@@ -1,8 +1,8 @@
 let dir =
-  if Array.length Sys.argv < 1 then
-    Sys.getcwd ()
-  else
+  if Array.length Sys.argv > 1 then
     Sys.argv.(1)
+  else
+    Filename.concat (Sys.getcwd ()) "lib_tests/md"
 
 let process file =
   let html = (Filename.chop_extension file) ^ ".html" in
