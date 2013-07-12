@@ -1,4 +1,4 @@
 omd
 ===
 
-a (hopefully efficient) markdown frontend in simple OCaml (no external dependencies)
+a (hopefully efficient) Markdown frontend in simple OCaml (no external dependencies)  
