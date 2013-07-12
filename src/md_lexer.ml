@@ -13,7 +13,11 @@
 
    * - `while' loops are sometimes preferred to recursion because this
    * may be used on systems where tail recursion is not well
-   * supported.
+   * supported. (I tried to write "while" as often as possible, but it
+   * turned out that it was pretty inconvenient, so I do use
+   * recursion.  When I have time, I'll do some tests and see if I
+   * need to convert recursive loops into iterative loops. Sorry if it
+   * makes it harder to read.)
 
 *)
 
@@ -55,6 +59,48 @@ type t =
   | Tilde of int
   | Underscore of int
   | Word of string
+
+
+let string_of_t = function
+  | Ampersand n -> String.make n '&'
+  | At  n -> String.make n '@'
+  | Backquote  n -> String.make n '`'
+  | Backslash  n -> String.make n '\\'
+  | Bar  n -> String.make n '|'
+  | Caret  n -> String.make n '^'
+  | Cbrace  n -> String.make n '{'
+  | Colon  n -> String.make n ','
+  | Cparenthesis  n -> String.make n ')'
+  | Csbracket  n -> String.make n ']'
+  | Dollar  n -> String.make n '$'
+  | Dot  n -> String.make n '.'
+  | Doublequote  n -> String.make n '"'
+  | Exclamation  n -> String.make n '!'
+  | Equal  n -> String.make n '='
+  | Greaterthan  n -> String.make n '>'
+  | Hash  n -> String.make n '#'
+  | Lessthan  n -> String.make n '<'
+  | Minus  n -> String.make n '-'
+  | Newline  n -> String.make n '\n'
+  | Number s -> s
+  | Obrace  n -> String.make n '{'
+  | Oparenthesis  n -> String.make n '('
+  | Osbracket  n -> String.make n '['
+  | Percent  n -> String.make n '%'
+  | Plus  n -> String.make n '+'
+  | Question  n -> String.make n '?'
+  | Quote  n -> String.make n '\''
+  | Return  n -> String.make n '\r'
+  | Semicolon  n -> String.make n ';'
+  | Slash  n -> String.make n '/'
+  | Space  n -> String.make n ' '
+  | Star  n -> String.make n '*'
+  | Tab  n -> String.make n '\t'
+  | Tilde  n -> String.make n '~'
+  | Underscore  n -> String.make n '_'
+  | Word s -> s
+
+
 
 let lex_from_string s =
   let result = ref [] in
