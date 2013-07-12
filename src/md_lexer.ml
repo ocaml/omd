@@ -153,7 +153,64 @@ let lex_from_string s =
     done;
     List.rev !result
 
+let rec convert_to_lf = function
+  | [] -> []
+  | Return 1 :: Newline 1 :: tl -> Newline 1 :: convert_to_lf tl
+  | Return n :: tl -> Newline n :: convert_to_lf tl
+  | hd :: tl -> hd :: convert_to_lf tl
+
+let rec convert_crlf_to_lf = function
+  | [] -> []
+  | Return 1 :: Newline 1 :: tl -> Newline 1 :: convert_crlf_to_lf tl
+  | hd :: tl -> hd :: convert_crlf_to_lf tl
+
+let rec convert_cr_to_lf = function
+  | [] -> []
+  | Return n :: tl -> Newline n :: convert_cr_to_lf tl
+  | hd :: tl -> hd :: convert_cr_to_lf tl
+
+let rec convert_to_crlf = function
+  | [] -> []
+  | Return 1 :: Newline 1 :: tl -> Return 1 :: Newline 1 :: convert_to_crlf tl
+  | Newline 1 :: tl -> Return 1 :: Newline 1 :: convert_to_crlf tl
+  | Newline n :: tl -> assert (n>0);
+      Return 1 :: Newline 1 :: convert_to_crlf (Newline (n-1) :: tl)
+  | Return n :: tl -> assert (n>0);
+      Return 1 :: Newline 1 :: convert_to_crlf (Return (n-1) :: tl)
+  | hd :: tl -> hd :: convert_to_crlf tl
+
+
+let position orig spot =
+  let ( ++ ) (x,y) (a,b) =
+    if b = 0 then
+      (x+a, y)
+    else
+      (a, y+b)
+  in 
+  let length = function
+    | Ampersand x | At x | Backquote x | Backslash x | Bar x | Caret x
+    | Cbrace x | Colon x | Cparenthesis x | Csbracket x | Dollar x | Dot x
+    | Doublequote x | Exclamation x | Greaterthan x | Hash x | Lessthan x 
+    | Minus x | Obrace x | Oparenthesis x | Osbracket x | Percent x | Plus x
+    | Question x | Quote x | Semicolon x | Slash x | Space x | Star x | Tab x 
+    | Underscore x -> (x, 0)
+    | Newline x -> (0, x)
+    | Return x -> (0, x)
+    | Number s | Word s -> (String.length s, 0)
+  in
+  let rec loop r = function
+    | (hd :: tl) as l -> 
+        if l == spot then
+          r
+        else
+          loop (r ++ length hd) tl
+    | [] -> r
+  in
+    loop (0,0)
 
 let _ =
   lex_from_string "42 Bonjour !\n"
+;;
+let _ =
+  convert_to_lf (lex_from_string "42 Bonjour !\n")
 ;;
