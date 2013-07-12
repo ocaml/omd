@@ -32,6 +32,7 @@ type t =
   | Dot of int
   | Doublequote of int
   | Exclamation of int
+  | Equal of int
   | Greaterthan of int
   | Hash of int
   | Lessthan of int
@@ -148,6 +149,7 @@ let lex_from_string s =
           | '/'  as c  -> incr i; Slash (rcount c)
           | '$'  as c  -> incr i; Dollar (rcount c)
           | '%'  as c  -> incr i; Percent (rcount c)
+          | '='  as c  -> incr i; Equal (rcount c)
           | '!'  as c  -> incr i; Exclamation (rcount c)
           | '?'  as c  -> incr i; Question (rcount c)
           | '0' .. '9' -> maybe_number()
@@ -192,7 +194,7 @@ let position orig spot =
   let length = function
     | Ampersand x | At x | Backquote x | Backslash x | Bar x | Caret x
     | Cbrace x | Colon x | Cparenthesis x | Csbracket x | Dollar x | Dot x
-    | Doublequote x | Exclamation x | Greaterthan x | Hash x | Lessthan x 
+    | Doublequote x | Exclamation x | Equal x | Greaterthan x | Hash x | Lessthan x 
     | Minus x | Obrace x | Oparenthesis x | Osbracket x | Percent x | Plus x
     | Question x | Quote x | Semicolon x | Slash x | Space x | Star x | Tab x 
     | Tilde x | Underscore x -> (x, 0)
