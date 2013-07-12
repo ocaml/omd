@@ -12,6 +12,7 @@
 include Md_lexer
 
 let lex_from_inchannel ic =
+  (* Maintenance-easiness-driven implementation. *)
   let string_of_inchannel ic =
     let b = Buffer.create 42 in
       try while true do
