@@ -1,5 +1,5 @@
 (***********************************************************************)
-(* MDOCaml: (an MPP-based) Markdown tool for OCaml                     *)
+(* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
 (* Licence : CeCILL-B                                                  *)
 (* http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html         *)
