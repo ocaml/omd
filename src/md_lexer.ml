@@ -51,6 +51,7 @@ type t =
   | Space of int
   | Star of int
   | Tab of int
+  | Tilde of int
   | Underscore of int
   | Word of string
 
@@ -82,7 +83,7 @@ let lex_from_string s =
         else
           match s.[!i] with
             | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"' 
-            | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>' 
+            | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>' | '~'
             | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!' | '?' -> 
                 Word (String.sub s start (!i-start))
             | c -> incr i; loop()
@@ -101,7 +102,7 @@ let lex_from_string s =
       done;
       match s.[!i] with
         | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"' 
-        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>' 
+        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'  | '~'
         | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!' | '?' ->
             Number(String.sub s start (!i-start))
         | _ ->
@@ -137,6 +138,7 @@ let lex_from_string s =
           | ':'  as c  -> incr i; Colon (rcount c)
           | ';'  as c  -> incr i; Semicolon (rcount c)
           | '>'  as c  -> incr i; Greaterthan (rcount c)
+          | '~'  as c  -> incr i; Tilde (rcount c)
           | '<'  as c  -> incr i; Lessthan (rcount c)
           | '@'  as c  -> incr i; At (rcount c)
           | '&'  as c  -> incr i; Ampersand (rcount c)
@@ -193,7 +195,7 @@ let position orig spot =
     | Doublequote x | Exclamation x | Greaterthan x | Hash x | Lessthan x 
     | Minus x | Obrace x | Oparenthesis x | Osbracket x | Percent x | Plus x
     | Question x | Quote x | Semicolon x | Slash x | Space x | Star x | Tab x 
-    | Underscore x -> (x, 0)
+    | Tilde x | Underscore x -> (x, 0)
     | Newline x -> (0, x)
     | Return x -> (0, x)
     | Number s | Word s -> (String.length s, 0)
