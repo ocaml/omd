@@ -71,7 +71,7 @@ let string_of_t = function
   | Cbrace  n -> String.make n '{'
   | Colon  n -> String.make n ','
   | Cparenthesis  n -> String.make n ')'
-  | Csbracket  n -> String.make n ']'
+  | Cbracket  n -> String.make n ']'
   | Dollar  n -> String.make n '$'
   | Dot  n -> String.make n '.'
   | Doublequote  n -> String.make n '"'
@@ -85,7 +85,7 @@ let string_of_t = function
   | Number s -> s
   | Obrace  n -> String.make n '{'
   | Oparenthesis  n -> String.make n '('
-  | Osbracket  n -> String.make n '['
+  | Obracket  n -> String.make n '['
   | Percent  n -> String.make n '%'
   | Plus  n -> String.make n '+'
   | Question  n -> String.make n '?'
@@ -176,8 +176,8 @@ let lex_from_string s =
           | '"'  as c  -> incr i; Doublequote (rcount c)
           | '\\' as c  -> incr i; Backslash (rcount c)
           | '_'  as c  -> incr i; Underscore (rcount c)
-          | '['  as c  -> incr i; Osbracket (rcount c)
-          | ']'  as c  -> incr i; Csbracket (rcount c)
+          | '['  as c  -> incr i; Obracket (rcount c)
+          | ']'  as c  -> incr i; Cbracket (rcount c)
           | '{'  as c  -> incr i; Obrace (rcount c)
           | '}'  as c  -> incr i; Cbrace (rcount c)
           | '('  as c  -> incr i; Oparenthesis (rcount c)
@@ -239,9 +239,9 @@ let position orig spot =
   in 
   let length = function
     | Ampersand x | At x | Backquote x | Backslash x | Bar x | Caret x
-    | Cbrace x | Colon x | Cparenthesis x | Csbracket x | Dollar x | Dot x
+    | Cbrace x | Colon x | Cparenthesis x | Cbracket x | Dollar x | Dot x
     | Doublequote x | Exclamation x | Equal x | Greaterthan x | Hash x | Lessthan x 
-    | Minus x | Obrace x | Oparenthesis x | Osbracket x | Percent x | Plus x
+    | Minus x | Obrace x | Oparenthesis x | Obracket x | Percent x | Plus x
     | Question x | Quote x | Semicolon x | Slash x | Space x | Star x | Tab x 
     | Tilde x | Underscore x -> (x, 0)
     | Newline x -> (0, x)
