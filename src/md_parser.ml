@@ -30,9 +30,9 @@ let parse lexemes =
           loop (`Text (string_of_t t) :: result) [t] tl
 
       (* spaces *)
-      | ([Newline _]|[]), Spaces n :: tl ->
+      | ([Newline _]|[]), Space n :: Star x :: tl -> 
           assert false
-      | _, Spaces n :: tl ->
+      | _, Space n :: tl ->
           assert false
 
       (* stars *)
