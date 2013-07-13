@@ -1,4 +1,4 @@
-
+all:md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
 
 
 %.cmo:%.ml
