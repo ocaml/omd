@@ -28,6 +28,18 @@ let parse lexemes =
           read_title n tl
       | _, (Hash _ as t) :: tl -> (* hash -- no title *)
           loop (`Text (string_of_t t) :: result) [t] tl
+
+      (* spaces *)
+      | ([Newline _]|[]), Spaces n :: tl ->
+          assert false
+      | _, Spaces n :: tl ->
+          assert false
+
+      (* stars *)
+      | _, Star 1 :: (e::_ as tl) -> (* * *)
+          assert (match e with Star _ -> false| _ -> true);
+          assert false
+          
             
       (* backslashes *)
       | _, Backslash 1 :: (Backquote 1 as t) :: tl -> (* \` *)
