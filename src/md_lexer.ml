@@ -31,7 +31,7 @@ type t =
   | Cbrace of int
   | Colon of int
   | Cparenthesis of int
-  | Csbracket of int
+  | Cbracket of int
   | Dollar of int
   | Dot of int
   | Doublequote of int
@@ -45,7 +45,7 @@ type t =
   | Number of string
   | Obrace of int
   | Oparenthesis of int
-  | Osbracket of int
+  | Obracket of int
   | Percent of int
   | Plus of int
   | Question of int
