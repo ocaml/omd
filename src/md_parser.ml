@@ -72,14 +72,11 @@ let parse lexemes =
       | _, (Star((1|2|3) as n) as t) :: tl -> (* 1, 2 or 3 "orphan" stars, or emph/bold *)
           begin match emph_or_bold n r tl with
             | [] -> loop (Text (string_of_t t) :: r) [t] tl
-            | x  -> loop (List.rev (loop [] [t] x) @ r) [t] tl
+            | x  -> loop ((loop [] [t] x) @ r) [t] tl
           end
       | _, (Star n as t) :: tl -> (* one or several "orphan" stars, or emph/bold *)
           loop (Text(string_of_t t) :: r) [t] tl
 
-          
-          
-            
       (* backslashes *)
       | _, Backslash 1 :: (Backquote 1 as t) :: tl -> (* \` *)
           loop (Text ("`") :: r) [t] tl
@@ -151,4 +148,4 @@ let parse lexemes =
     assert false
       
   in
-    loop [] [] lexemes
+    List.rev (loop [] [] lexemes)
