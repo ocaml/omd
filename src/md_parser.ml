@@ -86,12 +86,10 @@ let parse lexemes =
           loop (Text ("*") :: r) [t] tl
       | _, Backslash 1 :: Star n :: tl -> assert (n > 1); (* \****... *)
           loop (Text ("*") :: r) [Backslash 1; Star 1] (Star (n-1) :: tl)
-
       | _, Backslash 1 :: (Underscore 1 as t) :: tl -> (* \_ *)
           loop (Text ("_") :: r) [t] tl
       | _, Backslash 1 :: Underscore n :: tl -> assert (n > 1); (* \___... *)
           loop (Text ("_") :: r) [Backslash 1; Underscore 1] (Underscore (n-1) :: tl)
-
       | _, Backslash 1 :: (Obrace 1 as t) :: tl -> (* \{ *)
           loop (Text ("{") :: r) [t] tl
       | _, Backslash 1 :: Obrace n :: tl -> assert (n > 1); (* \{{{... *)
