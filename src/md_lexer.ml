@@ -244,8 +244,7 @@ let position orig spot =
     | Minus x | Obrace x | Oparenthesis x | Obracket x | Percent x | Plus x
     | Question x | Quote x | Semicolon x | Slash x | Space x | Star x | Tab x 
     | Tilde x | Underscore x -> (x, 0)
-    | Newline x -> (0, x)
-    | Return x -> (0, x)
+    | Return x | Newline x -> (0, x)
     | Number s | Word s -> (String.length s, 0)
   in
   let rec loop r = function
