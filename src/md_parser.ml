@@ -16,34 +16,71 @@
 *)
 
 type md_element = 
+    | Paragraph of md
     | Text of string
     | Emph of md
-    | Bold of md 
+    | Bold of md
+    | Ul of li list
+    | Ol of li list
+    | Sp of int (*spaces*)
+and li = Li of md
 and md = md_element list
     
 
 open Md_lexer
 
 
-(** [emph_or_bold (n:int) (r:md list) (l: Md_lexer.t list)] 
+(** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)] 
     returns [] if not (emph and/or bold),
-    else returns the contents intended to be formatted. *)
-let rec emph_or_bold n r l =
+    else returns the contents intended to be formatted,
+    along with the rest of the stream that hasn't been processed. *)
+let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t list) =
   assert (n>0 && n<4);
   let rec loop (result:Md_lexer.t list) = function
-    | [] -> []
-    | Newline _ :: tl -> []
-    | ((Star x) as t) :: tl ->
-        if x = n then
-          result
+    | [] ->
+        [], l
+    | (Newline|Newlines _) :: tl ->
+        [], l
+    | (Star as t) :: tl ->
+        if n = 1 then
+          (List.rev result), tl
         else
           loop (t :: result) tl
-    | _ -> assert false
-  in List.rev (loop [] l)
+    | ((Stars x) as t) :: tl ->
+        if n = x+2 then
+          (List.rev result), tl
+        else
+          loop (t :: result) tl
+    | t::tl ->
+        loop (t :: result) tl
+  in loop [] l
 
-let emph_or_bold n r l = failwith ""
-let spaces r previous n l = failwith ""
-let new_ulist r previous l = failwith ""
+
+(* let emph_or_bold n l = failwith "" *)
+
+(** n: indentation level *)
+let new_ulist n r l = failwith ""
+
+(** n: indentation level *)
+let new_olist n r l = failwith ""
+
+let code n r l = failwith ""
+
+let spaces n r previous l = match n, previous, l with
+  | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl -> (* unordered list *)
+      new_ulist n r tl
+  | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
+      new_olist n r tl
+  | _, ([]|[(Newlines _)]), _ -> (* n>=4, code *)
+      code n r l
+  | 1, _, _ ->
+      (Sp 1::r), [Space], l
+  | n, _, _ ->
+      (Sp n::r), [Spaces (n-2)], l
+
+let spaces n r previous l = failwith ""
+
+
 
 let parse lexemes =
   let rec loop (r: md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
@@ -54,96 +91,136 @@ let parse lexemes =
           r
 
       (* hashes *)
-      | ([Newline _]|[]), Hash n :: tl -> (* hash titles *)
-          read_title n tl
-      | _, (Hash _ as t) :: tl -> (* hash -- no title *)
-          loop
-            (Text(string_of_t t) :: r)
-            [t]
-            tl
-
-      (* spaces *)
-      | _, Space (n) :: tl -> (* too many cases to be handled here *)
-          spaces r previous n tl
-
-      (* stars *)
-      | ([]|[Newline _]), Star 1 :: tl -> (* one star at the beginning of a new line *)
-          new_ulist r previous tl
-      | _, (Star((1|2|3) as n) as t) :: tl -> (* 1, 2 or 3 "orphan" stars, or emph/bold *)
-          begin match emph_or_bold n r tl with
-            | [] -> loop (Text (string_of_t t) :: r) [t] tl
-            | x  -> loop ((loop [] [t] x) @ r) [t] tl
-          end
-      | _, (Star n as t) :: tl -> (* one or several "orphan" stars, or emph/bold *)
+      | ([]|[(Newline|Newlines _)]), Hashs n :: tl -> (* hash titles *)
+          read_title (n+2) tl
+      | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
+          read_title 1 tl
+      | _, ((Hash|Hashs _) as t) :: tl -> (* hash -- no title *)
           loop (Text(string_of_t t) :: r) [t] tl
 
-      (* backslashes *)
-      | _, Backslash 1 :: (Backquote 1 as t) :: tl -> (* \` *)
-          loop (Text ("`") :: r) [t] tl
-      | _, Backslash 1 :: Backquote n :: tl -> assert (n > 1); (* \````... *)
-          loop (Text ("`") :: r) [Backslash 1; Backquote 1] (Backquote (n-1) :: tl)
-      | _, Backslash 1 :: (Star 1 as t) :: tl -> (* \* *)
-          loop (Text ("*") :: r) [t] tl
-      | _, Backslash 1 :: Star n :: tl -> assert (n > 1); (* \****... *)
-          loop (Text ("*") :: r) [Backslash 1; Star 1] (Star (n-1) :: tl)
-      | _, Backslash 1 :: (Underscore 1 as t) :: tl -> (* \_ *)
-          loop (Text ("_") :: r) [t] tl
-      | _, Backslash 1 :: Underscore n :: tl -> assert (n > 1); (* \___... *)
-          loop (Text ("_") :: r) [Backslash 1; Underscore 1] (Underscore (n-1) :: tl)
-      | _, Backslash 1 :: (Obrace 1 as t) :: tl -> (* \{ *)
-          loop (Text ("{") :: r) [t] tl
-      | _, Backslash 1 :: Obrace n :: tl -> assert (n > 1); (* \{{{... *)
-          loop (Text ("{") :: r) [Backslash 1; Obrace 1] (Obrace (n-1) :: tl)
-      | _, Backslash 1 :: (Cbrace 1 as t) :: tl -> (* \} *)
-          loop (Text ("}") :: r) [t] tl
-      | _, Backslash 1 :: Cbrace n :: tl -> assert (n > 1); (* \}}}... *)
-          loop (Text ("}") :: r) [Backslash 1; Cbrace 1] (Cbrace (n-1) :: tl)
-      | _, Backslash 1 :: (Obracket 1 as t) :: tl -> (* \[ *)
-          loop (Text ("[") :: r) [t] tl
-      | _, Backslash 1 :: Obracket n :: tl -> assert (n > 1); (* \[[[... *)
-          loop (Text ("[") :: r) [Backslash 1; Obracket 1] (Obracket (n-1) :: tl)
-      | _, Backslash 1 :: (Cbracket 1 as t) :: tl -> (* \} *)
-          loop (Text ("]") :: r) [t] tl
-      | _, Backslash 1 :: Cbracket n :: tl -> assert (n > 1); (* \}}}... *)
-          loop (Text ("]") :: r) [Backslash 1; Cbracket 1] (Cbracket (n-1) :: tl)
-      | _, Backslash 1 :: (Oparenthesis 1 as t) :: tl -> (* \( *)
-          loop (Text ("(") :: r) [t] tl
-      | _, Backslash 1 :: Oparenthesis n :: tl -> assert (n > 1); (* \(((... *)
-          loop (Text ("(") :: r) [Backslash 1; Oparenthesis 1] (Oparenthesis (n-1) :: tl)
-      | _, Backslash 1 :: (Cparenthesis 1 as t) :: tl -> (* \) *)
-          loop (Text (")") :: r) [t] tl
-      | _, Backslash 1 :: Cparenthesis n :: tl -> assert (n > 1); (* \)))... *)
-          loop (Text (")") :: r) [Backslash 1; Cparenthesis 1] (Cparenthesis (n-1) :: tl)
-      | _, Backslash 1 :: (Plus 1 as t) :: tl -> (* \+ *)
-          loop (Text ("+") :: r) [t] tl
-      | _, Backslash 1 :: Plus n :: tl -> assert (n > 1); (* \+++... *)
-          loop (Text ("+") :: r) [Backslash 1; Plus 1] (Plus (n-1) :: tl)
-      | _, Backslash 1 :: (Minus 1 as t) :: tl -> (* \- *)
-          loop (Text ("-") :: r) [t] tl
-      | _, Backslash 1 :: Minus n :: tl -> assert (n > 1); (* \---... *)
-          loop (Text ("-") :: r) [Backslash 1; Minus 1] (Minus (n-1) :: tl)
-      | _, Backslash 1 :: (Dot 1 as t) :: tl -> (* \. *)
-          loop (Text (".") :: r) [t] tl
-      | _, Backslash 1 :: Dot n :: tl -> assert (n > 1); (* \....... *)
-          loop (Text (".") :: r) [Backslash 1; Dot 1] (Dot (n-1) :: tl)
-      | _, Backslash 1 :: (Exclamation 1 as t) :: tl -> (* \! *)
-          loop (Text ("!") :: r) [t] tl
-      | _, Backslash 1 :: Exclamation n :: tl -> assert (n > 1); (* \!!!... *)
-          loop (Text ("!") :: r) [Backslash 1; Exclamation 1] (Exclamation (n-1) :: tl)
+      (* spaces *)
+      | _, (Spaces n) :: tl -> (* too many cases to be handled here *)
+          let r, p, l = spaces n r previous tl in
+            loop r p l
+      | _, Space :: tl -> (* too many cases to be handled here *)
+          let r, p, l = spaces 1 r previous tl in
+            loop r p l
 
+      (* stars *)
+      | _, (Star as t) :: tl -> (* one "orphan" star, or emph *)
+          begin match emph_or_bold 1 tl with
+            | [], _      -> loop (Text(string_of_t t) :: r) [t] tl
+            | x , new_tl -> loop (Emph(revloop [] [t] x) :: r) [t] new_tl
+          end
+      | _, (Stars((0|1) as n) as t) :: tl -> (* 2 or 3 "orphan" stars, or emph/bold *)
+          begin match emph_or_bold (n+2) tl with
+            | [], _ ->
+                if n = 0 then
+                  loop (Text(string_of_t t) :: r) [t] tl
+                else
+                  loop (Text(string_of_t t) :: r) [t] tl
+            | x, new_tl ->
+                if n = 0 then
+                  loop (Bold(revloop [] [t] x) :: r) [t] new_tl
+                else
+                  loop (Emph([Bold(revloop [] [t] x)]) :: r) [t] new_tl
+          end
+
+      (* backslashes *)
+      | _, Backslash :: (Backquote as t) :: tl -> (* \` *)
+          loop (Text ("`") :: r) [t] tl
+      | _, Backslash :: Backquotes 0 :: tl -> (* \````... *)
+          loop (Text ("`") :: r) [Backslash; Backquote] (Backquote :: tl)
+      | _, Backslash :: Backquotes n :: tl -> assert (n >= 0); (* \````... *)
+          loop (Text ("`") :: r) [Backslash; Backquote] (Backquotes (n-1) :: tl)
+      | _, Backslash :: (Star as t) :: tl -> (* \* *)
+          loop (Text ("*") :: r) [t] tl
+      | _, Backslash :: Stars 0 :: tl -> (* \****... *)
+          loop (Text ("*") :: r) [Backslash; Star] (Star :: tl)
+      | _, Backslash :: Stars n :: tl -> assert (n >= 0); (* \****... *)
+          loop (Text ("*") :: r) [Backslash; Star] (Stars (n-1) :: tl)
+      | _, Backslash :: (Underscore as t) :: tl -> (* \_ *)
+          loop (Text ("_") :: r) [t] tl
+      | _, Backslash :: Underscores 0 :: tl -> (* \___... *)
+          loop (Text ("_") :: r) [Backslash; Underscore] (Underscore :: tl)
+      | _, Backslash :: Underscores n :: tl -> assert (n >= 0); (* \___... *)
+          loop (Text ("_") :: r) [Backslash; Underscore] (Underscores (n-1) :: tl)
+      | _, Backslash :: (Obrace as t) :: tl -> (* \{ *)
+          loop (Text ("{") :: r) [t] tl
+      | _, Backslash :: Obraces 0 :: tl -> (* \{{{... *)
+          loop (Text ("{") :: r) [Backslash; Obrace] (Obrace :: tl)
+      | _, Backslash :: Obraces n :: tl -> assert (n >= 0); (* \{{{... *)
+          loop (Text ("{") :: r) [Backslash; Obrace] (Obraces (n-1) :: tl)
+      | _, Backslash :: (Cbrace as t) :: tl -> (* \} *)
+          loop (Text ("}") :: r) [t] tl
+      | _, Backslash :: Cbraces 0 :: tl -> (* \}}}... *)
+          loop (Text ("}") :: r) [Backslash; Cbrace] (Cbrace :: tl)
+      | _, Backslash :: Cbraces n :: tl -> assert (n >= 0); (* \}}}... *)
+          loop (Text ("}") :: r) [Backslash; Cbrace] (Cbraces (n-1) :: tl)
+      | _, Backslash :: (Obracket as t) :: tl -> (* \[ *)
+          loop (Text ("[") :: r) [t] tl
+      | _, Backslash :: Obrackets 0 :: tl -> (* \[[[... *)
+          loop (Text ("[") :: r) [Backslash; Obracket] (Obracket :: tl)
+      | _, Backslash :: Obrackets n :: tl -> assert (n >= 0); (* \[[[... *)
+          loop (Text ("[") :: r) [Backslash; Obracket] (Obrackets (n-1) :: tl)
+      | _, Backslash :: (Cbracket as t) :: tl -> (* \} *)
+          loop (Text ("]") :: r) [t] tl
+      | _, Backslash :: Cbrackets 0 :: tl -> (* \}}}... *)
+          loop (Text ("]") :: r) [Backslash; Cbracket] (Cbracket :: tl)
+      | _, Backslash :: Cbrackets n :: tl -> assert (n >= 0); (* \}}}... *)
+          loop (Text ("]") :: r) [Backslash; Cbracket] (Cbrackets (n-1) :: tl)
+      | _, Backslash :: (Oparenthesis as t) :: tl -> (* \( *)
+          loop (Text ("(") :: r) [t] tl
+      | _, Backslash :: Oparenthesiss 0 :: tl -> (* \(((... *)
+          loop (Text ("(") :: r) [Backslash; Oparenthesis] (Oparenthesis :: tl)
+      | _, Backslash :: Oparenthesiss n :: tl -> assert (n >= 0); (* \(((... *)
+          loop (Text ("(") :: r) [Backslash; Oparenthesis] (Oparenthesiss (n-1) :: tl)
+      | _, Backslash :: (Cparenthesis as t) :: tl -> (* \) *)
+          loop (Text (")") :: r) [t] tl
+      | _, Backslash :: Cparenthesiss 0 :: tl -> (* \)))... *)
+          loop (Text (")") :: r) [Backslash; Cparenthesis] (Cparenthesis :: tl)
+      | _, Backslash :: Cparenthesiss n :: tl -> assert (n >= 0); (* \)))... *)
+          loop (Text (")") :: r) [Backslash; Cparenthesis] (Cparenthesiss (n-1) :: tl)
+      | _, Backslash :: (Plus as t) :: tl -> (* \+ *)
+          loop (Text ("+") :: r) [t] tl
+      | _, Backslash :: Pluss 0 :: tl -> (* \+++... *)
+          loop (Text ("+") :: r) [Backslash; Plus] (Plus :: tl)
+      | _, Backslash :: Pluss n :: tl -> assert (n >= 0); (* \+++... *)
+          loop (Text ("+") :: r) [Backslash; Plus] (Pluss (n-1) :: tl)
+      | _, Backslash :: (Minus as t) :: tl -> (* \- *)
+          loop (Text ("-") :: r) [t] tl
+      | _, Backslash :: Minuss 0 :: tl -> (* \---... *)
+          loop (Text ("-") :: r) [Backslash; Minus] (Minus :: tl)
+      | _, Backslash :: Minuss n :: tl -> assert (n >= 0); (* \---... *)
+          loop (Text ("-") :: r) [Backslash; Minus] (Minuss (n-1) :: tl)
+      | _, Backslash :: (Dot as t) :: tl -> (* \. *)
+          loop (Text (".") :: r) [t] tl
+      | _, Backslash :: Dots 0 :: tl -> (* \....... *)
+          loop (Text (".") :: r) [Backslash; Dot] (Dot :: tl)
+      | _, Backslash :: Dots n :: tl -> assert (n >= 0); (* \....... *)
+          loop (Text (".") :: r) [Backslash; Dot] (Dots (n-1) :: tl)
+      | _, Backslash :: (Exclamation as t) :: tl -> (* \! *)
+          loop (Text ("!") :: r) [t] tl
+      | _, Backslash :: Exclamations 0 :: tl -> (* \!!!... *)
+          loop (Text ("!") :: r) [Backslash; Exclamation] (Exclamation :: tl)
+      | _, Backslash :: Exclamations n :: tl -> assert (n >= 0); (* \!!!... *)
+          loop (Text ("!") :: r) [Backslash; Exclamation] (Exclamations (n-1) :: tl)
             
-      | _, (Backslash n as t) :: tl -> (* \\\\... *)
+      | _, (Backslashs n as t) :: tl -> (* \\\\... *)
           if n mod 2 = 0 then
-            loop (Text (String.make (n/2) '\\') :: r) [t](*???*) tl
+            loop (Text (String.make ((n-2)/2) '\\') :: r) [t](*???*) tl
           else
-            loop (Text (String.make (n/2) '\\') :: r) [t](*???*) (Backslash 1 :: tl)
+            loop (Text (String.make ((n-2)/2) '\\') :: r) [t](*???*) (Backslash :: tl)
 
       | _ ->
-            assert false
-          
+          assert false
+            
 
   and read_title n lexemes =
     assert false
+
+  and revloop (r: md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
+    List.rev (loop r previous lexemes)
       
   in
-    List.rev (loop [] [] lexemes)
+    revloop [] [] lexemes
