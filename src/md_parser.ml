@@ -23,6 +23,9 @@ type md_element =
     | Ul of li list
     | Ol of li list
     | Sp of int (*spaces*)
+    | Code of string
+    | Br
+    | Hr
 and li = Li of md
 and md = md_element list
     
@@ -64,26 +67,44 @@ let new_ulist n r l = failwith ""
 (** n: indentation level *)
 let new_olist n r l = failwith ""
 
-let code n r l = failwith ""
+(** indented code *)
+let icode r previous l =
+  let accu = Buffer.create 42 in
+  let rec loop = function
+    | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->  (* 1, 2 or 3 spaces. *)
+        Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+    | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl -> (* At least 4 spaces, it's still code. *)
+        Buffer.add_string accu (String.make (n-2) ' ');
+        loop ([t], tl)
+    | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
+        Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+    | _, e::tl ->
+        Buffer.add_string accu (string_of_t e);
+        loop ([e], tl)
+    | p, [] ->
+        Code (Buffer.contents accu)::r, p, []
+  in loop ([Newlines 0], l)
+  
+let icode r p l = failwith ""
 
 let spaces n r previous l = match n, previous, l with
   | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl -> (* unordered list *)
       new_ulist n r tl
   | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
       new_olist n r tl
-  | _, ([]|[(Newlines _)]), _ -> (* n>=4, code *)
-      code n r l
+  | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
+      icode r previous (make_space n :: l)
   | 1, _, _ ->
       (Sp 1::r), [Space], l
   | n, _, _ ->
       (Sp n::r), [Spaces (n-2)], l
 
-let spaces n r previous l = failwith ""
+(* let spaces n r previous l = failwith "" *)
 
 
 
 let parse lexemes =
-  let rec loop (r: md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
+  let rec loop (r:md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
     match previous, lexemes with
 
       (* no more to process *)
@@ -99,11 +120,8 @@ let parse lexemes =
           loop (Text(string_of_t t) :: r) [t] tl
 
       (* spaces *)
-      | _, (Spaces n) :: tl -> (* too many cases to be handled here *)
-          let r, p, l = spaces n r previous tl in
-            loop r p l
-      | _, Space :: tl -> (* too many cases to be handled here *)
-          let r, p, l = spaces 1 r previous tl in
+      | _, ((Space|Spaces _) as t) :: tl -> (* too many cases to be handled here *)
+          let r, p, l = spaces (fst (length t)) r previous tl in
             loop r p l
 
       (* stars *)
