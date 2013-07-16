@@ -302,6 +302,29 @@ let rec convert_to_crlf = function
   | hd :: tl -> hd :: convert_to_crlf tl
 
 
+let length = function
+  | Ampersand | At | Backquote | Backslash | Bar | Caret
+  | Cbrace | Colon | Cparenthesis | Cbracket | Dollar | Dot
+  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan 
+  | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
+  | Question | Quote | Semicolon | Slash | Space | Star | Tab 
+  | Tilde | Underscore -> (1, 0)
+  | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
+  | Cbraces x | Colons x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
+  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x | Lessthans x 
+  | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
+  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x | Tabs x 
+  | Tildes x | Underscores x -> (2+x, 0)
+  | Return | Newline -> (0, 1)
+  | Returns x | Newlines x -> (0, 2+x)
+  | Number s | Word s -> (String.length s, 0)
+
+let make_space = function
+  | 0 -> raise (Invalid_argument "Md_lexer.make_space")
+  | 1 -> Space
+  | n -> if n < 0 then raise (Invalid_argument "Md_lexer.make_space") else
+        Spaces (n-2)
+
 let position orig spot =
   let ( ++ ) (x,y) (a,b) =
     if b = 0 then
@@ -309,23 +332,6 @@ let position orig spot =
     else
       (a, y+b)
   in 
-  let length = function
-    | Ampersand | At | Backquote | Backslash | Bar | Caret
-    | Cbrace | Colon | Cparenthesis | Cbracket | Dollar | Dot
-    | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan 
-    | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
-    | Question | Quote | Semicolon | Slash | Space | Star | Tab 
-    | Tilde | Underscore -> (1, 0)
-    | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-    | Cbraces x | Colons x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
-    | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x | Lessthans x 
-    | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
-    | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x | Tabs x 
-    | Tildes x | Underscores x -> (2+x, 0)
-    | Return | Newline -> (0, 1)
-    | Returns x | Newlines x -> (0, 2+x)
-    | Number s | Word s -> (String.length s, 0)
-  in
   let rec loop r = function
     | (hd :: tl) as l -> 
         if l == spot then
