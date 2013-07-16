@@ -16,4 +16,9 @@ md_lexer.cmx:
 md_lexer_fs.cmx:
 
 
+clean:
+	rm -f *.cmx *.cmo *~ *.cmi 
+
+
+
 
