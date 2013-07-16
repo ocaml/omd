@@ -108,7 +108,7 @@ let parse lexemes =
     match previous, lexemes with
 
       (* no more to process *)
-      | _, [] ->
+      | _, [] -> (* return the result (it has to be reversed as some point) *)
           r
 
       (* hashes *)
