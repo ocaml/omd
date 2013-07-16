@@ -15,42 +15,38 @@
 
 *)
 
-type md = 
+type md_element = 
     | Text of string
-    | Emph of md list
-    | Bold of md list 
+    | Emph of md
+    | Bold of md 
+and md = md_element list
     
 
 open Md_lexer
 
 
-(** [emph_or_bold (n:int) (r:'r list) (l: Md_lexer.t list)] 
-    return (Emph x :: r) or (Bold x :: r) if relevant (i.e. it's indeed what is next in [l]),
-    or [] if not. *)
+(** [emph_or_bold (n:int) (r:md list) (l: Md_lexer.t list)] 
+    returns [] if not (emph and/or bold),
+    else returns the contents intended to be formatted. *)
 let rec emph_or_bold n r l =
   assert (n>0 && n<4);
-  let rec loop (a: md list) = function
-    | [] -> [], []
-    | Newline _ :: tl -> [], []
-    | Star 1 :: tl ->
-        begin
-          if n = 1 then
-            ((Emph a) :: r), tl
-          else
-            match emph_or_bold 1 a tl with
-              | (((Emph _) :: _) as r), tl -> loop r tl
-              | [], _ -> loop ((Text "*") :: r) tl
-              | _ -> assert false
-        end
+  let rec loop (result:Md_lexer.t list) = function
+    | [] -> []
+    | Newline _ :: tl -> []
+    | ((Star x) as t) :: tl ->
+        if x = n then
+          result
+        else
+          loop (t :: result) tl
     | _ -> assert false
-  in loop [] l
+  in List.rev (loop [] l)
 
 let emph_or_bold n r l = failwith ""
 let spaces r previous n l = failwith ""
 let new_ulist r previous l = failwith ""
 
 let parse lexemes =
-  let rec loop (r: md list) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
+  let rec loop (r: md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
     match previous, lexemes with
 
       (* no more to process *)
@@ -61,7 +57,10 @@ let parse lexemes =
       | ([Newline _]|[]), Hash n :: tl -> (* hash titles *)
           read_title n tl
       | _, (Hash _ as t) :: tl -> (* hash -- no title *)
-          loop (Text (string_of_t t) :: r) [t] tl
+          loop
+            (Text(string_of_t t) :: r)
+            [t]
+            tl
 
       (* spaces *)
       | _, Space (n) :: tl -> (* too many cases to be handled here *)
@@ -70,15 +69,13 @@ let parse lexemes =
       (* stars *)
       | ([]|[Newline _]), Star 1 :: tl -> (* one star at the beginning of a new line *)
           new_ulist r previous tl
-      | _, (Star ((1|2|3) as n) as t) :: tl -> (* 1, 2 or 3 "orphan" stars, or emph/bold *)
+      | _, (Star((1|2|3) as n) as t) :: tl -> (* 1, 2 or 3 "orphan" stars, or emph/bold *)
           begin match emph_or_bold n r tl with
-            | (((Emph _ |Bold _) :: _) as new_r), tl -> 
-                loop new_r [t] tl
-            | [], _ -> loop (Text (string_of_t t) :: r) [t] tl
-            | _ -> assert false
+            | [] -> loop (Text (string_of_t t) :: r) [t] tl
+            | x  -> loop (List.rev (loop [] [t] x) @ r) [t] tl
           end
       | _, (Star n as t) :: tl -> (* one or several "orphan" stars, or emph/bold *)
-          loop (Text (string_of_t t) :: r) [t] tl
+          loop (Text(string_of_t t) :: r) [t] tl
 
           
           
@@ -153,5 +150,5 @@ let parse lexemes =
   and read_title n lexemes =
     assert false
       
-  in 
-    assert false
+  in
+    loop [] [] lexemes
