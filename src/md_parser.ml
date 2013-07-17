@@ -22,10 +22,11 @@ type md_element =
     | Bold of md
     | Ul of li list
     | Ol of li list
-    | Sp of int (*spaces*)
-    | Code of string
+    | Sp of int (* spaces *)
+    | Code of string (* html entities are to be converted *later* *)
     | Br
     | Hr
+    | HTML of string
 and li = Li of md
 and md = md_element list
     
@@ -79,7 +80,7 @@ let icode r previous l =
     | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
         Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
     | _, e::tl ->
-        Buffer.add_string accu (string_of_t e);
+        Buffer.add_string accu (string_of_t e); (* html entities are to be converted later! *)
         loop ([e], tl)
     | p, [] ->
         Code (Buffer.contents accu)::r, p, []
