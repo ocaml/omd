@@ -1,4 +1,4 @@
-This directory contains expressions that break Markdown.
+This directory contains expressions that **"break"** Markdown.
 
 For instance:
 ```
