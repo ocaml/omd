@@ -14,5 +14,5 @@ On Github it renders like this:
   * 2 spaces and a star: are we still in the same list?
 
 
-So you can see that on Github, the star with less space starts an inner list, which is kind of very wrong...
+So you can see that on Github, the star with preceded by less spaces starts an **inner** list, which is kind of very wrong...
 Pandoc considers that the 3rd bullet starts the 3rd element of the unique list.
