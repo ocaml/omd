@@ -12,3 +12,6 @@ On Github it renders like this:
    * Starting a list with 3 spaces and a star.
    * Continuing the list.
   * 2 spaces and a star: are we still in the same list?
+
+
+So you can see that on Github, the star with less space starts an inner list, which is kind of very wrong...
