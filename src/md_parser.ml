@@ -26,7 +26,7 @@ type md_element =
     | Code of string (* html entities are to be converted *later* *)
     | Br
     | Hr
-    | HTML of string
+    | Html of string
 and li = Li of md
 and md = md_element list
     
@@ -63,6 +63,48 @@ let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t
 (* let emph_or_bold n l = failwith "" *)
 
 (** n: indentation level *)
+let new_ulist n r l =
+  let module ISet = Set.Make(struct type t = int let compare = (-) end) in
+  let indentation_levels = ref ISet.empty in
+  let r, tl = 
+    let rec loop (result:(int*Md_lexer.t)list) (curr_line:md) (curr_n:int) = function
+      | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl 
+      | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+          indentation_levels := ISet.add 0 !indentation_levels;
+          loop ((curr_n,md)::result) [] 0 tl
+      | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl 
+      | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
+          indentation_levels := ISet.add 1 !indentation_levels;
+          loop ((curr_n,md)::result) [] 1 tl
+      | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) 
+      | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
+          if x+2 > curr_n + 4 then
+            begin
+              loop result curr_line curr_n p
+            end
+          else
+            begin 
+              indentation_levels := ISet.add (x+2) !indentation_levels;
+              loop ((md,curr_n)::result) [] (x+2) tl
+            end
+      | Newline :: e :: tl ->
+          loop result (e::curr_line) curr_n tl
+      | Newlines(_) :: tl -> (* if an empty line appears, then it's the end of the list(s). *)
+          result, tl
+    in
+      loop [] [] n l 
+  in (* so far, it's half computed... *)
+(*   let module IMap = Map.Make(struct type t = int let compare = (-) end) in *)
+(*   let m = ref IMap.empty in *)
+(*   let () = ISet.iter (let c = ref 0 in fun i -> incr c; m := IMap.add i !c !m) !indentation_levels in     *)
+  let rec loop2 (idents:int list) i m = match i, m with
+    | i, m -> 
+        if [i] > idents then
+          new_list
+        else if [i] < idents then
+          ...
+
+
 let new_ulist n r l = failwith ""
 
 (** n: indentation level *)
@@ -86,7 +128,7 @@ let icode r previous l =
         Code (Buffer.contents accu)::r, p, []
   in loop ([Newlines 0], l)
   
-let icode r p l = failwith ""
+(* let icode r p l = failwith "" *)
 
 let spaces n r previous l = match n, previous, l with
   | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl -> (* unordered list *)
