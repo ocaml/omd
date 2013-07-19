@@ -64,45 +64,49 @@ let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t
 
 (** n: indentation level *)
 let new_ulist n r l =
-  let module ISet = Set.Make(struct type t = int let compare = (-) end) in
-  let indentation_levels = ref ISet.empty in
+  let list_hd e = match e with hd::_ -> hd | _ -> assert false in
   let r, tl = 
-    let rec loop (result:(int*Md_lexer.t)list) (curr_line:md) (curr_n:int) = function
+    let rec loop (result:((int list)*(Md_lexer.t list))list) (curr_item:Md_lexer.t list) (indents:int list) = function
+        (* first loop: return the list of (indentation level * item) *)
       | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl 
       | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-          indentation_levels := ISet.add 0 !indentation_levels;
-          loop ((curr_n,md)::result) [] 0 tl
+          loop ((indents,(curr_item:Md_lexer.t list))::result) [] (0::indents) tl
       | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl 
       | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
-          indentation_levels := ISet.add 1 !indentation_levels;
-          loop ((curr_n,md)::result) [] 1 tl
+          loop ((indents,curr_item)::result) [] (1::indents) tl
       | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) 
       | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
-          if x+2 > curr_n + 4 then
-            begin
-              loop result curr_line curr_n p
+          if x+2 > list_hd indents + 4 then
+            begin (* a single new line & too many spaces -> *not* a new list item. *)
+              loop result curr_item indents p (* p is what follows the new line *)
             end
           else
-            begin 
-              indentation_levels := ISet.add (x+2) !indentation_levels;
-              loop ((md,curr_n)::result) [] (x+2) tl
+            begin (* a new list item, set previous current item as a complete item *)
+              loop ((indents,curr_item)::result) [] ((x+2)::indents) tl
             end
-      | Newline :: e :: tl ->
-          loop result (e::curr_line) curr_n tl
-      | Newlines(_) :: tl -> (* if an empty line appears, then it's the end of the list(s). *)
-          result, tl
+      | ([] | (Newlines(_) :: _)) as l -> 
+          (* if an empty line appears, then it's the end of the list(s). *)
+          result, l
+      | (Newline :: e :: tl)  (* adding e to the current item *)
+      | e :: tl -> 
+          loop result (e::curr_item) indents tl
     in
-      loop [] [] n l 
-  in (* so far, it's half computed... *)
-(*   let module IMap = Map.Make(struct type t = int let compare = (-) end) in *)
-(*   let m = ref IMap.empty in *)
-(*   let () = ISet.iter (let c = ref 0 in fun i -> incr c; m := IMap.add i !c !m) !indentation_levels in     *)
-  let rec loop2 (idents:int list) i m = match i, m with
-    | i, m -> 
-        if [i] > idents then
-          new_list
-        else if [i] < idents then
-          ...
+      loop [] [] n l
+  in 
+  let rec loop2 f_res list curr_ind = function
+    | ([], item) :: rest ->
+        assert false
+    | (ind::prev_ind, item) :: rest ->
+        if ind = curr_ind then
+          loop2 f_res (`Item item :: list) curr_ind rest
+        else if ind > curr_ind then
+          Obj.magic ()
+        else
+          Obj.magic ()
+    | [] -> f_res
+  in 
+    Obj.magic (loop2 [] [] (-1) r)
+    
 
 
 let new_ulist n r l = failwith ""
