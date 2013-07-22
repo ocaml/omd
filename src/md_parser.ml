@@ -63,7 +63,7 @@ let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t
 (* let emph_or_bold n l = failwith "" *)
 
 (** n: indentation level *)
-let new_ulist n r l =
+let new_list r p l =
   let list_hd e = match e with hd::_ -> hd | _ -> assert false in
   let r, tl = 
     let rec loop (result:((int list)*(Md_lexer.t list))list) (curr_item:Md_lexer.t list) (indents:int list) = function
@@ -91,7 +91,7 @@ let new_ulist n r l =
       | e :: tl -> 
           loop result (e::curr_item) indents tl
     in
-      loop [] [] n l
+      loop [] [] [] l
   in 
   let rec loop2 f_res list curr_ind = function
     | ([], item) :: rest ->
@@ -104,17 +104,12 @@ let new_ulist n r l =
         else
           Obj.magic ()
     | [] -> f_res
-  in 
+  in
     Obj.magic (loop2 [] [] (-1) r)
     
 
-
-let new_ulist n r l = failwith ""
-
-(** n: indentation level *)
-let new_olist n r l = failwith ""
-
-(** indented code *)
+(** indented code:
+    returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
 let icode r previous l =
   let accu = Buffer.create 42 in
   let rec loop = function
@@ -134,11 +129,14 @@ let icode r previous l =
   
 (* let icode r p l = failwith "" *)
 
+
+(** spaces: returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
 let spaces n r previous l = match n, previous, l with
-  | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl -> (* unordered list *)
-      new_ulist n r tl
-  | ((1|2|3) as n), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
-      new_olist n r tl
+  | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
+  | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
+      begin
+        new_list r [] (Newline::make_space n::l)
+      end
   | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
       icode r previous (make_space n :: l)
   | 1, _, _ ->
@@ -155,7 +153,7 @@ let parse lexemes =
     match previous, lexemes with
 
       (* no more to process *)
-      | _, [] -> (* return the result (it has to be reversed as some point) *)
+      | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
           r
 
       (* hashes *)
@@ -276,10 +274,27 @@ let parse lexemes =
             loop (Text (String.make ((n-2)/2) '\\') :: r) [t](*???*) tl
           else
             loop (Text (String.make ((n-2)/2) '\\') :: r) [t](*???*) (Backslash :: tl)
-
-      | _ ->
-          assert false
-            
+              (* | _, Backslash ::  *)
+      | (_, Backslash::[]) ->
+          loop (Text "\\" :: r) [] []
+      | (_,
+        (Ampersand|Ampersands _|At|Ats _|Backquote|Backquotes _|Bar|Bars _|Caret|
+            Carets _|Cbrace|Cbraces _|Colon|Colons _|Cparenthesis|Cparenthesiss _|
+                Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _|
+                    Exclamation|Exclamations _|Equal|Equals _|Greaterthan|Greaterthans _|
+                        Lessthan|Lessthans _|Minus|Minuss _|Newline|Newlines _|Number _|Obrace|
+                            Obraces _|Oparenthesis|Oparenthesiss _|Obracket|Obrackets _|Percent|
+                                Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _|
+                                    Semicolon|Semicolons _|Slash|Slashs _|Tab|Tabs _|Tilde|Tildes _|Underscore|
+                                        Underscores _|Word _)::_)
+      | (_, Stars _::_)
+      | (_, Backslash::(Ampersand|Ampersands _|At|Ats _|Backslash|Backslashs _|Bar|Bars _|Caret|
+            Carets _|Colon|Colons _|Dollar|Dollars _|Doublequote|Doublequotes _|Equal|
+                Equals _|Greaterthan|Greaterthans _|Hash|Hashs _|Lessthan|Lessthans _|
+                    Newline|Newlines _|Number _|Percent|Percents _|Question|Questions _|Quote|
+                        Quotes _|Return|Returns _|Semicolon|Semicolons _|Slash|Slashs _|Space|
+                            Spaces _|Tab|Tabs _|Tilde|Tildes _|Word _)::_)
+        -> assert false (* not yet implemented *)            
 
   and read_title n lexemes =
     assert false
