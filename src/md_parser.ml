@@ -284,6 +284,12 @@ let parse lexemes =
         | e :: tl -> 
             loop result (e::curr_item) indents tl
       in
+      let rec valid i = function
+          (** This function stops searching if one predecessor has a
+              lesser indentation level *)
+        | [] -> false
+        | a::tl -> (i = a) || ((a>i) && valid i tl)
+     in
       let rec loop2 (tmp:(int list * Md_lexer.t list) list) (curr_indent:int) (accu:li list) =
         match tmp with
           | ((i::indents), item) :: tl ->
@@ -292,9 +298,9 @@ let parse lexemes =
               else if i > curr_indent then (* new sub list *)
                 loop2 [] i (Li(main_loop [] [Space;Star] item)::[])
               else (* i < curr_indent *)
-                if List.mem i indents then (* i < curr_indent && List.mem i indents *)
+                if valid i indents then (* i < curr_indent && valid i indents *)
                   (Ul accu)::(loop2 tmp (-1) [])
-              else (* i < curr_indent && not(List.mem i indents) *)
+              else (* i < curr_indent && not(valid i indents) *)
                 loop2 [] i (Li(main_loop [] [Space;Star] item)::[])
           | [] ->
               Ul accu::loop2 tmp (-1) []
