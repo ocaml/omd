@@ -314,10 +314,10 @@ let parse lexemes =
       | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
       | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
           begin
-            Obj.magic (new_list r [] (Newline::make_space n::l))
+            (new_list r [] (Newline::make_space n::l))
           end
       | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-          Obj.magic (icode r previous (make_space n :: l))
+          (icode r previous (make_space n :: l))
       | 1, _, _ ->
           (Sp 1::r), [Space], l
       | n, _, _ -> assert (n>1);
