@@ -307,9 +307,7 @@ let parse lexemes =
           | ([], _) :: _ -> assert false
       in
       let tmp_r, new_l = loop [] [] [] l in
-      let e:md = 
-        loop2 tmp_r (-1) []
-      in
+      let e:md = loop2 tmp_r (-1) [] in
         (e@(r:md)), [], new_l
     end
 
