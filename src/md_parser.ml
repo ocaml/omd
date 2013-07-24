@@ -259,15 +259,26 @@ let parse lexemes =
   and new_list (r:md) (p:Md_lexer.t list) (l:Md_lexer.t list) : (md * Md_lexer.t list * Md_lexer.t list) =
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
-      let rec loop (result:((int list)*(Md_lexer.t list))list) (curr_item:Md_lexer.t list) (indents:int list) = function
+      let rec loop (result:(bool*int list*Md_lexer.t list)list) (curr_item:Md_lexer.t list) (indents:int list) = function
+          (*Boolean is true if ordered, false otherwise. *)
           (* first loop: return the list of (indentation level * item) *)
-        | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl
+        | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+            loop ((false,indents,(curr_item:Md_lexer.t list))::result) [] (0::indents) tl
         | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-            loop ((indents,(curr_item:Md_lexer.t list))::result) [] (0::indents) tl
-        | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl 
+            loop ((true,indents,(curr_item:Md_lexer.t list))::result) [] (0::indents) tl
+        | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+            loop ((false,indents,curr_item)::result) [] (1::indents) tl
         | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
-            loop ((indents,curr_item)::result) [] (1::indents) tl
-        | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) 
+            loop ((true,indents,curr_item)::result) [] (1::indents) tl
+        | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) ->
+            if x+2 > list_hd indents + 4 then
+              begin (* a single new line & too many spaces -> *not* a new list item. *)
+                loop result curr_item indents p (* p is what follows the new line *)
+              end
+            else
+              begin (* a new list item, set previous current item as a complete item *)
+                loop ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
+              end
         | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
             if x+2 > list_hd indents + 4 then
               begin (* a single new line & too many spaces -> *not* a new list item. *)
@@ -275,11 +286,11 @@ let parse lexemes =
               end
             else
               begin (* a new list item, set previous current item as a complete item *)
-                loop ((indents,curr_item)::result) [] ((x+2)::indents) tl
+                loop ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
               end
         | ([] | (Newlines(_) :: _)) as l -> 
             (* if an empty line appears, then it's the end of the list(s). *)
-            ((result:((int list)*(Md_lexer.t list)) list), (l: Md_lexer.t list))
+            ((result:(bool*int list*Md_lexer.t list) list), (l: Md_lexer.t list))
         | (Newline :: e :: tl)  (* adding e to the current item *)
         | e :: tl -> 
             loop result (e::curr_item) indents tl
@@ -290,24 +301,24 @@ let parse lexemes =
         | [] -> false
         | a::tl -> (i = a) || ((a>i) && valid i tl)
      in
-      let rec loop2 (tmp:(int list * Md_lexer.t list) list) (curr_indent:int) (accu:li list) =
+      let rec loop2 (tmp:(bool*int list*Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list) =
         match tmp with
-          | ((i::indents), item) :: tl ->
+          | (o,(i::indents), item) :: tl ->
               if i = curr_indent then
-                loop2 tl curr_indent (Li(main_loop [] [Space;Star] item)::accu)
+                loop2 tl curr_indent ordered (Li(main_loop [] [Space;Star] item)::accu)
               else if i > curr_indent then (* new sub list *)
-                loop2 [] i (Li(main_loop [] [Space;Star] item)::[])
+                loop2 [] i o (Li(main_loop [] [Space;Star] item)::[])
               else (* i < curr_indent *)
                 if valid i indents then (* i < curr_indent && valid i indents *)
-                  (Ul accu)::(loop2 tmp (-1) [])
+                  (if ordered then Ol accu else Ul accu)::(loop2 tmp (-1) o [])
               else (* i < curr_indent && not(valid i indents) *)
-                loop2 [] i (Li(main_loop [] [Space;Star] item)::[])
+                loop2 [] i o (Li(main_loop [] [Space;Star] item)::[])
           | [] ->
-              Ul accu::loop2 tmp (-1) []
-          | ([], _) :: _ -> assert false
+              (if ordered then Ol accu else Ul accu)::loop2 tmp (-1) false []
+          | (_,[], _) :: _ -> assert false
       in
       let tmp_r, new_l = loop [] [] [] l in
-      let e:md = loop2 tmp_r (-1) [] in
+      let e:md = loop2 tmp_r (-1) false [] in
         (e@(r:md)), [], new_l
     end
 
