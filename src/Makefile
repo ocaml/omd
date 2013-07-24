@@ -1,11 +1,13 @@
+OCAMLC = ocamlc.opt
+OCAMLOPT = ocamlopt.opt
+
 all:md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
 
-
 %.cmo:%.ml
-	ocamlc -c $<
+	$(OCAMLC) -c $<
 
 %.cmx:%.ml
-	ocamlopt -c $<
+	$(OCAMLOPT) -c $<
 
 md_parser.cmo:md_lexer.cmo
 md_lexer.cmo:
@@ -19,6 +21,8 @@ md_lexer_fs.cmx:md_lexer.cmx
 clean:
 	rm -f *.cmx *.cmo *~ *.cmi 
 
+htest:
+	make ; rlwrap ocaml md_lexer.cmo md_parser.cmo 
 
 
 
