@@ -341,7 +341,7 @@ let parse lexemes =
 
 
   in
-    ( (* dummy *)
+    ( (* This is temporary, it's just to verify type inference with `ocamlc -i' *)
       xspaces := Some spaces;
       xnew_list := Some new_list;
       xicode := Some icode;
