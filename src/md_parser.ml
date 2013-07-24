@@ -338,24 +338,33 @@ let parse lexemes =
               if debug then Printf.eprintf "@330:loop2 tmp=(%b,inds,%s)::(%n)\n%!" o (estring_of_tl item) (List.length tl);
               let item = List.rev item in
                 if i = curr_indent then
-                  loop2 tl curr_indent ordered (Li(main_loop [] [Space;Star] item)::accu)
+                  begin
+                    if debug then Printf.eprintf "PLOP\n%!";
+                    loop2 tl curr_indent ordered (Li(main_loop [] [Space;Star] item)::accu)
+                  end
                 else if i > curr_indent then (* new sub list *)
                   begin
+                    if debug then Printf.eprintf "NEW SUB LIST\n%!";
                     let md, new_tl = loop2 tl i o [Li (main_loop [] [Space;Star] item)] in
                       match accu with
-                        | Li hd :: accu_tl -> 
+                        | Li hd :: accu_tl ->
                             loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
                         | [] ->
-                            loop2 new_tl curr_indent ordered [Li (md)]
+                            if curr_indent = -1 then
+                              md, new_tl
+                            else
+                              loop2 new_tl curr_indent ordered [Li (md)]
                   end
                 else (* i < curr_indent *)
                   begin
                     if valid i indents then (* i < curr_indent && valid i indents *)
                       begin
+                        if debug then Printf.eprintf "i < curr_indent && valid i indents\n%!";
                         [if ordered then Ol accu else Ul accu], tmp
                       end
                     else (* i < curr_indent && not(valid i indents), so it's a new list... *)
                       begin
+                        if debug then Printf.eprintf "i < curr_indent && not(valid i indents), so it's a new list...\n%!";
                         let md, new_tl = loop2 tl i o [Li(main_loop [] [Space;Star] item)] in
                           match accu with
                             | Li hd :: accu_tl -> 
@@ -365,6 +374,7 @@ let parse lexemes =
                       end
                   end
           | [(_,[],[])] | [] ->
+              if debug then Printf.eprintf "FOO\n%!";
               if accu = [] then 
                 [], []
               else
