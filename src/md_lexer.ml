@@ -348,3 +348,32 @@ let _ =
 let _ =
   convert_to_lf (lex_from_string "42 Bonjour !\n")
 ;;
+
+
+let string_of_tl, estring_of_tl =
+  let g escaped tl =
+    let b = Buffer.create 42 in
+    let rec loop : t list -> unit = function
+      | e::tl ->
+          Buffer.add_string b (if escaped then String.escaped (string_of_t e) else string_of_t e);
+          loop tl
+      | [] ->
+          ()
+    in 
+      Buffer.contents (loop tl; b)
+  in g false, g true
+
+
+let dstring_of_tl, destring_of_tl =
+  let g escaped tl =
+    let b = Buffer.create 42 in
+    let rec loop : t list -> unit = function
+      | e::tl ->
+          Buffer.add_string b (if escaped then String.escaped (string_of_t e) else string_of_t e);
+          Buffer.add_string b "::";
+          loop tl
+      | [] ->
+          Buffer.add_string b "[]"
+    in 
+      Buffer.contents (loop tl; b)
+  in g false, g true
