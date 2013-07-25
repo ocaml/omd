@@ -77,7 +77,7 @@ exception Not_yet_implemented of Md_lexer.t list
 
 let parse lexemes =
   let rec main_loop (r:md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
-    if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (estring_of_tl previous) (estring_of_tl lexemes);
+    if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
 
       (* no more to process *)
@@ -211,12 +211,19 @@ let parse lexemes =
           main_loop (Text "\\" :: r) [] []
       | _, Backslash::tl ->
           main_loop (Text "\\" :: r) [] tl
+
+      (* email addresses are not so simple to handle because of the possible presence of characters such as - _ + . *)
+      (*       | _, ((Word _|Number _) as w1)::At::((Word _|Number _) as w2)::Dot::Word w3::tl -> *)
+      (*           main_loop (Text (w1^"@"^w2) :: r) [] tl *)
+      (*       | _, Word w1::At::Word w2::tl -> *)
+      (*           main_loop (Text (w1^"@"^w2) :: r) [] tl *)
+
       | _, Word w::tl ->
           main_loop (Text w :: r) [] tl
       | _, [Newline] ->
           Text "\n"::r
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
-          let htmlentities = StringSet.of_list
+          let htmlentities = StringSet.of_list (* This list should be checked...*)
             ["ecirc"; "oacute"; "plusmn"; "para"; "sup"; "iquest"; "frac"; "aelig"; "ntilde";
              "Ecirc"; "Oacute"; "iexcl"; "brvbar"; "pound"; "not"; "macr"; "AElig"; "Ntilde"] in
             if StringSet.mem w htmlentities then
@@ -237,8 +244,12 @@ let parse lexemes =
           main_loop (Text("&amp;")::r) [] (Ampersand::tl)
       | _, Ampersands(n)::tl ->
           main_loop (Text("&amp;")::r) [] (Ampersands(n-1)::tl)
-      | (_,
-         (((At|Ats _|Backquote|Backquotes _|Bar|Bars _|Caret|
+      | _, (Backquote|Backquotes _)::_ ->
+          begin match bcode r previous lexemes with
+            | r, p, l -> main_loop r p l
+          end
+      | _,
+          ((At|Ats _|Bar|Bars _|Caret|
                 Carets _|Cbrace|Cbraces _|Colon|Colons _|Cparenthesis|Cparenthesiss _|
                     Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _|
                         Exclamation|Exclamations _|Equal|Equals _|Greaterthan|Greaterthans _|
@@ -247,9 +258,10 @@ let parse lexemes =
                                     Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _|
                                         Semicolon|Semicolons _|Slash|Slashs _
            | Stars _ |Tab|Tabs _|Tilde|Tildes _|Underscore|
-                 Underscores _)::_) as t))
-        ->
-          raise (Not_yet_implemented t)
+                 Underscores _) as t)::tl
+          ->
+          main_loop (Text(string_of_t t)::r) [t] tl 
+            (* raise (Not_yet_implemented t) *)
 
   and read_title n lexemes =
     assert false
@@ -257,38 +269,59 @@ let parse lexemes =
   and rev_main_loop (r: md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
     List.rev (main_loop r previous lexemes)
 
+  (** code that starts with one or several backquote(s) *)
+  and bcode (r:md) (p:Md_lexer.t list) (l:Md_lexer.t list) : md * Md_lexer.t list * Md_lexer.t list =
+    let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl | _ -> (* bcode is wrongly called *) assert false in
+    let rec code_block accu = function
+      | [] ->
+          List.rev accu, []
+      | Backquote::tl ->
+          if e = Backquote then
+            List.rev accu, tl
+          else
+            code_block (Backquote::accu) tl
+      | (Backquotes n as b)::tl ->
+          if e = b then
+            List.rev accu, tl
+          else
+            code_block (b::accu) tl
+      | e::tl ->
+          code_block (e::accu) tl
+    in 
+    let cb, l = code_block [] tl in
+      (Code(string_of_tl cb)::r), [Backquote], l
+
   and icode (r:md) (p:Md_lexer.t list) (l:Md_lexer.t list) : md * Md_lexer.t list * Md_lexer.t list =
     (** indented code:
         returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
-    let icode (r:md) previous l = (* icode's internal implementation is not recursive. *)
-      let accu = Buffer.create 42 in
-      let rec loop = function
-        | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->  (* 1, 2 or 3 spaces. *)
-            Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
-        | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl -> (* At least 4 spaces, it's still code. *)
-            Buffer.add_string accu (String.make (n-2) ' ');
-            loop ([t], tl)
-        | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
-            Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
-        | _, e::tl ->
-            Buffer.add_string accu (string_of_t e); (* html entities are to be converted later! *)
-            loop ([e], tl)
-        | p, [] ->
-            Code (Buffer.contents accu)::r, p, []
-      in loop ([Newlines 0], l)
-    in icode (r:md) p l
+    let accu = Buffer.create 42 in
+    let rec loop = function
+      | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->  (* 1, 2 or 3 spaces. *)
+          Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+      | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl -> (* At least 4 spaces, it's still code. *)
+          Buffer.add_string accu (String.make (n-2) ' ');
+          loop ([t], tl)
+      | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
+          Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+      | _, e::tl ->
+          Buffer.add_string accu (string_of_t e); (* html entities are to be converted later! *)
+          loop ([e], tl)
+      | p, [] ->
+          Code (Buffer.contents accu)::r, p, []
+    in loop ([Newlines 0], l)
+
 
   (*********************************************************************************)
   (** new_list: returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
   and new_list (r:md) (p:Md_lexer.t list) (l:Md_lexer.t list) : (md * Md_lexer.t list * Md_lexer.t list) =
-    if debug then Printf.eprintf "new_list p=(%s) l=(%s)\n%!" (estring_of_tl p) (estring_of_tl l);
+    if debug then Printf.eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p) (destring_of_tl l);
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
       let rec loop (ordered:bool) (result:(bool*int list*Md_lexer.t list)list) (curr_item:Md_lexer.t list) (indents:int list) (lexemes:Md_lexer.t list) =
-        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" result else "" in
+        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" result else "" in
           if debug then
             begin
-              Printf.eprintf "new_list>>loop er=(%s) curr_item=(%s)\n%!" er (estring_of_tl curr_item);
+              Printf.eprintf "new_list>>loop er=(%s) curr_item=(%s)\n%!" er (destring_of_tl curr_item);
             end;
           match lexemes with
               (* Boolean is true if ordered, false otherwise. *)
@@ -339,7 +372,7 @@ let parse lexemes =
       in
       let rec loop2 (tmp:(bool*int list*Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list) 
           : md * (bool*int list*Md_lexer.t list) list =
-        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" tmp else "" in
+        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" tmp else "" in
           if debug then Printf.eprintf "new_list>>loop2\n%!";
           match tmp with
             | (o,(i::indents), item) :: tl ->
@@ -375,7 +408,7 @@ let parse lexemes =
                   let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
             | (o,[], item) :: tl ->
                 let item = List.rev item in
-                  if debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((estring_of_tl item)) (List.length tl);
+                  if debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
                   assert false
                     (* [Text("<<" ^ string_of_tl item ^ ">>")] *)
                     (* [if ordered then Ol accu else Ul accu] *)
@@ -387,7 +420,7 @@ let parse lexemes =
             let p =
               List.fold_left
                 (fun r (o,indents,item) -> 
-                   Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (estring_of_tl item))
+                   Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
                 ""
                 (List.rev tmp_r)
             in
