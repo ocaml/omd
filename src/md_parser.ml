@@ -86,7 +86,7 @@ exception Not_yet_implemented of Md_lexer.t list
 
 let parse lexemes =
   let rec main_loop (r:md) (previous:Md_lexer.t list) (lexemes:Md_lexer.t list) =
-    if debug then Printf.eprintf "main_loop\n%!";
+    if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (estring_of_tl previous) (estring_of_tl lexemes);
     match previous, lexemes with
 
       (* no more to process *)
@@ -410,19 +410,26 @@ let parse lexemes =
 
   (** spaces: returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
   and spaces n r p l =
-    let spaces n r previous l = match n, previous, l with
+    let spaces n r previous l =
+      assert (n > 0);
+      match n, previous, l with (* NOT a recursive function *)
       | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
       | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
           begin
             (new_list r [] (Newline::make_space n::l))
           end
-      | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
+      | (1|2|3), ([]|[(Newlines _)]), t::tl ->
+          Text (" " ^ string_of_t t)::r, p, tl
+      | (1|2|3), ([]|[(Newlines _)]), [] ->
+          r, p, []
+      | (1|2|3), ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
           (icode r previous (make_space n :: l))
       | 1, _, _ ->
           (Sp 1::r), [Space], l
       | n, _, _ -> assert (n>1);
           (Sp n::r), [Spaces (n-2)], l
-    in spaces n r p l
+    in
+      spaces n r p l (* NOT a recursive call *)
 
 
   in
