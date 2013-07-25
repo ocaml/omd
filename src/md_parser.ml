@@ -324,12 +324,6 @@ let parse lexemes =
                 if debug then Printf.eprintf "#%d\n%!" 8;
                 loop ordered result (e::curr_item) indents tl
       in
-      let rec valid i = function
-          (** This function stops searching if one predecessor has a
-              lesser indentation level *)
-        | [] -> false
-        | a::tl -> (i = a) || ((a>i) && valid i tl)
-      in
       let rec loop2 (tmp:(bool*int list*Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list) 
           : md * (bool*int list*Md_lexer.t list) list =
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" tmp else "" in
@@ -346,36 +340,20 @@ let parse lexemes =
                   else if i > curr_indent then (* new sub list *)
                     begin
                       if debug then Printf.eprintf "NEW SUB LIST\n%!";
-                      let md, new_tl = loop2 tl i o [Li (rev_main_loop [] [Space;Star] item)] in
+                      let md, new_tl = loop2 tl i o [Li(rev_main_loop [] [Space;Star] item)] in
                         match accu with
                           | Li hd :: accu_tl ->
-                              loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
+                              loop2 new_tl curr_indent ordered (Li(hd@md) :: accu_tl)
                           | [] ->
                               if curr_indent = -1 then
                                 md, new_tl
                               else
                                 begin
-                                  loop2 new_tl curr_indent ordered [Li (md)]
+                                  loop2 new_tl curr_indent ordered [Li(md)]
                                 end
                     end
                   else (* i < curr_indent *)
-                    begin
-                      if valid i indents then (* i < curr_indent && valid i indents *)
-                        begin
-                          if debug then Printf.eprintf "i < curr_indent && valid i indents # i=%d\n%!" i;
-                          let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
-                        end
-                      else (* i < curr_indent && not(valid i indents), so it's a new list... *)
-                        begin
-                          if debug then Printf.eprintf "i < curr_indent && not(valid i indents), so it's a new list...\n%!";
-                          let md, new_tl = loop2 tl i o [Li(rev_main_loop [] [Space;Star] item)] in
-                            match accu with
-                              | Li hd :: accu_tl -> 
-                                  loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
-                              | [] ->
-                                  loop2 new_tl curr_indent ordered [Li (md)]
-                        end
-                    end
+                        let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
             | [(_,[],[])] | [] ->
                 if debug then Printf.eprintf "FOO\n%!";
                 if accu = [] then 
