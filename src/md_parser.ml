@@ -30,7 +30,7 @@ type md_element =
     | Br
     | Hr
     | Html of string
-and li = Li of md
+and li = Li of md | Li2 of md
 and md = md_element list
     
 
@@ -271,58 +271,58 @@ let parse lexemes =
     if debug then Printf.eprintf "new_list p=(%s) l=(%s)\n%!" (estring_of_tl p) (estring_of_tl l);
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
-      let rec loop (ordered:bool) (result:(bool*int list*Md_lexer.t list)list) (curr_item:Md_lexer.t list) (indents:int list) (lexemes:Md_lexer.t list) = 
-        if debug then
-          begin
-            let er = List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" result in
+      let rec loop (ordered:bool) (result:(bool*int list*Md_lexer.t list)list) (curr_item:Md_lexer.t list) (indents:int list) (lexemes:Md_lexer.t list) =
+        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" result else "" in
+          if debug then
+            begin
               Printf.eprintf "new_list>>loop er=(%s) curr_item=(%s)\n%!" er (estring_of_tl curr_item);
-          end;
-        match lexemes with
-            (* Boolean is true if ordered, false otherwise. *)
-            (* first loop: return the list of (indentation level * item) *)
-          | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
-              if debug then Printf.eprintf "#%d\n%!" 1;
-              if curr_item = [] then
-                loop ordered result [] (0::indents) tl
-              else
-                loop false ((false,indents,curr_item)::result) [] (0::indents) tl
-          | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-              if debug then Printf.eprintf "#%d\n%!" 2;
-              loop true ((true,indents,curr_item)::result) [] (0::indents) tl
-          | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
-              if debug then Printf.eprintf "#%d\n%!" 3;
-              loop false ((false,indents,curr_item)::result) [] (1::indents) tl
-          | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
-              if debug then Printf.eprintf "#%d\n%!" 4;
-              loop true ((true,indents,curr_item)::result) [] (1::indents) tl
-          | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) ->
-              if debug then Printf.eprintf "#%d\n%!" 5;
-              if x+2 > list_hd indents + 4 then
-                begin (* a single new line & too many spaces -> *not* a new list item. *)
-                  loop ordered result curr_item indents p (* p is what follows the new line *)
-                end
-              else
-                begin (* a new list item, set previous current item as a complete item *)
-                  loop false ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
-                end
-          | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
-              if debug then Printf.eprintf "#%d\n%!" 6;
-              if x+2 > list_hd indents + 4 then
-                begin (* a single new line & too many spaces -> *not* a new list item. *)
-                  loop ordered result curr_item indents p (* p is what follows the new line *)
-                end
-              else
-                begin (* a new list item, set previous current item as a complete item *)
-                  loop true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
-                end
-          | ([] | (Newlines(_) :: _)) as l ->
-              if debug then Printf.eprintf "#%d******************************\n%!" 7;
-              (* if an empty line appears, then it's the end of the list(s). *)
-              ((ordered,indents,curr_item)::(result:(bool*int list*Md_lexer.t list) list), (l: Md_lexer.t list))
-          | (Newline :: e :: tl)  (* adding e to the current item *)
-          | e :: tl ->
-              if debug then Printf.eprintf "#%d\n%!" 8;
-              loop ordered result (e::curr_item) indents tl
+            end;
+          match lexemes with
+              (* Boolean is true if ordered, false otherwise. *)
+              (* first loop: return the list of (indentation level * item) *)
+            | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+                if debug then Printf.eprintf "#%d\n%!" 1;
+                if curr_item = [] then
+                  loop ordered result [] (0::indents) tl
+                else
+                  loop false ((false,indents,curr_item)::result) [] (0::indents) tl
+            | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+                if debug then Printf.eprintf "#%d\n%!" 2;
+                loop true ((true,indents,curr_item)::result) [] (0::indents) tl
+            | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+                if debug then Printf.eprintf "#%d\n%!" 3;
+                loop false ((false,indents,curr_item)::result) [] (1::indents) tl
+            | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
+                if debug then Printf.eprintf "#%d\n%!" 4;
+                loop true ((true,indents,curr_item)::result) [] (1::indents) tl
+            | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) ->
+                if debug then Printf.eprintf "#%d\n%!" 5;
+                if x+2 > list_hd indents + 4 then
+                  begin (* a single new line & too many spaces -> *not* a new list item. *)
+                    loop ordered result curr_item indents p (* p is what follows the new line *)
+                  end
+                else
+                  begin (* a new list item, set previous current item as a complete item *)
+                    loop false ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
+                  end
+            | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
+                if debug then Printf.eprintf "#%d\n%!" 6;
+                if x+2 > list_hd indents + 4 then
+                  begin (* a single new line & too many spaces -> *not* a new list item. *)
+                    loop ordered result curr_item indents p (* p is what follows the new line *)
+                  end
+                else
+                  begin (* a new list item, set previous current item as a complete item *)
+                    loop true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
+                  end
+            | ([] | (Newlines(_) :: _)) as l ->
+                if debug then Printf.eprintf "#%d******************************\n%!" 7;
+                (* if an empty line appears, then it's the end of the list(s). *)
+                ((ordered,indents,curr_item)::(result:(bool*int list*Md_lexer.t list) list), (l: Md_lexer.t list))
+            | (Newline :: e :: tl)  (* adding e to the current item *)
+            | e :: tl ->
+                if debug then Printf.eprintf "#%d\n%!" 8;
+                loop ordered result (e::curr_item) indents tl
       in
       let rec valid i = function
           (** This function stops searching if one predecessor has a
@@ -332,59 +332,62 @@ let parse lexemes =
       in
       let rec loop2 (tmp:(bool*int list*Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list) 
           : md * (bool*int list*Md_lexer.t list) list =
-        if debug then Printf.eprintf "new_list>>loop2\n%!";
-        match tmp with
-          | (o,(i::indents), item) :: tl ->
-              if debug then Printf.eprintf "@330:loop2 tmp=(%b,inds,%s)::(%n)\n%!" o (estring_of_tl item) (List.length tl);
-              let item = List.rev item in
-                if i = curr_indent then
-                  begin
-                    if debug then Printf.eprintf "PLOP\n%!";
-                    loop2 tl curr_indent ordered (Li(main_loop [] [Space;Star] item)::accu)
-                  end
-                else if i > curr_indent then (* new sub list *)
-                  begin
-                    if debug then Printf.eprintf "NEW SUB LIST\n%!";
-                    let md, new_tl = loop2 tl i o [Li (main_loop [] [Space;Star] item)] in
-                      match accu with
-                        | Li hd :: accu_tl ->
-                            loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
-                        | [] ->
-                            if curr_indent = -1 then
-                              md, new_tl
-                            else
-                              loop2 new_tl curr_indent ordered [Li (md)]
-                  end
-                else (* i < curr_indent *)
-                  begin
-                    if valid i indents then (* i < curr_indent && valid i indents *)
-                      begin
-                        if debug then Printf.eprintf "i < curr_indent && valid i indents\n%!";
-                        [if ordered then Ol accu else Ul accu], tmp
-                      end
-                    else (* i < curr_indent && not(valid i indents), so it's a new list... *)
-                      begin
-                        if debug then Printf.eprintf "i < curr_indent && not(valid i indents), so it's a new list...\n%!";
-                        let md, new_tl = loop2 tl i o [Li(main_loop [] [Space;Star] item)] in
-                          match accu with
-                            | Li hd :: accu_tl -> 
-                                loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
-                            | [] ->
-                                loop2 new_tl curr_indent ordered [Li (md)]
-                      end
-                  end
-          | [(_,[],[])] | [] ->
-              if debug then Printf.eprintf "FOO\n%!";
-              if accu = [] then 
-                [], []
-              else
-                [if ordered then Ol accu else Ul accu], []
-          | (o,[], item) :: tl ->
-              let item = List.rev item in
-                if debug then Printf.eprintf "@345:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((estring_of_tl item)) (List.length tl);
-                assert false
-                  (* [Text("<<" ^ string_of_tl item ^ ">>")] *)
-                  (* [if ordered then Ol accu else Ul accu] *)
+        let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ estring_of_tl e ^ ")") "" tmp else "" in
+          if debug then Printf.eprintf "new_list>>loop2\n%!";
+          match tmp with
+            | (o,(i::indents), item) :: tl ->
+                if debug then Printf.eprintf "@338:loop2 tmp=%s\n%!" er;
+                let item = List.rev item in
+                  if i = curr_indent then
+                    begin
+                      if debug then Printf.eprintf "PLOP\n%!";
+                      loop2 tl i ordered (Li(rev_main_loop [] [Space;Star] item)::accu)
+                    end
+                  else if i > curr_indent then (* new sub list *)
+                    begin
+                      if debug then Printf.eprintf "NEW SUB LIST\n%!";
+                      let md, new_tl = loop2 tl i o [Li (rev_main_loop [] [Space;Star] item)] in
+                        match accu with
+                          | Li hd :: accu_tl ->
+                              loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
+                          | [] ->
+                              if curr_indent = -1 then
+                                md, new_tl
+                              else
+                                begin
+                                  loop2 new_tl curr_indent ordered [Li (md)]
+                                end
+                    end
+                  else (* i < curr_indent *)
+                    begin
+                      if valid i indents then (* i < curr_indent && valid i indents *)
+                        begin
+                          if debug then Printf.eprintf "i < curr_indent && valid i indents # i=%d\n%!" i;
+                          let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
+                        end
+                      else (* i < curr_indent && not(valid i indents), so it's a new list... *)
+                        begin
+                          if debug then Printf.eprintf "i < curr_indent && not(valid i indents), so it's a new list...\n%!";
+                          let md, new_tl = loop2 tl i o [Li(rev_main_loop [] [Space;Star] item)] in
+                            match accu with
+                              | Li hd :: accu_tl -> 
+                                  loop2 new_tl curr_indent ordered (Li (hd@md) :: accu_tl)
+                              | [] ->
+                                  loop2 new_tl curr_indent ordered [Li (md)]
+                        end
+                    end
+            | [(_,[],[])] | [] ->
+                if debug then Printf.eprintf "FOO\n%!";
+                if accu = [] then 
+                  [], []
+                else
+                  let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
+            | (o,[], item) :: tl ->
+                let item = List.rev item in
+                  if debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((estring_of_tl item)) (List.length tl);
+                  assert false
+                    (* [Text("<<" ^ string_of_tl item ^ ">>")] *)
+                    (* [if ordered then Ol accu else Ul accu] *)
       in
       let (tmp_r: (bool*int list*Md_lexer.t list) list), (new_l:Md_lexer.t list) = loop true [] [] [] l in
       let () =
@@ -400,7 +403,7 @@ let parse lexemes =
               Printf.eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
           end
       in
-      let (e:md), (x:(bool*int list*Md_lexer.t list) list) = loop2 tmp_r (-1) false [] in
+      let (e:md), (x:(bool*int list*Md_lexer.t list) list) = loop2 (List.rev tmp_r) (-1) false [] in
         (e@(r:md)), [], new_l
     end
 
