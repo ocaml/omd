@@ -231,8 +231,14 @@ let parse lexemes =
               end
             else
               main_loop (Text("&amp;")::r) [] tl2
+      | _, Ampersand::tl ->
+          main_loop (Text("&amp;")::r) [Ampersand] tl
+      | _, Ampersands(0)::tl ->
+          main_loop (Text("&amp;")::r) [] (Ampersand::tl)
+      | _, Ampersands(n)::tl ->
+          main_loop (Text("&amp;")::r) [] (Ampersands(n-1)::tl)
       | (_,
-         (((Ampersand|Ampersands _|At|Ats _|Backquote|Backquotes _|Bar|Bars _|Caret|
+         (((At|Ats _|Backquote|Backquotes _|Bar|Bars _|Caret|
                 Carets _|Cbrace|Cbraces _|Colon|Colons _|Cparenthesis|Cparenthesiss _|
                     Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _|
                         Exclamation|Exclamations _|Equal|Equals _|Greaterthan|Greaterthans _|
