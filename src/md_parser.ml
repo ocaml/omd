@@ -17,25 +17,18 @@
 
 let debug = true
   
-
-type md_element = 
-    | Paragraph of md
-    | Text of string
-    | Emph of md
-    | Bold of md
-    | Ul of li list
-    | Ol of li list
-    | Sp of int (* spaces *)
-    | Code of string (* html entities are to be converted *later* *)
-    | Br
-    | Hr
-    | Html of string
-and li = Li of md | Li2 of md
-and md = md_element list
-    
-
+open Md
 open Md_lexer
 
+module StringSet : sig
+  type elt = string
+  type t
+  val mem : elt -> t -> bool
+  val of_list : elt list -> t
+end = struct 
+  include Set.Make(struct type t = string let compare = String.compare end)
+  let of_list l = List.fold_left (fun r e -> add e r) empty l
+end
 
 (** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)] 
     returns [] if not (emph and/or bold),
@@ -68,19 +61,17 @@ let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t
 type tmp_list = element list
 and element   = Item of Md_lexer.t list
 
-  
 
-  
 (* let icode r p l = failwith "" *)
 
 
 (* let spaces n r previous l = failwith "" *)
 
-
-let      xspaces = ref None
-let      xnew_list = ref None
-let      xicode = ref None
-let      xmain_loop = ref None
+(* The few following lines are there for development purpose only. *)
+let xspaces = ref None
+let xnew_list = ref None
+let xicode = ref None
+let xmain_loop = ref None
 
 exception Not_yet_implemented of Md_lexer.t list
 
@@ -216,14 +207,30 @@ let parse lexemes =
           else
             main_loop (Text (String.make ((n-2)/2) '\\') :: r) [t](*???*) (Backslash :: tl)
               (* | _, Backslash ::  *)
-      | (_, Backslash::[]) ->
+      | _, Backslash::[] ->
           main_loop (Text "\\" :: r) [] []
-      | (_, Backslash::tl) ->
+      | _, Backslash::tl ->
           main_loop (Text "\\" :: r) [] tl
-      | (_, Word w::tl) ->
+      | _, Word w::tl ->
           main_loop (Text w :: r) [] tl
-      | (_, [Newline]) ->
+      | _, [Newline] ->
           Text "\n"::r
+      | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
+          let htmlentities = StringSet.of_list
+            ["ecirc"; "oacute"; "plusmn"; "para"; "sup"; "iquest"; "frac"; "aelig"; "ntilde";
+             "Ecirc"; "Oacute"; "iexcl"; "brvbar"; "pound"; "not"; "macr"; "AElig"; "Ntilde"] in
+            if StringSet.mem w htmlentities then
+              begin match s with
+                | Semicolon ->
+                    main_loop (Text("&"^w^";")::r) [s] tl
+                | Semicolons 0 ->
+                    main_loop (Text("&"^w^";")::r) [s] (Semicolon::tl)
+                | Semicolons n ->
+                    main_loop (Text("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
+                | _ -> assert false
+              end
+            else
+              main_loop (Text("&amp;")::r) [] tl2
       | (_,
          (((Ampersand|Ampersands _|At|Ats _|Backquote|Backquotes _|Bar|Bars _|Caret|
                 Carets _|Cbrace|Cbraces _|Colon|Colons _|Cparenthesis|Cparenthesiss _|
@@ -353,7 +360,7 @@ let parse lexemes =
                                 end
                     end
                   else (* i < curr_indent *)
-                        let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
+                    let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
             | [(_,[],[])] | [] ->
                 if debug then Printf.eprintf "FOO\n%!";
                 if accu = [] then 
@@ -391,21 +398,21 @@ let parse lexemes =
     let spaces n r previous l =
       assert (n > 0);
       match n, previous, l with (* NOT a recursive function *)
-      | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
-      | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
-          begin
-            (new_list r [] (Newline::make_space n::l))
-          end
-      | (1|2|3), ([]|[(Newlines _)]), t::tl ->
-          Text (" " ^ string_of_t t)::r, p, tl
-      | (1|2|3), ([]|[(Newlines _)]), [] ->
-          r, p, []
-      | (1|2|3), ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-          (icode r previous (make_space n :: l))
-      | 1, _, _ ->
-          (Sp 1::r), [Space], l
-      | n, _, _ -> assert (n>1);
-          (Sp n::r), [Spaces (n-2)], l
+        | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
+        | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
+            begin
+              (new_list r [] (Newline::make_space n::l))
+            end
+        | (1|2|3), ([]|[(Newlines _)]), t::tl ->
+            Text (" " ^ string_of_t t)::r, p, tl
+        | (1|2|3), ([]|[(Newlines _)]), [] ->
+            r, p, []
+        | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
+            (icode r previous (make_space n :: l))
+        | 1, _, _ ->
+            (Sp 1::r), [Space], l
+        | n, _, _ -> assert (n>1);
+            (Sp n::r), [Spaces (n-2)], l
     in
       spaces n r p l (* NOT a recursive call *)
 
