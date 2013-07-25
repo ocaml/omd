@@ -17,6 +17,6 @@ type md_element =
   | Br
   | Hr
   | Html of string
-and li = Li of md | Li2 of md
+and li = Li of md
 and md = md_element list
     
