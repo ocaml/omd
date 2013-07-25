@@ -15,7 +15,7 @@
 
 *)
 
-let debug = true
+let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
   
 open Md
 open Md_lexer
