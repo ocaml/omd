@@ -38,6 +38,8 @@ type t = (* "of int":  *)
   | Cbraces of int
   | Colon
   | Colons of int
+  | Comma
+  | Commas of int
   | Cparenthesis
   | Cparenthesiss of int
   | Cbracket
@@ -111,8 +113,10 @@ let string_of_t = function
   | Carets  n -> String.make (2+n) '^'
   | Cbrace -> "{"
   | Cbraces  n -> String.make (2+n) '{'
-  | Colon -> ","
-  | Colons  n -> String.make (2+n) ','
+  | Colon -> ":"
+  | Colons  n -> String.make (2+n) ':'
+  | Comma -> ","
+  | Commas  n -> String.make (2+n) ','
   | Cparenthesis -> ")"
   | Cparenthesiss  n -> String.make (2+n) ')'
   | Cbracket -> "]"
@@ -261,6 +265,7 @@ let lex_from_string s =
           | '&'  as c  -> incr i; (match (rcount c) with 1 -> Ampersand | n -> Ampersands (n-2))
           | '|'  as c  -> incr i; (match (rcount c) with 1 -> Bar | n -> Bars (n-2))
           | '^'  as c  -> incr i; (match (rcount c) with 1 -> Caret | n -> Carets (n-2))
+          | ','  as c  -> incr i; (match (rcount c) with 1 -> Comma | n -> Comma (n-2))
           | '.'  as c  -> incr i; (match (rcount c) with 1 -> Dot | n -> Dots (n-2))
           | '/'  as c  -> incr i; (match (rcount c) with 1 -> Slash | n -> Slashs (n-2))
           | '$'  as c  -> incr i; (match (rcount c) with 1 -> Dollar | n -> Dollars (n-2))
@@ -303,14 +308,14 @@ let rec convert_to_crlf = function
 
 
 let length = function
-  | Ampersand | At | Backquote | Backslash | Bar | Caret
-  | Cbrace | Colon | Cparenthesis | Cbracket | Dollar | Dot
+  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
+  | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
   | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan 
   | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
   | Question | Quote | Semicolon | Slash | Space | Star | Tab 
   | Tilde | Underscore -> (1, 0)
   | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-  | Cbraces x | Colons x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
+  | Cbraces x | Colons x | Comma x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
   | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x | Lessthans x 
   | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
   | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x | Tabs x 
