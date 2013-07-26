@@ -443,7 +443,7 @@ let parse lexemes =
               (new_list r [] (Newline::make_space n::l))
             end
         | (1|2|3), ([]|[(Newlines _)]), t::tl ->
-            Text (" " ^ string_of_t t)::r, p, tl
+            Text (" ")::r, p, l
         | (1|2|3), ([]|[(Newlines _)]), [] ->
             r, p, []
         | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
