@@ -349,7 +349,8 @@ let _ =
   convert_to_lf (lex_from_string "42 Bonjour !\n")
 ;;
 
-
+(** [string_of_tl l] returns the string representation of l.
+    [estring_of_tl l] returns the escaped string representation of l (same semantics as [String.escaped (string_of_tl l)]). *)
 let string_of_tl, estring_of_tl =
   let g escaped tl =
     let b = Buffer.create 42 in
