@@ -265,7 +265,7 @@ let lex_from_string s =
           | '&'  as c  -> incr i; (match (rcount c) with 1 -> Ampersand | n -> Ampersands (n-2))
           | '|'  as c  -> incr i; (match (rcount c) with 1 -> Bar | n -> Bars (n-2))
           | '^'  as c  -> incr i; (match (rcount c) with 1 -> Caret | n -> Carets (n-2))
-          | ','  as c  -> incr i; (match (rcount c) with 1 -> Comma | n -> Comma (n-2))
+          | ','  as c  -> incr i; (match (rcount c) with 1 -> Comma | n -> Commas (n-2))
           | '.'  as c  -> incr i; (match (rcount c) with 1 -> Dot | n -> Dots (n-2))
           | '/'  as c  -> incr i; (match (rcount c) with 1 -> Slash | n -> Slashs (n-2))
           | '$'  as c  -> incr i; (match (rcount c) with 1 -> Dollar | n -> Dollars (n-2))
@@ -315,7 +315,7 @@ let length = function
   | Question | Quote | Semicolon | Slash | Space | Star | Tab 
   | Tilde | Underscore -> (1, 0)
   | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-  | Cbraces x | Colons x | Comma x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
+  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
   | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x | Lessthans x 
   | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
   | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x | Tabs x 
