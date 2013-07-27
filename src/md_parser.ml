@@ -204,7 +204,12 @@ let parse lexemes =
           main_loop (Text ("!") :: r) [Backslash; Exclamation] (Exclamation :: tl)
       | _, Backslash :: Exclamations n :: tl -> assert (n >= 0); (* \!!!... *)
           main_loop (Text ("!") :: r) [Backslash; Exclamation] (Exclamations (n-1) :: tl)
-            
+      | _, Backslash :: (Hash as t) :: tl -> (* \# *)
+          main_loop (Text ("#") :: r) [t] tl
+      | _, Backslash :: Hashs 0 :: tl -> (* \###... *)
+          main_loop (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
+      | _, Backslash :: Hashs n :: tl -> assert (n >= 0); (* \###... *)
+          main_loop (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
       | _, (Backslashs n as t) :: tl -> (* \\\\... *)
           if n mod 2 = 0 then
             main_loop (Text (String.make ((n-2)/2) '\\') :: r) [t] tl
@@ -213,7 +218,7 @@ let parse lexemes =
       | _, Backslash::[] ->
           main_loop (Text "\\" :: r) [] []
       | _, Backslash::tl ->
-          main_loop (Text "\\" :: r) [] tl
+          main_loop (Text "\\" :: r) [Backslash] tl
 
       | _, (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)::Colon::Slashs(n)::tl -> (* automatic URLs *)
           let rec read_url accu = function
