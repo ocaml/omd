@@ -294,7 +294,8 @@ let parse lexemes =
           begin match bcode r previous lexemes with
             | r, p, l -> main_loop r p l
           end
-      | _, (Lessthan|Lessthans _ as opening)::
+      | _, (Lessthan|Lessthans _ as opening):: 
+          (* N.B. inline HTML and block HTML are not yet differenciated. *)
           Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
           |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
