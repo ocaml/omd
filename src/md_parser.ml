@@ -258,6 +258,19 @@ let parse lexemes =
               end
             else
               main_loop (Text("&amp;")::r) [] tl2
+      | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
+          if String.length w <= 4 then
+            begin match s with
+              | Semicolon ->
+                  main_loop (Text("&#"^w^";")::r) [s] tl
+              | Semicolons 0 ->
+                  main_loop (Text("&#"^w^";")::r) [s] (Semicolon::tl)
+              | Semicolons n ->
+                  main_loop (Text("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+              | _ -> assert false
+            end
+          else
+            main_loop (Text("&amp;")::r) [] tl2
       | _, Ampersand::tl ->
           main_loop (Text("&amp;")::r) [Ampersand] tl
       | _, Ampersands(0)::tl ->
