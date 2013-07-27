@@ -249,12 +249,10 @@ let parse lexemes =
           let url, new_tl = read_url [] tl in
             main_loop (Url url :: r) [] new_tl
 
-
-      (* email addresses are not so simple to handle because of the possible presence of characters such as - _ + . *)
-      (*       | _, ((Word _|Number _) as w1)::At::((Word _|Number _) as w2)::Dot::Word w3::tl -> *)
-      (*           main_loop (Text (w1^"@"^w2) :: r) [] tl *)
-      (*       | _, Word w1::At::Word w2::tl -> *)
-      (* main_loop (Text (w1^"@"^w2) :: r) [] tl *)
+      (* Email addresses are not so simple to handle because of the
+         possible presence of characters such as '-', '_', '+' and '.'.
+         Maybe they should be framed at lexing time. If at parsing time,
+         it should probably be _here_. *)
 
       | _, Word w::tl ->
           main_loop (Text w :: r) [] tl
@@ -262,17 +260,17 @@ let parse lexemes =
           Text "\n"::r
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if StringSet.mem w htmlentities_set then
-              begin match s with
-                | Semicolon ->
-                    main_loop (Text("&"^w^";")::r) [s] tl
-                | Semicolons 0 ->
-                    main_loop (Text("&"^w^";")::r) [s] (Semicolon::tl)
-                | Semicolons n ->
-                    main_loop (Text("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
-                | _ -> assert false
-              end
-            else
-              main_loop (Text("&amp;")::r) [] tl2
+            begin match s with
+              | Semicolon ->
+                  main_loop (Text("&"^w^";")::r) [s] tl
+              | Semicolons 0 ->
+                  main_loop (Text("&"^w^";")::r) [s] (Semicolon::tl)
+              | Semicolons n ->
+                  main_loop (Text("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
+              | _ -> assert false
+            end
+          else
+            main_loop (Text("&amp;")::r) [] tl2
       | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if String.length w <= 4 then
             begin match s with
