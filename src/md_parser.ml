@@ -30,6 +30,24 @@ end = struct
   let of_list l = List.fold_left (fun r e -> add e r) empty l
 end
 
+let htmlentities_set = StringSet.of_list (* This list should be checked... *)
+  (* list extracted from: http://www.ascii.cl/htmlcodes.htm *)
+  ["eth";  "ntilde";  "ograve";  "oacute";  "ocirc";  "otilde"; "ouml";
+   "divide"; "oslash";  "ugrave"; "uacute"; "ucirc";  "uuml"; "yacute";
+   "thorn";  "yuml";  "agrave";  "aacute"; "acirc";  "atilde";  "auml";
+   "aring";  "aelig"; "ccedil";  "egrave";  "eacute"; "ecirc";  "euml";
+   "igrave";  "iacute";  "icirc";  "iuml"; "ETH";  "Ntilde";  "Ograve";
+   "Oacute";  "Ocirc"; "Otilde";  "Ouml"; "times";  "Oslash"; "Ugrave";
+   "Uacute";  "Ucirc"; "Uuml";  "Yacute";  "THORN"; "szlig";  "Agrave";
+   "Aacute";  "Acirc"; "Atilde";  "Auml";  "Aring"; "AElig";  "Ccedil";
+   "Egrave";  "Eacute"; "Ecirc";  "Euml"; "Igrave";  "Iacute"; "Icirc";
+   "Iuml"; "deg";  "plusmn"; "sup2"; "sup3";  "acute"; "micro"; "para";
+   "middot";  "cedil";  "sup1";  "ordm"; "raquo";  "frac14";  "frac12";
+   "frac34";  "iquest";  "nbsp";  "iexcl"; "cent";  "pound";  "curren";
+   "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
+   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
+
+
 (** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)] 
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
@@ -243,10 +261,7 @@ let parse lexemes =
       | _, [Newline] ->
           Text "\n"::r
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
-          let htmlentities = StringSet.of_list (* This list should be checked...*)
-            ["ecirc"; "oacute"; "plusmn"; "para"; "sup"; "iquest"; "frac"; "aelig"; "ntilde";
-             "Ecirc"; "Oacute"; "iexcl"; "brvbar"; "pound"; "not"; "macr"; "AElig"; "Ntilde"] in
-            if StringSet.mem w htmlentities then
+          if StringSet.mem w htmlentities_set then
               begin match s with
                 | Semicolon ->
                     main_loop (Text("&"^w^";")::r) [s] tl
