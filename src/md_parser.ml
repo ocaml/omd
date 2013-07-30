@@ -52,13 +52,19 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
-let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t list) =
+let emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t list) =
   assert (n>0 && n<4);
   let rec loop (result:Md_lexer.t list) = function
     | [] ->
         [], l
     | (Newline|Newlines _) :: tl ->
         [], l
+    | Backslash::Star::tl ->
+        loop (Star::result) tl
+    | Backslash::Stars 0::tl ->
+        loop (Star::result) tl
+    | Backslash::Stars n::tl ->
+        loop (Star::result) (Stars(n-1)::tl)
     | (Star as t) :: tl ->
         if n = 1 then
           (List.rev result), tl
@@ -73,6 +79,68 @@ let rec emph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t
         loop (t :: result) tl
   in loop [] l
 
+(** [uemph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)] 
+    returns [] if not (emph and/or bold),
+    else returns the contents intended to be formatted,
+    along with the rest of the stream that hasn't been processed. *)
+let uemph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t list) =
+  assert (n>0 && n<4);
+  let rec loop (result:Md_lexer.t list) = function
+    | [] ->
+        [], l
+    | (Newline|Newlines _) :: tl ->
+        [], l
+    | Backslash::Underscore::tl ->
+        loop (Underscore::result) tl
+    | Backslash::Underscores 0::tl ->
+        loop (Underscore::result) tl
+    | Backslash::Underscores n::tl ->
+        loop (Underscore::result) (Underscores(n-1)::tl)
+    | (Underscore as t) :: tl ->
+        if n = 1 then
+          (List.rev result), tl
+        else
+          loop (t :: result) tl
+    | ((Underscores x) as t) :: tl ->
+        if n = x+2 then
+          (List.rev result), tl
+        else
+          loop (t :: result) tl
+    | t::tl ->
+        loop (t :: result) tl
+  in loop [] l
+
+let gh_uemph_or_bold (n:int) (l:Md_lexer.t list) : (Md_lexer.t list * Md_lexer.t list) =
+  assert (n>0 && n<4);
+  let rec loop (result:Md_lexer.t list) = function
+    | [] ->
+        [], l
+    | (Newline|Newlines _) :: tl ->
+        [], l
+    | Backslash::Underscore::tl ->
+        loop (Underscore::result) tl
+    | Backslash::Underscores 0::tl ->
+        loop (Underscore::result) tl
+    | Backslash::Underscores n::tl ->
+        loop (Underscore::result) (Underscores(n-1)::tl)
+    | (Underscore | Underscores _ as t) :: (Word _ as w) :: tl ->
+          loop (w :: t :: result) tl
+    | (Underscore as t) :: tl ->
+        if n = 1 then
+          (List.rev result), tl
+        else
+          loop (t :: result) tl
+    | ((Underscores x) as t) :: tl ->
+        if n = x+2 then
+          (List.rev result), tl
+        else
+          loop (t :: result) tl
+    | t::tl ->
+        loop (t :: result) tl
+  in loop [] l
+
+let uemph_or_bold = 
+  if true then gh_uemph_or_bold else uemph_or_bold
 
 (* let emph_or_bold n l = failwith "" *)
 
@@ -118,6 +186,26 @@ let parse lexemes =
       | _, ((Space|Spaces _) as t) :: tl -> (* too many cases to be handled here *)
           let r, p, l = spaces (fst (length t)) r previous tl in
             main_loop r p l
+
+      (* underscores *)
+      | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
+          begin match uemph_or_bold 1 tl with
+            | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
+            | x , new_tl -> main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
+          end
+      | _, (Underscores((0|1) as n) as t) :: tl -> (* 2 or 3 "orphan" stars, or emph/bold *)
+          begin match uemph_or_bold (n+2) tl with
+            | [], _ ->
+                if n = 0 then
+                  main_loop (Text(string_of_t t) :: r) [t] tl
+                else
+                  main_loop (Text(string_of_t t) :: r) [t] tl
+            | x, new_tl ->
+                if n = 0 then
+                  main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
+                else
+                  main_loop (Emph([Bold(rev_main_loop [] [t] x)]) :: r) [t] new_tl
+          end
 
       (* stars *)
       | ([]|[(Newline|Newlines _)]), Star :: (Space|Spaces _) :: _ -> (* new list *)
@@ -361,7 +449,7 @@ let parse lexemes =
           |Minus|Minuss _|Number _|Obrace
           |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
           |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
-          |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _|Underscore
+          |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
           |Underscores _
           |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
