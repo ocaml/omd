@@ -8,29 +8,29 @@
    * span-level
      * current status: undifferenciated from block-level
  * paragraphs
-   * todo
+   * ***todo***
  * automatic escaping for special characters
    * partly done
  - Email-style quoting  (block-quoting)
-   * todo
+   * ***todo***
  * Titles
    * hash-style (Atx-style): done
-   - Setext-style (with - and =): todo
+   - Setext-style (with - and =): ***todo***
  * Lists
    * unordered: done
    * ordered: done
-   * paragraphs in lists: todo
-   * blockquote inside lists: todo
-   * code inside lists: todo (to check: does it exist in Github flavoured markdown??)
- * Horizontal rules: todo
+   * paragraphs in lists: ***todo***
+   * blockquote inside lists: ***todo***
+   * code inside lists: ***todo*** (to check: does it exist in Github flavoured markdown??)
+ * Horizontal rules: ***todo***
  * Links
    * inline: done
-   * reference: todo
+   * reference: ***todo***
  * Emphasis
    * single, double, triple asterisk: done
    * single, double, triple underscore: done
- * Image insertions: todo
- * Automatic links: todo
+ * Image insertions: ***todo***
+ * Automatic links: ***todo***
  * Backslashes: done
 
 ## Implementation road map
