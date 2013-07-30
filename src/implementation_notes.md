@@ -15,7 +15,7 @@
    * ***todo***
  * Titles
    * hash-style (Atx-style): done
-   - Setext-style (with - and =): ***todo***
+   - Setext-style (with - and =): done
  * Lists
    * unordered: done
    * ordered: done
