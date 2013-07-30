@@ -27,10 +27,8 @@
    * inline: done
    * reference: todo
  * Emphasis
-   * single asterisk: done
-   * underscore: todo
-   * double asterisk: done
-   * double underscore: todo
+   * single, double, triple asterisk: done
+   * single, double, triple underscore: done
  * Image insertions: todo
  * Automatic links: todo
  * Backslashes: done
