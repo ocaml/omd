@@ -15,7 +15,7 @@ type md_element =
   | Code of string (* html entities are to be converted *later* *)
   | Br
   | Hr
-  | Url of string
+  | Url of href * string
   | Html of string
   | H1 of md
   | H2 of md
@@ -24,6 +24,7 @@ type md_element =
   | H5 of md
   | H6 of md
   | NL
+and href = string
 and li = Li of md
 and md = md_element list
 
@@ -87,10 +88,10 @@ let html_of_md md =
         Buffer.add_string b "<hr/>"
     | Html s ->
         Buffer.add_string b s
-    | Url s ->
+    | Url (href,s) ->
         let s = htmlentities s in
           Buffer.add_string b "<a href='";
-          Buffer.add_string b s;
+          Buffer.add_string b href;
           Buffer.add_string b "'>";
           Buffer.add_string b s;
           Buffer.add_string b "</a>";
