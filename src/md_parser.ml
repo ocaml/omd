@@ -247,7 +247,7 @@ let parse lexemes =
             | [] -> string_of_tl (List.rev accu), []
           in
           let url, new_tl = read_url [] tl in
-            main_loop (Url url :: r) [] new_tl
+            main_loop (Url(url,url,"")::r) [] new_tl
 
       (* Email addresses are not so simple to handle because of the
          possible presence of characters such as '-', '_', '+' and '.'.
@@ -345,20 +345,101 @@ let parse lexemes =
           main_loop (NL::r) [Newline] tl
       | _, Newlines _::tl ->
           main_loop (NL::NL::r) [Newline] tl
+      | _, Obracket::tl ->
+          begin match maybe_link r previous tl with
+            | r, p, l -> main_loop r p l
+          end
+      | _, Obrackets 0::tl ->
+          begin match maybe_wikistyle_link r previous tl with
+            | r, p, l -> main_loop r p l
+          end
       | _,
           ((At|Ats _|Bar|Bars _|Caret
           |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
           |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
           |Exclamation|Exclamations _|Equal|Equals _
           |Minus|Minuss _|Number _|Obrace
-          |Obraces _|Oparenthesis|Oparenthesiss _|Obracket|Obrackets _|Percent
+          |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
           |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
           |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _|Underscore
           |Underscores _
           |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
           main_loop (Text(htmlentities(string_of_t t))::r) [t] tl 
-            
+
+  and maybe_link r p l =
+    let rec read_title name href res = function
+      | Doublequote::(Cparenthesis as t)::tl ->
+          let title = string_of_tl (List.rev res) in
+            Url(href, name, title)::r, [t], tl
+      | Doublequote::Cparenthesiss 0::tl ->
+          let title = string_of_tl (List.rev res) in
+            Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl
+      | Doublequote::Cparenthesiss n::tl ->
+          let title = string_of_tl (List.rev res) in
+            Url(href, name, title)::r, [Cparenthesis], Cparenthesiss(n-1)::tl
+      | []
+      | (Newline|Newlines _)::_ as l ->
+          r, p, l
+      | e::tl ->
+          read_title name href (e::res) tl
+    in
+    let rec read_url name res = function
+      | Cparenthesis as t::tl ->
+          let href = string_of_tl (List.rev res) in
+            Url(href, name, "")::r, [t], tl
+      | Cparenthesiss 0::tl ->
+          let href = string_of_tl (List.rev res) in
+            Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl
+      | Cparenthesiss n::tl ->
+          let href = string_of_tl (List.rev res) in
+            Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl
+      | (Space|Spaces _)::Doublequote::tl ->
+          let href = string_of_tl (List.rev res) in
+            read_title name href [] tl
+      | []
+      | (Newline|Newlines _)::_ as l ->
+          r, p, l
+      | e::tl ->
+          read_url name (e::res) tl
+    in
+    let rec read_name res = function
+      | Cbracket::Oparenthesis::tl ->
+          read_url (string_of_tl (List.rev res)) [] tl
+      | Cbracket::_
+      | []
+      | (Newline|Newlines _)::_ -> (* failed to read a MD-link *)
+          r, p, l
+      | e::tl ->
+          read_name (e::res) tl
+    in
+      read_name [] l
+
+  and maybe_wikistyle_link r p l =
+    let rec read_name href res = function
+      | Cbrackets 0 as t :: tl ->
+          Url(href, string_of_tl (List.rev res), "")::r, [t], tl
+      | []
+      | (Newline|Newlines _)::_ as l ->
+          r, p, l
+      | e::tl ->
+          read_name href (e::res) tl
+    in      
+    let rec read_url res = function
+      | Cbrackets 0 as t :: tl ->
+          let href = string_of_tl (List.rev res) in
+            Url(href, href, "")::r, [t], tl
+      | Bar::tl ->
+          let href = string_of_tl (List.rev res) in
+            read_name href [] tl
+      | []
+      | (Newline|Newlines _)::_ as l ->
+          r, p, l
+      | e::tl ->
+          read_url (e::res) tl
+    in
+      read_url [] l
+
   and read_title n (r:md) (p:Md_lexer.t list) (l:Md_lexer.t list) =
     if true then (* a behaviour closer to github *)
       begin
