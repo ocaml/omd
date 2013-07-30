@@ -1,9 +1,44 @@
 # Notes on the Implementation and Semantics of omd
 
+## Checklist
+ * HTML
+   * As in "standard" Markdown, it's a "subset" of HTML with **restrictions** on the syntax that is supported. For instance, one cannot write `< a href...` instead of `<a href...` because a space following the `<` character will make it "not HTML". It's the same kind of restrictions for closing tags.
+   * block-level
+     * current status: undifferenciated from span-level
+   * span-level
+     * current status: undifferenciated from block-level
+ * paragraphs
+   * todo
+ * automatic escaping for special characters
+   * partly done
+ - Email-style quoting  (block-quoting)
+   * todo
+ * Titles
+   * hash-style (Atx-style): done
+   - Setext-style (with - and =): todo
+ * Lists
+   * unordered: done
+   * ordered: done
+   * paragraphs in lists: todo
+   * blockquote inside lists: todo
+   * code inside lists: todo (to check: does it exist in Github flavoured markdown??)
+ * Horizontal rules: todo
+ * Links
+   * inline: done
+   * reference: todo
+ * Emphasis
+   * single asterisk: done
+   * underscore: todo
+   * double asterisk: done
+   * double underscore: todo
+ * Image insertions: todo
+ * Automatic links: todo
+ * Backslashes: done
+
 ## Implementation road map
 
   * 24 July 2013: first complete version of implementation of ordered and unordered lists with a rather sound semantics. However, testing has not started yet, but will soon.
-  * Initialisation: I'll write as little recursive functions as possible, but for the thing to work as soon as possible, I won't try hard to avoid recursion. When the whole thing starts to actually work, I'll start converting into iterative loops.
+  * I'll try to avoid recursion between multiple functions, since it's not well-supported by `Js_of_ocaml`. However I will not try hard, for the first version.
 
 ## Flaws in Markdown
 
