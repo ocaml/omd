@@ -21,7 +21,7 @@
 
 *)
 
-type t = (* "of int":  *)
+type 'a t = (* "of int":  *)
   | Ampersand
   | Ampersands of int
   | At
@@ -96,9 +96,10 @@ type t = (* "of int":  *)
   | Underscore
   | Underscores of int
   | Word of string
-
+  | Tag of 'a
 
 let string_of_t = function
+  | Tag _ -> ""
   | Ampersand -> "&"
   | Ampersands n -> String.make (2+n) '&'
   | At -> "@"
@@ -308,6 +309,7 @@ let rec convert_to_crlf = function
 
 
 let length = function
+  | Tag _ -> (0, 0)
   | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
   | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
   | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan 
@@ -354,12 +356,13 @@ let _ =
   convert_to_lf (lex_from_string "42 Bonjour !\n")
 ;;
 
+(*
 (** [string_of_tl l] returns the string representation of l.
     [estring_of_tl l] returns the escaped string representation of l (same semantics as [String.escaped (string_of_tl l)]). *)
 let string_of_tl, estring_of_tl =
   let g escaped tl =
     let b = Buffer.create 42 in
-    let rec loop : t list -> unit = function
+    let rec loop : 'a t list -> unit = function
       | e::tl ->
           Buffer.add_string b (if escaped then String.escaped (string_of_t e) else string_of_t e);
           loop tl
@@ -368,18 +371,29 @@ let string_of_tl, estring_of_tl =
     in 
       Buffer.contents (loop tl; b)
   in g false, g true
+*)
+
+let string_of_tl tl =
+  let b = Buffer.create 42 in
+  let rec loop : 'a t list -> unit = function
+    | e::tl ->
+        Buffer.add_string b (string_of_t e);
+        loop tl
+    | [] ->
+        ()
+  in 
+    Buffer.contents (loop tl; b)
 
 
-let dstring_of_tl, destring_of_tl =
-  let g escaped tl =
-    let b = Buffer.create 42 in
-    let rec loop : t list -> unit = function
-      | e::tl ->
-          Buffer.add_string b (if escaped then String.escaped (string_of_t e) else string_of_t e);
-          Buffer.add_string b "::";
-          loop tl
-      | [] ->
-          Buffer.add_string b "[]"
-    in 
-      Buffer.contents (loop tl; b)
-  in g false, g true
+let destring_of_tl tl =
+  let b = Buffer.create 42 in
+  let rec loop : 'a t list -> unit = function
+    | e::tl ->
+        Buffer.add_string b (String.escaped (string_of_t e));
+        Buffer.add_string b "::";
+        loop tl
+    | [] ->
+        Buffer.add_string b "[]"
+  in 
+    Buffer.contents (loop tl; b)
+
