@@ -22,7 +22,9 @@
    * paragraphs in lists: ***todo***
    * blockquote inside lists: ***todo***
    * code inside lists: ***todo*** (to check: does it exist in Github flavoured markdown??)
- * Horizontal rules: ***todo***
+ * Horizontal rules:
+   * with stars: ***todo***
+   * with dashes: ***todo***
  * Links
    * inline: done
    * reference: ***todo***
