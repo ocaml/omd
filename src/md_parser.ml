@@ -183,7 +183,39 @@ let setext_title l =
   in
     loop [] l
 
+(** [hr_m l] returns [Some nl] where [nl] is the remaining of [l] if [l]
+    contains a horizontal rule drawn with dashes. If it doesn't, then
+    returns [None].*)
+let hr_m l =
+  let rec loop n = function
+    | (Newline::tl) | ([] as tl) ->
+        if n >= 3 then Some [] else None
+    | (Space|Spaces _)::tl ->
+        loop n tl
+    | Minus::tl ->
+        loop (n+1) tl
+    | Minuss x::tl ->
+        loop (x+2+n) tl
+    | _::_ ->
+        None
+  in loop 0 l
 
+(** [hr_s l] returns [Some nl] where [nl] is the remaining of [l] if [l]
+    contains a horizontal rule drawn with dashes. If it doesn't, then
+    returns [None].*)
+let hr_s l =
+  let rec loop n = function
+    | (Newline::tl) | ([] as tl) ->
+        if n >= 3 then Some [] else None
+    | (Space|Spaces _)::tl ->
+        loop n tl
+    | Star::tl ->
+        loop (n+1) tl
+    | Stars x::tl ->
+        loop (x+2+n) tl
+    | _::_ ->
+        None
+  in loop 0 l
 
 let main_parse lexemes =
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
@@ -194,21 +226,43 @@ let main_parse lexemes =
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
           r
 
-      | _, (* (Newline|Newlines _):: *)Tag(Maybe_h1)::tl ->
+      (* maybe tags*)
+      | ([]|[Newline|Newlines _]), Tag(Maybe_h1)::tl ->
           begin match setext_title tl with
+            | [], _ ->
+                main_loop [] [] tl
             | title, tl ->
                 let title = H1(main_loop [] [] title) in
                   main_loop (title::r) [] tl
           end
-      | _, (* (Newline|Newlines _):: *)Tag(Maybe_h2)::tl ->
+      | ([]|[Newline|Newlines _]), Tag(Maybe_h2)::tl ->
           begin match setext_title tl with
+            | [], _ ->
+                main_loop [] [] tl
             | title, tl -> 
                 let title = H2(main_loop [] [] title) in
                   main_loop (title::r) [] tl
           end
+      | _, Tag(Maybe_h1|Maybe_h2)::tl ->
+          assert false
 
-(*       | _, Tag(Maybe_h1|Maybe_h2)::tl -> *)
-(*           assert false *)
+      (* minus *)
+      | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _)::_ -> (* maybe hr *)
+          begin match hr_m lexemes with
+            | None -> (* no hr, so it's a list *)
+                begin match new_list r [] (Newline::lexemes) with
+                  | md, new_p, new_l -> main_loop (md@r) new_p new_l
+                end
+            | Some l -> (* hr *)
+                main_loop (Hr::r) [Newline] l
+          end
+      | ([]|[Newline|Newlines _]), (Minus|Minuss _ as m)::tl ->
+          begin match hr_m lexemes with
+            | None -> (* no hr, but it's not a list *)
+                main_loop (Text(string_of_t m)::r) [Minus] tl
+            | Some l -> (* hr *)
+                main_loop (Hr::r) [Newline] l
+          end
 
       (* hashes *)
       | ([]|[(Newline|Newlines _)]), Hashs n :: tl -> (* hash titles *)
@@ -222,7 +276,22 @@ let main_parse lexemes =
       | _, ((Hash|Hashs _) as t) :: tl -> (* hash -- no title *)
           main_loop (Text(string_of_t t) :: r) [t] tl
 
-      (* spaces *)
+      (* spaces after a newline: could lead to hr *)
+      | ([]|[Newline|Newlines _]), ((Space|Spaces _) as t) :: tl ->
+          begin match hr_s tl with
+            | None ->
+                begin match hr_m tl with
+                  | None ->
+                      let r, p, l = spaces (fst (length t)) r previous tl in
+                        main_loop r p l
+                  | Some l ->
+                      main_loop (Hr::r) [Newline] l
+                end
+            | Some l ->
+                main_loop (Hr::r) [Newline] l
+          end
+            
+      (* spaces anywhere *)
       | _, ((Space|Spaces _) as t) :: tl -> (* too many cases to be handled here *)
           let r, p, l = spaces (fst (length t)) r previous tl in
             main_loop r p l
@@ -248,11 +317,27 @@ let main_parse lexemes =
           end
 
       (* stars *)
-      | ([]|[(Newline|Newlines _)]), Star :: (Space|Spaces _) :: _ -> (* new list *)
-          begin match new_list r [] (Newline::lexemes) with
-            | md, new_p, new_l -> main_loop (md@r) new_p new_l
-          end          
-      | _, (Star as t) :: tl -> (* one "orphan" star, or emph *)
+      | ([]|[(Newline|Newlines _)]), Star :: (Space|Spaces _) :: _ -> (* maybe hr or new list *)
+          begin match hr_s lexemes with
+            | Some l ->
+                main_loop (Hr::r) [Newline] l
+            | None ->
+                begin match new_list r [] (Newline::lexemes) with
+                  | md, new_p, new_l -> main_loop (md@r) new_p new_l
+                end
+          end
+      | ([]|[(Newline|Newlines _)]), Stars _ :: _ when (not (hr_s lexemes = None)) -> (* hr *)
+          begin match hr_s lexemes with
+            | Some l -> main_loop (Hr::r) [Newline] l
+            | None -> assert false
+          end
+      | ([]|[(Newline|Newlines _)]), Star :: tl -> (* maybe hr *)
+          begin match hr_s lexemes with
+            | Some l -> main_loop (Hr::r) [Newline] l
+            | None ->
+                main_loop (Text "*"::r) [Star] tl
+          end
+      | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
           begin match emph_or_bold 1 tl with
             | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
             | x , new_tl -> main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
@@ -366,17 +451,29 @@ let main_parse lexemes =
       | _, Backslash::tl ->
           main_loop (Text "\\" :: r) [Backslash] tl
 
-      | _, (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)::Colon::Slashs(n)::tl -> (* automatic URLs *)
+      | _, (Lessthan|Lessthans _ as lt)::((Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)::Colon::Slashs(n)::tl as fallback) -> (* "semi-automatic" URLs *)
           let rec read_url accu = function
-            | (Space|Spaces _|Tab|Tabs _|Newline|Newlines _|Return|Returns _)::tl ->
-                (string_of_t w) ^ "://" ^ (if n = 0 then "" else String.make (n-2) '/') ^ string_of_tl (List.rev accu), tl
+            | (Newline|Newlines _|Return|Returns _)::tl ->
+                None
+            | Greaterthan::tl ->
+                let url = 
+                  (match lt with Lessthans 0 -> "<" | Lessthans n -> String.make (n-2) '<' | _ -> "")
+                  ^ (string_of_t w) ^ "://" 
+                  ^ (if n = 0 then "" else String.make (n-2) '/')
+                  ^ string_of_tl (List.rev accu)
+                in Some(url, tl)
             | x::tl ->
                 read_url (x::accu) tl
-            | [] -> string_of_tl (List.rev accu), []
+            | [] -> 
+                None
           in
-          let url, new_tl = read_url [] tl in
-            main_loop (Url(url,url,"")::r) [] new_tl
-
+            begin match read_url [] tl with
+              | Some(url, new_tl) ->
+                  main_loop (Url(url,url,"")::r) [] new_tl
+              | None ->
+                  main_loop (Text(string_of_t lt)::r) [Lessthan] fallback
+            end
+              
       (* Email addresses are not so simple to handle because of the
          possible presence of characters such as '-', '_', '+' and '.'.
          Maybe they should be framed at lexing time. If at parsing time,
@@ -422,7 +519,7 @@ let main_parse lexemes =
           begin match bcode r previous lexemes with
             | r, p, l -> main_loop r p l
           end
-      | _, (Lessthan|Lessthans _ as opening):: 
+      | _, (Lessthan|Lessthans _ as opening)::
           (* N.B. inline HTML and block HTML are not yet differenciated. *)
           Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
@@ -493,7 +590,7 @@ let main_parse lexemes =
            |Underscores _
            |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
-          main_loop (Text(htmlentities(string_of_t t))::r) [t] tl 
+          main_loop (Text(htmlentities(string_of_t t))::r) [t] tl
 
   and maybe_link r p l =
     let rec read_title name href res = function
@@ -552,7 +649,7 @@ let main_parse lexemes =
           r, p, l
       | e::tl ->
           read_name href (e::res) tl
-    in      
+    in
     let rec read_url res = function
       | Cbrackets 0 as t :: tl ->
           let href = string_of_tl (List.rev res) in
