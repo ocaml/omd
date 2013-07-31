@@ -232,7 +232,7 @@ let main_parse lexemes =
             | [], _ ->
                 main_loop [] [] tl
             | title, tl ->
-                let title = H1(main_loop [] [] title) in
+                let title = H1(rev_main_loop [] [] title) in
                   main_loop (title::r) [] tl
           end
       | ([]|[Newline|Newlines _]), Tag(Maybe_h2)::tl ->
@@ -240,7 +240,7 @@ let main_parse lexemes =
             | [], _ ->
                 main_loop [] [] tl
             | title, tl ->
-                let title = H2(main_loop [] [] title) in
+                let title = H2(rev_main_loop [] [] title) in
                   main_loop (title::r) [] tl
           end
       | _, Tag(Maybe_h1|Maybe_h2)::tl ->
@@ -480,7 +480,7 @@ let main_parse lexemes =
          it should probably be _here_. *)
 
       | _, Word w::tl ->
-          main_loop (Text w :: r) [] tl
+          main_loop (Text w :: r) [Word w] tl
       | _, [Newline] ->
           NL::r
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
