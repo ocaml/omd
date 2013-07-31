@@ -13,6 +13,11 @@ let () =
     with End_of_file ->
       print_endline
         (
-          Md.html_of_md (Md_parser.parse (Md_lexer.lex_from_string (Buffer.contents b)))
+          Md.html_of_md 
+            (Md.make_paragraphs
+               (Md_parser.parse
+                  (Md_lexer.lex_from_string (Buffer.contents b))
+               )
+            )
         )
 
