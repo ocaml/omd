@@ -23,8 +23,8 @@
    * blockquote inside lists: ***todo***
    * code inside lists: ***todo*** (to check: does it exist in Github flavoured markdown??)
  * Horizontal rules:
-   * with stars: ***todo***
-   * with dashes: ***todo***
+   * with stars: done (todo: tests)
+   * with dashes: done (todo: tests)
  * Links
    * inline: done
    * reference: ***todo***
