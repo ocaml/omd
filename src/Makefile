@@ -1,7 +1,7 @@
 OCAMLC = ocamlc.opt
 OCAMLOPT = ocamlopt.opt
 
-all:md.cmo md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
+# all:md.cmo md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
 
 md:md.cmx md_lexer.cmx md_parser.cmx md_main.cmx
 	$(OCAMLOPT) -o $@ $+
