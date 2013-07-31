@@ -180,6 +180,7 @@ let html_of_md md =
         loop tl
     | Text t :: tl ->
         Buffer.add_string b t;
+        (* Buffer.add_string b (htmlentities t); *)
         loop tl
     | Emph md :: tl ->
         Buffer.add_string b "<em>";
