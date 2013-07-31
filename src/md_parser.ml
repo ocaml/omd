@@ -189,7 +189,7 @@ let setext_title l =
 let hr_m l =
   let rec loop n = function
     | (Newline::tl) | ([] as tl) ->
-        if n >= 3 then Some [] else None
+        if n >= 3 then Some tl else None
     | (Space|Spaces _)::tl ->
         loop n tl
     | Minus::tl ->
@@ -205,15 +205,15 @@ let hr_m l =
     returns [None].*)
 let hr_s l =
   let rec loop n = function
-    | (Newline::tl) | ([] as tl) ->
-        if n >= 3 then Some [] else None
+    | ((Newline|Newlines _)::tl) | ([] as tl) ->
+        if n >= 3 then Some tl else None
     | (Space|Spaces _)::tl ->
         loop n tl
     | Star::tl ->
         loop (n+1) tl
     | Stars x::tl ->
         loop (x+2+n) tl
-    | _::_ ->
+    | _::_ as l ->
         None
   in loop 0 l
 
