@@ -213,7 +213,7 @@ let hr_s l =
         loop (n+1) tl
     | Stars x::tl ->
         loop (x+2+n) tl
-    | _::_ as l ->
+    | _::_ ->
         None
   in loop 0 l
 
