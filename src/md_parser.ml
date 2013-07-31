@@ -23,7 +23,7 @@ type tag = Maybe_h1 | Maybe_h2
 type tmp_list = element list
 and element   = Item of tag Md_lexer.t list
 
-  
+
 open Md
 open Md_lexer
 
@@ -32,7 +32,7 @@ module StringSet : sig
   type t
   val mem : elt -> t -> bool
   val of_list : elt list -> t
-end = struct 
+end = struct
   include Set.Make(struct type t = string let compare = String.compare end)
   let of_list l = List.fold_left (fun r e -> add e r) empty l
 end
@@ -55,7 +55,7 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
 
-(** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)] 
+(** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
@@ -86,7 +86,7 @@ let emph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md
         loop (t :: result) tl
   in loop [] l
 
-(** [uemph_or_bold (n:int) (r:md list) (l:tag Md_lexer.t list)] 
+(** [uemph_or_bold (n:int) (r:md list) (l:tag Md_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
@@ -146,7 +146,7 @@ let gh_uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * ta
         loop (t :: result) tl
   in loop [] l
 
-let uemph_or_bold = 
+let uemph_or_bold =
   if true then gh_uemph_or_bold else uemph_or_bold
 
 
@@ -239,7 +239,7 @@ let main_parse lexemes =
           begin match setext_title tl with
             | [], _ ->
                 main_loop [] [] tl
-            | title, tl -> 
+            | title, tl ->
                 let title = H2(main_loop [] [] title) in
                   main_loop (title::r) [] tl
           end
@@ -290,7 +290,7 @@ let main_parse lexemes =
             | Some l ->
                 main_loop (Hr::r) [Newline] l
           end
-            
+
       (* spaces anywhere *)
       | _, ((Space|Spaces _) as t) :: tl -> (* too many cases to be handled here *)
           let r, p, l = spaces (fst (length t)) r previous tl in
@@ -456,15 +456,15 @@ let main_parse lexemes =
             | (Newline|Newlines _|Return|Returns _)::tl ->
                 None
             | Greaterthan::tl ->
-                let url = 
+                let url =
                   (match lt with Lessthans 0 -> "<" | Lessthans n -> String.make (n-2) '<' | _ -> "")
-                  ^ (string_of_t w) ^ "://" 
+                  ^ (string_of_t w) ^ "://"
                   ^ (if n = 0 then "" else String.make (n-2) '/')
                   ^ string_of_tl (List.rev accu)
                 in Some(url, tl)
             | x::tl ->
                 read_url (x::accu) tl
-            | [] -> 
+            | [] ->
                 None
           in
             begin match read_url [] tl with
@@ -473,7 +473,7 @@ let main_parse lexemes =
               | None ->
                   main_loop (Text(string_of_t lt)::r) [Lessthan] fallback
             end
-              
+
       (* Email addresses are not so simple to handle because of the
          possible presence of characters such as '-', '_', '+' and '.'.
          Maybe they should be framed at lexing time. If at parsing time,
@@ -482,7 +482,7 @@ let main_parse lexemes =
       | _, Word w::tl ->
           main_loop (Text w :: r) [] tl
       | _, [Newline] ->
-          Text "\n"::r
+          NL::r
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if StringSet.mem w htmlentities_set then
             begin match s with
@@ -694,13 +694,13 @@ let main_parse lexemes =
       end
     else (* a behaviour closer to pandoc *)
       begin
-        let rec loop accu l = 
+        let rec loop accu l =
           match l with
-            | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Html _ | Url _ | Br | Hr | Code _ | Ol _ | Ul _ | NL )::_ -> 
+            | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Html _ | Url _ | Br | Hr | Code _ | Ol _ | Ul _ | NL )::_ ->
                 List.rev accu, l
             | x::tl -> loop (x::accu) tl
             | [] -> List.rev accu, []
-        in 
+        in
         let title, rest = loop [] (rev_main_loop [] [] l) in
           match n with
             | 1 -> List.rev (H1 title :: rest) @ r, [], []
@@ -733,7 +733,7 @@ let main_parse lexemes =
             code_block (b::accu) tl
       | e::tl ->
           code_block (e::accu) tl
-    in 
+    in
     let cb, l = code_block [] tl in
       (Code(string_of_tl cb)::r), [Backquote], l
 
@@ -816,7 +816,7 @@ let main_parse lexemes =
                 if debug then Printf.eprintf "#%d\n%!" 8;
                 loop ordered result (e::curr_item) indents tl
       in
-      let rec loop2 (tmp:(bool*int list*tag Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list) 
+      let rec loop2 (tmp:(bool*int list*tag Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list)
           : md * (bool*int list*tag Md_lexer.t list) list =
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" tmp else "" in
           if debug then Printf.eprintf "new_list>>loop2\n%!";
@@ -848,7 +848,7 @@ let main_parse lexemes =
                     let accu = List.rev accu in [if ordered then Ol accu else Ul accu], tmp
             | [(_,[],[])] | [] ->
                 if debug then Printf.eprintf "FOO\n%!";
-                if accu = [] then 
+                if accu = [] then
                   [], []
                 else
                   let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
@@ -865,7 +865,7 @@ let main_parse lexemes =
           begin
             let p =
               List.fold_left
-                (fun r (o,indents,item) -> 
+                (fun r (o,indents,item) ->
                    Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
                 ""
                 (List.rev tmp_r)
