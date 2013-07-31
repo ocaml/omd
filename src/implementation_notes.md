@@ -8,7 +8,7 @@
    * span-level
      * current status: undifferenciated from block-level
  * paragraphs
-   * ***todo***
+   * done (but needs more testing)
  * automatic escaping for special characters
    * partly done
  - Email-style quoting  (block-quoting)
@@ -34,6 +34,8 @@
  * Image insertions: ***todo***
  * Automatic links: ***todo***
  * Backslashes: done
+ * Code:
+   * syntax-highlighted code...
 
 ## Implementation road map
 
