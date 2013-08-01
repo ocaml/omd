@@ -241,6 +241,20 @@ let hr_s l =
   in loop 0 l
 
 
+(* This function is intended to fix lists that "look wrong" in
+   Markdown. First, nothing being "wrong" in Markdown means that what
+   doesn't have a clear semantics has to be attributed one. Lists are
+   based on indentation and sometimes it appears that we can't count
+   on human beings to write only good looking Markdown. Second, it
+   appeared hard to write a simple lists parser that would generate
+   the tree that I expected to see. For those 2 reasons, I wrote this
+   function that fixes what's generated at some point by this
+   parser. It seems to work fine. 
+   
+   However, if this parser benefits from some optimizations at some
+   point, one of them should probably be about getting rid of this
+   function.
+*)
 let rec fix_lists = function
   | Ul []::tl ->
       fix_lists tl
@@ -979,4 +993,4 @@ let main_parse lexemes =
 
 
 let parse lexemes =
-  fix_lists (main_parse (tag_setext lexemes))
+  main_parse (tag_setext lexemes)
