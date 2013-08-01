@@ -214,9 +214,6 @@ let rec html_of_md md =
         loop indent md;
         Buffer.add_string b "</strong>";
         loop indent tl
-    | Ul [Li((Ul(_)::_) as l)] :: tl ->
-        loop indent l;
-        loop indent tl
     | Ul l :: tl ->
         Buffer.add_string b "\n";
         for i = 0 to indent do Buffer.add_char b ' ' done;
