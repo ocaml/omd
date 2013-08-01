@@ -4,9 +4,11 @@
  * HTML
    * As in "standard" Markdown, it's a "subset" of HTML with **restrictions** on the syntax that is supported. For instance, one cannot write `< a href...` instead of `<a href...` because a space following the `<` character will make it "not HTML". It's the same kind of restrictions for closing tags.
    * block-level
-     * current status: undifferenciated from span-level
+     * partly done
    * span-level
-     * current status: undifferenciated from block-level
+     * partly done
+   * Some work still has to be done but it may already work. All HTML tags are basically in a single category for now. So, in order to have a block-level tag treated as a block-level tag, one should put it after 2 line breaks.
+
  * paragraphs
    * done (but needs more testing)
  * automatic escaping for special characters
