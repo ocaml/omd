@@ -899,7 +899,10 @@ let main_parse lexemes =
       in
       let (e:md), (x:(bool*int list*tag Md_lexer.t list) list) = loop2 (List.rev tmp_r) (-1) false [] in
         match e with
-          | Ul [Li((Ul(_)::_) as l)] :: tl ->
+          | Ul [Li((Ul(_)::_) as l)] :: tl
+          | Ol [Li((Ul(_)::_) as l)] :: tl
+          | Ul [Li((Ol(_)::_) as l)] :: tl 
+          | Ol [Li((Ol(_)::_) as l)] :: tl ->
               l@tl@r, [], new_l
           | _ ->
               (e@(r:md)), [], new_l
