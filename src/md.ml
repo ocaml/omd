@@ -7,6 +7,7 @@
 
 let pindent = false
 let pindent = true
+let smdnl = false (* about standard markdown new lines *)
 
 type md_element = 
   | Paragraph of md
@@ -26,7 +27,10 @@ type md_element =
   | H4 of md
   | H5 of md
   | H6 of md
+  | Img of alt * src * title
   | NL
+and alt = string
+and src = string
 and href = string
 and title = string
 and li = Li of md
@@ -114,6 +118,18 @@ let rec html_of_md md =
                Buffer.add_string b s;
                Buffer.add_string b "</p>\n";
              end);
+        loop indent tl
+    | Img(alt, src, title) :: tl ->
+        Buffer.add_string b "<img src='";
+        Buffer.add_string b (htmlentities src);
+        Buffer.add_string b "' alt='";
+        Buffer.add_string b (htmlentities alt);
+        Buffer.add_string b "' ";
+        if title <> "" then
+          (Buffer.add_string b "' title='";
+           Buffer.add_string b (htmlentities title);
+           Buffer.add_string b "' ");
+        Buffer.add_string b "/>";
         loop indent tl
     | Text t :: tl ->
         Buffer.add_string b t;
@@ -223,6 +239,7 @@ let rec html_of_md md =
         Buffer.add_string b "</h6>";
         loop indent tl
     | NL :: tl ->
+        if smdnl then Buffer.add_string b "<br />";
         Buffer.add_char b '\n';
         loop indent tl
     | [] -> ()
