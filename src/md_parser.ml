@@ -876,7 +876,7 @@ let main_parse lexemes =
                 else
                   let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
             | (o,[], item) :: tl ->
-                if true|| debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
+                if debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
                 loop2 ((o,[0], item) :: tl) curr_indent ordered accu
 
       in
