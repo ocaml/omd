@@ -794,9 +794,9 @@ let main_parse lexemes =
           end
       | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Oparenthesis::tl as l) -> (* image insertion with no "alt" *)
           (* ![](/path/to/img.jpg) *)
-          begin
+          begin (* TODO: end of files with incomplete "images"... *)
             try
-              match read_until_cparenth ~no_nl:true tl with
+              match read_until_cparenth (* ~no_nl:true tl *) with
                 | b, tl ->
                     let url, tls = read_until_space b in
                     let title, should_be_empty_list = read_until_dq (snd (read_until_dq tls)) in
@@ -812,12 +812,13 @@ let main_parse lexemes =
           end
       | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
           (* ![Alt text](/path/to/img.jpg "Optional title") *)
+          (* TODO: end of files with incomplete "images"... *)
           begin match read_until_cbracket tl with
             | alt, Oparenthesis::ntl ->
                 begin
                   try
                     let alt = string_of_tl alt in
-                    let path_title, rest = read_until_cparenth ~no_nl:true ntl in
+                    let path_title, rest = read_until_cparenth (* ~no_nl:true *) ntl in
                     let path, title = read_until_space path_title in
                     let title, nothing = read_until_dq (snd(read_until_dq title)) in
                     let () = if nothing <> [] then raise NL_exception in
