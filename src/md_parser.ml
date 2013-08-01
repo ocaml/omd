@@ -601,8 +601,8 @@ let main_parse lexemes =
           begin match bcode r previous lexemes with
             | r, p, l -> main_loop r p l
           end
-      | _, (Lessthan|Lessthans _ as opening)::
-          (* N.B. inline HTML and block HTML are not yet differenciated. *)
+      | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as opening)::
+          (* Block HTML. *)
           Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
           |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
@@ -615,7 +615,9 @@ let main_parse lexemes =
           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
           |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
-          |"thead"|"time"|"title"|"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname)::((Space|Spaces _|Greaterthan|Greaterthans _) as x)::tl ->
+          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname)
+          ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
+          ::tl ->
           let read_html() =
             let rec loop accu n = function
               | Lessthan::Slash::Word(tn)::Greaterthan::tl ->
@@ -648,6 +650,72 @@ let main_parse lexemes =
                 match read_html() with
                   | html, tl -> main_loop (Html(string_of_tl html)::r) [Greaterthan] tl
             end
+      | _, (Lessthan|Lessthans _ as opening)::
+          (* inline HTML. *)
+          Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
+          |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
+          |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
+          |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
+          |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
+          |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
+                (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
+          |"legend"|"li"|"link"|"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
+          |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
+          |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
+          |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
+          |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
+          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname)
+          ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
+          ::tl ->
+          let read_until_gt l =
+            let rec loop accu = function
+              | Greaterthan :: tl -> (List.rev (Greaterthan::accu)), tl
+              | Greaterthans 0 :: tl -> (List.rev (Greaterthan::accu)), Greaterthan::tl
+              | Greaterthans n :: tl -> (List.rev (Greaterthan::accu)), Greaterthans(n-1)::tl
+              | e::tl -> loop (e::accu) tl
+              | [] -> List.rev accu, []
+            in loop [] l
+          in
+          let read_html() =
+            let rec loop accu n = function
+              | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
+                  if tn = tagname then
+                    if n = 0 then
+                      List.rev (Word(Printf.sprintf "</%s>" tn)::accu), tl
+                    else
+                      loop (Word(Printf.sprintf "</%s>" tn)::accu) (n-1) tl
+                  else
+                    loop (Word(Printf.sprintf "</%s>" tn)::accu) n tl
+              | Lessthan::Word(tn)::tl -> (* <word... *)
+                  begin
+                    match read_until_gt tl with
+                      | b, tl ->
+                          if tn = tagname then
+                            loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) (n+1) tl
+                          else
+                            loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) n tl
+                  end
+              | x::tl ->
+                  loop (x::accu) n tl
+              | [] ->
+                  List.rev accu, []
+            in
+              begin
+                match read_until_gt tl with
+                  | b, tl ->
+                      loop [Word(Printf.sprintf "<%s%s%s" tagname (string_of_t x) (string_of_tl b))] 0 tl
+              end
+          in
+            begin
+              let r = match opening with
+                | Lessthan -> r
+                | Lessthans 0 -> Text("<")::r
+                | Lessthans n -> Text(String.make (n-3) '<')::r
+                | _ -> assert false
+              in
+                match read_html() with
+                  | html, tl -> main_loop (main_loop [] [] html@r) [Greaterthan] tl
+            end
       | _, Newline::tl ->
           main_loop (NL::r) [Newline] tl
       | _, Newlines _::tl ->
@@ -662,15 +730,15 @@ let main_parse lexemes =
           end
       | _,
           ((At|Ats _|Bar|Bars _|Caret
-          |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
-          |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
-          |Exclamation|Exclamations _|Equal|Equals _
-          |Minus|Minuss _|Number _|Obrace
-          |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
-          |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
-          |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
-          |Underscores _
-          |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
+           |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
+           |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
+           |Exclamation|Exclamations _|Equal|Equals _
+           |Minus|Minuss _|Number _|Obrace
+           |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
+           |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
+           |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
+           |Underscores _
+           |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
           main_loop (Text(htmlentities(string_of_t t))::r) [t] tl
 
@@ -946,7 +1014,7 @@ let main_parse lexemes =
             let p =
               List.fold_left
                 (fun r (o,indents,item) ->
-                  Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
+                   Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
                 ""
                 (List.rev tmp_r)
             in
