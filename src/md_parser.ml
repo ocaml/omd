@@ -877,10 +877,7 @@ let main_parse lexemes =
                   let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
             | (o,[], item) :: tl ->
                 if true|| debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
-                (*TODO: FIX ME*)
-                (* loop2 ((o,[0], item) :: tl) curr_indent ordered accu *)
-                loop2 tl curr_indent ordered (Li(rev_main_loop [] [Newline] item)::accu)
-                  (* loop2 (tl) curr_indent ordered accu *)
+                loop2 ((o,[0], item) :: tl) curr_indent ordered accu
 
       in
       let (tmp_r: (bool*int list*tag Md_lexer.t list) list), (new_l:tag Md_lexer.t list) = loop true [] [] [] l in
