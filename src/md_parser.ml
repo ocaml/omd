@@ -240,6 +240,51 @@ let hr_s l =
         None
   in loop 0 l
 
+
+let rec fix_lists = function
+  | Ul []::tl ->
+      fix_lists tl
+  | Ol []::tl ->
+      fix_lists tl
+  | Ul (Li((Ul(_)::_) as l)::l2) :: tl
+  | Ul (Li((Ol(_)::_) as l)::l2) :: tl ->
+      fix_lists [Ul(l2)] @ fix_lists l @ fix_lists tl
+  | Ol (Li((Ul(_)::_) as l)::l2) :: tl
+  | Ol (Li((Ol(_)::_) as l)::l2) :: tl ->
+      fix_lists [Ol(l2)] @ fix_lists l @ fix_lists tl
+  | Ul l :: tl ->
+      Ul (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Ol l :: tl ->
+      Ol (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Paragraph p :: tl ->
+      Paragraph (fix_lists p) :: fix_lists tl
+  | Text _ as e :: tl ->
+      e::fix_lists tl
+  | Emph e :: tl ->
+      Emph(fix_lists e)::fix_lists tl
+  | Bold e :: tl ->
+      Bold(fix_lists e)::fix_lists tl
+  | (Code _ | Br | Hr | Url (_, _, _) | Html _ as e) :: tl ->
+      e::fix_lists tl
+  | H1 e :: tl ->
+      H1(fix_lists e)::fix_lists tl
+  | H2 e :: tl ->
+      H2(fix_lists e)::fix_lists tl
+  | H3 e :: tl ->
+      H3(fix_lists e)::fix_lists tl
+  | H4 e :: tl ->
+      H4(fix_lists e)::fix_lists tl
+  | H5 e :: tl ->
+      H5(fix_lists e)::fix_lists tl
+  | H6 e :: tl ->
+      H6(fix_lists e)::fix_lists tl
+  | NL :: tl ->
+      NL :: fix_lists tl
+  | [] ->
+      []
+
+(* let fix_lists x = x *)
+
 let main_parse lexemes =
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
     if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
@@ -895,14 +940,7 @@ let main_parse lexemes =
           end
       in
       let (e:md), (x:(bool*int list*tag Md_lexer.t list) list) = loop2 (List.rev tmp_r) (-1) false [] in
-        match e with
-          | Ul [Li((Ul(_)::_) as l)] :: tl
-          | Ol [Li((Ul(_)::_) as l)] :: tl
-          | Ul [Li((Ol(_)::_) as l)] :: tl 
-          | Ol [Li((Ol(_)::_) as l)] :: tl ->
-              l@tl@r, [], new_l
-          | _ ->
-              (e@(r:md)), [], new_l
+        (fix_lists e @ r), [], new_l
     end
 
 
@@ -941,4 +979,4 @@ let main_parse lexemes =
 
 
 let parse lexemes =
-  main_parse (tag_setext lexemes)
+  fix_lists (main_parse (tag_setext lexemes))
