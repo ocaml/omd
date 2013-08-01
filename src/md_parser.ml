@@ -270,6 +270,8 @@ let rec fix_lists = function
       Ul (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
   | Ol l :: tl ->
       Ol (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Img _ as i :: tl ->
+      i :: fix_lists tl
   | Paragraph p :: tl ->
       Paragraph (fix_lists p) :: fix_lists tl
   | Text _ as e :: tl ->
@@ -298,6 +300,68 @@ let rec fix_lists = function
       []
 
 (* let fix_lists x = x *)
+exception NL_exception
+
+let read_until_gt ?(no_nl=false) l =
+  let rec loop accu = function
+    | Greaterthan :: tl -> (List.rev (accu)), tl
+    | Greaterthans 0 :: tl -> (List.rev (accu)), Greaterthan::tl
+    | Greaterthans n :: tl -> (List.rev (accu)), Greaterthans(n-1)::tl
+    | (Newline|Newlines _)::tl ->
+        if no_nl then raise NL_exception;
+        (List.rev (accu)), Greaterthan::tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> List.rev accu, []
+  in loop [] l
+
+let read_until_cparenth ?(no_nl=false) l =
+  let rec loop accu = function
+    | Cparenthesis :: tl -> (List.rev (accu)), tl
+    | Cparenthesiss 0 :: tl -> (List.rev (accu)), Cparenthesis::tl
+    | Cparenthesiss n :: tl -> (List.rev (accu)), Cparenthesiss(n-1)::tl
+    | (Newline|Newlines _)::tl ->
+        if no_nl then raise NL_exception;
+        (List.rev (accu)), Greaterthan::tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> List.rev accu, []
+  in loop [] l
+
+let read_until_dq ?(no_nl=false) l =
+  let rec loop accu = function
+    | Doublequote :: tl -> (List.rev (accu)), tl
+    | Doublequotes 0 :: tl -> (List.rev (accu)), Doublequote::tl
+    | Doublequotes n :: tl -> (List.rev (accu)), Doublequotes(n-1)::tl
+    | (Newline|Newlines _)::tl ->
+        if no_nl then raise NL_exception;
+        (List.rev (accu)), Greaterthan::tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> List.rev accu, []
+  in loop [] l
+
+let read_until_space ?(no_nl=false) l =
+  let rec loop accu = function
+    | Space :: tl -> (List.rev (accu)), tl
+    | Spaces 0 :: tl -> (List.rev (accu)), Space::tl
+    | Spaces n :: tl -> (List.rev (accu)), Spaces(n-1)::tl
+    | (Newline|Newlines _)::tl ->
+        if no_nl then raise NL_exception;
+        (List.rev (accu)), Greaterthan::tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> List.rev accu, []
+  in loop [] l
+
+let read_until_cbracket ?(no_nl=false) l =
+  let rec loop accu = function
+    | Cbracket :: tl -> (List.rev (accu)), tl
+    | Cbrackets 0 :: tl -> (List.rev (accu)), Cbracket::tl
+    | Cbrackets n :: tl -> (List.rev (accu)), Cbrackets(n-1)::tl
+    | (Newline|Newlines _)::tl ->
+        if no_nl then raise NL_exception;
+        (List.rev (accu)), Greaterthan::tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> List.rev accu, []
+  in loop [] l
+
 
 let main_parse lexemes =
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
@@ -667,25 +731,16 @@ let main_parse lexemes =
           |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname)
           ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
           ::tl ->
-          let read_until_gt l =
-            let rec loop accu = function
-              | Greaterthan :: tl -> (List.rev (Greaterthan::accu)), tl
-              | Greaterthans 0 :: tl -> (List.rev (Greaterthan::accu)), Greaterthan::tl
-              | Greaterthans n :: tl -> (List.rev (Greaterthan::accu)), Greaterthans(n-1)::tl
-              | e::tl -> loop (e::accu) tl
-              | [] -> List.rev accu, []
-            in loop [] l
-          in
           let read_html() =
             let rec loop accu n = function
               | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> (* self-closing tags *)
                   begin
                     if n = 0 then
                       match read_until_gt tl with
-                        | b, tl -> (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu), tl
+                        | b, tl -> (Word(Printf.sprintf "<%s%s>" tn (string_of_tl b))::accu), tl
                     else
                       match read_until_gt tl with
-                        | b, tl -> loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) n tl
+                        | b, tl -> loop (Word(Printf.sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
                   end               
               | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
                   if tn = tagname then
@@ -700,9 +755,9 @@ let main_parse lexemes =
                     match read_until_gt tl with
                       | b, tl ->
                           if tn = tagname then
-                            loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) (n+1) tl
+                            loop (Word(Printf.sprintf "<%s%s>" tn (string_of_tl b))::accu) (n+1) tl
                           else
-                            loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) n tl
+                            loop (Word(Printf.sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
                   end
               | x::tl ->
                   loop (x::accu) n tl
@@ -712,7 +767,7 @@ let main_parse lexemes =
               begin
                 match read_until_gt tl with
                   | b, tl ->
-                      loop [Word(Printf.sprintf "<%s%s%s" tagname (string_of_t x) (string_of_tl b))] 0 tl
+                      loop [Word(Printf.sprintf "<%s%s%s>" tagname (string_of_t x) (string_of_tl b))] 0 tl
               end
           in
             begin
@@ -736,6 +791,47 @@ let main_parse lexemes =
       | _, Obrackets 0::tl ->
           begin match maybe_wikistyle_link r previous tl with
             | r, p, l -> main_loop r p l
+          end
+      | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Oparenthesis::tl as l) -> (* image insertion with no "alt" *)
+          (* ![](/path/to/img.jpg) *)
+          begin
+            try
+              match read_until_cparenth ~no_nl:true tl with
+                | b, tl ->
+                    let url, tls = read_until_space b in
+                    let title, should_be_empty_list = read_until_dq (snd (read_until_dq tls)) in
+                    let r =
+                      match e with
+                        | Exclamations 0 -> Text "!" :: r
+                        | Exclamations n -> Text(String.make (n+1) '!') :: r
+                        | _ -> r
+                    in
+                    let r = Img("", string_of_tl url, string_of_tl title) :: r in
+                      main_loop r [Cparenthesis] tl
+            with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+          end
+      | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
+          (* ![Alt text](/path/to/img.jpg "Optional title") *)
+          begin match read_until_cbracket tl with
+            | alt, Oparenthesis::ntl ->
+                begin
+                  try
+                    let alt = string_of_tl alt in
+                    let path_title, rest = read_until_cparenth ~no_nl:true ntl in
+                    let path, title = read_until_space path_title in
+                    let title, nothing = read_until_dq (snd(read_until_dq title)) in
+                    let () = if nothing <> [] then raise NL_exception in
+                    let r =
+                      match e with
+                        | Exclamations 0 -> Text "!" :: r
+                        | Exclamations n -> Text(String.make (n+1) '!') :: r
+                        | _ -> r
+                    in
+                    let r = Img(alt, string_of_tl path, string_of_tl title) :: r in
+                      main_loop r [Cparenthesis] rest
+                  with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+                end
+            | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
           end
       | _,
           ((At|Ats _|Bar|Bars _|Caret
