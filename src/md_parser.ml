@@ -55,6 +55,12 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
 
+let rec is_blank = function
+  | (Space | Spaces _ | Newline | Newlines _) :: tl ->
+      is_blank tl
+  | [] -> true
+  | _ -> false
+
 (** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
@@ -84,7 +90,12 @@ let emph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md
           loop (t :: result) tl
     | t::tl ->
         loop (t :: result) tl
-  in loop [] l
+  in
+  let r, tl = loop [] l in
+    if is_blank r then
+      [], l
+    else
+      r, tl
 
 (** [uemph_or_bold (n:int) (r:md list) (l:tag Md_lexer.t list)]
     returns [] if not (emph and/or bold),
@@ -115,7 +126,13 @@ let uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag M
           loop (t :: result) tl
     | t::tl ->
         loop (t :: result) tl
-  in loop [] l
+  in
+  let r, tl = loop [] l in
+    if is_blank r then
+      [], tl
+    else
+      r, l
+
 
 let gh_uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md_lexer.t list) =
   assert (n>0 && n<4);
@@ -144,7 +161,13 @@ let gh_uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * ta
           loop (t :: result) tl
     | t::tl ->
         loop (t :: result) tl
-  in loop [] l
+  in
+  let r, tl = loop [] l in
+    if is_blank r then
+      [], l
+    else
+      r, tl
+
 
 let uemph_or_bold =
   if true then gh_uemph_or_bold else uemph_or_bold
@@ -580,15 +603,15 @@ let main_parse lexemes =
           end
       | _,
           ((At|Ats _|Bar|Bars _|Caret
-           |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
-           |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
-           |Exclamation|Exclamations _|Equal|Equals _
-           |Minus|Minuss _|Number _|Obrace
-           |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
-           |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
-           |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
-           |Underscores _
-           |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
+          |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
+          |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
+          |Exclamation|Exclamations _|Equal|Equals _
+          |Minus|Minuss _|Number _|Obrace
+          |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
+          |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
+          |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
+          |Underscores _
+          |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
           main_loop (Text(htmlentities(string_of_t t))::r) [t] tl
 
@@ -853,11 +876,12 @@ let main_parse lexemes =
                 else
                   let accu = List.rev accu in [if ordered then Ol accu else Ul accu], []
             | (o,[], item) :: tl ->
-                let item = List.rev item in
-                  if debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
-                  assert false
-                    (* [Text("<<" ^ string_of_tl item ^ ">>")] *)
-                    (* [if ordered then Ol accu else Ul accu] *)
+                if true|| debug then Printf.eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o ((destring_of_tl item)) (List.length tl);
+                (*TODO: FIX ME*)
+                (* loop2 ((o,[0], item) :: tl) curr_indent ordered accu *)
+                loop2 tl curr_indent ordered (Li(rev_main_loop [] [Newline] item)::accu)
+                  (* loop2 (tl) curr_indent ordered accu *)
+
       in
       let (tmp_r: (bool*int list*tag Md_lexer.t list) list), (new_l:tag Md_lexer.t list) = loop true [] [] [] l in
       let () =
@@ -866,7 +890,7 @@ let main_parse lexemes =
             let p =
               List.fold_left
                 (fun r (o,indents,item) ->
-                   Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
+                  Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
                 ""
                 (List.rev tmp_r)
             in

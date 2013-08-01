@@ -161,7 +161,12 @@ let make_paragraphs md =
         assert false
     | NL::NL::tl ->
         let tl = remove_prefix NL tl in
-          loop [] (Paragraph(List.rev cp)::accu) tl
+          begin match cp with
+            | [] | [NL] ->
+                loop [] (NL::accu) tl
+            | _ ->
+                loop [] (Paragraph(List.rev cp)::accu) tl
+          end
     | x::tl ->
         loop (x::cp) accu tl
   in
@@ -170,62 +175,88 @@ let make_paragraphs md =
 (* let make_paragraphs x = x  *)
 
 
-let html_of_md md = 
+let rec html_of_md md = 
+  let empty s =
+    let rec loop i =
+      if i < String.length s then
+        match s.[i] with
+          | ' ' | '\n' -> loop (i+1)
+          | _ -> false
+      else
+        true
+    in
+      loop 0
+  in    
   let b = Buffer.create 42 in
-  let rec loop = function
+  let rec loop indent = function
     | Paragraph md :: tl ->
-        Buffer.add_string b "<p>";
-        loop md;
-        Buffer.add_string b "</p>";
-        loop tl
+        (let s = html_of_md md in
+           if empty s then
+             ()
+           else
+             begin
+               Buffer.add_string b "<p>";
+               Buffer.add_string b s;
+               Buffer.add_string b "</p>\n";
+             end);
+        loop indent tl
     | Text t :: tl ->
         Buffer.add_string b t;
         (* Buffer.add_string b (htmlentities t); *)
-        loop tl
+        loop indent tl
     | Emph md :: tl ->
         Buffer.add_string b "<em>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</em>";
-        loop tl
+        loop indent tl
     | Bold md :: tl ->
         Buffer.add_string b "<strong>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</strong>";
-        loop tl
+        loop indent tl
+    | Ul [Li((Ul(_)::_) as l)] :: tl ->
+        loop indent l;
+        loop indent tl
     | Ul l :: tl ->
-        Buffer.add_string b "<ul>";
+        Buffer.add_string b "\n";
+        for i = 0 to indent do Buffer.add_char b ' ' done;
+        Buffer.add_string b "<ul>\n";
         List.iter
           (fun (Li li) ->
+            for i = 0 to indent + 1 do Buffer.add_char b ' ' done;
             Buffer.add_string b "<li>";
-            loop li;
-            Buffer.add_string b "</li>")
+            loop (indent+2) li;
+            Buffer.add_string b "\n";
+            for i = 0 to indent + 1 do Buffer.add_char b ' ' done;
+            Buffer.add_string b "</li>\n")
           l;
-        Buffer.add_string b "</ul>";
-        loop tl
+        for i = 0 to indent do Buffer.add_char b ' ' done;
+        Buffer.add_string b "</ul>\n";
+        loop indent tl
     | Ol l :: tl ->
         Buffer.add_string b "<ol>";
         List.iter
           (fun (Li li) ->
             Buffer.add_string b "<li>";
-            loop li;
+            loop indent li;
             Buffer.add_string b "</li>")
           l;
-        Buffer.add_string b "</ol>";
-        loop tl
+        Buffer.add_string b "</ol>\n";
+        loop indent tl
     | Code c :: tl ->
         Buffer.add_string b "<pre>";
         Buffer.add_string b (htmlentities c);
-        Buffer.add_string b "</pre>";
-        loop tl
+        Buffer.add_string b "</pre>\n";
+        loop indent tl
     | Br :: tl ->
-        Buffer.add_string b "<br/>";
-        loop tl
+        Buffer.add_string b "<br/>\n";
+        loop indent tl
     | Hr :: tl ->
-        Buffer.add_string b "<hr/>";
-        loop tl
+        Buffer.add_string b "<hr/>\n";
+        loop indent tl
     | Html s :: tl ->
         Buffer.add_string b s;
-        loop tl
+        loop indent tl
     | Url (href,s,title) :: tl ->
         let s = htmlentities s in
           Buffer.add_string b "<a href='";
@@ -240,42 +271,42 @@ let html_of_md md =
           Buffer.add_string b ">";
           Buffer.add_string b s;
           Buffer.add_string b "</a>";
-          loop tl
+          loop indent tl
     | H1 md :: tl ->
         Buffer.add_string b "<h1>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h1>";
-        loop tl
+        loop indent tl
     | H2 md :: tl ->
         Buffer.add_string b "<h2>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h2>";
-        loop tl
+        loop indent tl
     | H3 md :: tl ->
         Buffer.add_string b "<h3>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h3>";
-        loop tl
+        loop indent tl
     | H4 md :: tl ->
         Buffer.add_string b "<h4>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h4>";
-        loop tl
+        loop indent tl
     | H5 md :: tl ->
         Buffer.add_string b "<h5>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h5>";
-        loop tl
+        loop indent tl
     | H6 md :: tl ->
         Buffer.add_string b "<h6>";
-        loop md;
+        loop indent md;
         Buffer.add_string b "</h6>";
-        loop tl
+        loop indent tl
     | NL :: tl ->
         Buffer.add_char b '\n';
-        loop tl
+        loop indent tl
     | [] -> ()
   in 
-    loop md;
+    loop 0 md;
     Buffer.contents b
 
