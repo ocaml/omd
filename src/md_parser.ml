@@ -659,7 +659,7 @@ let main_parse lexemes =
           |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
           |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
                 (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
-          |"legend"|"li"|"link"|"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
+          |"legend"|"li" (* |"link" *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
           |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
@@ -678,6 +678,15 @@ let main_parse lexemes =
           in
           let read_html() =
             let rec loop accu n = function
+              | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> (* self-closing tags *)
+                  begin
+                    if n = 0 then
+                      match read_until_gt tl with
+                        | b, tl -> (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu), tl
+                    else
+                      match read_until_gt tl with
+                        | b, tl -> loop (Word(Printf.sprintf "<%s%s" tn (string_of_tl b))::accu) n tl
+                  end               
               | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
                   if tn = tagname then
                     if n = 0 then
