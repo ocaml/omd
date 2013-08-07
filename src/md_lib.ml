@@ -54,6 +54,12 @@ module Md : sig
 
   (** Translate tokens to Markdown representation *)
   val parse : token list -> md
+    
+  (** Translate markdown representation into raw HTML *)
+  val html_of_md : md -> string
+
+(** If you need a full HTML representation, you mainly have to figure out
+    how to convert [Html of string] into your HTML representation. *)
 end =
 struct
   include Md
@@ -67,6 +73,8 @@ struct
   let lex : string -> token list = Md_lexer.lex
 
   let parse : token list -> md = Md_parser.parse
+
+  let html_of_md : md -> string = Md.html_of_md
 
   let html_of_string (html:string) : string =
     Md.html_of_md (parse (lex html))
