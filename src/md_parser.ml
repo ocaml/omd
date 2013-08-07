@@ -301,6 +301,7 @@ let rec fix_lists = function
 
 (* let fix_lists x = x *)
 exception NL_exception
+exception Premature_ending
 
 let read_until_gt ?(no_nl=false) l =
   let rec loop accu = function
@@ -311,7 +312,7 @@ let read_until_gt ?(no_nl=false) l =
         if no_nl then raise NL_exception;
         (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
-    | [] -> List.rev accu, []
+    | [] -> raise Premature_ending
   in loop [] l
 
 let read_until_cparenth ?(no_nl=false) l =
@@ -323,7 +324,7 @@ let read_until_cparenth ?(no_nl=false) l =
         if no_nl then raise NL_exception;
         (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
-    | [] -> List.rev accu, []
+    | [] -> raise Premature_ending
   in loop [] l
 
 let read_until_dq ?(no_nl=false) l =
@@ -335,7 +336,7 @@ let read_until_dq ?(no_nl=false) l =
         if no_nl then raise NL_exception;
         (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
-    | [] -> List.rev accu, []
+    | [] -> raise Premature_ending
   in loop [] l
 
 let read_until_space ?(no_nl=false) l =
@@ -347,7 +348,7 @@ let read_until_space ?(no_nl=false) l =
         if no_nl then raise NL_exception;
         (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
-    | [] -> List.rev accu, []
+    | [] -> raise Premature_ending
   in loop [] l
 
 let read_until_cbracket ?(no_nl=false) l =
@@ -359,7 +360,7 @@ let read_until_cbracket ?(no_nl=false) l =
         if no_nl then raise NL_exception;
         (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
-    | [] -> List.rev accu, []
+    | [] -> raise Premature_ending
   in loop [] l
 
 
@@ -716,7 +717,7 @@ let main_parse lexemes =
             end
       | _, (Lessthan|Lessthans _ as opening)::
           (* inline HTML. *)
-          Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
+          (Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
           |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
           |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
@@ -728,9 +729,9 @@ let main_parse lexemes =
           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
           |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
-          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname)
-          ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
-          ::tl ->
+          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname) as w)
+          ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
+             ::tl as l) ->
           let read_html() =
             let rec loop accu n = function
               | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> (* self-closing tags *)
@@ -771,15 +772,20 @@ let main_parse lexemes =
               end
           in
             begin
-              let r = match opening with
-                | Lessthan -> r
-                | Lessthans 0 -> Text("<")::r
-                | Lessthans n -> Text(String.make (n-3) '<')::r
-                | _ -> assert false
-              in
-                match read_html() with
-                  | html, tl -> main_loop (main_loop [] [] html@r) [Greaterthan] tl
+              match try Some(read_html()) with Premature_ending -> None with
+                | Some (html, tl) ->
+                    let r =
+                      match opening with
+                        | Lessthan -> r
+                        | Lessthans 0 -> Text("<")::r
+                        | Lessthans n -> Text(String.make (n-3) '<')::r
+                        | _ -> assert false
+                    in
+                      main_loop (main_loop [] [] html @ r) [Greaterthan] tl
+                | None ->
+                    main_loop (Text(string_of_t opening^tagname)::r) [w] l
             end
+              (* / end of inline HTML. *)
       | _, Newline::tl ->
           main_loop (NL::r) [Newline] tl
       | _, Newlines _::tl ->
