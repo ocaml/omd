@@ -200,8 +200,11 @@ let tag_setext l =
   | e::tl ->
       loop (e::pl) res tl
   | [] ->
-      List.rev res
-    in loop [] [] l
+      List.rev (pl@res)
+  in 
+  let r = loop [] [] l in
+    assert (List.length r >= List.length l);
+    r
 
 let setext_title l =
   let rec loop r = function
@@ -859,6 +862,7 @@ let main_parse lexemes =
             end
               (* / end of inline HTML. *)
 
+
       (* line breaks *)
       | _, Newline::tl ->
           main_loop (NL::r) [Newline] tl
@@ -922,7 +926,8 @@ let main_parse lexemes =
                     main_loop (Text(string_of_t e)::r) [Exclamation] l
                 end
             | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
-          end
+end
+
       | _,
           ((At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar|Dot|Doublequote
            |Exclamation|Equal|Minus|Obrace|Oparenthesis|Percent|Plus|Question|Quote|Return
