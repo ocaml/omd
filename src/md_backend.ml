@@ -9,6 +9,21 @@ let pindent = false
 let pindent = true
 let smdnl = true (* about standard markdown new lines *)
 
+
+(** references *)
+module R = Map.Make(String)
+class ref_container = object
+  val broken_url = "", "Broken URL"
+  val mutable c = R.empty
+  method add_ref name title url =
+    c <- R.add name (url, title) c
+  method get_ref name =
+    let (url, title) as r = 
+      try R.find name c
+      with Not_found -> broken_url
+    in r
+end
+
 type md_element = 
   | Paragraph of md
   | Text of string
@@ -20,6 +35,7 @@ type md_element =
   | Br
   | Hr
   | Url of href * string * title
+  | Ref of ref_container * name * string
   | Html of string
   | H1 of md
   | H2 of md
@@ -29,12 +45,14 @@ type md_element =
   | H6 of md
   | Img of alt * src * title
   | NL
+and name = string
 and alt = string
 and src = string
 and href = string
 and title = string
 and li = Li of md
 and md = md_element list
+  
 
 let htmlentities s =
   let b = Buffer.create 42 in
@@ -108,6 +126,11 @@ let rec html_of_md md =
   in    
   let b = Buffer.create 42 in
   let rec loop indent = function
+    | Ref(rc, name, text) :: tl ->
+        let title, href =
+          rc#get_ref name
+        in
+        loop indent (Url(href,text,title)::tl)
     | Paragraph md :: tl ->
         (let s = html_of_md md in
            if empty s then
