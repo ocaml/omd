@@ -830,7 +830,8 @@ let main_parse lexemes =
       (* [ *)
       | _, Obracket::tl ->
           begin match maybe_link r previous tl with
-            | r, p, l -> main_loop r p l
+            | Some(r, p, l) -> main_loop r p l
+            | None -> main_loop (Text("[")::r) [Obracket] tl
           end
             
       (* img *)
@@ -956,43 +957,41 @@ let main_parse lexemes =
     let rec read_title name href res = function
       | Doublequote::(Cparenthesis as t)::tl ->
           let title = string_of_tl (List.rev res) in
-            Url(href, name, title)::r, [t], tl
+            Some(Url(href, name, title)::r, [t], tl)
       | Doublequote::Cparenthesiss 0::tl ->
           let title = string_of_tl (List.rev res) in
-            Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl
+            Some(Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl)
       | Doublequote::Cparenthesiss n::tl ->
           let title = string_of_tl (List.rev res) in
-            Url(href, name, title)::r, [Cparenthesis], Cparenthesiss(n-1)::tl
-      | []
-      | (Newline|Newlines _)::_ as l ->
-          r, p, l
+            Some(Url(href, name, title)::r, [Cparenthesis], Cparenthesiss(n-1)::tl)
+      | [] ->
+          None
       | e::tl ->
           read_title name href (e::res) tl
     in
     let rec read_url name res = function
       | Cparenthesis as t::tl ->
           let href = string_of_tl (List.rev res) in
-            Url(href, name, "")::r, [t], tl
+            Some(Url(href, name, "")::r, [t], tl)
       | Cparenthesiss 0::tl ->
           let href = string_of_tl (List.rev res) in
-            Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl
+            Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl)
       | Cparenthesiss n::tl ->
           let href = string_of_tl (List.rev res) in
-            Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl
+            Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl)
       | (Space|Spaces _)::Doublequote::tl ->
           let href = string_of_tl (List.rev res) in
             read_title name href [] tl
-      | []
-      | (Newline|Newlines _)::_ as l ->
-          r, p, l
+      | [] | (Newline|Newlines _)::_  ->
+          None
       | e::tl ->
           read_url name (e::res) tl
     in
     let rec read_name res = function
       | Cbracket::Oparenthesis::tl ->
           read_url (string_of_tl (List.rev res)) [] tl
-      | Cbracket::_
-      | [] -> (* failed to read a MD-link *) r, p, l
+      | [] | Cbracket::_ -> (* failed to read a MD-link *)
+          None
       | e::tl ->
           read_name (e::res) tl
     in
