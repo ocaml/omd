@@ -615,7 +615,8 @@ let main_parse lexemes =
           main_loop (Text "\\" :: r) [] []
       | _, Backslash::tl ->
           main_loop (Text "\\" :: r) [Backslash] tl
-
+            
+      (* < *)
       | _, (Lessthan|Lessthans _ as lt)::((Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)::Colon::Slashs(n)::tl as fallback) -> (* "semi-automatic" URLs *)
           let rec read_url accu = function
             | (Newline|Newlines _|Return|Returns _)::tl ->
@@ -638,11 +639,6 @@ let main_parse lexemes =
               | None ->
                   main_loop (Text(string_of_t lt)::r) [Lessthan] fallback
             end
-
-      (* Email addresses are not so simple to handle because of the
-         possible presence of characters such as '-', '_', '+' and '.'.
-         Maybe they should be framed at lexing time. If at parsing time,
-         it should probably be _here_. *)
 
       | _, Word w::tl ->
           main_loop (Text w :: r) [Word w] tl
