@@ -309,7 +309,7 @@ let read_until_gt ?(no_nl=false) l =
     | Greaterthans n :: tl -> (List.rev (accu)), Greaterthans(n-1)::tl
     | (Newline|Newlines _)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), Greaterthan::tl
+        (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
     | [] -> List.rev accu, []
   in loop [] l
@@ -321,7 +321,7 @@ let read_until_cparenth ?(no_nl=false) l =
     | Cparenthesiss n :: tl -> (List.rev (accu)), Cparenthesiss(n-1)::tl
     | (Newline|Newlines _)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), Greaterthan::tl
+        (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
     | [] -> List.rev accu, []
   in loop [] l
@@ -333,7 +333,7 @@ let read_until_dq ?(no_nl=false) l =
     | Doublequotes n :: tl -> (List.rev (accu)), Doublequotes(n-1)::tl
     | (Newline|Newlines _)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), Greaterthan::tl
+        (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
     | [] -> List.rev accu, []
   in loop [] l
@@ -345,7 +345,7 @@ let read_until_space ?(no_nl=false) l =
     | Spaces n :: tl -> (List.rev (accu)), Spaces(n-1)::tl
     | (Newline|Newlines _)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), Greaterthan::tl
+        (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
     | [] -> List.rev accu, []
   in loop [] l
@@ -357,7 +357,7 @@ let read_until_cbracket ?(no_nl=false) l =
     | Cbrackets n :: tl -> (List.rev (accu)), Cbrackets(n-1)::tl
     | (Newline|Newlines _)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), Greaterthan::tl
+        (List.rev (accu)), tl
     | e::tl -> loop (e::accu) tl
     | [] -> List.rev accu, []
   in loop [] l
@@ -796,7 +796,7 @@ let main_parse lexemes =
           (* ![](/path/to/img.jpg) *)
           begin (* TODO: end of files with incomplete "images"... *)
             try
-              match read_until_cparenth (* ~no_nl:true tl *) with
+              match read_until_cparenth ~no_nl:false tl with (* new lines there seem to be allowed *)
                 | b, tl ->
                     let url, tls = read_until_space b in
                     let title, should_be_empty_list = read_until_dq (snd (read_until_dq tls)) in
@@ -818,10 +818,10 @@ let main_parse lexemes =
                 begin
                   try
                     let alt = string_of_tl alt in
-                    let path_title, rest = read_until_cparenth (* ~no_nl:true *) ntl in
-                    let path, title = read_until_space path_title in
+                    let path_title, rest = read_until_cparenth ~no_nl:false ntl in
+                    let path, title = read_until_space ~no_nl:true path_title in
                     let title, nothing = read_until_dq (snd(read_until_dq title)) in
-                    let () = if nothing <> [] then raise NL_exception in
+                    let () = if nothing <> [] then raise NL_exception in (* this exception is caught right below *)
                     let r =
                       match e with
                         | Exclamations 0 -> Text "!" :: r
