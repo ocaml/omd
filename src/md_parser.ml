@@ -17,6 +17,11 @@
 
 let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
 
+let raise = 
+  if debug then
+    (fun e -> Printf.eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
+  else
+    raise
 
 type tag = Maybe_h1 | Maybe_h2
 
@@ -308,21 +313,34 @@ let read_until_gt ?(no_nl=false) l =
     | Greaterthan :: tl -> (List.rev (accu)), tl
     | Greaterthans 0 :: tl -> (List.rev (accu)), Greaterthan::tl
     | Greaterthans n :: tl -> (List.rev (accu)), Greaterthans(n-1)::tl
-    | (Newline|Newlines _)::tl ->
+    | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), tl
+        loop (e::accu) tl
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
+
+let read_until_lt ?(no_nl=false) l =
+  let rec loop accu = function
+    | Lessthan :: tl -> (List.rev (accu)), tl
+    | Lessthans 0 :: tl -> (List.rev (accu)), Lessthan::tl
+    | Lessthans n :: tl -> (List.rev (accu)), Lessthans(n-1)::tl
+    | (Newline|Newlines _ as e)::tl ->
+        if no_nl then raise NL_exception;
+        loop (e::accu) tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> raise Premature_ending
+  in loop [] l
+
 
 let read_until_cparenth ?(no_nl=false) l =
   let rec loop accu = function
     | Cparenthesis :: tl -> (List.rev (accu)), tl
     | Cparenthesiss 0 :: tl -> (List.rev (accu)), Cparenthesis::tl
     | Cparenthesiss n :: tl -> (List.rev (accu)), Cparenthesiss(n-1)::tl
-    | (Newline|Newlines _)::tl ->
+    | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), tl
+        loop (e::accu) tl
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
@@ -332,9 +350,9 @@ let read_until_dq ?(no_nl=false) l =
     | Doublequote :: tl -> (List.rev (accu)), tl
     | Doublequotes 0 :: tl -> (List.rev (accu)), Doublequote::tl
     | Doublequotes n :: tl -> (List.rev (accu)), Doublequotes(n-1)::tl
-    | (Newline|Newlines _)::tl ->
+    | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), tl
+        loop (e::accu) tl
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
@@ -344,9 +362,9 @@ let read_until_space ?(no_nl=false) l =
     | Space :: tl -> (List.rev (accu)), tl
     | Spaces 0 :: tl -> (List.rev (accu)), Space::tl
     | Spaces n :: tl -> (List.rev (accu)), Spaces(n-1)::tl
-    | (Newline|Newlines _)::tl ->
+    | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), tl
+        loop (e::accu) tl
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
@@ -356,9 +374,9 @@ let read_until_cbracket ?(no_nl=false) l =
     | Cbracket :: tl -> (List.rev (accu)), tl
     | Cbrackets 0 :: tl -> (List.rev (accu)), Cbracket::tl
     | Cbrackets n :: tl -> (List.rev (accu)), Cbrackets(n-1)::tl
-    | (Newline|Newlines _)::tl ->
+    | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
-        (List.rev (accu)), tl
+        loop (e::accu) tl
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
@@ -634,34 +652,34 @@ let main_parse lexemes =
           if StringSet.mem w htmlentities_set then
             begin match s with
               | Semicolon ->
-                  main_loop (Text("&"^w^";")::r) [s] tl
+                  main_loop (Html("&"^w^";")::r) [s] tl
               | Semicolons 0 ->
-                  main_loop (Text("&"^w^";")::r) [s] (Semicolon::tl)
+                  main_loop (Html("&"^w^";")::r) [s] (Semicolon::tl)
               | Semicolons n ->
-                  main_loop (Text("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
+                  main_loop (Html("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
               | _ -> assert false
             end
           else
-            main_loop (Text("&amp;")::r) [] tl2
+            main_loop (Html("&amp;")::r) [] tl2
       | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if String.length w <= 4 then
             begin match s with
               | Semicolon ->
-                  main_loop (Text("&#"^w^";")::r) [s] tl
+                  main_loop (Html("&#"^w^";")::r) [s] tl
               | Semicolons 0 ->
-                  main_loop (Text("&#"^w^";")::r) [s] (Semicolon::tl)
+                  main_loop (Html("&#"^w^";")::r) [s] (Semicolon::tl)
               | Semicolons n ->
-                  main_loop (Text("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+                  main_loop (Html("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
               | _ -> assert false
             end
           else
-            main_loop (Text("&amp;")::r) [] tl2
+            main_loop (Html("&amp;")::r) [] tl2
       | _, Ampersand::tl ->
-          main_loop (Text("&amp;")::r) [Ampersand] tl
+          main_loop (Html("&amp;")::r) [Ampersand] tl
       | _, Ampersands(0)::tl ->
-          main_loop (Text("&amp;")::r) [] (Ampersand::tl)
+          main_loop (Html("&amp;")::r) [] (Ampersand::tl)
       | _, Ampersands(n)::tl ->
-          main_loop (Text("&amp;")::r) [] (Ampersands(n-1)::tl)
+          main_loop (Html("&amp;")::r) [] (Ampersands(n-1)::tl)
       | _, (Backquote|Backquotes _)::_ ->
           begin match bcode r previous lexemes with
             | r, p, l -> main_loop r p l
@@ -701,7 +719,7 @@ let main_parse lexemes =
               | x::tl ->
                   loop (x::accu) n tl
               | [] ->
-                  accu, []
+                  List.rev accu, []
             in
               loop [x;Word(tagname);Lessthan] 0 tl
           in
@@ -766,9 +784,12 @@ let main_parse lexemes =
                   List.rev accu, []
             in
               begin
-                match read_until_gt tl with
+                match read_until_gt l with
                   | b, tl ->
-                      loop [Word(Printf.sprintf "<%s%s%s>" tagname (string_of_t x) (string_of_tl b))] 0 tl
+                      if (try ignore(read_until_lt b); false with Premature_ending -> true) then (* there must not be any '<' in b *)
+                        loop [Word(Printf.sprintf "<%s%s%s>" tagname (string_of_t x) (string_of_tl b))] 0 tl
+                      else
+                        raise Premature_ending
               end
           in
             begin
@@ -856,7 +877,7 @@ let main_parse lexemes =
            |Underscores _
            |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
           ->
-          main_loop (Text(htmlentities(string_of_t t))::r) [t] tl
+          main_loop (Text(string_of_t t)::r) [t] tl
 
   and maybe_link r p l =
     let rec read_title name href res = function
