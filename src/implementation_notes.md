@@ -12,7 +12,7 @@
  * paragraphs
    * done (but needs more testing)
  * automatic escaping for special characters
-   * partly done
+   * done (but needs more testing)
  - Email-style quoting  (block-quoting)
    * ***todo***
  * Titles
@@ -33,11 +33,13 @@
  * Emphasis
    * single, double, triple asterisk: done
    * single, double, triple underscore: done
- * Image insertions: ***todo***
- * Automatic links: ***todo***
+ * Image insertions: done (but needs more testing)
+ * Automatic links: ***todo?***
+ * Semi-automatic links: done (but needs more testing)
  * Backslashes: done
  * Code:
-   * syntax-highlighted code...
+   * verbatim: done (but needs more testing)
+   * syntax-highlighted code: todo
 
 ## Implementation road map
 
