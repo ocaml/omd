@@ -29,7 +29,7 @@
    * with dashes: done (todo: tests)
  * Links
    * inline: done
-   * reference: ***todo***
+   * reference: done (preliminary testing done, but needs more testing)
  * Emphasis
    * single, double, triple asterisk: done
    * single, double, triple underscore: done
