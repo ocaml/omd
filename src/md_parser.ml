@@ -831,7 +831,7 @@ let main_parse lexemes =
 
       | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Oparenthesis::tl as l) -> (* image insertion with no "alt" *)
           (* ![](/path/to/img.jpg) *)
-          begin (* TODO: end of files with incomplete "images"... *)
+          begin
             try
               match read_until_cparenth ~no_nl:false tl with (* new lines there seem to be allowed *)
                 | b, tl ->
@@ -849,7 +849,6 @@ let main_parse lexemes =
           end
       | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
           (* ![Alt text](/path/to/img.jpg "Optional title") *)
-          (* TODO: end of files with incomplete "images"... *)
           begin match read_until_cbracket tl with
             | alt, Oparenthesis::ntl ->
                 begin
