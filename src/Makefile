@@ -6,6 +6,12 @@ OCAMLOPT = ocamlopt.opt
 md:md_backend.cmx md_lexer.cmx md_parser.cmx md_lib.cmx md_main.cmx
 	$(OCAMLOPT) -o $@ $+
 
+md.byte:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo md_main.cmo
+	$(OCAMLC) -o $@ $+
+
+md.opt:md_backend.cmx md_lexer.cmx md_parser.cmx md_lib.cmx md_main.cmx
+	$(OCAMLOPT) -o $@ $+
+
 %.cmo:%.ml
 	$(OCAMLC) -c $<
 
