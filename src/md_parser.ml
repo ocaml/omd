@@ -285,7 +285,7 @@ let rec fix_lists = function
       Emph(fix_lists e)::fix_lists tl
   | Bold e :: tl ->
       Bold(fix_lists e)::fix_lists tl
-  | (Code _ | Br | Hr | Url (_, _, _) | Html _ as e) :: tl ->
+  | (Code _ | Br | Hr | Ref _ | Url _ | Html _ as e) :: tl ->
       e::fix_lists tl
   | H1 e :: tl ->
       H1(fix_lists e)::fix_lists tl
@@ -357,11 +357,35 @@ let read_until_dq ?(no_nl=false) l =
     | [] -> raise Premature_ending
   in loop [] l
 
+let read_until_q ?(no_nl=false) l =
+  let rec loop accu = function
+    | Quote :: tl -> (List.rev (accu)), tl
+    | Quotes 0 :: tl -> (List.rev (accu)), Quote::tl
+    | Quotes n :: tl -> (List.rev (accu)), Quotes(n-1)::tl
+    | (Newline|Newlines _ as e)::tl ->
+        if no_nl then raise NL_exception;
+        loop (e::accu) tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> raise Premature_ending
+  in loop [] l
+
 let read_until_space ?(no_nl=false) l =
   let rec loop accu = function
     | Space :: tl -> (List.rev (accu)), tl
     | Spaces 0 :: tl -> (List.rev (accu)), Space::tl
     | Spaces n :: tl -> (List.rev (accu)), Spaces(n-1)::tl
+    | (Newline|Newlines _ as e)::tl ->
+        if no_nl then raise NL_exception;
+        loop (e::accu) tl
+    | e::tl -> loop (e::accu) tl
+    | [] -> raise Premature_ending
+  in loop [] l
+
+let read_until_obracket ?(no_nl=false) l =
+  let rec loop accu = function
+    | Obracket :: tl -> (List.rev (accu)), tl
+    | Obrackets 0 :: tl -> (List.rev (accu)), Obracket::tl
+    | Obrackets n :: tl -> (List.rev (accu)), Obrackets(n-1)::tl
     | (Newline|Newlines _ as e)::tl ->
         if no_nl then raise NL_exception;
         loop (e::accu) tl
@@ -381,8 +405,22 @@ let read_until_cbracket ?(no_nl=false) l =
     | [] -> raise Premature_ending
   in loop [] l
 
+(* [eat f l] removes elements from [l] until [f] meets an element 
+   for which it returns false. If [l] is empty, then returns [l]. *)
+let rec eat f = function
+  | [] -> []
+  | e::tl -> if f e then eat f tl else e::tl
+
+(* [eat f l] removes elements from [l] until [f] meets an element 
+   for which it returns false. If [l] is empty, then returns [l]. *)
+let split f =
+  let rec loop r = function
+  | [] -> List.rev r, []
+  | e::tl as l -> if f e then loop (e::r) tl else List.rev r, l
+  in loop []
 
 let main_parse lexemes =
+  let rc = new Md_backend.ref_container in
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
     if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
@@ -831,7 +869,10 @@ let main_parse lexemes =
       | _, Obracket::tl ->
           begin match maybe_link r previous tl with
             | Some(r, p, l) -> main_loop r p l
-            | None -> main_loop (Text("[")::r) [Obracket] tl
+            | None ->
+                match maybe_reference r previous tl with
+                  | Some(r, p, l) -> main_loop r p l
+                  | None -> main_loop (Text("[")::r) [Obracket] tl
           end
             
       (* img *)
@@ -892,67 +933,105 @@ let main_parse lexemes =
       | _, (Number(_) as t) :: tl -> main_loop (Text(string_of_t t)::r) [t] tl
 
       (* generated part: *)
-      | _, Ats(0) :: tl -> main_loop (Text(string_of_t(At))::r) [At] tl
+      | _, Ats(0) :: tl -> main_loop (Text(string_of_t(At))::r) [At] (At::tl)
       | _, Ats(n) :: tl -> main_loop (Text(string_of_t(At))::r) [At] (Ats(n-1)::tl)
-      | _, Bars(0) :: tl -> main_loop (Text(string_of_t(Bar))::r) [Bar] tl
+      | _, Bars(0) :: tl -> main_loop (Text(string_of_t(Bar))::r) [Bar] (Bar::tl)
       | _, Bars(n) :: tl -> main_loop (Text(string_of_t(Bar))::r) [Bar] (Bars(n-1)::tl)
-      | _, Carets(0) :: tl -> main_loop (Text(string_of_t(Caret))::r) [Caret] tl
+      | _, Carets(0) :: tl -> main_loop (Text(string_of_t(Caret))::r) [Caret] (Caret::tl)
       | _, Carets(n) :: tl -> main_loop (Text(string_of_t(Caret))::r) [Caret] (Carets(n-1)::tl)
-      | _, Cbraces(0) :: tl -> main_loop (Text(string_of_t(Cbrace))::r) [Cbrace] tl
+      | _, Cbraces(0) :: tl -> main_loop (Text(string_of_t(Cbrace))::r) [Cbrace] (Cbrace::tl)
       | _, Cbraces(n) :: tl -> main_loop (Text(string_of_t(Cbrace))::r) [Cbrace] (Cbraces(n-1)::tl)
-      | _, Colons(0) :: tl -> main_loop (Text(string_of_t(Colon))::r) [Colon] tl
+      | _, Colons(0) :: tl -> main_loop (Text(string_of_t(Colon))::r) [Colon] (Colon::tl)
       | _, Colons(n) :: tl -> main_loop (Text(string_of_t(Colon))::r) [Colon] (Colons(n-1)::tl)
-      | _, Commas(0) :: tl -> main_loop (Text(string_of_t(Comma))::r) [Comma] tl
+      | _, Commas(0) :: tl -> main_loop (Text(string_of_t(Comma))::r) [Comma] (Comma::tl)
       | _, Commas(n) :: tl -> main_loop (Text(string_of_t(Comma))::r) [Comma] (Commas(n-1)::tl)
-      | _, Cparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Cparenthesis))::r) [Cparenthesis] tl
+      | _, Cparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Cparenthesis))::r) [Cparenthesis] (Cparenthesis::tl)
       | _, Cparenthesiss(n) :: tl -> main_loop (Text(string_of_t(Cparenthesis))::r) [Cparenthesis] (Cparenthesiss(n-1)::tl)
-      | _, Cbrackets(0) :: tl -> main_loop (Text(string_of_t(Cbracket))::r) [Cbracket] tl
+      | _, Cbrackets(0) :: tl -> main_loop (Text(string_of_t(Cbracket))::r) [Cbracket] (Cbracket::tl)
       | _, Cbrackets(n) :: tl -> main_loop (Text(string_of_t(Cbracket))::r) [Cbracket] (Cbrackets(n-1)::tl)
-      | _, Dollars(0) :: tl -> main_loop (Text(string_of_t(Dollar))::r) [Dollar] tl
+      | _, Dollars(0) :: tl -> main_loop (Text(string_of_t(Dollar))::r) [Dollar] (Dollar::tl)
       | _, Dollars(n) :: tl -> main_loop (Text(string_of_t(Dollar))::r) [Dollar] (Dollars(n-1)::tl)
-      | _, Dots(0) :: tl -> main_loop (Text(string_of_t(Dot))::r) [Dot] tl
+      | _, Dots(0) :: tl -> main_loop (Text(string_of_t(Dot))::r) [Dot] (Dot::tl)
       | _, Dots(n) :: tl -> main_loop (Text(string_of_t(Dot))::r) [Dot] (Dots(n-1)::tl)
-      | _, Doublequotes(0) :: tl -> main_loop (Text(string_of_t(Doublequote))::r) [Doublequote] tl
+      | _, Doublequotes(0) :: tl -> main_loop (Text(string_of_t(Doublequote))::r) [Doublequote] (Doublequote::tl)
       | _, Doublequotes(n) :: tl -> main_loop (Text(string_of_t(Doublequote))::r) [Doublequote] (Doublequotes(n-1)::tl)
-      | _, Exclamations(0) :: tl -> main_loop (Text(string_of_t(Exclamation))::r) [Exclamation] tl
+      | _, Exclamations(0) :: tl -> main_loop (Text(string_of_t(Exclamation))::r) [Exclamation] (Exclamation::tl)
       | _, Exclamations(n) :: tl -> main_loop (Text(string_of_t(Exclamation))::r) [Exclamation] (Exclamations(n-1)::tl)
-      | _, Equals(0) :: tl -> main_loop (Text(string_of_t(Equal))::r) [Equal] tl
+      | _, Equals(0) :: tl -> main_loop (Text(string_of_t(Equal))::r) [Equal] (Equal::tl)
       | _, Equals(n) :: tl -> main_loop (Text(string_of_t(Equal))::r) [Equal] (Equals(n-1)::tl)
-      | _, Minuss(0) :: tl -> main_loop (Text(string_of_t(Minus))::r) [Minus] tl
+      | _, Minuss(0) :: tl -> main_loop (Text(string_of_t(Minus))::r) [Minus] (Minus::tl)
       | _, Minuss(n) :: tl -> main_loop (Text(string_of_t(Minus))::r) [Minus] (Minuss(n-1)::tl)
-      | _, Obraces(0) :: tl -> main_loop (Text(string_of_t(Obrace))::r) [Obrace] tl
+      | _, Obraces(0) :: tl -> main_loop (Text(string_of_t(Obrace))::r) [Obrace] (Obrace::tl)
       | _, Obraces(n) :: tl -> main_loop (Text(string_of_t(Obrace))::r) [Obrace] (Obraces(n-1)::tl)
-      | _, Obrackets(0) :: tl -> main_loop (Text(string_of_t(Obracket))::r) [Obracket] tl
+      | _, Obrackets(0) :: tl -> main_loop (Text(string_of_t(Obracket))::r) [Obracket] (Obracket::tl)
       | _, Obrackets(n) :: tl -> main_loop (Text(string_of_t(Obracket))::r) [Obracket] (Obrackets(n-1)::tl)
-      | _, Percents(0) :: tl -> main_loop (Text(string_of_t(Percent))::r) [Percent] tl
+      | _, Percents(0) :: tl -> main_loop (Text(string_of_t(Percent))::r) [Percent] (Percent::tl)
       | _, Percents(n) :: tl -> main_loop (Text(string_of_t(Percent))::r) [Percent] (Percents(n-1)::tl)
-      | _, Pluss(0) :: tl -> main_loop (Text(string_of_t(Plus))::r) [Plus] tl
+      | _, Pluss(0) :: tl -> main_loop (Text(string_of_t(Plus))::r) [Plus] (Plus::tl)
       | _, Pluss(n) :: tl -> main_loop (Text(string_of_t(Plus))::r) [Plus] (Pluss(n-1)::tl)
-      | _, Questions(0) :: tl -> main_loop (Text(string_of_t(Question))::r) [Question] tl
+      | _, Questions(0) :: tl -> main_loop (Text(string_of_t(Question))::r) [Question] (Question::tl)
       | _, Questions(n) :: tl -> main_loop (Text(string_of_t(Question))::r) [Question] (Questions(n-1)::tl)
-      | _, Quotes(0) :: tl -> main_loop (Text(string_of_t(Quote))::r) [Quote] tl
+      | _, Quotes(0) :: tl -> main_loop (Text(string_of_t(Quote))::r) [Quote] (Quote::tl)
       | _, Quotes(n) :: tl -> main_loop (Text(string_of_t(Quote))::r) [Quote] (Quotes(n-1)::tl)
-      | _, Returns(0) :: tl -> main_loop (Text(string_of_t(Return))::r) [Return] tl
+      | _, Returns(0) :: tl -> main_loop (Text(string_of_t(Return))::r) [Return] (Return::tl)
       | _, Returns(n) :: tl -> main_loop (Text(string_of_t(Return))::r) [Return] (Returns(n-1)::tl)
-      | _, Semicolons(0) :: tl -> main_loop (Text(string_of_t(Semicolon))::r) [Semicolon] tl
+      | _, Semicolons(0) :: tl -> main_loop (Text(string_of_t(Semicolon))::r) [Semicolon] (Semicolon::tl)
       | _, Semicolons(n) :: tl -> main_loop (Text(string_of_t(Semicolon))::r) [Semicolon] (Semicolons(n-1)::tl)
+      | _, Stars(0) :: tl -> main_loop (Text(string_of_t(Star))::r) [Star] (Star::tl)
       | _, Stars(n) :: tl -> main_loop (Text(string_of_t(Star))::r) [Star] (Stars(n-1)::tl)
-      | _, Tabs(0) :: tl -> main_loop (Text(string_of_t(Tab))::r) [Tab] tl
+      | _, Tabs(0) :: tl -> main_loop (Text(string_of_t(Tab))::r) [Tab] (Tab::tl)
       | _, Tabs(n) :: tl -> main_loop (Text(string_of_t(Tab))::r) [Tab] (Tabs(n-1)::tl)
-      | _, Tildes(0) :: tl -> main_loop (Text(string_of_t(Tilde))::r) [Tilde] tl
+      | _, Tildes(0) :: tl -> main_loop (Text(string_of_t(Tilde))::r) [Tilde] (Tilde::tl)
       | _, Tildes(n) :: tl -> main_loop (Text(string_of_t(Tilde))::r) [Tilde] (Tildes(n-1)::tl)
+      | _, Underscores(0) :: tl -> main_loop (Text(string_of_t(Underscore))::r) [Underscore] (Underscore::tl)
       | _, Underscores(n) :: tl -> main_loop (Text(string_of_t(Underscore))::r) [Underscore] (Underscores(n-1)::tl)
-      | _, Lessthans(0) :: tl -> main_loop (Text(string_of_t(Lessthan))::r) [Lessthan] tl
+      | _, Lessthans(0) :: tl -> main_loop (Text(string_of_t(Lessthan))::r) [Lessthan] (Lessthan::tl)
       | _, Lessthans(n) :: tl -> main_loop (Text(string_of_t(Lessthan))::r) [Lessthan] (Lessthans(n-1)::tl)
-      | _, Greaterthans(0) :: tl -> main_loop (Text(string_of_t(Greaterthan))::r) [Greaterthan] tl
+      | _, Greaterthans(0) :: tl -> main_loop (Text(string_of_t(Greaterthan))::r) [Greaterthan] (Greaterthan::tl)
       | _, Greaterthans(n) :: tl -> main_loop (Text(string_of_t(Greaterthan))::r) [Greaterthan] (Greaterthans(n-1)::tl)
-      | _, Oparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Oparenthesis))::r) [Oparenthesis] tl
+      | _, Oparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Oparenthesis))::r) [Oparenthesis] (Oparenthesis::tl)
       | _, Oparenthesiss(n) :: tl -> main_loop (Text(string_of_t(Oparenthesis))::r) [Oparenthesis] (Oparenthesiss(n-1)::tl)
-      | _, Slashs(0) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] tl
+      | _, Slashs(0) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slash::tl)
       | _, Slashs(n) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slashs(n-1)::tl)
           (* /generated part *)
           
-  (* maybe a link or a reference *)
+  (* maybe a reference *)
+  and maybe_reference r p l = (* this function is called when we know it's not a link although it started with a '[' *)
+    (* So it could be a reference or a link definition. *)
+    let rec maybe_ref l =
+      let text, remains = read_until_cbracket l in
+      let () = if try ignore(read_until_obracket text); true with Premature_ending -> false then raise Premature_ending in
+      let blank, remains = read_until_obracket remains in
+      let () = if eat (function (Space|Spaces _|Newline|Newlines _) -> true| _ -> false) blank <> [] then raise Premature_ending in
+      let id, remains = read_until_cbracket remains in
+        Some(((Ref(rc, string_of_tl id, string_of_tl text))::r), [Cbracket], remains)
+    in
+    let rec maybe_def l =
+      match read_until_cbracket l with
+        | _, [] -> None
+        | id, (Colon::(Space|Spaces _)::Word(w)::Colon::Slashs(0)::remains)
+        | id, (Colon::Word(w)::Colon::Slashs(0)::remains) ->
+            begin
+              let url, remains = read_until_space ~no_nl:true remains in
+              let title, remains =
+                match eat (function (Space|Spaces _|Newline|Newlines _) -> true| _ -> false) remains with
+                  | Doublequotes(0)::tl -> [], tl
+                  | Doublequote::tl -> read_until_dq tl
+                  | Quotes(0)::tl -> [], tl
+                  | Quote::tl -> read_until_q tl
+                  | Oparenthesis::tl-> read_until_cparenth tl
+                  | x -> raise Premature_ending
+              in
+                rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+                Some(r, [Quote], remains)
+            end
+        | _ -> None
+    in
+      try maybe_ref l with Premature_ending -> 
+        try maybe_def l with Premature_ending ->
+          None
+
+  (* maybe a link *)
   and maybe_link r p l =
     let rec read_title name href res = function
       | Doublequote::(Cparenthesis as t)::tl ->
