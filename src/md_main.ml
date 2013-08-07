@@ -11,13 +11,12 @@ let () =
       Buffer.add_char b (input_char stdin)
     done; assert false
     with End_of_file ->
+      let open Md_lib.Md in
       print_endline
         (
-          Md.html_of_md 
-            (Md.make_paragraphs
-               (Md_parser.parse
-                  (Md_lexer.lex_from_string (Buffer.contents b))
-               )
+          html_of_md 
+            (make_paragraphs
+               (parse (lex (Buffer.contents b)))
             )
         )
 
