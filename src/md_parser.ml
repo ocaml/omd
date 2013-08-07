@@ -830,7 +830,11 @@ let main_parse lexemes =
                     in
                     let r = Img(alt, string_of_tl path, string_of_tl title) :: r in
                       main_loop r [Cparenthesis] rest
-                  with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+                  with NL_exception -> (* if NL_exception was raised, then fall back to "text" *)
+                    (* Below: call with (string_of_t e) even if e is (Exclamations _) because if it failed to 
+                       parse an image tag, then it won't succeed if given another chance. However Obracket could 
+                       announce something else, such as a link, so we have to go through it again. *)
+                    main_loop (Text(string_of_t e)::r) [Exclamation] l
                 end
             | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
           end
