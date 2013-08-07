@@ -640,10 +640,15 @@ let main_parse lexemes =
                   main_loop (Text(string_of_t lt)::r) [Lessthan] fallback
             end
 
+      (* Word(w) *)
       | _, Word w::tl ->
           main_loop (Text w :: r) [Word w] tl
+
+      (* newline at the end *)
       | _, [Newline] ->
           NL::r
+
+      (* named html entity *)
       | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if StringSet.mem w htmlentities_set then
             begin match s with
@@ -657,6 +662,8 @@ let main_parse lexemes =
             end
           else
             main_loop (Html("&amp;")::r) [] tl2
+
+      (* digit-coded html entity *)
       | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
           if String.length w <= 4 then
             begin match s with
@@ -670,16 +677,26 @@ let main_parse lexemes =
             end
           else
             main_loop (Html("&amp;")::r) [] tl2
+
+      (* Ampersand *)
       | _, Ampersand::tl ->
           main_loop (Html("&amp;")::r) [Ampersand] tl
+
+      (* 2 Ampersands *)
       | _, Ampersands(0)::tl ->
           main_loop (Html("&amp;")::r) [] (Ampersand::tl)
+
+      (* Several Ampersands (more than 2) *)
       | _, Ampersands(n)::tl ->
           main_loop (Html("&amp;")::r) [] (Ampersands(n-1)::tl)
+
+      (* backquotes *)
       | _, (Backquote|Backquotes _)::_ ->
           begin match bcode r previous lexemes with
             | r, p, l -> main_loop r p l
           end
+
+      (* HTML *)
       | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as opening)::
           (* Block HTML. *)
           Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
@@ -732,18 +749,18 @@ let main_parse lexemes =
       | _, (Lessthan|Lessthans _ as opening)::
           (* inline HTML. *)
           (Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
-          |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
-          |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
-          |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
-          |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
-          |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
-                (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
-          |"legend"|"li" (* |"link" *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
-          |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
-          |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
-          |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
-          |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
-          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname) as w)
+           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
+           |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
+           |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
+           |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
+           |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
+                 (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
+           |"legend"|"li" (* |"link" *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
+           |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
+           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
+           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
+           |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
+           |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname) as w)
           ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
              ::tl as l) ->
           let read_html() =
@@ -859,18 +876,75 @@ let main_parse lexemes =
             | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
           end
       | _,
-          ((At|Ats _|Bar|Bars _|Caret
-           |Carets _|Cbrace|Cbraces _|Colon|Colons _|Comma|Commas _|Cparenthesis|Cparenthesiss _
-           |Cbracket|Cbrackets _|Dollar|Dollars _|Dot|Dots _|Doublequote|Doublequotes _
-           |Exclamation|Exclamations _|Equal|Equals _
-           |Minus|Minuss _|Number _|Obrace
-           |Obraces _|Oparenthesis|Oparenthesiss _|Obrackets _|Percent
-           |Percents _|Plus|Pluss _|Question|Questions _|Quote|Quotes _|Return|Returns _
-           |Semicolon|Semicolons _|Slash|Slashs _|Stars _ |Tab|Tabs _|Tilde|Tildes _
-           |Underscores _
-           |Lessthan|Lessthans _|Greaterthan|Greaterthans _) as t)::tl
+          ((At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar|Dot|Doublequote
+           |Exclamation|Equal|Minus|Obrace|Oparenthesis|Percent|Plus|Question|Quote|Return
+           |Semicolon|Slash|Tab|Tilde|Lessthan|Greaterthan) as t)::tl
           ->
           main_loop (Text(string_of_t t)::r) [t] tl
+
+      | _, (Number(_) as t) :: tl -> main_loop (Text(string_of_t t)::r) [t] tl
+
+      (* generated part: *)
+      | _, Ats(0) :: tl -> main_loop (Text(string_of_t(At))::r) [At] tl
+      | _, Ats(n) :: tl -> main_loop (Text(string_of_t(At))::r) [At] (Ats(n-1)::tl)
+      | _, Bars(0) :: tl -> main_loop (Text(string_of_t(Bar))::r) [Bar] tl
+      | _, Bars(n) :: tl -> main_loop (Text(string_of_t(Bar))::r) [Bar] (Bars(n-1)::tl)
+      | _, Carets(0) :: tl -> main_loop (Text(string_of_t(Caret))::r) [Caret] tl
+      | _, Carets(n) :: tl -> main_loop (Text(string_of_t(Caret))::r) [Caret] (Carets(n-1)::tl)
+      | _, Cbraces(0) :: tl -> main_loop (Text(string_of_t(Cbrace))::r) [Cbrace] tl
+      | _, Cbraces(n) :: tl -> main_loop (Text(string_of_t(Cbrace))::r) [Cbrace] (Cbraces(n-1)::tl)
+      | _, Colons(0) :: tl -> main_loop (Text(string_of_t(Colon))::r) [Colon] tl
+      | _, Colons(n) :: tl -> main_loop (Text(string_of_t(Colon))::r) [Colon] (Colons(n-1)::tl)
+      | _, Commas(0) :: tl -> main_loop (Text(string_of_t(Comma))::r) [Comma] tl
+      | _, Commas(n) :: tl -> main_loop (Text(string_of_t(Comma))::r) [Comma] (Commas(n-1)::tl)
+      | _, Cparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Cparenthesis))::r) [Cparenthesis] tl
+      | _, Cparenthesiss(n) :: tl -> main_loop (Text(string_of_t(Cparenthesis))::r) [Cparenthesis] (Cparenthesiss(n-1)::tl)
+      | _, Cbrackets(0) :: tl -> main_loop (Text(string_of_t(Cbracket))::r) [Cbracket] tl
+      | _, Cbrackets(n) :: tl -> main_loop (Text(string_of_t(Cbracket))::r) [Cbracket] (Cbrackets(n-1)::tl)
+      | _, Dollars(0) :: tl -> main_loop (Text(string_of_t(Dollar))::r) [Dollar] tl
+      | _, Dollars(n) :: tl -> main_loop (Text(string_of_t(Dollar))::r) [Dollar] (Dollars(n-1)::tl)
+      | _, Dots(0) :: tl -> main_loop (Text(string_of_t(Dot))::r) [Dot] tl
+      | _, Dots(n) :: tl -> main_loop (Text(string_of_t(Dot))::r) [Dot] (Dots(n-1)::tl)
+      | _, Doublequotes(0) :: tl -> main_loop (Text(string_of_t(Doublequote))::r) [Doublequote] tl
+      | _, Doublequotes(n) :: tl -> main_loop (Text(string_of_t(Doublequote))::r) [Doublequote] (Doublequotes(n-1)::tl)
+      | _, Exclamations(0) :: tl -> main_loop (Text(string_of_t(Exclamation))::r) [Exclamation] tl
+      | _, Exclamations(n) :: tl -> main_loop (Text(string_of_t(Exclamation))::r) [Exclamation] (Exclamations(n-1)::tl)
+      | _, Equals(0) :: tl -> main_loop (Text(string_of_t(Equal))::r) [Equal] tl
+      | _, Equals(n) :: tl -> main_loop (Text(string_of_t(Equal))::r) [Equal] (Equals(n-1)::tl)
+      | _, Minuss(0) :: tl -> main_loop (Text(string_of_t(Minus))::r) [Minus] tl
+      | _, Minuss(n) :: tl -> main_loop (Text(string_of_t(Minus))::r) [Minus] (Minuss(n-1)::tl)
+      | _, Obraces(0) :: tl -> main_loop (Text(string_of_t(Obrace))::r) [Obrace] tl
+      | _, Obraces(n) :: tl -> main_loop (Text(string_of_t(Obrace))::r) [Obrace] (Obraces(n-1)::tl)
+      | _, Obrackets(0) :: tl -> main_loop (Text(string_of_t(Obracket))::r) [Obracket] tl
+      | _, Obrackets(n) :: tl -> main_loop (Text(string_of_t(Obracket))::r) [Obracket] (Obrackets(n-1)::tl)
+      | _, Percents(0) :: tl -> main_loop (Text(string_of_t(Percent))::r) [Percent] tl
+      | _, Percents(n) :: tl -> main_loop (Text(string_of_t(Percent))::r) [Percent] (Percents(n-1)::tl)
+      | _, Pluss(0) :: tl -> main_loop (Text(string_of_t(Plus))::r) [Plus] tl
+      | _, Pluss(n) :: tl -> main_loop (Text(string_of_t(Plus))::r) [Plus] (Pluss(n-1)::tl)
+      | _, Questions(0) :: tl -> main_loop (Text(string_of_t(Question))::r) [Question] tl
+      | _, Questions(n) :: tl -> main_loop (Text(string_of_t(Question))::r) [Question] (Questions(n-1)::tl)
+      | _, Quotes(0) :: tl -> main_loop (Text(string_of_t(Quote))::r) [Quote] tl
+      | _, Quotes(n) :: tl -> main_loop (Text(string_of_t(Quote))::r) [Quote] (Quotes(n-1)::tl)
+      | _, Returns(0) :: tl -> main_loop (Text(string_of_t(Return))::r) [Return] tl
+      | _, Returns(n) :: tl -> main_loop (Text(string_of_t(Return))::r) [Return] (Returns(n-1)::tl)
+      | _, Semicolons(0) :: tl -> main_loop (Text(string_of_t(Semicolon))::r) [Semicolon] tl
+      | _, Semicolons(n) :: tl -> main_loop (Text(string_of_t(Semicolon))::r) [Semicolon] (Semicolons(n-1)::tl)
+      | _, Stars(n) :: tl -> main_loop (Text(string_of_t(Star))::r) [Star] (Stars(n-1)::tl)
+      | _, Tabs(0) :: tl -> main_loop (Text(string_of_t(Tab))::r) [Tab] tl
+      | _, Tabs(n) :: tl -> main_loop (Text(string_of_t(Tab))::r) [Tab] (Tabs(n-1)::tl)
+      | _, Tildes(0) :: tl -> main_loop (Text(string_of_t(Tilde))::r) [Tilde] tl
+      | _, Tildes(n) :: tl -> main_loop (Text(string_of_t(Tilde))::r) [Tilde] (Tildes(n-1)::tl)
+      | _, Underscores(n) :: tl -> main_loop (Text(string_of_t(Underscore))::r) [Underscore] (Underscores(n-1)::tl)
+      | _, Lessthans(0) :: tl -> main_loop (Text(string_of_t(Lessthan))::r) [Lessthan] tl
+      | _, Lessthans(n) :: tl -> main_loop (Text(string_of_t(Lessthan))::r) [Lessthan] (Lessthans(n-1)::tl)
+      | _, Greaterthans(0) :: tl -> main_loop (Text(string_of_t(Greaterthan))::r) [Greaterthan] tl
+      | _, Greaterthans(n) :: tl -> main_loop (Text(string_of_t(Greaterthan))::r) [Greaterthan] (Greaterthans(n-1)::tl)
+      | _, Oparenthesiss(0) :: tl -> main_loop (Text(string_of_t(Oparenthesis))::r) [Oparenthesis] tl
+      | _, Oparenthesiss(n) :: tl -> main_loop (Text(string_of_t(Oparenthesis))::r) [Oparenthesis] (Oparenthesiss(n-1)::tl)
+      | _, Slashs(0) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] tl
+      | _, Slashs(n) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slashs(n-1)::tl)
+          (* /generated part *)
+          
 
   and maybe_link r p l =
     let rec read_title name href res = function
