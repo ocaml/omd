@@ -178,7 +178,7 @@ let string_of_t = function
 
 
 
-let lex_from_string s =
+let lex s =
   let result = ref [] in
   let i = ref 0 in
   let l = String.length s in
@@ -351,10 +351,10 @@ let position orig spot =
     loop (0,0)
 
 let _ =
-  lex_from_string "42 Bonjour !!\n"
+  lex "42 Bonjour !!\n"
 ;;
 let _ =
-  convert_to_lf (lex_from_string "42 Bonjour !\n")
+  convert_to_lf (lex "42 Bonjour !\n")
 ;;
 
 (*
