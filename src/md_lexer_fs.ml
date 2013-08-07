@@ -20,7 +20,7 @@ let lex_from_inchannel ic =
       done; assert false        
       with End_of_file -> Buffer.contents b
   in 
-    lex_from_string (string_of_inchannel ic)
+    lex (string_of_inchannel ic)
 
 
 
