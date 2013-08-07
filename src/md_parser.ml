@@ -820,15 +820,20 @@ let main_parse lexemes =
                     main_loop (Text(string_of_t opening^tagname)::r) [w] l
             end
               (* / end of inline HTML. *)
+
+      (* line breaks *)
       | _, Newline::tl ->
           main_loop (NL::r) [Newline] tl
       | _, Newlines _::tl ->
           main_loop (NL::NL::r) [Newline] tl
+
+      (* [ *)
       | _, Obracket::tl ->
           begin match maybe_link r previous tl with
             | r, p, l -> main_loop r p l
           end
-
+            
+      (* img *)
       | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Oparenthesis::tl as l) -> (* image insertion with no "alt" *)
           (* ![](/path/to/img.jpg) *)
           begin
@@ -847,6 +852,8 @@ let main_parse lexemes =
                       main_loop r [Cparenthesis] tl
             with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
           end
+
+      (* img *)
       | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
           (* ![Alt text](/path/to/img.jpg "Optional title") *)
           begin match read_until_cbracket tl with
@@ -944,7 +951,7 @@ let main_parse lexemes =
       | _, Slashs(n) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slashs(n-1)::tl)
           (* /generated part *)
           
-
+  (* maybe a link or a reference *)
   and maybe_link r p l =
     let rec read_title name href res = function
       | Doublequote::(Cparenthesis as t)::tl ->
@@ -985,14 +992,13 @@ let main_parse lexemes =
       | Cbracket::Oparenthesis::tl ->
           read_url (string_of_tl (List.rev res)) [] tl
       | Cbracket::_
-      | []
-      | (Newline|Newlines _)::_ -> (* failed to read a MD-link *)
-          r, p, l
+      | [] -> (* failed to read a MD-link *) r, p, l
       | e::tl ->
           read_name (e::res) tl
     in
       read_name [] l
 
+  (* H1, H2, H3, ... *)
   and read_title n (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) =
     if true then (* a behaviour closer to github *)
       begin
