@@ -29,7 +29,7 @@ type tmp_list = element list
 and element   = Item of tag Md_lexer.t list
 
 
-open Md
+open Md_backend
 open Md_lexer
 
 module StringSet : sig
@@ -693,7 +693,7 @@ let main_parse lexemes =
           |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
           |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
                 (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
-          |"legend"|"li"|"link"|"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
+          |"legend"|"li" (* |"link"| *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
           |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
@@ -815,10 +815,7 @@ let main_parse lexemes =
           begin match maybe_link r previous tl with
             | r, p, l -> main_loop r p l
           end
-      | _, Obrackets 0::tl ->
-          begin match maybe_wikistyle_link r previous tl with
-            | r, p, l -> main_loop r p l
-          end
+
       | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Oparenthesis::tl as l) -> (* image insertion with no "alt" *)
           (* ![](/path/to/img.jpg) *)
           begin (* TODO: end of files with incomplete "images"... *)
@@ -927,30 +924,35 @@ let main_parse lexemes =
     in
       read_name [] l
 
-  and maybe_wikistyle_link r p l =
-    let rec read_name href res = function
-      | Cbrackets 0 as t :: tl ->
-          Url(href, string_of_tl (List.rev res), "")::r, [t], tl
-      | []
-      | (Newline|Newlines _)::_ as l ->
-          r, p, l
-      | e::tl ->
-          read_name href (e::res) tl
-    in
-    let rec read_url res = function
-      | Cbrackets 0 as t :: tl ->
-          let href = string_of_tl (List.rev res) in
-            Url(href, href, "")::r, [t], tl
-      | Bar::tl ->
-          let href = string_of_tl (List.rev res) in
-            read_name href [] tl
-      | []
-      | (Newline|Newlines _)::_ as l ->
-          r, p, l
-      | e::tl ->
-          read_url (e::res) tl
-    in
-      read_url [] l
+
+(*       | _, Obrackets 0::tl -> *)
+(*           begin match maybe_wikistyle_link r previous tl with *)
+(*             | r, p, l -> main_loop r p l *)
+(*           end *)
+(*   and maybe_wikistyle_link r p l = *)
+(*     let rec read_name href res = function *)
+(*       | Cbrackets 0 as t :: tl -> *)
+(*           Url(href, string_of_tl (List.rev res), "")::r, [t], tl *)
+(*       | [] *)
+(*       | (Newline|Newlines _)::_ as l -> *)
+(*           r, p, l *)
+(*       | e::tl -> *)
+(*           read_name href (e::res) tl *)
+(*     in *)
+(*     let rec read_url res = function *)
+(*       | Cbrackets 0 as t :: tl -> *)
+(*           let href = string_of_tl (List.rev res) in *)
+(*             Url(href, href, "")::r, [t], tl *)
+(*       | Bar::tl -> *)
+(*           let href = string_of_tl (List.rev res) in *)
+(*             read_name href [] tl *)
+(*       | [] *)
+(*       | (Newline|Newlines _)::_ as l -> *)
+(*           r, p, l *)
+(*       | e::tl -> *)
+(*           read_url (e::res) tl *)
+(*     in *)
+(*       read_url [] l *)
 
   and read_title n (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) =
     if true then (* a behaviour closer to github *)
