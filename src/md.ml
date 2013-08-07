@@ -7,7 +7,7 @@
 
 let pindent = false
 let pindent = true
-let smdnl = false (* about standard markdown new lines *)
+let smdnl = true (* about standard markdown new lines *)
 
 type md_element = 
   | Paragraph of md
@@ -132,8 +132,8 @@ let rec html_of_md md =
         Buffer.add_string b "/>";
         loop indent tl
     | Text t :: tl ->
-        Buffer.add_string b t;
-        (* Buffer.add_string b (htmlentities t); *)
+        (* Buffer.add_string b t; *)
+        Buffer.add_string b (htmlentities t);
         loop indent tl
     | Emph md :: tl ->
         Buffer.add_string b "<em>";
