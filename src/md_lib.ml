@@ -6,6 +6,9 @@
 (***********************************************************************)
 
 module Md : sig
+  (** abstract type for references container *)
+  type ref_container
+
   (** A element of a Markdown document *)
   type md_element = 
     | Paragraph of md
@@ -18,6 +21,7 @@ module Md : sig
     | Br
     | Hr
     | Url of href * string * title
+    | Ref of ref_container * name * string
     | Html of string
     | H1 of md
     | H2 of md
@@ -27,6 +31,9 @@ module Md : sig
     | H6 of md
     | Img of alt * src * title
     | NL
+
+  (** markdown reference name *)
+  and name = string
 
   (** html img tag attribute *)
   and alt = string
