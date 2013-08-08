@@ -1272,14 +1272,15 @@ let main_parse lexemes =
                     loop true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
                   end
             | Newlines(0) :: ((Spaces(2|3|4|5 as n)) :: Greaterthan :: (Space|Spaces _) :: tl as l) -> (* blockquote inside a list *)
-                begin match unindent (n+2) l with
+                begin match unindent (n+2) (Newline::l) with
                   | block, rest ->
-                      let em, _, _ = emailstyle_quoting [] [] block in
-                        loop ordered result (Tag(Md(em))::curr_item) indents rest                  
+                      let em, _, _x = emailstyle_quoting [] [] block in
+                        assert(_x = []);
+                        loop ordered result (Tag(Md(em))::curr_item) indents rest
                 end
-            | Newlines(0) :: (Spaces(6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100)) :: tl -> (* code inside a list *)
+            | Newlines(0) :: ((Spaces(6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100)) :: tl as l) -> (* code inside a list *)
                 (* sorry for that huge pattern, I might swich to using a "when" clause later *)
-                begin match unindent 4 l with
+                begin match unindent 4 (Newline::l) with
                   | block, rest ->
                       loop ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
                 end
