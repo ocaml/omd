@@ -214,12 +214,39 @@ let xnew_list = ref None
 let xicode = ref None
 let xmain_loop = ref None
 
+(* [eat f l] removes elements from [l] until [f] meets an element 
+   for which it returns false. If [l] is empty, then returns [l]. *)
+let rec eat f = function
+  | [] -> []
+  | e::tl -> if f e then eat f tl else e::tl
+
+let split_norev f =
+  let rec loop r = function
+  | [] -> r, []
+  | e::tl as l -> if f e then loop (e::r) tl else r, l
+  in loop []
+
+(* [split f l] *)
+let split f l =
+  let r, l = split_norev f l in
+    List.rev r, l
+
 let tag_setext l =
   let rec loop pl res = function (* pl = previous line *)
   | (Newline as e1)::(Equal|Equals _ as e2)::tl ->
-      loop [] (e2::e1::pl@[Tag(Maybe_h1)]@res) tl
+      begin match split_norev (function Space|Spaces _|Equal|Equals _ -> true| _ -> false) tl with
+        | left, (((Newline|Newlines _)::right)|([] as right)) ->
+            loop [] (left@[Tag(Maybe_h1)]@res) right
+        | left, right ->
+            loop [] (left@[e2;e1]@pl@res) right
+      end
   | (Newline as e1)::(Minus|Minuss _ as e2)::tl ->
-      loop [] (e2::e1::pl@[Tag(Maybe_h2)]@res) tl
+      begin match split_norev (function Space|Spaces _|Minus|Minuss _ -> true| _ -> false) tl with
+        | left, (((Newline|Newlines _)::right)|([] as right)) ->
+            loop [] (left@[Tag(Maybe_h1)]@res) right
+        | left, right ->
+            loop [] (left@[e2;e1]@pl@res) right
+      end
   | Newline as e::tl ->
       loop [] (e::pl@res) tl
   | e::tl ->
@@ -434,19 +461,6 @@ let read_until_cbracket ?(no_nl=false) l =
     | [] -> raise Premature_ending
   in loop [] l
 
-(* [eat f l] removes elements from [l] until [f] meets an element 
-   for which it returns false. If [l] is empty, then returns [l]. *)
-let rec eat f = function
-  | [] -> []
-  | e::tl -> if f e then eat f tl else e::tl
-
-(* [eat f l] removes elements from [l] until [f] meets an element 
-   for which it returns false. If [l] is empty, then returns [l]. *)
-let split f =
-  let rec loop r = function
-  | [] -> List.rev r, []
-  | e::tl as l -> if f e then loop (e::r) tl else List.rev r, l
-  in loop []
 
 let main_parse lexemes =
   let rc = new Md_backend.ref_container in
@@ -556,6 +570,12 @@ let main_parse lexemes =
                   main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
                 else
                   main_loop (Emph([Bold(rev_main_loop [] [t] x)]) :: r) [t] new_tl
+          end
+
+      (* enumerated lists *)
+      | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+          begin match new_list r [] (Newline::lexemes) with
+            | md, new_p, new_l -> main_loop (md@r) new_p new_l
           end
 
       (* stars *)
@@ -1045,15 +1065,17 @@ let main_parse lexemes =
 
   and emailstyle_quoting r previous lexemes =
     let rec loop (block:tag Md_lexer.t list) (cl:tag Md_lexer.t list) = function
+      | Newline::Greaterthan::(Newline::_ as tl) -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
       | Newline::Greaterthan::Spaces n::tl -> loop (Newline::cl@block) [Spaces(n-1)] tl
-      | Newline::tl -> loop block (Newline::cl) tl
-      | Newlines _::tl | ([] as tl) -> List.rev (cl@block), tl
+      (* | Newline::tl -> loop block (Newline::cl) tl *)
+      | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
       | e::tl -> loop block (e::cl) tl
     in
       match loop [] [] lexemes with
         | block, tl ->
+            Printf.eprintf "==============================\n%s\n==============================\n%!" (string_of_tl block);
             (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
 
   (* maybe a reference *)
@@ -1252,6 +1274,7 @@ let main_parse lexemes =
                 else
                   loop false ((false,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+                Printf.eprintf "==============================\n(%s)\n%!" (String.escaped(string_of_tl lexemes)); 
                 if debug then Printf.eprintf "#%d\n%!" 2;
                 loop true ((true,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
@@ -1294,10 +1317,10 @@ let main_parse lexemes =
                       loop ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
                 end
                   
-            | ([] | (Newlines(_) :: _)) as l ->
+            | ([] | (Newlines(_) :: _)) ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
-                ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), (l: tag Md_lexer.t list))
+                ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), lexemes)
             | (Newline :: e :: tl)  (* adding e to the current item *)
             | e :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 8;
@@ -1344,7 +1367,10 @@ let main_parse lexemes =
                 loop2 ((o,[0], item) :: tl) curr_indent ordered accu
 
       in
-      let (tmp_r: (bool*int list*tag Md_lexer.t list) list), (new_l:tag Md_lexer.t list) = loop true [] [] [] l in
+      let tmp_r, new_l =
+        (* tmp_r: (bool*int list*tag Md_lexer.t list) list) ; new_l:tag Md_lexer.t list *)
+         loop true [] [] [] l 
+      in
       let () =
         if debug then
           begin
@@ -1358,7 +1384,9 @@ let main_parse lexemes =
               Printf.eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
           end
       in
-      let (e:md), (x:(bool*int list*tag Md_lexer.t list) list) = loop2 (List.rev tmp_r) (-1) false [] in
+      let (e:md), (x:(bool*int list*tag Md_lexer.t list) list) =
+        loop2 (List.rev tmp_r) (-1) false []
+      in
         (fix_lists e @ r), [], new_l
     end
 
