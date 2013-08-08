@@ -453,7 +453,7 @@ let main_parse lexemes =
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
     if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
-      (* no more to process *)
+        (* no more to process *)
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
           r
 
@@ -828,20 +828,20 @@ let main_parse lexemes =
       | _, (Lessthan|Lessthans _ as opening)::
           (* inline HTML. *)
           (Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
-           |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
-           |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
-           |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
-           |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
-           |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
-                 (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
-           |"legend"|"li" (* |"link" *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
-           |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
-           |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
-           |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
-           |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
-           |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname) as w)
+          |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote" (* |"body" *)
+          |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
+          |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"|"dialog"
+          |"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"|"figcaption"|"figure"
+          |"font"|"footer"|"form"|"frame"|"frameset"|"h1" (* |"head" *) |"header"|"hr"
+                (* |"html" *) |"i"|"iframe"|"img"|"input"|"ins"|"kbd"|"keygen"|"label"
+          |"legend"|"li" (* |"link" *) |"map"|"mark"|"menu" (* |"meta" *) |"meter"|"nav"
+          |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"|"p"
+          |"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"|"script"
+          |"section"|"select"|"small"|"source"|"span"|"strike"|"strong"|"style"
+          |"sub"|"summary"|"sup"|"table"|"tbody"|"td"|"textarea"|"tfoot"|"th"
+          |"thead"|"time" (* |"title" *) |"tr"|"track"|"tt"|"u"|"ul"|"var"|"video"|"wbr" as tagname) as w)
           ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
-             ::tl as l) ->
+              ::tl as l) ->
           let read_html() =
             let rec loop accu n = function
               | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> (* self-closing tags *)
@@ -940,36 +940,43 @@ let main_parse lexemes =
       (* img *)
       | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
           (* ![Alt text](/path/to/img.jpg "Optional title") *)
-          begin match read_until_cbracket tl with
-            | alt, Oparenthesis::ntl ->
-                begin
-                  try
-                    let alt = string_of_tl alt in
-                    let path_title, rest = read_until_cparenth ~no_nl:false ntl in
-                    let path, title = read_until_space ~no_nl:true path_title in
-                    let title, nothing = read_until_dq (snd(read_until_dq title)) in
-                    let () = if nothing <> [] then raise NL_exception in (* this exception is caught right below *)
-                    let r =
-                      match e with
-                        | Exclamations 0 -> Text "!" :: r
-                        | Exclamations n -> Text(String.make (n+1) '!') :: r
-                        | _ -> r
-                    in
-                    let r = Img(alt, string_of_tl path, string_of_tl title) :: r in
-                      main_loop r [Cparenthesis] rest
-                  with NL_exception -> (* if NL_exception was raised, then fall back to "text" *)
-                    (* Below: call with (string_of_t e) even if e is (Exclamations _) because if it failed to 
-                       parse an image tag, then it won't succeed if given another chance. However Obracket could 
-                       announce something else, such as a link, so we have to go through it again. *)
-                    main_loop (Text(string_of_t e)::r) [Exclamation] l
-                end
-            | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+          begin try
+              match read_until_cbracket tl with
+                | alt, Oparenthesis::ntl ->
+                    begin
+                      try
+                        let alt = string_of_tl alt in
+                        let path_title, rest = read_until_cparenth ~no_nl:false ntl in
+                        let path, title = read_until_space ~no_nl:true path_title in
+                        let title, nothing = read_until_dq (snd(read_until_dq title)) in
+                        let () = if nothing <> [] then raise NL_exception else () in (* this exception is caught right below *)
+                        let r =
+                          match e with
+                            | Exclamations 0 -> Text "!" :: r
+                            | Exclamations n -> Text(String.make (n+1) '!') :: r
+                            | _ -> r
+                        in
+                        let r = Img(alt, string_of_tl path, string_of_tl title) :: r in
+                          main_loop r [Cparenthesis] rest
+                      with
+                        | NL_exception -> (* if NL_exception was raised, then fall back to "text" *)
+                            (* Below: call with (string_of_t e) even if e is (Exclamations _) because if it failed to 
+                               parse an image tag, then it won't succeed if given another chance. However Obracket could 
+                               announce something else, such as a link, so we have to go through it again. *)
+                            main_loop (Text(string_of_t e)::r) [Exclamation] l
+                        | Premature_ending ->
+                            main_loop (Text(string_of_t e)::r) [Exclamation] l (* todo: images with references *)
+                    end
+                | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+            with 
+              | Premature_ending ->
+                  main_loop (Text(string_of_t e)::r) [Exclamation] l (* todo:  *)
           end
 
       | _,
           ((At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar|Dot|Doublequote
-           |Exclamation|Equal|Minus|Obrace|Oparenthesis|Percent|Plus|Question|Quote|Return
-           |Semicolon|Slash|Tab|Tilde|Lessthan|Greaterthan) as t)::tl
+          |Exclamation|Equal|Minus|Obrace|Oparenthesis|Percent|Plus|Question|Quote|Return
+          |Semicolon|Slash|Tab|Tilde|Lessthan|Greaterthan) as t)::tl
           ->
           main_loop (Text(string_of_t t)::r) [t] tl
 
@@ -1081,8 +1088,8 @@ let main_parse lexemes =
             end
         | _ -> None
     in
-      try maybe_ref l with Premature_ending -> 
-        try maybe_def l with Premature_ending ->
+      try maybe_ref l with Premature_ending | NL_exception -> 
+        try maybe_def l with Premature_ending | NL_exception ->
           None
 
   (* maybe a link *)
@@ -1286,7 +1293,7 @@ let main_parse lexemes =
                   | block, rest ->
                       loop ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
                 end
-                
+                  
             | ([] | (Newlines(_) :: _)) as l ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
@@ -1344,7 +1351,7 @@ let main_parse lexemes =
             let p =
               List.fold_left
                 (fun r (o,indents,item) ->
-                   Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
+                  Printf.sprintf "%s(%b,#%d,%s)::" r o (List.length indents) (destring_of_tl item))
                 ""
                 (List.rev tmp_r)
             in
