@@ -683,6 +683,8 @@ let main_parse lexemes =
           main_loop (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
       | _, Backslash :: Hashs n :: tl -> assert (n >= 0); (* \###... *)
           main_loop (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
+      | _, (Backslashs 0 as t) :: tl -> (* \\\\... *)
+          main_loop (Text ("\\") :: r) [t] tl
       | _, (Backslashs n as t) :: tl -> (* \\\\... *)
           if n mod 2 = 0 then
             main_loop (Text (String.make ((n-2)/2) '\\') :: r) [t] tl
