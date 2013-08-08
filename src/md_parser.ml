@@ -1083,7 +1083,7 @@ let main_parse lexemes =
                   | Oparenthesis::tl-> read_until_cparenth tl
                   | x -> raise Premature_ending
               in
-                rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+                rc#add_ref (string_of_tl id) (string_of_tl title) (w^"://"^string_of_tl url);
                 Some(r, [Quote], remains)
             end
         | _ -> None
