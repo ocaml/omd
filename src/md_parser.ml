@@ -465,7 +465,7 @@ let read_until_cbracket ?(no_nl=false) l =
 let main_parse lexemes =
   let rc = new Md_backend.ref_container in
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
-    if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
+    if debug then Printf.eprintf "main_loop r=%s p=(%s) l=(%s)\n%!" (Md_backend.sexpr_of_md (List.rev r)) (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
         (* no more to process *)
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
@@ -574,8 +574,10 @@ let main_parse lexemes =
 
       (* enumerated lists *)
       | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+          if debug then Printf.eprintf "++++++++++++++++++++++++++++++\n(%s)\n%!" (String.escaped(string_of_tl lexemes));
           begin match new_list r [] (Newline::lexemes) with
-            | md, new_p, new_l -> main_loop (md@r) new_p new_l
+            | md, new_p, new_l ->
+                main_loop (md@r) new_p new_l
           end
 
       (* stars *)
@@ -1075,7 +1077,7 @@ let main_parse lexemes =
     in
       match loop [] [] lexemes with
         | block, tl ->
-            Printf.eprintf "==============================\n%s\n==============================\n%!" (string_of_tl block);
+            if debug then Printf.eprintf "##############################\n%s\n##############################\n%!" (string_of_tl block);
             (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
 
   (* maybe a reference *)
@@ -1274,7 +1276,7 @@ let main_parse lexemes =
                 else
                   loop false ((false,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-                Printf.eprintf "==============================\n(%s)\n%!" (String.escaped(string_of_tl lexemes)); 
+                if debug then Printf.eprintf "==============================\n(%s)\n%!" (String.escaped(string_of_tl lexemes));
                 if debug then Printf.eprintf "#%d\n%!" 2;
                 loop true ((true,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
