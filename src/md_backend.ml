@@ -43,6 +43,7 @@ type md_element =
   | H4 of md
   | H5 of md
   | H6 of md
+  | Quote of md
   | Img of alt * src * title
   | NL
 and name = string
