@@ -133,7 +133,7 @@ let rec html_of_md md =
         Buffer.add_string b "</blockquote>";
         loop indent tl
     | Ref(rc, name, text) :: tl ->
-        let title, href =
+        let href, title =
           rc#get_ref name
         in
         loop indent (Url(href,text,title)::tl)
