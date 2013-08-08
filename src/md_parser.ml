@@ -577,7 +577,7 @@ let main_parse lexemes =
           if debug then Printf.eprintf "++++++++++++++++++++++++++++++\n(%s)\n%!" (String.escaped(string_of_tl lexemes));
           begin match new_list r [] (Newline::lexemes) with
             | md, new_p, new_l ->
-                main_loop (md@r) new_p new_l
+                main_loop (md) new_p new_l
           end
 
       (* stars *)
@@ -587,7 +587,7 @@ let main_parse lexemes =
                 main_loop (Hr::r) [Newline] l
             | None ->
                 begin match new_list r [] (Newline::lexemes) with
-                  | md, new_p, new_l -> main_loop (md@r) new_p new_l
+                  | md, new_p, new_l -> main_loop (md) new_p new_l
                 end
           end
       | ([]|[(Newline|Newlines _)]), Stars _ :: _ when (not (hr_s lexemes = None)) -> (* hr *)
