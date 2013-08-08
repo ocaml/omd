@@ -1,4 +1,4 @@
-OCAMLC = ocamlc.opt
+OCAMLC = ocamlc.opt -g
 OCAMLOPT = ocamlopt.opt
 
 # all:md_backend.cmo md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
