@@ -60,6 +60,19 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
 let unindent n l =
+  let rec fix n p = function (* reproduce the property that twice the same token can't happen *)
+    | x::tl ->
+        if x = p then
+          fix (n+1) p tl
+        else if n = 0 then
+          assert false
+        else if n = 1 then
+          p::fix 1 x tl
+        else
+          (Md_lexer.lex(let b = Buffer.create n in for i = 1 to n do Buffer.add_string b(string_of_t p) done; Buffer.contents b))
+          @ fix 1 x tl
+    | [] -> []
+  in
   let rec loop accu cl = function
     | Newline::Space::tl as l ->
         if n = 1 then
@@ -88,7 +101,13 @@ let unindent n l =
         loop accu (e::cl) tl
     | [] -> 
         List.rev (cl@accu), l
-  in loop [] [] l
+  in 
+  match loop [] [] l with
+    | [], right -> [], right
+    | (e::tl), right -> fix 1 e tl, right
+  
+
+
 
 let rec is_blank = function
   | (Space | Spaces _ | Newline | Newlines _) :: tl ->
@@ -460,6 +479,7 @@ let read_until_cbracket ?(no_nl=false) l =
     | e::tl -> loop (e::accu) tl
     | [] -> raise Premature_ending
   in loop [] l
+
 
 
 let main_parse lexemes =
@@ -1264,7 +1284,7 @@ let main_parse lexemes =
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" result else "" in
           if debug then
             begin
-              Printf.eprintf "new_list>>loop er=(%s) curr_item=(%s)\n%!" er (destring_of_tl curr_item);
+              Printf.eprintf "new_list>>loop er=(%s) curr_item=(%s) lexemes=%s\n%!" er (destring_of_tl curr_item) (destring_of_tl lexemes);
             end;
           match lexemes with
               (* Boolean is true if ordered, false otherwise. *)
@@ -1276,7 +1296,7 @@ let main_parse lexemes =
                 else
                   loop false ((false,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-                if debug then Printf.eprintf "==============================\n(%s)\n%!" (String.escaped(string_of_tl lexemes));
+                (* if debug then Printf.eprintf "==============================\n(%s)\n%!" (String.escaped(string_of_tl lexemes)); *)
                 if debug then Printf.eprintf "#%d\n%!" 2;
                 loop true ((true,indents,curr_item)::result) [] (0::indents) tl
             | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
@@ -1318,14 +1338,18 @@ let main_parse lexemes =
                   | block, rest ->
                       loop ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
                 end
-                  
+
+            | Newline::Newline::_ (* <---------- todo: something wrong here *)
             | ([] | (Newlines(_) :: _)) ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
                 ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), lexemes)
-            | (Newline :: e :: tl)  (* adding e to the current item *)
-            | e :: tl ->
-                if debug then Printf.eprintf "#%d\n%!" 8;
+               
+            | (Newline :: e :: tl) -> (* adding e to the current item *)
+                if debug then Printf.eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
+                loop ordered result (e::Newline::curr_item) indents tl
+            | e :: tl -> (* adding e to the current item *)
+                if debug then Printf.eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
                 loop ordered result (e::curr_item) indents tl
       in
       let rec loop2 (tmp:(bool*int list*tag Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list)
