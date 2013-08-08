@@ -127,6 +127,11 @@ let rec html_of_md md =
   in    
   let b = Buffer.create 42 in
   let rec loop indent = function
+    | Blockquote q :: tl ->
+        Buffer.add_string b "<quote>";
+        loop indent q;
+        Buffer.add_string b "</quote>";
+        loop indent tl
     | Ref(rc, name, text) :: tl ->
         let title, href =
           rc#get_ref name
@@ -263,7 +268,7 @@ let rec html_of_md md =
         Buffer.add_string b "</h6>";
         loop indent tl
     | NL :: tl ->
-        if smdnl then Buffer.add_string b "<br />";
+        if not(smdnl) then Buffer.add_string b "<br />";
         Buffer.add_char b '\n';
         loop indent tl
     | [] -> ()
