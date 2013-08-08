@@ -10,11 +10,11 @@
    * Some work still has to be done but it may already work. All HTML tags are basically in a single category for now. So, in order to have a block-level tag treated as a block-level tag, one should put it after 2 line breaks.
 
  * paragraphs
-   * done (but needs more testing)
+   * done
  * automatic escaping for special characters
-   * done (but needs more testing)
+   * done
  - Email-style quoting  (block-quoting)
-   * ***todo***
+   * done
  * Titles
    * hash-style (Atx-style): done
    - Setext-style (with - and =): done
@@ -22,11 +22,11 @@
    * unordered: done
    * ordered: done
    * paragraphs in lists: ***todo***
-   * blockquote inside lists: ***todo***
-   * code inside lists: ***todo*** (to check: does it exist in Github flavoured markdown??)
+   * blockquote inside lists: done (todo: more tests)
+   * code inside lists: done (todo: tests) (to check: does it exist in Github flavoured markdown??)
  * Horizontal rules:
-   * with stars: done (todo: tests)
-   * with dashes: done (todo: tests)
+   * with stars: done
+   * with dashes: done
  * Links
    * inline: done
    * reference: done (preliminary testing done, but needs more testing)
