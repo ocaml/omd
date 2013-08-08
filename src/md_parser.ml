@@ -23,14 +23,14 @@ let raise =
   else
     raise
 
-type tag = Maybe_h1 | Maybe_h2
+open Md_backend
+open Md_lexer
+
+type tag = Maybe_h1 | Maybe_h2 | Md of Md_backend.md
 
 type tmp_list = element list
 and element   = Item of tag Md_lexer.t list
 
-
-open Md_backend
-open Md_lexer
 
 module StringSet : sig
   type elt = string
@@ -59,6 +59,36 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
+let unindent n l =
+  let rec loop accu cl = function
+    | Newline::Space::tl as l ->
+        if n = 1 then
+          loop (Newline::cl@accu) [] tl
+        else
+          List.rev (cl@accu), l
+    | Newline::Spaces(0)::tl as l ->
+        if n = 1 then
+          loop (Newline::cl@accu) [Space] tl
+        else if n = 2 then
+          loop (Newline::cl@accu) [] tl
+        else
+          List.rev (cl@accu), l
+    | Newline::Spaces(s)::tl as l ->
+        if s+2 = n then
+          loop (Newline::cl@accu) [] tl
+        else if s+2 > n then
+          loop (Newline::cl@accu) (Md_lexer.lex(String.make (s+2-n) ' ')) tl
+        else
+          List.rev (cl@accu), l
+    | Newlines(_)::_ as l ->
+        List.rev (cl@accu), l
+    | Newline::_ as l ->
+        List.rev (cl@accu), l
+    | e::tl ->
+        loop accu (e::cl) tl
+    | [] -> 
+        List.rev (cl@accu), l
+  in loop [] [] l
 
 let rec is_blank = function
   | (Space | Spaces _ | Newline | Newlines _) :: tl ->
@@ -177,11 +207,6 @@ let gh_uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * ta
 let uemph_or_bold =
   if true then gh_uemph_or_bold else uemph_or_bold
 
-
-(* let icode r p l = failwith "" *)
-
-
-(* let spaces n r previous l = failwith "" *)
 
 (* The few following lines are there for development purpose only. *)
 let xspaces = ref None
@@ -309,7 +334,6 @@ let rec fix_lists = function
   | [] ->
       []
 
-(* let fix_lists x = x *)
 exception NL_exception
 exception Premature_ending
 
@@ -429,10 +453,13 @@ let main_parse lexemes =
   let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
     if debug then Printf.eprintf "main_loop p=(%s) l=(%s)\n%!" (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
-
       (* no more to process *)
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
           r
+
+      (* previously processed *)
+      | _, Tag(Md(md))::tl -> (* md should be in reverse, such as r *)
+          main_loop (md@r) [] tl
 
       (* email-style quoting *)
       | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
@@ -1244,6 +1271,19 @@ let main_parse lexemes =
                   begin (* a new list item, set previous current item as a complete item *)
                     loop true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
                   end
+            | Newlines(0) :: ((Spaces(2|3|4|5 as n)) :: Greaterthan :: (Space|Spaces _) :: tl as l) -> (* blockquote inside a list *)
+                begin match unindent (n+2) l with
+                  | block, rest ->
+                      let em, _, _ = emailstyle_quoting [] [] block in
+                        loop ordered result (Tag(Md(em))::curr_item) indents rest                  
+                end
+            | Newlines(0) :: (Spaces(6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100)) :: tl -> (* code inside a list *)
+                (* sorry for that huge pattern, I might swich to using a "when" clause later *)
+                begin match unindent 4 l with
+                  | block, rest ->
+                      loop ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
+                end
+                
             | ([] | (Newlines(_) :: _)) as l ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
