@@ -264,23 +264,25 @@ let hr_s l =
    function.
 *)
 let rec fix_lists = function
-  | Ul []::tl ->
+  | Ul[] :: tl ->
       fix_lists tl
-  | Ol []::tl ->
+  | Ol[] :: tl ->
       fix_lists tl
-  | Ul (Li((Ul(_)::_) as l)::l2) :: tl
-  | Ul (Li((Ol(_)::_) as l)::l2) :: tl ->
+  | Ul(Li(Ul(_) :: _ as l) :: l2) :: tl
+  | Ul(Li(Ol(_) :: _ as l) :: l2) :: tl ->
       fix_lists [Ul(l2)] @ fix_lists l @ fix_lists tl
-  | Ol (Li((Ul(_)::_) as l)::l2) :: tl
-  | Ol (Li((Ol(_)::_) as l)::l2) :: tl ->
+  | Ol(Li(Ul(_) :: _ as l) :: l2) :: tl
+  | Ol(Li(Ol(_) :: _ as l) :: l2) :: tl ->
       fix_lists [Ol(l2)] @ fix_lists l @ fix_lists tl
-  | Ul l :: tl ->
-      Ul (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
-  | Ol l :: tl ->
-      Ol (List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Ul(l) :: tl ->
+      Ul(List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Ol(l) :: tl ->
+      Ol(List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Blockquote(q) :: tl ->
+      Blockquote(fix_lists q) :: fix_lists tl
   | Img _ as i :: tl ->
       i :: fix_lists tl
-  | Paragraph p :: tl ->
+ | Paragraph p ::  tl ->
       Paragraph (fix_lists p) :: fix_lists tl
   | Text _ as e :: tl ->
       e::fix_lists tl
@@ -431,6 +433,13 @@ let main_parse lexemes =
       (* no more to process *)
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
           r
+
+      (* email-style quoting *)
+      | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
+          begin 
+            let r, p, l = emailstyle_quoting r previous (Newline::lexemes)
+            in main_loop r p l
+          end
 
       (* maybe tags*)
       | ([]|[Newline|Newlines _]), Tag(Maybe_h1)::tl ->
@@ -926,7 +935,7 @@ let main_parse lexemes =
                     main_loop (Text(string_of_t e)::r) [Exclamation] l
                 end
             | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
-end
+          end
 
       | _,
           ((At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar|Dot|Doublequote
@@ -997,7 +1006,20 @@ end
       | _, Slashs(0) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slash::tl)
       | _, Slashs(n) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slashs(n-1)::tl)
           (* /generated part *)
-          
+
+  and emailstyle_quoting r previous lexemes =
+    let rec loop (block:tag Md_lexer.t list) (cl:tag Md_lexer.t list) = function
+      | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
+      | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
+      | Newline::Greaterthan::Spaces n::tl -> loop (Newline::cl@block) [Spaces(n-1)] tl
+      | Newline::tl -> loop block (Space::cl) tl
+      | Newlines _::tl | ([] as tl) -> List.rev (cl@block), tl
+      | e::tl -> loop block (e::cl) tl
+    in
+      match loop [] [] lexemes with
+        | block, tl ->
+            (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
+
   (* maybe a reference *)
   and maybe_reference r p l = (* this function is called when we know it's not a link although it started with a '[' *)
     (* So it could be a reference or a link definition. *)
