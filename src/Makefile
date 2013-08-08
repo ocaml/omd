@@ -12,6 +12,9 @@ md.byte:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo md_main.cmo
 md.opt:md_backend.cmx md_lexer.cmx md_parser.cmx md_lib.cmx md_main.cmx
 	$(OCAMLOPT) -o $@ $+
 
+md.cma:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo
+	$(OCAMLC) -a -o $@ $+
+
 %.cmo:%.ml
 	$(OCAMLC) -c $<
 
@@ -35,7 +38,10 @@ md_main.cmx:md_lib.cmx
 md_lib.cmx:md_backend.cmx md_lexer.cmx md_parser.cmx
 
 clean:
-	rm -f *.cmx *.cmo *~ *.cmi *.o md
+	rm -f *.cmx *.cmo *~ *.cmi *.o *.cma md
+
+test: md.cma
+	ocaml md.cma cow_tests/test.ml
 
 htest:
 	make ; rlwrap ocaml md_lexer.cmo md_parser.cmo 
