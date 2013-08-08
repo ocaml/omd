@@ -1012,7 +1012,7 @@ let main_parse lexemes =
       | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
       | Newline::Greaterthan::Spaces n::tl -> loop (Newline::cl@block) [Spaces(n-1)] tl
-      | Newline::tl -> loop block (Space::cl) tl
+      | Newline::tl -> loop block (Newline::cl) tl
       | Newlines _::tl | ([] as tl) -> List.rev (cl@block), tl
       | e::tl -> loop block (e::cl) tl
     in
