@@ -40,6 +40,9 @@ md_lib.cmx:md_backend.cmx md_lexer.cmx md_parser.cmx
 clean:
 	rm -f *.cmx *.cmo *~ *.cmi *.o *.cma md
 
+test: md.cma
+	ocaml md.cma cow_tests/test.ml
+
 htest:
 	make ; rlwrap ocaml md_lexer.cmo md_parser.cmo 
 
