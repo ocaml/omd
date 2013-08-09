@@ -90,7 +90,7 @@ let make_paragraphs md =
             Paragraph(List.rev cp)::accu
         in
           List.rev accu
-    | (Code _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Html _ | Br | Hr) as e :: tl->
+    | (Code _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr) as e :: tl->
         if cp = [] || cp = [NL] then 
           loop cp (e::accu) tl
         else
@@ -334,7 +334,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b "(Hr)";
         loop  tl
     | Html s :: tl ->
-        Buffer.add_string b "(Html";
+        Buffer.add_string b "(Html ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
         loop  tl
