@@ -1169,8 +1169,8 @@ let main_parse lexemes =
     let rec maybe_def l =
       match read_until_cbracket l with
         | _, [] -> None
-        | id, (Colon::(Space|Spaces _)::Word(w)::Colon::Slashs(0)::remains)
-        | id, (Colon::Word(w)::Colon::Slashs(0)::remains) ->
+        | id, (Colon::(Space|Spaces _)::remains)
+        | id, (Colon::remains) ->
             begin
               let url, remains = read_until_space ~no_nl:true remains in
               let title, remains =
@@ -1182,7 +1182,7 @@ let main_parse lexemes =
                   | Oparenthesis::tl-> read_until_cparenth tl
                   | x -> raise Premature_ending
               in
-                rc#add_ref (string_of_tl id) (string_of_tl title) (w^"://"^string_of_tl url);
+                rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
                 Some(r, [Quote], remains)
             end
         | _ -> None
