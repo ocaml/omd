@@ -23,6 +23,7 @@ module Md : sig
     | Url of href * string * title
     | Ref of ref_container * name * string
     | Html of string
+    | Html_block of string
     | H1 of md
     | H2 of md
     | H3 of md
