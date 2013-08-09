@@ -1372,13 +1372,13 @@ let main_parse lexemes =
               (* first loop: return the list of (indentation level * item) *)
 
             (* indent = 0 *)
-            | Newline :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+            | (Newline|Newlines 0) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 1;
                 if fi then
                   loop false ordered result [] (0::indents) tl
                 else
                   loop false false ((false,indents,curr_item)::result) [] (0::indents) tl
-            | Newline :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+            | (Newline|Newlines 0) :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 2;
                 if fi then
                   loop false ordered result [] (0::indents) tl
@@ -1386,13 +1386,13 @@ let main_parse lexemes =
                   loop false true ((true,indents,curr_item)::result) [] (0::indents) tl
 
             (* indent = 1 *)
-            | Newline :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+            | (Newline|Newlines 0) :: Space :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 3;
                 if fi then
                   loop false ordered result [] (1::indents) tl
                 else
                   loop false false ((false,indents,curr_item)::result) [] (1::indents) tl
-            | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
+            | (Newline|Newlines 0) :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 4;
                 if fi then
                   loop false ordered result [] (1::indents) tl
@@ -1400,7 +1400,7 @@ let main_parse lexemes =
                   loop false true ((true,indents,curr_item)::result) [] (1::indents) tl
 
             (* indent >= 2 *)
-            | Newline :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) ->
+            | (Newline|Newlines 0) :: ((Spaces(x) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl) as p) ->
                 if debug then Printf.eprintf "#%d\n%!" 5;
                 if x+2 > list_hd indents + 4 then
                   begin (* a single new line & too many spaces -> *not* a new list item. *)
@@ -1413,7 +1413,7 @@ let main_parse lexemes =
                     else
                       loop false false ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
                   end
-            | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
+            | (Newline|Newlines 0) :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
                 if debug then Printf.eprintf "#%d\n%!" 6;
                 if x+2 > list_hd indents + 4 then
                   begin (* a single new line & too many spaces -> *not* a new list item. *)
@@ -1433,22 +1433,26 @@ let main_parse lexemes =
                         assert(_x = []);
                         loop false ordered result (Tag(Md(em))::curr_item) indents rest
                 end
-            | Newlines(0) :: ((Spaces(6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100)) :: tl as l) -> (* code inside a list *)
-                (* sorry for that huge pattern, I might switch to using a "when" clause later *)
-                begin match unindent 4 (Newline::l) with
+            | Newlines(0) :: (Spaces(n) :: tl as l) 
+            | Newline::Newline:: (Spaces(n) :: tl as l) when (try n+2 >= List.hd indents+4 with _ -> assert false) -> (* code inside a list *)
+                begin match unindent (List.hd indents+4) (Newline::l) with
                   | block, rest ->
                       loop false ordered result (Tag(Md(main_loop [] [] block))::curr_item) indents rest                  
                 end
 
-            | Newline::Newline::_ (* <---------- todo: something wrong here *)
+            | ((Newline|Newlines 0 as k) :: Spaces(_) :: e :: tl) -> (* adding e to the current item *)
+                if debug then Printf.eprintf "#%d (%s)\n%!" 88 (destring_of_tl lexemes);
+                loop false ordered result (e::Space::k::curr_item) indents tl
+
+            | ((Newline|Newlines 0 as k) :: e :: tl) -> (* adding e to the current item *)
+                if debug then Printf.eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
+                loop false ordered result (e::k::curr_item) indents tl
+
             | ([] | (Newlines(_) :: _)) ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
                 ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), lexemes)
-                  
-            | (Newline :: e :: tl) -> (* adding e to the current item *)
-                if debug then Printf.eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
-                loop false ordered result (e::Newline::curr_item) indents tl
+
             | e :: tl -> (* adding e to the current item *)
                 if debug then Printf.eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
                 loop false ordered result (e::curr_item) indents tl
