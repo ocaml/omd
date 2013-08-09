@@ -113,8 +113,8 @@ let string_of_t = function
   | Bars  n -> String.make (2+n) '|'
   | Caret -> "^"
   | Carets  n -> String.make (2+n) '^'
-  | Cbrace -> "{"
-  | Cbraces  n -> String.make (2+n) '{'
+  | Cbrace -> "}"
+  | Cbraces  n -> String.make (2+n) '}'
   | Colon -> ":"
   | Colons  n -> String.make (2+n) ':'
   | Comma -> ","
