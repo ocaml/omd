@@ -362,7 +362,7 @@ let rec fix_lists = function
       Emph(fix_lists e)::fix_lists tl
   | Bold e :: tl ->
       Bold(fix_lists e)::fix_lists tl
-  | (Code _ | Br | Hr | Ref _ | Url _ | Html _ as e) :: tl ->
+  | (Code _ | Br | Hr | Ref _ | Url _ | Html _ | Html_block _ as e) :: tl ->
       e::fix_lists tl
   | H1 e :: tl ->
       H1(fix_lists e)::fix_lists tl
@@ -1011,8 +1011,8 @@ let main_parse lexemes =
                       try
                         let alt = string_of_tl alt in
                         let path_title, rest = read_until_cparenth ~no_nl:false ntl in
-                        let path, title = read_until_space ~no_nl:true path_title in
-                        let title, nothing = read_until_dq (snd(read_until_dq title)) in
+                        let path, title = try read_until_space ~no_nl:true path_title with Premature_ending -> path_title, [] in
+                        let title, nothing = if title <> [] then read_until_dq (snd(read_until_dq title)) else [], [] in
                         let () = if nothing <> [] then raise NL_exception else () in (* this exception is caught right below *)
                         let r =
                           match e with
