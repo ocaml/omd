@@ -18,6 +18,7 @@ module Md : sig
     | Ul of li list
     | Ol of li list
     | Code of string (* html entities are to be converted *later* *)
+    | Code_block of string (* html entities are to be converted *later* *)
     | Br
     | Hr
     | Url of href * string * title
