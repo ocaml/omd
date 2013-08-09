@@ -594,7 +594,7 @@ let main_parse lexemes =
             | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
             | x , new_tl -> main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
           end
-      | _, (Underscores((0|1) as n) as t) :: tl -> (* 2 or 3 "orphan" stars, or emph/bold *)
+      | _, (Underscores((0|1) as n) as t) :: tl -> (* 2 or 3 "orphan" underscores, or emph/bold *)
           begin match uemph_or_bold (n+2) tl with
             | [], _ ->
                 if n = 0 then
