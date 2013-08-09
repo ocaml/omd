@@ -114,7 +114,19 @@ let make_paragraphs md =
             loop cp (e::accu) tl
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _ | Ul _ | Ol _) as e :: tl->
+    | (Ul b) :: tl ->
+        let e = Ul(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
+          if cp = [] || cp = [NL] then 
+            loop cp (e::accu) tl
+          else
+            loop [] (e::Paragraph(List.rev cp)::accu) tl
+    | (Ol b) :: tl ->
+        let e = Ol(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
+          if cp = [] || cp = [NL] then 
+            loop cp (e::accu) tl
+          else
+            loop [] (e::Paragraph(List.rev cp)::accu) tl
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _ ) as e :: tl->
         if cp = [] || cp = [NL] then 
           loop cp (e::accu) tl
         else
@@ -133,8 +145,6 @@ let make_paragraphs md =
         loop (x::cp) accu tl
   in
     loop [] [] md
-
-(* let make_paragraphs x = x  *)
 
 
 let rec html_of_md md = 
@@ -363,14 +373,10 @@ let rec sexpr_of_md md =
         Printf.bprintf b ")";
         loop  tl
     | Code c :: tl ->
-        Buffer.add_string b "(Code ";
-        Buffer.add_string b c;
-        Buffer.add_string b ")";
+        Printf.bprintf b "(Code \"%s\")" (String.escaped c);
         loop  tl
     | Code_block c :: tl ->
-        Buffer.add_string b "(Code_block ";
-        Buffer.add_string b c;
-        Buffer.add_string b ")";
+        Printf.bprintf b "(Code_block \"%s\")" (String.escaped c);
         loop  tl
     | Br :: tl ->
         Buffer.add_string b "(Br)";
