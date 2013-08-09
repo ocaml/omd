@@ -250,6 +250,7 @@ let split f l =
   let r, l = split_norev f l in
     List.rev r, l
 
+(* ** todo: fix this function!! *)
 let tag_setext l =
   let rec loop pl res = function (* pl = previous line *)
   | (Newline as e1)::(Equal|Equals _ as e2)::tl ->
@@ -271,11 +272,11 @@ let tag_setext l =
   | e::tl ->
       loop (e::pl) res tl
   | [] ->
-      List.rev (pl@res)
+      (* List.rev  *)(pl@res)
   in 
-  let r = loop [] [] l in
-    assert (List.length r >= List.length l);
-    r
+  let res = loop [] [] l in
+    if (not(List.length res >= List.length l)) then raise(Failure "tag_setext");
+    res
 
 let setext_title l =
   let rec loop r = function
