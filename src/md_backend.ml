@@ -210,9 +210,9 @@ let rec html_of_md md =
         loop indent tl
 
     | Code c :: tl ->
-        Buffer.add_string b "<pre>";
+        Buffer.add_string b "<pre><code>";
         Buffer.add_string b (htmlentities c);
-        Buffer.add_string b "</pre>\n";
+        Buffer.add_string b "</code></pre>\n";
         loop indent tl
     | Br :: tl ->
         Buffer.add_string b "<br/>\n";
