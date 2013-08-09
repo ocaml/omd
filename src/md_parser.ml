@@ -1281,6 +1281,7 @@ let main_parse lexemes =
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
       let rec loop (fi:bool) (ordered:bool) (result:(bool*int list*tag Md_lexer.t list)list) (curr_item:tag Md_lexer.t list) (indents:int list) (lexemes:tag Md_lexer.t list) =
+        (* 'fi' means first iteration *)
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" result else "" in
           if debug then
             begin
