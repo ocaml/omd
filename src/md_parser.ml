@@ -250,33 +250,33 @@ let split f l =
   let r, l = split_norev f l in
     List.rev r, l
 
-(* ** todo: fix this function!! *)
-let tag_setext l =
-  let rec loop pl res = function (* pl = previous line *)
-  | (Newline as e1)::(Equal|Equals _ as e2)::tl ->
-      begin match split_norev (function Space|Spaces _|Equal|Equals _ -> true| _ -> false) tl with
-        | left, (((Newline|Newlines _)::right)|([] as right)) ->
-            loop [] (left@[Tag(Maybe_h1)]@res) right
-        | left, right ->
-            loop [] (left@[e2;e1]@pl@res) right
-      end
-  | (Newline as e1)::(Minus|Minuss _ as e2)::tl ->
-      begin match split_norev (function Space|Spaces _|Minus|Minuss _ -> true| _ -> false) tl with
-        | left, (((Newline|Newlines _)::right)|([] as right)) ->
-            loop [] (left@[Tag(Maybe_h1)]@res) right
-        | left, right ->
-            loop [] (left@[e2;e1]@pl@res) right
-      end
-  | Newline as e::tl ->
-      loop [] (e::pl@res) tl
-  | e::tl ->
-      loop (e::pl) res tl
-  | [] ->
-      (* List.rev  *)(pl@res)
-  in 
-  let res = loop [] [] l in
-    if (not(List.length res >= List.length l)) then raise(Failure "tag_setext");
-    res
+(* Let's tag the lines that *might* be titles using setext-style. 
+   "might" because if they are, for instance, in a code section, 
+   then they are not titles at all. *)
+let tag_setext lexemes =
+  let rec loop pl res = function
+    | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
+        begin match split_norev (function (Space|Spaces _|Equal|Equals _) -> true|_ -> false) tl with
+          | rleft, (([]|(Newline|Newlines _)::_) as right) ->
+              loop [] (rleft@(e2::e1::pl@(Tag(Maybe_h1)::res))) right
+          | rleft, right ->
+              loop [] (rleft@(e2::e1::pl@res)) right
+        end
+    | (Newline as e1)::(Minus|Minuss _ as e2)::tl -> (* might be a H2. *)
+        begin match split_norev (function (Space|Spaces _|Minus|Minuss _) -> true|_ -> false) tl with
+          | rleft, (([]|(Newline|Newlines _)::_) as right) ->
+              loop [] (rleft@(e2::e1::pl@(Tag(Maybe_h2)::res))) right
+          | rleft, right ->
+              loop [] (rleft@(e2::e1::pl@res)) right
+        end
+    | (Newlines _ as e1)::tl ->
+        loop [] (e1::pl@res) tl
+    | e::tl ->
+        loop (e::pl) res tl
+    | [] ->
+        pl@res
+  in
+    List.rev (loop [] [] lexemes)
 
 let setext_title l =
   let rec loop r = function
