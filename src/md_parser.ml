@@ -291,7 +291,7 @@ let setext_title l =
     returns [None].*)
 let hr_m l =
   let rec loop n = function
-    | (Newline::tl) | ([] as tl) ->
+    | ((Newlines _|Newline)::tl) | ([] as tl) ->
         if n >= 3 then Some tl else None
     | (Space|Spaces _)::tl ->
         loop n tl
