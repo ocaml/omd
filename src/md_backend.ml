@@ -37,6 +37,7 @@ type md_element =
   | Url of href * string * title
   | Ref of ref_container * name * string
   | Html of string
+  | Html_block of string
   | H1 of md
   | H2 of md
   | H3 of md
@@ -90,7 +91,7 @@ let make_paragraphs md =
             Paragraph(List.rev cp)::accu
         in
           List.rev accu
-    | (Code _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr) as e :: tl->
+    | (Code _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _) as e :: tl->
         if cp = [] || cp = [NL] then 
           loop cp (e::accu) tl
         else
@@ -221,6 +222,9 @@ let rec html_of_md md =
         Buffer.add_string b "<hr/>\n";
         loop indent tl
     | Html s :: tl ->
+        Buffer.add_string b s;
+        loop indent tl
+    | Html_block s :: tl ->
         Buffer.add_string b s;
         loop indent tl
     | Url (href,s,title) :: tl ->
