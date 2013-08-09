@@ -9,6 +9,14 @@ let pindent = false
 let pindent = true
 let smdnl = true (* about standard markdown new lines *)
 
+let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
+
+let raise = 
+  if debug then
+    (fun e -> Printf.eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
+  else
+    raise
+
 
 (** references *)
 module R = Map.Make(String)
@@ -20,7 +28,9 @@ class ref_container = object
   method get_ref name =
     let (url, title) as r = 
       try R.find name c
-      with Not_found -> broken_url
+      with Not_found ->
+        if debug then Printf.eprintf "Could not find reference (%s)\n%!" (name);
+        broken_url
     in r
 end
 
