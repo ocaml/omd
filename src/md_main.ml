@@ -12,11 +12,22 @@ let () =
     done; assert false
     with End_of_file ->
       let open Md_lib.Md in
-      print_endline
-        (
-          html_of_md 
-            (make_paragraphs
-               (parse (lex (Buffer.contents b)))
-            )
-        )
+        print_endline
+          (
+            html_of_md 
+              (make_paragraphs
+                  (parse (lex (Buffer.contents b)))
+              )
+          );
+        if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
+        print_endline
+          (
+            Md_backend.sexpr_of_md 
+              ((* Md_backend.make_paragraphs *)
+                  (Md_parser.parse (Md_lexer.lex (Buffer.contents b)))
+              )
+          )
+
+
+
 
