@@ -108,7 +108,13 @@ let make_paragraphs md =
     | Blockquote b1 :: NL :: Blockquote b2 :: tl 
     | Blockquote b1 :: NL :: NL :: Blockquote b2 :: tl ->
         loop cp accu (Blockquote(b1@b2):: tl)
-    | (Blockquote _ | Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _) as e :: tl->
+    | Blockquote b :: tl ->
+        let e = Blockquote(loop [] [] b) in
+          if cp = [] || cp = [NL] then 
+            loop cp (e::accu) tl
+          else
+            loop [] (e::Paragraph(List.rev cp)::accu) tl
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _ | Ul _ | Ol _) as e :: tl->
         if cp = [] || cp = [NL] then 
           loop cp (e::accu) tl
         else
