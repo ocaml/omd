@@ -15,14 +15,6 @@
 
 *)
 
-let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
-
-let raise = 
-  if debug then
-    (fun e -> Printf.eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
-  else
-    raise
-
 open Md_backend
 open Md_lexer
 
