@@ -36,6 +36,7 @@ type md_element =
   | Hr
   | Url of href * string * title
   | Ref of ref_container * name * string
+  | Img_ref of ref_container * name * alt
   | Html of string
   | Html_block of string
   | H1 of md
@@ -138,6 +139,11 @@ let rec html_of_md md =
           rc#get_ref name
         in
         loop indent (Url(href,text,title)::tl)
+    | Img_ref(rc, name, alt) :: tl ->
+        let src, title =
+          rc#get_ref name
+        in
+        loop indent (Img(alt,src,title)::tl)
     | Paragraph md :: tl ->
         (let s = html_of_md md in
            if empty s then
@@ -293,6 +299,9 @@ let rec sexpr_of_md md =
     | Ref(rc, name, text) :: tl ->
         Printf.bprintf b "(Ref %s %s)" name text;
         loop tl
+    | Img_ref(rc, name, alt) :: tl ->
+        Printf.bprintf b "(Img_ref %s %s)" name alt;
+        loop tl
     | Paragraph md :: tl ->
         Buffer.add_string b "(Paragraph";
         loop md;
@@ -339,6 +348,11 @@ let rec sexpr_of_md md =
         loop  tl
     | Html s :: tl ->
         Buffer.add_string b "(Html ";
+        Buffer.add_string b s;
+        Buffer.add_string b ")";
+        loop  tl
+    | Html_block s :: tl ->
+        Buffer.add_string b "(Html_block ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
         loop  tl
