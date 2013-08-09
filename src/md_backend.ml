@@ -42,6 +42,7 @@ type md_element =
   | Ul of li list
   | Ol of li list
   | Code of string (* html entities are to be converted *later* *)
+  | Code_block of string (* html entities are to be converted *later* *)
   | Br
   | Hr
   | Url of href * string * title
@@ -83,6 +84,7 @@ let htmlentities s =
     Buffer.contents b
 
 
+(** - recognizes paragraphs - glues following blockquotes  *)
 let make_paragraphs md =
   let rec remove_prefix prefix = function
     | [] ->
@@ -102,7 +104,11 @@ let make_paragraphs md =
             Paragraph(List.rev cp)::accu
         in
           List.rev accu
-    | (Code _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _) as e :: tl->
+    | Blockquote b1 :: Blockquote b2 :: tl 
+    | Blockquote b1 :: NL :: Blockquote b2 :: tl 
+    | Blockquote b1 :: NL :: NL :: Blockquote b2 :: tl ->
+        loop cp accu (Blockquote(b1@b2):: tl)
+    | (Blockquote _ | Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _) as e :: tl->
         if cp = [] || cp = [NL] then 
           loop cp (e::accu) tl
         else
@@ -226,10 +232,15 @@ let rec html_of_md md =
         if pindent then Buffer.add_char b '\n';
         loop indent tl
 
-    | Code c :: tl ->
+    | Code_block c :: tl ->
         Buffer.add_string b "<pre><code>";
         Buffer.add_string b (htmlentities c);
         Buffer.add_string b "</code></pre>\n";
+        loop indent tl
+    | Code c :: tl ->
+        Buffer.add_string b "<code>";
+        Buffer.add_string b (htmlentities c);
+        Buffer.add_string b "</code>";
         loop indent tl
     | Br :: tl ->
         Buffer.add_string b "<br/>\n";
@@ -346,7 +357,12 @@ let rec sexpr_of_md md =
         Printf.bprintf b ")";
         loop  tl
     | Code c :: tl ->
-        Buffer.add_string b "(Code";
+        Buffer.add_string b "(Code ";
+        Buffer.add_string b c;
+        Buffer.add_string b ")";
+        loop  tl
+    | Code_block c :: tl ->
+        Buffer.add_string b "(Code_block ";
         Buffer.add_string b c;
         Buffer.add_string b ")";
         loop  tl
