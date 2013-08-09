@@ -59,7 +59,7 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
-let unindent n l =
+let unindent n lexemes =
   let rec fix n p = function (* reproduce the property that twice the same token can't happen *)
     | x::tl ->
         if x = p then
@@ -99,10 +99,10 @@ let unindent n l =
         List.rev (cl@accu), l
     | e::tl ->
         loop accu (e::cl) tl
-    | [] -> 
+    | [] as l -> 
         List.rev (cl@accu), l
   in 
-  match loop [] [] l with
+  match loop [] [] lexemes with
     | [], right -> [], right
     | (e::tl), right -> fix 1 e tl, right
   
@@ -500,6 +500,17 @@ let main_parse lexemes =
           begin 
             let r, p, l = emailstyle_quoting r previous (Newline::lexemes)
             in main_loop r p l
+          end
+
+      (* email-style quoting, with lines starting with spaces! *)
+      | ([]|[Newline|Newlines _]), (Space|Spaces(0|1) as s)::Greaterthan::(Space|Spaces _)::_ ->
+          begin
+            let new_r, p, rest =
+              let foo, rest = unindent (fst(length s)) (Newline::lexemes) in
+                match emailstyle_quoting [] previous (Newline::(foo)) with
+                  | new_r, p, [] -> new_r, p, rest
+                  | _ -> assert false
+            in main_loop (new_r@r) [Newline] rest
           end
 
       (* maybe tags*)
