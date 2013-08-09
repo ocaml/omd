@@ -564,7 +564,7 @@ let main_parse lexemes =
           main_loop (Text(string_of_t t) :: r) [t] tl
 
       (* At least 4 spaces, so it can only be code. *)
-      | ([]|[Newline|Newlines _]), (Spaces n as t)::tl when n>=2 ->
+      | ([]|[Newline|Newlines _]), (Spaces n)::tl when n>=2 ->
           let r, p, l = icode r [Newline] lexemes in
             main_loop r p l
 
@@ -631,11 +631,16 @@ let main_parse lexemes =
             | Some l -> main_loop (Hr::r) [Newline] l
             | None -> assert false
           end
-      | ([]|[(Newline|Newlines _)]), Star :: tl -> (* maybe hr *)
+      | ([]|[(Newline|Newlines _)]), (Star as t) :: tl -> (* maybe hr *)
           begin match hr_s lexemes with
-            | Some l -> main_loop (Hr::r) [Newline] l
+            | Some l ->
+                main_loop (Hr::r) [Newline] l
             | None ->
-                main_loop (Text "*"::r) [Star] tl
+                begin match emph_or_bold 1 tl with
+                  | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
+                  | x , new_tl -> main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl                  
+                end
+                  
           end
       | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
           begin match emph_or_bold 1 tl with
@@ -1205,14 +1210,15 @@ let main_parse lexemes =
           let rec loop accu = function
             | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
             | ((Hash|Hashs _)::(Space|Spaces _)::((Newline|Newlines _)::_ as l))
-            | (((Newline|Newlines _)::_) as l) ->
+            | (((Newline|Newlines _)::_) as l)
+            | ([] as l) ->
                 rev_main_loop [] [] (List.rev accu), l
+            | (Hash|Hashs _)::[] ->
+                rev_main_loop [] [] (List.rev accu), []
             | (Hash|Hashs _ as x)::tl ->
                 loop (Word(string_of_t x)::accu) tl
             | x::tl ->
                 loop (x::accu) tl
-            | [] ->
-                rev_main_loop [] [] (List.rev accu), []
           in
             loop [] l
         in
