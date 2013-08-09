@@ -887,7 +887,7 @@ let main_parse lexemes =
                 | _ -> assert false
               in
                 match read_html() with
-                  | html, tl -> main_loop (Html(string_of_tl html)::r) [Greaterthan] tl
+                  | html, tl -> main_loop (Html_block(string_of_tl html)::r) [Greaterthan] tl
             end
       | _, (Lessthan|Lessthans _ as opening)::
           (* inline HTML. *)
