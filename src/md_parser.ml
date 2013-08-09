@@ -537,7 +537,7 @@ let main_parse lexemes =
       | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _)::_ -> (* maybe hr *)
           begin match hr_m lexemes with
             | None -> (* no hr, so it's a list *)
-                begin match new_list r [] (Newline::lexemes) with
+                begin match new_list false r [] (Newline::lexemes) with
                   | md, new_p, new_l -> main_loop (md@r) new_p new_l
                 end
             | Some l -> (* hr *)
@@ -611,7 +611,7 @@ let main_parse lexemes =
       (* enumerated lists *)
       | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
           if debug then Printf.eprintf "++++++++++++++++++++++++++++++\n(%s)\n%!" (String.escaped(string_of_tl lexemes));
-          begin match new_list r [] (Newline::lexemes) with
+          begin match new_list true r [] (Newline::lexemes) with
             | md, new_p, new_l ->
                 main_loop (md) new_p new_l
           end
@@ -622,7 +622,7 @@ let main_parse lexemes =
             | Some l ->
                 main_loop (Hr::r) [Newline] l
             | None ->
-                begin match new_list r [] (Newline::lexemes) with
+                begin match new_list false r [] (Newline::lexemes) with
                   | md, new_p, new_l -> main_loop (md) new_p new_l
                 end
           end
@@ -1292,7 +1292,7 @@ let main_parse lexemes =
 
   (*********************************************************************************)
   (** new_list: returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
-  and new_list (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : (md * tag Md_lexer.t list * tag Md_lexer.t list) =
+  and new_list (o:bool) (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : (md * tag Md_lexer.t list * tag Md_lexer.t list) =
     if debug then Printf.eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p) (destring_of_tl l);
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
@@ -1432,7 +1432,7 @@ let main_parse lexemes =
       in
       let tmp_r, new_l =
         (* tmp_r: (bool*int list*tag Md_lexer.t list) list) ; new_l:tag Md_lexer.t list *)
-         loop true true [] [] [] l 
+        loop true o [] [] [] l 
       in
       let () =
         if debug then
@@ -1459,11 +1459,10 @@ let main_parse lexemes =
     let spaces n r previous l =
       assert (n > 0);
       match n, previous, l with (* NOT a recursive function *)
-        | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl  (* unordered list *)
+        | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)::(Space|Spaces _)::tl -> (* unordered list *) 
+            new_list false r [] (Newline::make_space n::l)
         | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot::(Space|Spaces _)::tl -> (* ordered list *)
-            begin
-              (new_list r [] (Newline::make_space n::l))
-            end
+            new_list true r [] (Newline::make_space n::l)
         | (1|2|3), ([]|[(Newlines _)]), t::tl ->
             Text (" ")::r, p, l
         | (1|2|3), ([]|[(Newlines _)]), [] ->
