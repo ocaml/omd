@@ -552,6 +552,11 @@ let main_parse lexemes =
       | _, ((Hash|Hashs _) as t) :: tl -> (* hash -- no title *)
           main_loop (Text(string_of_t t) :: r) [t] tl
 
+      (* At least 4 spaces, so it can only be code. *)
+      | ([]|[Newline|Newlines _]), (Spaces n as t)::tl when n>=2 ->
+          let r, p, l = icode r [Newline] lexemes in
+            main_loop r p l
+
       (* spaces after a newline: could lead to hr *)
       | ([]|[Newline|Newlines _]), ((Space|Spaces _) as t) :: tl ->
           begin match hr_s tl with
