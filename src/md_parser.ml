@@ -231,6 +231,10 @@ let rec eat f = function
   | [] -> []
   | e::tl -> if f e then eat f tl else e::tl
 
+let rec mem f = function
+  | [] -> false
+  | e::tl -> f e || mem f tl  
+
 let split_norev f =
   let rec loop r = function
   | [] -> r, []
@@ -354,7 +358,7 @@ let rec fix_lists = function
       Emph(fix_lists e)::fix_lists tl
   | Bold e :: tl ->
       Bold(fix_lists e)::fix_lists tl
-  | (Code _ | Br | Hr | Ref _ | Img_ref _ | Url _ | Html _ | Html_block _ as e) :: tl ->
+  | (Code _ |Code_block _ | Br | Hr | Ref _ | Img_ref _ | Url _ | Html _ | Html_block _ as e) :: tl ->
       e::fix_lists tl
   | H1 e :: tl ->
       H1(fix_lists e)::fix_lists tl
@@ -1267,7 +1271,7 @@ let main_parse lexemes =
       begin
         let rec loop accu l =
           match l with
-            | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Html _ | Url _ | Br | Hr | Code _ | Ol _ | Ul _ | NL )::_ ->
+            | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Html _ | Html_block _ | Url _ | Br | Hr | Code _ | Code_block _ | Ol _ | Ul _ | NL )::_ ->
                 List.rev accu, l
             | x::tl -> loop (x::accu) tl
             | [] -> List.rev accu, []
@@ -1306,7 +1310,29 @@ let main_parse lexemes =
           code_block (e::accu) tl
     in
     let cb, l = code_block [] tl in
-      (Code(string_of_tl cb)::r), [Backquote], l
+      if mem (function (Newline|Newlines _) -> true | _ -> false) cb then
+        (Code_block(string_of_tl cb)::r), [Backquote], l
+      else
+        let clean_bcode s =
+          let rec loop1 i =
+            if i = String.length s then 0
+            else match s.[i] with
+              | '`' -> i
+              | ' ' -> loop1(i+1)
+              | _ -> 0
+          in
+          let rec loop2 i =
+            if i = -1 then String.length s - 1
+            else match s.[i] with
+              | '`' -> i+1
+              | ' ' -> loop2(i-1)
+              | _ -> String.length s - 1
+          in
+            match loop1 0, loop2 (String.length s - 1) with
+              | 0, n when n = String.length s - 1 -> s
+              | i, n -> String.sub s i (n-i)
+        in
+          (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
 
   and icode (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : md * tag Md_lexer.t list * tag Md_lexer.t list =
     (** indented code:
@@ -1314,17 +1340,17 @@ let main_parse lexemes =
     let accu = Buffer.create 42 in
     let rec loop = function
       | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->  (* 1, 2 or 3 spaces. *)
-          Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+          Code_block (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
       | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl -> (* At least 4 spaces, it's still code. *)
           Buffer.add_string accu (String.make (n-2) ' ');
           loop ([t], tl)
       | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
-          Code (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
+          Code_block (Buffer.contents accu)::r, p, tl (* -> Return what's been found as code because it's no more code. *)
       | _, e::tl ->
           Buffer.add_string accu (string_of_t e); (* html entities are to be converted later! *)
           loop ([e], tl)
       | p, [] ->
-          Code (Buffer.contents accu)::r, p, []
+          Code_block (Buffer.contents accu)::r, p, []
     in loop ([Newlines 0], l)
 
 
