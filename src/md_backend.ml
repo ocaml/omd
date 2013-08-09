@@ -208,6 +208,7 @@ let rec html_of_md md =
         Buffer.add_string b "</ol>";
         if pindent then Buffer.add_char b '\n';
         loop indent tl
+
     | Code c :: tl ->
         Buffer.add_string b "<pre>";
         Buffer.add_string b (htmlentities c);
@@ -274,5 +275,107 @@ let rec html_of_md md =
     | [] -> ()
   in 
     loop 0 md;
+    Buffer.contents b
+
+
+let rec sexpr_of_md md = 
+  let b = Buffer.create 42 in
+  let rec loop = function
+    | Blockquote q :: tl ->
+        Buffer.add_string b "(Blockquote";
+        loop  q;
+        Buffer.add_string b ")";
+        loop  tl
+    | Ref(rc, name, text) :: tl ->
+        Printf.bprintf b "(Ref %s %s)" name text;
+        loop tl
+    | Paragraph md :: tl ->
+        Buffer.add_string b "(Paragraph";
+        loop md;
+        Buffer.add_string b ")";
+        loop tl
+    | Img(alt, src, title) :: tl ->
+        Printf.bprintf b "(Img %s %s %s)" alt src title;
+        loop tl
+    | Text t1 :: Text t2 :: tl ->
+        loop (Text(t1^t2)::tl)
+    | Text t :: tl ->
+        Printf.bprintf b "(Text \"%s\")" (String.escaped t);
+        loop tl
+    | Emph md :: tl ->
+        Buffer.add_string b "(Emph";
+        loop md;
+        Buffer.add_string b ")";
+        loop tl
+    | Bold md :: tl ->
+        Buffer.add_string b "(Bold";
+        loop md;
+        Buffer.add_string b ")";
+        loop tl
+    | Ol l :: tl ->
+        Printf.bprintf b "(Ol";
+        List.iter(fun (Li li) -> Printf.bprintf b "(Li"; loop li; Printf.bprintf b ")") l;
+        Printf.bprintf b ")";
+        loop  tl
+    | Ul l :: tl ->
+        Printf.bprintf b "(Ul";
+        List.iter(fun (Li li) -> Printf.bprintf b "(Li"; loop li;Printf.bprintf b ")") l;
+        Printf.bprintf b ")";
+        loop  tl
+    | Code c :: tl ->
+        Buffer.add_string b "(Code";
+        Buffer.add_string b c;
+        Buffer.add_string b ")";
+        loop  tl
+    | Br :: tl ->
+        Buffer.add_string b "(Br)";
+        loop  tl
+    | Hr :: tl ->
+        Buffer.add_string b "(Hr)";
+        loop  tl
+    | Html s :: tl ->
+        Buffer.add_string b "(Html";
+        Buffer.add_string b s;
+        Buffer.add_string b ")";
+        loop  tl
+    | Url (href,s,title) :: tl ->
+        Printf.bprintf b "(Url %s %s %s)" href s title;
+        loop  tl
+    | H1 md :: tl ->
+        Buffer.add_string b "(H1";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | H2 md :: tl ->
+        Buffer.add_string b "(H2";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | H3 md :: tl ->
+        Buffer.add_string b "(H3";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | H4 md :: tl ->
+        Buffer.add_string b "(H4";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | H5 md :: tl ->
+        Buffer.add_string b "(H5";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | H6 md :: tl ->
+        Buffer.add_string b "(H6";
+        loop  md;
+        Buffer.add_string b ")";
+        loop  tl
+    | NL :: tl ->
+        Buffer.add_string b "(NL)";
+        loop  tl
+    | [] -> ()
+  in 
+    loop md;
     Buffer.contents b
 
