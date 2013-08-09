@@ -354,7 +354,7 @@ let rec fix_lists = function
       Blockquote(fix_lists q) :: fix_lists tl
   | Img _ as i :: tl ->
       i :: fix_lists tl
- | Paragraph p ::  tl ->
+  | Paragraph p ::  tl ->
       Paragraph (fix_lists p) :: fix_lists tl
   | Text _ as e :: tl ->
       e::fix_lists tl
@@ -362,7 +362,7 @@ let rec fix_lists = function
       Emph(fix_lists e)::fix_lists tl
   | Bold e :: tl ->
       Bold(fix_lists e)::fix_lists tl
-  | (Code _ | Br | Hr | Ref _ | Url _ | Html _ | Html_block _ as e) :: tl ->
+  | (Code _ | Br | Hr | Ref _ | Img_ref _ | Url _ | Html _ | Html_block _ as e) :: tl ->
       e::fix_lists tl
   | H1 e :: tl ->
       H1(fix_lists e)::fix_lists tl
@@ -1001,10 +1001,30 @@ let main_parse lexemes =
             with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
           end
 
+      (* img ref *)
+      | _, (Exclamation|Exclamations _ as e)::(Obracket::Cbracket::Obracket::tl as l) -> (* ref image insertion with no "alt" *)
+          (* ![][ref] *)
+          begin
+            try
+              match read_until_cbracket ~no_nl:true tl with
+                | id, tl ->
+                    let r =
+                      match e with
+                        | Exclamations 0 -> Text "!" :: r
+                        | Exclamations n -> Text(String.make (n+1) '!') :: r
+                        | _ -> r
+                    in
+                    let r = Img_ref(rc, string_of_tl id, "") :: r in
+                      main_loop r [Cbracket] tl
+            with NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+          end
+
+
       (* img *)
       | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) -> (* image insertion with "alt" *)
           (* ![Alt text](/path/to/img.jpg "Optional title") *)
-          begin try
+          begin
+            try
               match read_until_cbracket tl with
                 | alt, Oparenthesis::ntl ->
                     begin
@@ -1029,7 +1049,20 @@ let main_parse lexemes =
                                announce something else, such as a link, so we have to go through it again. *)
                             main_loop (Text(string_of_t e)::r) [Exclamation] l
                         | Premature_ending ->
-                            main_loop (Text(string_of_t e)::r) [Exclamation] l (* todo: images with references *)
+                                main_loop (Text(string_of_t e)::r) [Exclamation] l
+                    end
+                | alt, Obracket::Word(id)::Cbracket::ntl 
+                | alt, Obracket::(Space|Spaces _)::Word(id)::Cbracket::ntl 
+                | alt, Obracket::(Space|Spaces _)::Word(id)::(Space|Spaces _)::Cbracket::ntl
+                | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
+                    main_loop (Img_ref(rc, id, string_of_tl alt)::r) [Cbracket] ntl
+                | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_ as ntl) ->
+                    begin
+                      try
+                        match read_until_cbracket ~no_nl:false ntl with
+                          | [], rest -> raise Premature_ending
+                          | id, rest -> main_loop (Img_ref(rc, string_of_tl id, string_of_tl alt)::r) [Cbracket] rest
+                      with Premature_ending | NL_exception -> main_loop (Text(string_of_t e)::r) [Exclamation] l
                     end
                 | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
             with 
@@ -1113,7 +1146,7 @@ let main_parse lexemes =
       | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
       | Newline::Greaterthan::Spaces n::tl -> loop (Newline::cl@block) [Spaces(n-1)] tl
-      (* | Newline::tl -> loop block (Newline::cl) tl *)
+          (* | Newline::tl -> loop block (Newline::cl) tl *)
       | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
       | e::tl -> loop block (e::cl) tl
     in
@@ -1334,7 +1367,7 @@ let main_parse lexemes =
                 if fi then
                   loop false ordered result [] (1::indents) tl
                 else
-                loop false false ((false,indents,curr_item)::result) [] (1::indents) tl
+                  loop false false ((false,indents,curr_item)::result) [] (1::indents) tl
             | Newline :: Space :: Number _ :: Dot :: (Space|Spaces _) :: tl ->
                 if debug then Printf.eprintf "#%d\n%!" 4;
                 if fi then
@@ -1354,7 +1387,7 @@ let main_parse lexemes =
                     if fi then
                       loop false ordered result [] ((x+2)::indents) tl
                     else
-                    loop false false ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
+                      loop false false ((false,indents,curr_item)::result) [] ((x+2)::indents) tl
                   end
             | Newline :: ((Spaces(x) :: Number _ :: Dot :: (Space|Spaces _) :: tl) as p) ->
                 if debug then Printf.eprintf "#%d\n%!" 6;
@@ -1367,7 +1400,7 @@ let main_parse lexemes =
                     if fi then
                       loop false ordered result [] ((x+2)::indents) tl
                     else
-                    loop false true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
+                      loop false true ((true,indents,curr_item)::result) [] ((x+2)::indents) tl
                   end
             | Newlines(0) :: ((Spaces(2|3|4|5 as n)) :: Greaterthan :: (Space|Spaces _) :: tl as l) -> (* blockquote inside a list *)
                 begin match unindent (n+2) (Newline::l) with
@@ -1388,7 +1421,7 @@ let main_parse lexemes =
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
                 ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), lexemes)
-               
+                  
             | (Newline :: e :: tl) -> (* adding e to the current item *)
                 if debug then Printf.eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
                 loop false ordered result (e::Newline::curr_item) indents tl
