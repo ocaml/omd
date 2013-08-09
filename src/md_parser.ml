@@ -1163,8 +1163,12 @@ let main_parse lexemes =
       let () = if try ignore(read_until_obracket text); true with Premature_ending -> false then raise Premature_ending in
       let blank, remains = read_until_obracket remains in
       let () = if eat (function (Space|Spaces _|Newline|Newlines _) -> true| _ -> false) blank <> [] then raise Premature_ending in
-      let id, remains = read_until_cbracket remains in
-        Some(((Ref(rc, string_of_tl id, string_of_tl text))::r), [Cbracket], remains)
+        match read_until_cbracket remains with
+          | [], remains ->
+              let id = string_of_tl text in (* implicit anchor *)
+              Some(((Ref(rc, id, id))::r), [Cbracket], remains)
+          | id, remains ->
+              Some(((Ref(rc, string_of_tl id, string_of_tl text))::r), [Cbracket], remains)
     in
     let rec maybe_def l =
       match read_until_cbracket l with
@@ -1172,7 +1176,9 @@ let main_parse lexemes =
         | id, (Colon::(Space|Spaces _)::remains)
         | id, (Colon::remains) ->
             begin
-              let url, remains = read_until_space ~no_nl:true remains in
+              let url, remains =
+                split (function (Space|Spaces _|Newline|Newlines _) -> false|_ -> true) remains
+              in
               let title, remains =
                 match eat (function (Space|Spaces _|Newline|Newlines _) -> true| _ -> false) remains with
                   | Doublequotes(0)::tl -> [], tl
@@ -1180,7 +1186,7 @@ let main_parse lexemes =
                   | Quotes(0)::tl -> [], tl
                   | Quote::tl -> read_until_q tl
                   | Oparenthesis::tl-> read_until_cparenth tl
-                  | x -> raise Premature_ending
+                  | l -> [], l
               in
                 rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
                 Some(r, [Quote], remains)
