@@ -156,7 +156,7 @@ let rec html_of_md md =
         Buffer.add_string b (htmlentities alt);
         Buffer.add_string b "' ";
         if title <> "" then
-          (Buffer.add_string b "' title='";
+          (Buffer.add_string b " title='";
            Buffer.add_string b (htmlentities title);
            Buffer.add_string b "' ");
         Buffer.add_string b "/>";
