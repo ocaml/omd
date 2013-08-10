@@ -64,7 +64,7 @@ val parse : token list -> t
 val make_paragraphs : t -> t
 (** Build Markdown paragraphs. *)
 
-val html_of_md : t -> string
+val to_html : t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] into your HTML representation.  *)

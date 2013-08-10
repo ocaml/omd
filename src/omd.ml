@@ -13,7 +13,7 @@ let lex : string -> token list = Omd_lexer.lex
 
 let parse : token list -> t = Omd_parser.parse
 
-let html_of_md : t -> string = html_of_md
+let to_html : t -> string = html_of_md
 
 let html_of_string (html:string) : string =
   html_of_md (parse (lex html))
