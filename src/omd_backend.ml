@@ -5,15 +5,17 @@
 (* http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html         *)
 (***********************************************************************)
 
+open Printf
+
 let pindent = false
 let pindent = true
 let smdnl = true (* about standard markdown new lines *)
 
 let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
 
-let raise = 
+let raise =
   if debug then
-    (fun e -> Printf.eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
+    (fun e -> eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
   else
     raise
 
@@ -26,15 +28,15 @@ class ref_container = object
   method add_ref name title url =
     c <- R.add name (url, title) c
   method get_ref name =
-    let (url, title) as r = 
+    let (url, title) as r =
       try R.find name c
       with Not_found ->
-        if debug then Printf.eprintf "Could not find reference (%s)\n%!" (name);
+        if debug then eprintf "Could not find reference (%s)\n%!" (name);
         broken_url
     in r
 end
 
-type element = 
+type element =
   | Paragraph of t
   | Text of string
   | Emph of t
@@ -66,7 +68,7 @@ and href = string
 and title = string
 and li = Li of t
 and t = element list
-  
+
 
 let htmlentities s =
   let b = Buffer.create 42 in
@@ -104,30 +106,31 @@ let make_paragraphs md =
             Paragraph(List.rev cp)::accu
         in
           List.rev accu
-    | Blockquote b1 :: Blockquote b2 :: tl 
-    | Blockquote b1 :: NL :: Blockquote b2 :: tl 
+    | Blockquote b1 :: Blockquote b2 :: tl
+    | Blockquote b1 :: NL :: Blockquote b2 :: tl
     | Blockquote b1 :: NL :: NL :: Blockquote b2 :: tl ->
         loop cp accu (Blockquote(b1@b2):: tl)
     | Blockquote b :: tl ->
         let e = Blockquote(loop [] [] b) in
-          if cp = [] || cp = [NL] then 
+          if cp = [] || cp = [NL] then
             loop cp (e::accu) tl
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Ul b) :: tl ->
         let e = Ul(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
-          if cp = [] || cp = [NL] then 
+          if cp = [] || cp = [NL] then
             loop cp (e::accu) tl
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Ol b) :: tl ->
         let e = Ol(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
-          if cp = [] || cp = [NL] then 
+          if cp = [] || cp = [NL] then
             loop cp (e::accu) tl
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr | Html_block _ ) as e :: tl->
-        if cp = [] || cp = [NL] then 
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr
+       | Html_block _ ) as e :: tl->
+        if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
@@ -147,7 +150,7 @@ let make_paragraphs md =
     loop [] [] md
 
 
-let rec html_of_md md = 
+let rec html_of_md md =
   let empty s =
     let rec loop i =
       if i < String.length s then
@@ -158,7 +161,7 @@ let rec html_of_md md =
         true
     in
       loop 0
-  in    
+  in
   let b = Buffer.create 42 in
   let rec loop indent = function
     | Blockquote q :: tl ->
@@ -220,7 +223,9 @@ let rec html_of_md md =
         if pindent then Buffer.add_char b '\n';
         List.iter
           (fun (Li li) ->
-            if pindent then for i = 0 to indent + 1 do Buffer.add_char b ' ' done;
+            if pindent then for i = 0 to indent + 1 do
+                              Buffer.add_char b ' '
+                            done;
             Buffer.add_string b "<li>";
             loop (indent+2) li;
             Buffer.add_string b "</li>";
@@ -237,7 +242,9 @@ let rec html_of_md md =
         if pindent then Buffer.add_char b '\n';
         List.iter
           (fun (Li li) ->
-            if pindent then for i = 0 to indent + 1 do Buffer.add_char b ' ' done;
+            if pindent then for i = 0 to indent + 1 do
+                              Buffer.add_char b ' '
+                            done;
             Buffer.add_string b "<li>";
             loop (indent+2) li;
             Buffer.add_string b "</li>";
@@ -275,7 +282,7 @@ let rec html_of_md md =
           Buffer.add_string b "<a href='";
           Buffer.add_string b (htmlentities href);
           Buffer.add_string b "'";
-          if title <> "" then 
+          if title <> "" then
             begin
               Buffer.add_string b " title='";
               Buffer.add_string b (htmlentities title);
@@ -320,12 +327,12 @@ let rec html_of_md md =
         Buffer.add_char b '\n';
         loop indent tl
     | [] -> ()
-  in 
+  in
     loop 0 md;
     Buffer.contents b
 
 
-let rec sexpr_of_md md = 
+let rec sexpr_of_md md =
   let b = Buffer.create 42 in
   let rec loop = function
     | Blockquote q :: tl ->
@@ -334,10 +341,10 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop  tl
     | Ref(rc, name, text) :: tl ->
-        Printf.bprintf b "(Ref %s %s)" name text;
+        bprintf b "(Ref %s %s)" name text;
         loop tl
     | Img_ref(rc, name, alt) :: tl ->
-        Printf.bprintf b "(Img_ref %s %s)" name alt;
+        bprintf b "(Img_ref %s %s)" name alt;
         loop tl
     | Paragraph md :: tl ->
         Buffer.add_string b "(Paragraph";
@@ -345,12 +352,12 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop tl
     | Img(alt, src, title) :: tl ->
-        Printf.bprintf b "(Img %s %s %s)" alt src title;
+        bprintf b "(Img %s %s %s)" alt src title;
         loop tl
     | Text t1 :: Text t2 :: tl ->
         loop (Text(t1^t2)::tl)
     | Text t :: tl ->
-        Printf.bprintf b "(Text \"%s\")" (String.escaped t);
+        bprintf b "(Text \"%s\")" (String.escaped t);
         loop tl
     | Emph md :: tl ->
         Buffer.add_string b "(Emph";
@@ -363,20 +370,20 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop tl
     | Ol l :: tl ->
-        Printf.bprintf b "(Ol";
-        List.iter(fun (Li li) -> Printf.bprintf b "(Li"; loop li; Printf.bprintf b ")") l;
-        Printf.bprintf b ")";
+        bprintf b "(Ol";
+        List.iter(fun (Li li) -> bprintf b "(Li"; loop li; bprintf b ")") l;
+        bprintf b ")";
         loop  tl
     | Ul l :: tl ->
-        Printf.bprintf b "(Ul";
-        List.iter(fun (Li li) -> Printf.bprintf b "(Li"; loop li;Printf.bprintf b ")") l;
-        Printf.bprintf b ")";
+        bprintf b "(Ul";
+        List.iter(fun (Li li) -> bprintf b "(Li"; loop li;bprintf b ")") l;
+        bprintf b ")";
         loop  tl
     | Code c :: tl ->
-        Printf.bprintf b "(Code \"%s\")" (String.escaped c);
+        bprintf b "(Code \"%s\")" (String.escaped c);
         loop  tl
     | Code_block c :: tl ->
-        Printf.bprintf b "(Code_block \"%s\")" (String.escaped c);
+        bprintf b "(Code_block \"%s\")" (String.escaped c);
         loop  tl
     | Br :: tl ->
         Buffer.add_string b "(Br)";
@@ -395,7 +402,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop  tl
     | Url (href,s,title) :: tl ->
-        Printf.bprintf b "(Url %s %s %s)" href s title;
+        bprintf b "(Url %s %s %s)" href s title;
         loop  tl
     | H1 md :: tl ->
         Buffer.add_string b "(H1";
@@ -431,7 +438,6 @@ let rec sexpr_of_md md =
         Buffer.add_string b "(NL)";
         loop  tl
     | [] -> ()
-  in 
+  in
     loop md;
     Buffer.contents b
-
