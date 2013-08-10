@@ -11,7 +11,7 @@ let () =
       Buffer.add_char b (input_char stdin)
     done; assert false
     with End_of_file ->
-      let open Md_lib.Md in
+      let open Omd.Md in
         print_endline
           (
             html_of_md 
@@ -22,9 +22,9 @@ let () =
         if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
         print_endline
           (
-            Md_backend.sexpr_of_md 
+            Omd_backend.sexpr_of_md 
               ((* Md_backend.make_paragraphs *)
-                  (Md_parser.parse (Md_lexer.lex (Buffer.contents b)))
+                  (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))
               )
           )
 
