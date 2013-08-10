@@ -15,13 +15,13 @@
 
 *)
 
-open Md_backend
-open Md_lexer
+open Omd_backend
+open Omd_lexer
 
-type tag = Maybe_h1 | Maybe_h2 | Md of Md_backend.md
+type tag = Maybe_h1 | Maybe_h2 | Md of Omd_backend.md
 
 type tmp_list = element list
-and element   = Item of tag Md_lexer.t list
+and element   = Item of tag Omd_lexer.t list
 
 
 module StringSet : sig
@@ -61,7 +61,7 @@ let unindent n lexemes =
         else if n = 1 then
           p::fix 1 x tl
         else
-          (Md_lexer.lex(let b = Buffer.create n in for i = 1 to n do Buffer.add_string b(string_of_t p) done; Buffer.contents b))
+          (Omd_lexer.lex(let b = Buffer.create n in for i = 1 to n do Buffer.add_string b(string_of_t p) done; Buffer.contents b))
           @ fix 1 x tl
     | [] -> []
   in
@@ -82,7 +82,7 @@ let unindent n lexemes =
         if s+2 = n then
           loop (Newline::cl@accu) [] tl
         else if s+2 > n then
-          loop (Newline::cl@accu) (Md_lexer.lex(String.make (s+2-n) ' ')) tl
+          loop (Newline::cl@accu) (Omd_lexer.lex(String.make (s+2-n) ' ')) tl
         else
           List.rev (cl@accu), l
     | Newlines(_)::_ as l ->
@@ -107,13 +107,13 @@ let rec is_blank = function
   | [] -> true
   | _ -> false
 
-(** [emph_or_bold (n:int) (r:md list) (l:Md_lexer.t list)]
+(** [emph_or_bold (n:int) (r:md list) (l:Omd_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
-let emph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md_lexer.t list) =
+let emph_or_bold (n:int) (l:tag Omd_lexer.t list) : (tag Omd_lexer.t list * tag Omd_lexer.t list) =
   assert (n>0 && n<4);
-  let rec loop (result:tag Md_lexer.t list) = function
+  let rec loop (result:tag Omd_lexer.t list) = function
     | [] ->
         [], l
     | (Newline|Newlines _) :: tl ->
@@ -143,13 +143,13 @@ let emph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md
     else
       r, tl
 
-(** [uemph_or_bold (n:int) (r:md list) (l:tag Md_lexer.t list)]
+(** [uemph_or_bold (n:int) (r:md list) (l:tag Omd_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
-let uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md_lexer.t list) =
+let uemph_or_bold (n:int) (l:tag Omd_lexer.t list) : (tag Omd_lexer.t list * tag Omd_lexer.t list) =
   assert (n>0 && n<4);
-  let rec loop (result:tag Md_lexer.t list) = function
+  let rec loop (result:tag Omd_lexer.t list) = function
     | [] ->
         [], l
     | (Newline|Newlines _) :: tl ->
@@ -180,9 +180,9 @@ let uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag M
       r, l
 
 
-let gh_uemph_or_bold (n:int) (l:tag Md_lexer.t list) : (tag Md_lexer.t list * tag Md_lexer.t list) =
+let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list) : (tag Omd_lexer.t list * tag Omd_lexer.t list) =
   assert (n>0 && n<4);
-  let rec loop (result:tag Md_lexer.t list) = function
+  let rec loop (result:tag Omd_lexer.t list) = function
     | [] ->
         [], l
     | (Newline|Newlines _) :: tl ->
@@ -480,9 +480,9 @@ let read_until_cbracket ?(no_nl=false) l =
 
 
 let main_parse lexemes =
-  let rc = new Md_backend.ref_container in
-  let rec main_loop (r:md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
-    if debug then Printf.eprintf "main_loop r=%s p=(%s) l=(%s)\n%!" (Md_backend.sexpr_of_md (List.rev r)) (destring_of_tl previous) (destring_of_tl lexemes);
+  let rc = new Omd_backend.ref_container in
+  let rec main_loop (r:md) (previous:tag Omd_lexer.t list) (lexemes:tag Omd_lexer.t list) =
+    if debug then Printf.eprintf "main_loop r=%s p=(%s) l=(%s)\n%!" (Omd_backend.sexpr_of_md (List.rev r)) (destring_of_tl previous) (destring_of_tl lexemes);
     match previous, lexemes with
         (* no more to process *)
       | _, [] -> (* return the result (/!\ it has to be reversed as some point) *)
@@ -1137,7 +1137,7 @@ let main_parse lexemes =
           (* /generated part *)
 
   and emailstyle_quoting r previous lexemes =
-    let rec loop (block:tag Md_lexer.t list) (cl:tag Md_lexer.t list) = function
+    let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) = function
       | Newline::Greaterthan::(Newline::_ as tl) -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
       | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
@@ -1239,7 +1239,7 @@ let main_parse lexemes =
       read_name [] l
 
   (* H1, H2, H3, ... *)
-  and read_title n (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) =
+  and read_title n (r:md) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list) =
     if true then (* a behaviour closer to github *)
       begin
         let title, rest =
@@ -1287,11 +1287,11 @@ let main_parse lexemes =
             | _ -> assert false
       end
 
-  and rev_main_loop (r: md) (previous:tag Md_lexer.t list) (lexemes:tag Md_lexer.t list) =
+  and rev_main_loop (r: md) (previous:tag Omd_lexer.t list) (lexemes:tag Omd_lexer.t list) =
     List.rev (main_loop r previous lexemes)
 
   (** code that starts with one or several backquote(s) *)
-  and bcode (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : md * tag Md_lexer.t list * tag Md_lexer.t list =
+  and bcode (r:md) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list) : md * tag Omd_lexer.t list * tag Omd_lexer.t list =
     let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl | _ -> (* bcode is wrongly called *) assert false in
     let rec code_block accu = function
       | [] ->
@@ -1334,7 +1334,7 @@ let main_parse lexemes =
         in
           (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
 
-  and icode (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : md * tag Md_lexer.t list * tag Md_lexer.t list =
+  and icode (r:md) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list) : md * tag Omd_lexer.t list * tag Omd_lexer.t list =
     (** indented code:
         returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
     let accu = Buffer.create 42 in
@@ -1356,11 +1356,11 @@ let main_parse lexemes =
 
   (*********************************************************************************)
   (** new_list: returns (r,p,l) where r is the result, p is the last thing read, l is the remains *)
-  and new_list (o:bool) (r:md) (p:tag Md_lexer.t list) (l:tag Md_lexer.t list) : (md * tag Md_lexer.t list * tag Md_lexer.t list) =
+  and new_list (o:bool) (r:md) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list) : (md * tag Omd_lexer.t list * tag Omd_lexer.t list) =
     if debug then Printf.eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p) (destring_of_tl l);
     begin
       let list_hd e = match e with hd::_ -> hd | _ -> assert false in
-      let rec loop (fi:bool) (ordered:bool) (result:(bool*int list*tag Md_lexer.t list)list) (curr_item:tag Md_lexer.t list) (indents:int list) (lexemes:tag Md_lexer.t list) =
+      let rec loop (fi:bool) (ordered:bool) (result:(bool*int list*tag Omd_lexer.t list)list) (curr_item:tag Omd_lexer.t list) (indents:int list) (lexemes:tag Omd_lexer.t list) =
         (* 'fi' means first iteration *)
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" result else "" in
           if debug then
@@ -1451,14 +1451,14 @@ let main_parse lexemes =
             | ([] | (Newlines(_) :: _)) ->
                 if debug then Printf.eprintf "#%d******************************\n%!" 7;
                 (* if an empty line appears, then it's the end of the list(s). *)
-                ((ordered,indents,curr_item)::(result:(bool*int list*tag Md_lexer.t list) list), lexemes)
+                ((ordered,indents,curr_item)::(result:(bool*int list*tag Omd_lexer.t list) list), lexemes)
 
             | e :: tl -> (* adding e to the current item *)
                 if debug then Printf.eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
                 loop false ordered result (e::curr_item) indents tl
       in
-      let rec loop2 (tmp:(bool*int list*tag Md_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list)
-          : md * (bool*int list*tag Md_lexer.t list) list =
+      let rec loop2 (tmp:(bool*int list*tag Omd_lexer.t list) list) (curr_indent:int) (ordered:bool) (accu:li list)
+          : md * (bool*int list*tag Omd_lexer.t list) list =
         let er = if debug then List.fold_left (fun r (o,il,e) -> r ^ Printf.sprintf "(%b," o ^ destring_of_tl e ^ ")") "" tmp else "" in
           if debug then Printf.eprintf "new_list>>loop2\n%!";
           match tmp with
@@ -1499,7 +1499,7 @@ let main_parse lexemes =
 
       in
       let tmp_r, new_l =
-        (* tmp_r: (bool*int list*tag Md_lexer.t list) list) ; new_l:tag Md_lexer.t list *)
+        (* tmp_r: (bool*int list*tag Omd_lexer.t list) list) ; new_l:tag Omd_lexer.t list *)
         loop true o [] [] [] l 
       in
       let () =
@@ -1515,7 +1515,7 @@ let main_parse lexemes =
               Printf.eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
           end
       in
-      let (e:md), (x:(bool*int list*tag Md_lexer.t list) list) =
+      let (e:md), (x:(bool*int list*tag Omd_lexer.t list) list) =
         loop2 (List.rev tmp_r) (-1) false []
       in
         (fix_lists e @ r), [], new_l

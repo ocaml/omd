@@ -76,13 +76,13 @@ module Md : sig
     how to convert [Html of string] into your HTML representation. *)
 end =
 struct
-  include Md_backend
+  include Omd_backend
 
-  include Md_lexer
+  include Omd_lexer
     
-  include Md_parser
+  include Omd_parser
 
-  type token = tag Md_lexer.t
+  type token = tag Omd_lexer.t
 
   let lex : string -> token list = lex
 
