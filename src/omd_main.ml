@@ -12,22 +12,11 @@ let () =
     done; assert false
     with End_of_file ->
       let open Omd in
+      print_endline (html_of_md
+                       (make_paragraphs
+                          (parse (lex (Buffer.contents b)))));
+      if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
         print_endline
-          (
-            html_of_md 
-              (make_paragraphs
-                  (parse (lex (Buffer.contents b)))
-              )
-          );
-        if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
-        print_endline
-          (
-            Omd_backend.sexpr_of_md 
-              ((* Md_backend.make_paragraphs *)
-                  (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))
-              )
-          )
-
-
-
-
+          (Omd_backend.sexpr_of_md
+             ((* Md_backend.make_paragraphs *)
+               (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))))
