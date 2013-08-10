@@ -12,7 +12,7 @@ let () =
     done; assert false
     with End_of_file ->
       let open Omd in
-      print_endline (html_of_md
+      print_endline (Omd.to_html
                        (make_paragraphs
                           (parse (lex (Buffer.contents b)))));
       if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
