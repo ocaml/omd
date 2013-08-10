@@ -11,7 +11,7 @@ let () =
       Buffer.add_char b (input_char stdin)
     done; assert false
     with End_of_file ->
-      let open Omd.Md in
+      let open Omd in
         print_endline
           (
             html_of_md 
