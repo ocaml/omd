@@ -1,0 +1,31 @@
+#								-*-conf-*-
+OASISFormat: 0.3
+Name:        omd
+Version:     0.1
+Synopsis:    A Markdown frontend in pure OCaml.
+Description: This Markdown library has no dependency besides the OCaml
+  compiler.  The implementation targets more Github Markdown than the
+  original Markdown.
+Authors:     Philippe Wang <philippe.wang@gmail.com>
+License:     LGPL-3.0 with OCaml linking exception
+Homepage:    https://github.com/pw374/omd
+Plugins:     META (0.3), StdFiles (0.3)
+
+Library "md"
+  Path:         src
+  BuildTools:   ocamlbuild
+  Modules:      Md_backend, Md_lexer, Md_parser, Md_lib
+
+Executable "md"
+  Path:         src
+  BuildTools:   ocamlbuild
+  MainIs:       md_main.ml
+  BuildDepends: md
+  CompiledObject: best
+
+# TODO: Add tests
+
+SourceRepository master
+  Type:       git
+  Location:   https://github.com/pw374/omd.git
+  Browser:    https://github.com/pw374/omd
