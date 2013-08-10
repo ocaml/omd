@@ -34,11 +34,11 @@ class ref_container = object
     in r
 end
 
-type md_element = 
-  | Paragraph of md
+type element = 
+  | Paragraph of t
   | Text of string
-  | Emph of md
-  | Bold of md
+  | Emph of t
+  | Bold of t
   | Ul of li list
   | Ol of li list
   | Code of string (* html entities are to be converted *later* *)
@@ -50,13 +50,13 @@ type md_element =
   | Img_ref of ref_container * name * alt
   | Html of string
   | Html_block of string
-  | H1 of md
-  | H2 of md
-  | H3 of md
-  | H4 of md
-  | H5 of md
-  | H6 of md
-  | Blockquote of md
+  | H1 of t
+  | H2 of t
+  | H3 of t
+  | H4 of t
+  | H5 of t
+  | H6 of t
+  | Blockquote of t
   | Img of alt * src * title
   | NL
 and name = string
@@ -64,8 +64,8 @@ and alt = string
 and src = string
 and href = string
 and title = string
-and li = Li of md
-and md = md_element list
+and li = Li of t
+and t = element list
   
 
 let htmlentities s =
