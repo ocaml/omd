@@ -237,10 +237,6 @@ let rec eat f = function
   | [] -> []
   | e::tl -> if f e then eat f tl else e::tl
 
-let rec mem f = function
-  | [] -> false
-  | e::tl -> f e || mem f tl
-
 let split_norev f =
   let rec loop r = function
   | [] -> r, []
@@ -1398,7 +1394,7 @@ let main_parse lexemes =
          code_block (e::accu) tl
     in
     let cb, l = code_block [] tl in
-    if mem (function (Newline|Newlines _) -> true | _ -> false) cb then
+    if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb then
       (Code_block(string_of_tl cb)::r), [Backquote], l
     else
       let clean_bcode s =
