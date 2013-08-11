@@ -7,23 +7,32 @@ Description: This Markdown library has no dependency besides the OCaml
   compiler.  The implementation targets more Github Markdown than the
   original Markdown.
 Authors:     Philippe Wang <philippe.wang@gmail.com>
-License:     LGPL-3.0 with OCaml linking exception
+License:     ISC
 Homepage:    https://github.com/pw374/omd
 Plugins:     META (0.3), StdFiles (0.3)
 
-Library "md"
+Library "omd"
   Path:         src
   BuildTools:   ocamlbuild
-  Modules:      Md_backend, Md_lexer, Md_parser, Md_lib
+  Modules:      Omd_backend, Omd_lexer, Omd_parser, Omd
 
-Executable "md"
+Executable "omd"
   Path:         src
   BuildTools:   ocamlbuild
-  MainIs:       md_main.ml
-  BuildDepends: md
+  MainIs:       omd_main.ml
+  BuildDepends: omd
   CompiledObject: best
 
-# TODO: Add tests
+Executable "test_cow"
+  Path:         tests/cow
+  BuildTools:   ocamlbuild
+  MainIs:	test.ml
+  BuildDepends: omd
+  CompiledObject: best
+
+Test "cow"
+  Type: Custom (0.0.1)
+  Command: $test_cow
 
 SourceRepository master
   Type:       git

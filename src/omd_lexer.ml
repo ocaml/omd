@@ -1,8 +1,8 @@
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
-(* Licence : CeCILL-B                                                  *)
-(* http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html         *)
+(* Licence : ISC                                                       *)
+(* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
 (* Implementation notes *********************************************
@@ -187,15 +187,11 @@ let lex s =
        occurrences of [c].  By side-effect, it increases the reference
        counter [i]. *)
     let rec loop r =
-      if !i = l then
-        r
-      else
-        if s.[!i] = c then
-          (incr i; loop (r+1))
-        else
-          r
+      if !i = l then r
+      else if s.[!i] = c then (incr i; loop (r+1))
+      else r
     in
-      loop 1
+    loop 1
   in
   let word () =
     let start = !i in
@@ -205,80 +201,93 @@ let lex s =
           Word (String.sub s start (!i-start))
         else
           match s.[!i] with
-            | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"' 
-            | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>' | '~'
-            | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!' | '?' -> 
-                Word (String.sub s start (!i-start))
-            | c -> incr i; loop()
-      end      
+          (* FIXME: pattern matching on chars is inefficient *)
+          | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\''
+          | '"' | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':'
+          | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
+          | '$' | '%' | '!' | '?' ->
+                               Word (String.sub s start (!i-start))
+          | c -> incr i; loop()
+      end
     in
-      loop()
+    loop()
   in
   let maybe_number () =
     let start = !i in
-      while 
-        match s.[!i] with
-          | '0' .. '9' -> true
-          | _ -> false
-      do
-        incr i
-      done;
+    while
       match s.[!i] with
-        | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"' 
-        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'  | '~'
-        | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!' | '?' ->
-            Number(String.sub s start (!i-start))
-        | _ ->
-            i := start;
-            word()
-  in
-  let (++) _ w =
-    result := w :: !result
+      | '0' .. '9' -> true
+      | _ -> false
+    do
+      incr i
+    done;
+    match s.[!i] with
+    (* FIXME: pattern matching on chars is inefficient *)
+    | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
+    | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
+    | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
+    | '?' ->
+       Number(String.sub s start (!i-start))
+    | _ ->
+       i := start;
+       word()
   in
 
-    while !i < l do
-      () ++
-        match s.[!i] with 
-          | ' '  as c  -> incr i; (match (rcount c) with 1 -> Space | n -> Spaces (n-2))
-          | '\t' as c  -> incr i; (match (rcount c) with 1 -> Tab | n -> Tabs (n-2))
-          | '\n' as c  -> incr i; (match (rcount c) with 1 -> Newline | n -> Newlines (n-2))
-          | '\r' as c  -> incr i; (match (rcount c) with 1 -> Return | n -> Returns (n-2))
-          | '#'  as c  -> incr i; (match (rcount c) with 1 -> Hash | n -> Hashs (n-2))
-          | '*'  as c  -> incr i; (match (rcount c) with 1 -> Star | n -> Stars (n-2))
-          | '-'  as c  -> incr i; (match (rcount c) with 1 -> Minus | n -> Minuss (n-2))
-          | '+'  as c  -> incr i; (match (rcount c) with 1 -> Plus | n -> Pluss (n-2))
-          | '`'  as c  -> incr i; (match (rcount c) with 1 -> Backquote | n -> Backquotes (n-2))
-          | '\'' as c  -> incr i; (match (rcount c) with 1 -> Quote | n -> Quotes (n-2))
-          | '"'  as c  -> incr i; (match (rcount c) with 1 -> Doublequote | n -> Doublequotes (n-2))
-          | '\\' as c  -> incr i; (match (rcount c) with 1 -> Backslash | n -> Backslashs (n-2))
-          | '_'  as c  -> incr i; (match (rcount c) with 1 -> Underscore | n -> Underscores (n-2))
-          | '['  as c  -> incr i; (match (rcount c) with 1 -> Obracket | n -> Obrackets (n-2))
-          | ']'  as c  -> incr i; (match (rcount c) with 1 -> Cbracket | n -> Cbrackets (n-2))
-          | '{'  as c  -> incr i; (match (rcount c) with 1 -> Obrace | n -> Obraces (n-2))
-          | '}'  as c  -> incr i; (match (rcount c) with 1 -> Cbrace | n -> Cbraces (n-2))
-          | '('  as c  -> incr i; (match (rcount c) with 1 -> Oparenthesis | n -> Oparenthesiss (n-2))
-          | ')'  as c  -> incr i; (match (rcount c) with 1 -> Cparenthesis | n -> Cparenthesiss (n-2))
-          | ':'  as c  -> incr i; (match (rcount c) with 1 -> Colon | n -> Colons (n-2))
-          | ';'  as c  -> incr i; (match (rcount c) with 1 -> Semicolon | n -> Semicolons (n-2))
-          | '>'  as c  -> incr i; (match (rcount c) with 1 -> Greaterthan | n -> Greaterthans (n-2))
-          | '~'  as c  -> incr i; (match (rcount c) with 1 -> Tilde | n -> Tildes (n-2))
-          | '<'  as c  -> incr i; (match (rcount c) with 1 -> Lessthan | n -> Lessthans (n-2))
-          | '@'  as c  -> incr i; (match (rcount c) with 1 -> At | n -> Ats (n-2))
-          | '&'  as c  -> incr i; (match (rcount c) with 1 -> Ampersand | n -> Ampersands (n-2))
-          | '|'  as c  -> incr i; (match (rcount c) with 1 -> Bar | n -> Bars (n-2))
-          | '^'  as c  -> incr i; (match (rcount c) with 1 -> Caret | n -> Carets (n-2))
-          | ','  as c  -> incr i; (match (rcount c) with 1 -> Comma | n -> Commas (n-2))
-          | '.'  as c  -> incr i; (match (rcount c) with 1 -> Dot | n -> Dots (n-2))
-          | '/'  as c  -> incr i; (match (rcount c) with 1 -> Slash | n -> Slashs (n-2))
-          | '$'  as c  -> incr i; (match (rcount c) with 1 -> Dollar | n -> Dollars (n-2))
-          | '%'  as c  -> incr i; (match (rcount c) with 1 -> Percent | n -> Percents (n-2))
-          | '='  as c  -> incr i; (match (rcount c) with 1 -> Equal | n -> Equals (n-2))
-          | '!'  as c  -> incr i; (match (rcount c) with 1 -> Exclamation | n -> Exclamations (n-2))
-          | '?'  as c  -> incr i; (match (rcount c) with 1 -> Question | n -> Questions (n-2))
-          | '0' .. '9' -> maybe_number()
-          | c -> word()
-    done;
-    List.rev !result
+  let n_occ c = incr i; rcount c in
+
+  while !i < l do
+    let c = s.[!i] in
+    let w = match c with
+      (* FIXME: pattern matching on chars is inefficient *)
+      | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
+      | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2)
+      | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
+      | '\r' -> let n = n_occ c in if n = 1 then Return else Returns (n-2)
+      | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
+      | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
+      | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
+      | '+'  -> let n = n_occ c in if n = 1 then Plus else Pluss (n-2)
+      | '`'  -> let n = n_occ c in if n = 1 then Backquote else Backquotes (n-2)
+      | '\'' -> let n = n_occ c in if n = 1 then Quote else Quotes (n-2)
+      | '"'  -> let n = n_occ c in if n = 1 then Doublequote
+                                  else Doublequotes (n-2)
+      | '\\' -> let n = n_occ c in if n = 1 then Backslash
+                                  else Backslashs (n-2)
+      | '_'  -> let n = n_occ c in if n = 1 then Underscore
+                                  else Underscores (n-2)
+      | '['  -> let n = n_occ c in if n = 1 then Obracket
+                                  else Obrackets (n-2)
+      | ']'  -> let n = n_occ c in if n = 1 then Cbracket else Cbrackets (n-2)
+      | '{'  -> let n = n_occ c in if n = 1 then Obrace else Obraces (n-2)
+      | '}'  -> let n = n_occ c in if n = 1 then Cbrace else Cbraces (n-2)
+      | '('  -> let n = n_occ c in if n = 1 then Oparenthesis
+                                  else Oparenthesiss (n-2)
+      | ')'  -> let n = n_occ c in if n = 1 then Cparenthesis
+                                  else Cparenthesiss (n-2)
+      | ':'  -> let n = n_occ c in if n = 1 then Colon else Colons (n-2)
+      | ';'  -> let n = n_occ c in if n = 1 then Semicolon else Semicolons (n-2)
+      | '>'  -> let n = n_occ c in if n = 1 then Greaterthan
+                                  else Greaterthans (n-2)
+      | '~'  -> let n = n_occ c in if n = 1 then Tilde else Tildes (n-2)
+      | '<'  -> let n = n_occ c in if n = 1 then Lessthan else Lessthans (n-2)
+      | '@'  -> let n = n_occ c in if n = 1 then At else Ats (n-2)
+      | '&'  -> let n = n_occ c in if n = 1 then Ampersand else Ampersands (n-2)
+      | '|'  -> let n = n_occ c in if n = 1 then Bar else Bars (n-2)
+      | '^'  -> let n = n_occ c in if n = 1 then Caret else Carets (n-2)
+      | ','  -> let n = n_occ c in if n = 1 then Comma else Commas (n-2)
+      | '.'  -> let n = n_occ c in if n = 1 then Dot else Dots (n-2)
+      | '/'  -> let n = n_occ c in if n = 1 then Slash else Slashs (n-2)
+      | '$'  -> let n = n_occ c in if n = 1 then Dollar else Dollars (n-2)
+      | '%'  -> let n = n_occ c in if n = 1 then Percent else Percents (n-2)
+      | '='  -> let n = n_occ c in if n = 1 then Equal else Equals (n-2)
+      | '!'  -> let n = n_occ c in if n = 1 then Exclamation
+                                  else Exclamations (n-2)
+      | '?'  -> let n = n_occ c in if n = 1 then Question else Questions (n-2)
+      | '0' .. '9' -> maybe_number()
+      | c -> word() in
+    result := w :: !result
+  done;
+  List.rev !result
 
 let rec convert_to_lf = function
   | [] -> []
@@ -302,10 +311,14 @@ let rec convert_to_crlf = function
   | [] -> []
   | Return :: Newline :: tl -> Return :: Newline :: convert_to_crlf tl
   | Newline :: tl -> Return :: Newline :: convert_to_crlf tl
-  | Newlines 0 :: tl -> Return :: Newline :: Return :: Newline :: convert_to_crlf tl
-  | Newlines n :: tl -> Return :: Newline :: convert_to_crlf (Newlines (n-1) :: tl)
-  | Returns 0 :: tl -> Return :: Newline :: Return :: Newline :: convert_to_crlf tl
-  | Returns n :: tl -> Return :: Newline :: convert_to_crlf (Returns (n-1) :: tl)
+  | Newlines 0 :: tl ->
+     Return :: Newline :: Return :: Newline :: convert_to_crlf tl
+  | Newlines n :: tl ->
+     Return :: Newline :: convert_to_crlf (Newlines (n-1) :: tl)
+  | Returns 0 :: tl ->
+     Return :: Newline :: Return :: Newline :: convert_to_crlf tl
+  | Returns n :: tl ->
+     Return :: Newline :: convert_to_crlf (Returns (n-1) :: tl)
   | hd :: tl -> hd :: convert_to_crlf tl
 
 
@@ -313,15 +326,18 @@ let length = function
   | Tag _ -> (0, 0)
   | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
   | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
-  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan 
+  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan
   | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
-  | Question | Quote | Semicolon | Slash | Space | Star | Tab 
+  | Question | Quote | Semicolon | Slash | Space | Star | Tab
   | Tilde | Underscore -> (1, 0)
   | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x | Dollars x | Dots x
-  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x | Lessthans x 
+  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x
+  | Dollars x | Dots x
+  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x
+  | Lessthans x
   | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
-  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x | Tabs x 
+  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x
+  | Tabs x
   | Tildes x | Underscores x -> (2+x, 0)
   | Return | Newline -> (0, 1)
   | Returns x | Newlines x -> (0, 2+x)
@@ -339,9 +355,9 @@ let position orig spot =
       (x+a, y)
     else
       (a, y+b)
-  in 
+  in
   let rec loop r = function
-    | (hd :: tl) as l -> 
+    | (hd :: tl) as l ->
         if l == spot then
           r
         else
@@ -359,17 +375,19 @@ let _ =
 
 (*
 (** [string_of_tl l] returns the string representation of l.
-    [estring_of_tl l] returns the escaped string representation of l (same semantics as [String.escaped (string_of_tl l)]). *)
+    [estring_of_tl l] returns the escaped string representation of l
+    (same semantics as [String.escaped (string_of_tl l)]). *)
 let string_of_tl, estring_of_tl =
   let g escaped tl =
     let b = Buffer.create 42 in
     let rec loop : 'a t list -> unit = function
       | e::tl ->
-          Buffer.add_string b (if escaped then String.escaped (string_of_t e) else string_of_t e);
+          Buffer.add_string b (if escaped then String.escaped (string_of_t e)
+                               else string_of_t e);
           loop tl
       | [] ->
           ()
-    in 
+    in
       Buffer.contents (loop tl; b)
   in g false, g true
 *)
@@ -382,7 +400,7 @@ let string_of_tl tl =
         loop tl
     | [] ->
         ()
-  in 
+  in
     Buffer.contents (loop tl; b)
 
 
@@ -395,6 +413,5 @@ let destring_of_tl tl =
         loop tl
     | [] ->
         Buffer.add_string b "[]"
-  in 
+  in
     Buffer.contents (loop tl; b)
-
