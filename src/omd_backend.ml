@@ -41,8 +41,8 @@ type element =
   | Text of string
   | Emph of t
   | Bold of t
-  | Ul of li list
-  | Ol of li list
+  | Ul of t list
+  | Ol of t list
   | Code of string (* html entities are to be converted *later* *)
   | Code_block of string (* html entities are to be converted *later* *)
   | Br
@@ -66,7 +66,6 @@ and alt = string
 and src = string
 and href = string
 and title = string
-and li = Li of t
 and t = element list
 
 
@@ -117,17 +116,17 @@ let make_paragraphs md =
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Ul b) :: tl ->
-        let e = Ul(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
-          if cp = [] || cp = [NL] then
-            loop cp (e::accu) tl
-          else
-            loop [] (e::Paragraph(List.rev cp)::accu) tl
+        let e = Ul(List.map (fun li -> loop [] [] li) b) in
+        if cp = [] || cp = [NL] then
+          loop cp (e::accu) tl
+        else
+          loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Ol b) :: tl ->
-        let e = Ol(List.map (fun (Li li) -> Li(loop [] [] li)) b) in
-          if cp = [] || cp = [NL] then
-            loop cp (e::accu) tl
-          else
-            loop [] (e::Paragraph(List.rev cp)::accu) tl
+        let e = Ol(List.map (fun li -> loop [] [] li) b) in
+        if cp = [] || cp = [NL] then
+          loop cp (e::accu) tl
+        else
+          loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr
        | Html_block _ ) as e :: tl->
         if cp = [] || cp = [NL] then
@@ -222,7 +221,7 @@ let rec html_of_md md =
         Buffer.add_string b "<ul>";
         if pindent then Buffer.add_char b '\n';
         List.iter
-          (fun (Li li) ->
+          (fun li ->
             if pindent then for i = 0 to indent + 1 do
                               Buffer.add_char b ' '
                             done;
@@ -241,7 +240,7 @@ let rec html_of_md md =
         Buffer.add_string b "<ol>";
         if pindent then Buffer.add_char b '\n';
         List.iter
-          (fun (Li li) ->
+          (fun li ->
             if pindent then for i = 0 to indent + 1 do
                               Buffer.add_char b ' '
                             done;
@@ -371,12 +370,12 @@ let rec sexpr_of_md md =
         loop tl
     | Ol l :: tl ->
         bprintf b "(Ol";
-        List.iter(fun (Li li) -> bprintf b "(Li"; loop li; bprintf b ")") l;
+        List.iter(fun li -> bprintf b "(Li"; loop li; bprintf b ")") l;
         bprintf b ")";
         loop  tl
     | Ul l :: tl ->
         bprintf b "(Ul";
-        List.iter(fun (Li li) -> bprintf b "(Li"; loop li;bprintf b ")") l;
+        List.iter(fun li -> bprintf b "(Li"; loop li;bprintf b ")") l;
         bprintf b ")";
         loop  tl
     | Code c :: tl ->

@@ -12,8 +12,8 @@ and element =
   | Text of string
   | Emph of t
   | Bold of t
-  | Ul of li list
-  | Ol of li list
+  | Ul of t list
+  | Ol of t list
   | Code of string (* html entities are to be converted *later* *)
   | Code_block of string (* html entities are to be converted *later* *)
   | Br
@@ -34,7 +34,7 @@ and element =
   | NL
 
 and name = string
-(** Markdown reference name/. *)
+(** Markdown reference name. *)
 
 and alt = string
 (** HTML img tag attribute. *)
@@ -47,9 +47,6 @@ and href = string
 
 and title = string
 (** HTML attribute. *)
-
-and li = Li of t
-(** Element of a list. *)
 
 
 type token
