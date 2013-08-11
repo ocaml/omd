@@ -7,7 +7,7 @@ Description: This Markdown library has no dependency besides the OCaml
   compiler.  The implementation targets more Github Markdown than the
   original Markdown.
 Authors:     Philippe Wang <philippe.wang@gmail.com>
-License:     LGPL-3.0 with OCaml linking exception
+License:     ISC
 Homepage:    https://github.com/pw374/omd
 Plugins:     META (0.3), StdFiles (0.3)
 

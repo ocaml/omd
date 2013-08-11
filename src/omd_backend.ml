@@ -1,8 +1,8 @@
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
-(* Licence : CeCILL-B                                                  *)
-(* http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html         *)
+(* Licence : ISC                                                       *)
+(* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
 open Printf

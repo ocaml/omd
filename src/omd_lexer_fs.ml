@@ -1,15 +1,15 @@
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
-(* Licence : CeCILL-B                                                  *)
-(* http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html         *)
+(* Licence : ISC                                                       *)
+(* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
 (** You should either use this module or OMd_lexer, not both.
     This module includes OMd_lexer.
 *)
 
-include OMd_lexer
+include Omd_lexer
 
 let lex_from_inchannel ic =
   (* Maintenance-easiness-driven implementation. *)
