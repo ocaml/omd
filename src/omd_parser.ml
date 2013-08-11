@@ -350,16 +350,14 @@ let rec fix_lists = function
       fix_lists tl
   | Ol[] :: tl ->
       fix_lists tl
-  | Ul(Li(Ul(_) :: _ as l) :: l2) :: tl
-  | Ul(Li(Ol(_) :: _ as l) :: l2) :: tl ->
+  | Ul((Ul(_) :: _ as l) :: l2) :: tl
+  | Ul((Ol(_) :: _ as l) :: l2) :: tl ->
       fix_lists [Ul(l2)] @ fix_lists l @ fix_lists tl
-  | Ol(Li(Ul(_) :: _ as l) :: l2) :: tl
-  | Ol(Li(Ol(_) :: _ as l) :: l2) :: tl ->
+  | Ol((Ul(_) :: _ as l) :: l2) :: tl
+  | Ol((Ol(_) :: _ as l) :: l2) :: tl ->
       fix_lists [Ol(l2)] @ fix_lists l @ fix_lists tl
-  | Ul(l) :: tl ->
-      Ul(List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
-  | Ol(l) :: tl ->
-      Ol(List.map (fun (Li e) -> Li(fix_lists e)) l) :: fix_lists tl
+  | Ul(l) :: tl -> Ul(List.map (fun e -> fix_lists e) l) :: fix_lists tl
+  | Ol(l) :: tl -> Ol(List.map (fun e -> fix_lists e) l) :: fix_lists tl
   | Blockquote(q) :: tl ->
       Blockquote(fix_lists q) :: fix_lists tl
   | Img _ as i :: tl ->
@@ -1579,7 +1577,7 @@ let main_parse lexemes =
          loop false ordered result (e::curr_item) indents tl
     in
     let rec loop2 (tmp:(bool*int list*tag Omd_lexer.t list) list)
-                  (curr_indent:int) (ordered:bool) (accu:li list)
+                  (curr_indent:int) (ordered:bool) (accu:Omd_backend.t list)
             : Omd_backend.t * (bool*int list*tag Omd_lexer.t list) list =
       let er = if debug then
                  let to_string r (o,il,e) =
@@ -1593,20 +1591,20 @@ let main_parse lexemes =
          let item = List.rev item in
          if i = curr_indent then (
            if debug then Printf.eprintf "PLOP\n%!";
-           loop2 tl i ordered (Li(rev_main_loop [] [Space;Star] item)::accu)
+           loop2 tl i ordered ((rev_main_loop [] [Space;Star] item)::accu)
          )
          else if i > curr_indent then ( (* new sub list *)
            if debug then Printf.eprintf "NEW SUB LIST\n%!";
            let md, new_tl =
-             loop2 tl i o [Li(rev_main_loop [] [Space;Star] item)] in
+             loop2 tl i o [rev_main_loop [] [Space;Star] item] in
            match accu with
-           | Li hd :: accu_tl ->
-              loop2 new_tl curr_indent ordered (Li(hd@md) :: accu_tl)
+           | hd :: accu_tl ->
+              loop2 new_tl curr_indent ordered ((hd@md) :: accu_tl)
            | [] ->
               if curr_indent = -1 then
                 md, new_tl
               else
-                loop2 new_tl curr_indent ordered [Li(md)]
+                loop2 new_tl curr_indent ordered [md]
          )
          else (* i < curr_indent *)
            let accu = List.rev accu in
