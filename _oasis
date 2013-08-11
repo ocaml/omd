@@ -23,7 +23,16 @@ Executable "omd"
   BuildDepends: omd
   CompiledObject: best
 
-# TODO: Add tests
+Executable "test_cow"
+  Path:         tests/cow
+  BuildTools:   ocamlbuild
+  MainIs:	test.ml
+  BuildDepends: omd
+  CompiledObject: best
+
+Test "cow"
+  Type: Custom (0.0.1)
+  Command: $test_cow
 
 SourceRepository master
   Type:       git
