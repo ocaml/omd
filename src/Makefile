@@ -1,18 +1,18 @@
 OCAMLC = ocamlc.opt -g
 OCAMLOPT = ocamlopt.opt
 
-# all:md_backend.cmo md_parser.cmo md_lexer.cmo md_lexer_fs.cmo
+# all:omd_backend.cmo omd_parser.cmo omd_lexer.cmo omd_lexer_fs.cmo
 
-md:md_backend.cmx md_lexer.cmx md_parser.cmx md_lib.cmx md_main.cmx
+omd:omd_backend.cmx omd_lexer.cmx omd_parser.cmx omd.cmx omd_main.cmx
 	$(OCAMLOPT) -o $@ $+
 
-md.byte:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo md_main.cmo
+omd.byte:omd_backend.cmo omd_lexer.cmo omd_parser.cmo omd.cmo omd_main.cmo
 	$(OCAMLC) -o $@ $+
 
-md.opt:md_backend.cmx md_lexer.cmx md_parser.cmx md_lib.cmx md_main.cmx
+omd.opt:omd_backend.cmx omd_lexer.cmx omd_parser.cmx omd.cmx omd_main.cmx
 	$(OCAMLOPT) -o $@ $+
 
-md.cma:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo
+omd.cma:omd_backend.cmo omd_lexer.cmo omd_parser.cmo omd.cmo
 	$(OCAMLC) -a -o $@ $+
 
 %.cmo:%.ml
@@ -21,30 +21,42 @@ md.cma:md_backend.cmo md_lexer.cmo md_parser.cmo md_lib.cmo
 %.cmx:%.ml
 	$(OCAMLOPT) -c $<
 
-md_parser.cmo:md_lexer.cmo md_backend.cmo
-md_lexer.cmo:
-md_lexer_fs.cmo:md_lexer.cmo
+%.cmi:%.mli
+	$(OCAMLC) -c $<
 
-md_parser.cmx:md_lexer.cmx md_backend.cmx
-md_lexer.cmx:
-md_lexer_fs.cmx:md_lexer.cmx
+omd.cmx:omd.cmi
 
-md_backend.cmo:
-md_backend.cmx:
+omd_parser.cmo:omd_lexer.cmo omd_backend.cmo
+omd_lexer.cmo:
+omd_lexer_fs.cmo:omd_lexer.cmo
 
-md_main.cmo:md_lib.cmo
-md_lib.cmo:md_backend.cmo md_lexer.cmo md_parser.cmo 
-md_main.cmx:md_lib.cmx 
-md_lib.cmx:md_backend.cmx md_lexer.cmx md_parser.cmx
+omd_parser.cmx:omd_lexer.cmx omd_backend.cmx
+omd_lexer.cmx:
+omd_lexer_fs.cmx:omd_lexer.cmx
+
+omd_backend.cmo:
+omd_backend.cmx:
+
+omd_main.cmo:omd.cmo
+omd.cmo:omd_backend.cmo omd_lexer.cmo omd_parser.cmo 
+omd_main.cmx:omd.cmx 
+omd.cmx:omd_backend.cmx omd_lexer.cmx omd_parser.cmx
 
 clean:
-	rm -f *.cmx *.cmo *~ *.cmi *.o *.cma md
+	rm -f *.cmx *.cmo *~ *.cmi *.o *.cma md{,.byte,.opt} omd{,.byte,.opt}
 
 test: md.cma
 	ocaml md.cma cow_tests/test.ml
 
 htest:
-	make ; rlwrap ocaml md_lexer.cmo md_parser.cmo 
+	make ; rlwrap ocaml omd_lexer.cmo omd_parser.cmo 
 
 
+# compatibility (temporary)
+md:omd
+	cp $< $@
+md.byte:omd.byte
+	cp $< $@
+md.opt:omd.opt
+	cp $< $@
 
