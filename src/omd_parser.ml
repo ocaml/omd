@@ -1449,6 +1449,7 @@ let main_parse lexemes =
   (*************************************************************************)
   (** new_list: returns (r,p,l) where r is the result, p is the last thing
       read, l is the remains *)
+    (* TODO: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
   and new_list (o:bool) (r:Omd_backend.t) (p:tag Omd_lexer.t list)
                (l:tag Omd_lexer.t list)
       : (Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) =
