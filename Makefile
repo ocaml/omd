@@ -10,19 +10,19 @@ ifneq ($(PREFIX),)
 PREFIX_FLAG = --prefix $(PREFIX)
 endif
 
-.PHONY: all byte native
+.PHONY: all byte native doc install uninstall reinstall test
 
 all byte native setup.log: configure
 	ocaml setup.ml -build
 
 configure: setup.data
 setup.data: setup.ml
-	ocaml $< -configure $(PREFIX_FLAG)
+	ocaml $< -configure --enable-tests $(PREFIX_FLAG)
 
 setup.ml: _oasis
 	oasis setup -setup-update dynamic
 
-doc install uninstall reinstall: setup.log
+doc install uninstall reinstall test: setup.log
 	ocaml setup.ml -$@
 
 
