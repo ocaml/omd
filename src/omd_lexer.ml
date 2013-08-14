@@ -80,8 +80,6 @@ type 'a t = (* "of int":  *)
   | Questions of int
   | Quote
   | Quotes of int
-  | Return
-  | Returns of int
   | Semicolon
   | Semicolons of int
   | Slash
@@ -158,8 +156,6 @@ let string_of_t = function
   | Questions  n -> String.make (2+n) '?'
   | Quote -> "'"
   | Quotes  n -> String.make (2+n) '\''
-  | Return -> "\r"
-  | Returns  n -> String.make (2+n) '\r'
   | Semicolon -> ";"
   | Semicolons  n -> String.make (2+n) ';'
   | Slash -> "/"
@@ -242,7 +238,18 @@ let lex s =
       | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
       | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2)
       | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
-      | '\r' -> let n = n_occ c in if n = 1 then Return else Returns (n-2)
+      | '\r' -> (* eliminating \r by converting all styles to unix style *)
+          let n = n_occ c in
+            if n = 1 then
+              if !i = l then
+                Newline
+              else
+                if s.[!i] = '\n' then
+                  (incr i; Newline)
+                else
+                  Newline
+            else 
+              Newlines (n-2) 
       | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
       | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
       | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
@@ -289,39 +296,6 @@ let lex s =
   done;
   List.rev !result
 
-let rec convert_to_lf = function
-  | [] -> []
-  | Return :: Newline :: tl -> Newline :: convert_to_lf tl
-  | Return :: tl -> Newline :: convert_to_lf tl
-  | Returns n :: tl -> Newlines n :: convert_to_lf tl
-  | hd :: tl -> hd :: convert_to_lf tl
-
-let rec convert_crlf_to_lf = function
-  | [] -> []
-  | Return :: Newline :: tl -> Newline :: convert_crlf_to_lf tl
-  | hd :: tl -> hd :: convert_crlf_to_lf tl
-
-let rec convert_cr_to_lf = function
-  | [] -> []
-  | Return :: tl -> Newline :: convert_cr_to_lf tl
-  | Returns n :: tl -> Newlines n :: convert_cr_to_lf tl
-  | hd :: tl -> hd :: convert_cr_to_lf tl
-
-let rec convert_to_crlf = function
-  | [] -> []
-  | Return :: Newline :: tl -> Return :: Newline :: convert_to_crlf tl
-  | Newline :: tl -> Return :: Newline :: convert_to_crlf tl
-  | Newlines 0 :: tl ->
-     Return :: Newline :: Return :: Newline :: convert_to_crlf tl
-  | Newlines n :: tl ->
-     Return :: Newline :: convert_to_crlf (Newlines (n-1) :: tl)
-  | Returns 0 :: tl ->
-     Return :: Newline :: Return :: Newline :: convert_to_crlf tl
-  | Returns n :: tl ->
-     Return :: Newline :: convert_to_crlf (Returns (n-1) :: tl)
-  | hd :: tl -> hd :: convert_to_crlf tl
-
-
 let length = function
   | Tag _ -> (0, 0)
   | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
@@ -339,8 +313,8 @@ let length = function
   | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x
   | Tabs x
   | Tildes x | Underscores x -> (2+x, 0)
-  | Return | Newline -> (0, 1)
-  | Returns x | Newlines x -> (0, 2+x)
+  | Newline -> (0, 1)
+  | Newlines x -> (0, 2+x)
   | Number s | Word s -> (String.length s, 0)
 
 let make_space = function
@@ -368,9 +342,6 @@ let position orig spot =
 
 let _ =
   lex "42 Bonjour !!\n"
-;;
-let _ =
-  convert_to_lf (lex "42 Bonjour !\n")
 ;;
 
 (*
