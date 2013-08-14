@@ -490,6 +490,8 @@ let read_until_cbracket ?(no_nl=false) l =
 
 let main_parse lexemes =
   let rc = new Omd_backend.ref_container in
+
+  (* [main_loop] should be called only by itself and [rev_main_loop] *)
   let rec main_loop (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
                     (lexemes:tag Omd_lexer.t list) =
     if debug then
