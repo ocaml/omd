@@ -1,4 +1,5 @@
-
+(** A markdown parser in OCaml, with no extra dependencies.
+    N.B. This module is supposed to be reentrant, if it's not then please report the bug. *)
 
 type ref_container
 (** abstract type for references container *)
@@ -55,7 +56,23 @@ type token
 val lex : string -> token list
 (** Translate a raw string into tokens for the parser *)
 
-val parse : token list -> t
+type extension =
+    Omd_backend.t -> Omd_parser.tag Omd_lexer.t list -> Omd_parser.tag Omd_lexer.t list
+    -> ((Omd_backend.t * Omd_parser.tag Omd_lexer.t list * Omd_parser.tag Omd_lexer.t list) option)
+  (** A function that takes the current state of the parser's data and
+      returns None if nothing has been changed, otherwise it returns
+      the new state.  The current state of the parser's data is [(r,
+      p, l)] where [r] is the result so far, [p] is the list of the
+      previous tokens (it's typically empty or contains information on
+      how many newlines we've just seen), and [l] is the remaining
+      tokens to parse. *)
+
+and extensions = extension list
+(** One must use this type to extend the parser. It's a list of
+    functions of type [extension]. They are processed in order (the head is applied first), so
+    be careful about it. If you use it wrong, it will behave wrong. *)
+
+val parse : ?extensions:extensions -> token list -> t
 (** Translate tokens to Markdown representation *)
 
 val make_paragraphs : t -> t
@@ -65,5 +82,6 @@ val to_html : t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] into your HTML representation.  *)
+
 
 ;;
