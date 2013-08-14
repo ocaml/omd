@@ -1462,10 +1462,9 @@ let main_parse extensions lexemes =
         end
     (* /generated code *)
 
-
-  (* Temporary note: this function will implement the extension
-     mechanism, so the first step is to change all fall-back calls to
-     main_loop into calls to this function. *)
+  (** [maybe_extension r p l] returns None if there is no extension or 
+      if extensions haven't had  any effect, returns Some(nr, np, nl) if
+      at least one extension has applied successfully. *)
   and maybe_extension (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
       (lexemes:tag Omd_lexer.t list) : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
     match extensions with
@@ -1478,7 +1477,6 @@ let main_parse extensions lexemes =
             )
             None
             extensions
-
 
   and emailstyle_quoting r previous lexemes =
     let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
