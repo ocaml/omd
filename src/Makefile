@@ -25,6 +25,7 @@ omd.cma:omd_backend.cmo omd_lexer.cmo omd_parser.cmo omd.cmo
 	$(OCAMLC) -c $<
 
 omd.cmx:omd.cmi
+omd.cmo:omd.cmi
 
 omd_parser.cmo:omd_lexer.cmo omd_backend.cmo
 omd_lexer.cmo:
