@@ -7,11 +7,14 @@
 
 include Omd_backend
 
+type extension = Omd_parser.extension 
+and extensions = Omd_parser.extensions
+
 type token = Omd_parser.tag Omd_lexer.t
 
 let lex : string -> token list = Omd_lexer.lex
 
-let parse : token list -> t = Omd_parser.parse
+let parse : ?extensions:extensions -> token list -> t = Omd_parser.parse
 
 let to_html : t -> string = html_of_md
 
