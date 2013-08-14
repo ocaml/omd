@@ -556,10 +556,11 @@ let main_parse lexemes =
              | Some l -> (* hr *)
                 main_loop (Hr::r) [Newline] l
        end
-    | ([]|[Newline|Newlines _]), (Minus|Minuss _ as m)::tl ->
+    | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
        begin match hr_m lexemes with
              | None -> (* no hr, but it's not a list *)
-                main_loop (Text(string_of_t m)::r) [Minus] tl
+                (* main_loop (Text(string_of_t m)::r) [Minus] tl *)
+                (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
              | Some l -> (* hr *)
                 main_loop (Hr::r) [Newline] l
        end
@@ -573,8 +574,9 @@ let main_parse lexemes =
        begin match read_title 1 r previous tl with
              | r, p, l -> main_loop r p l
        end
-    | _, ((Hash|Hashs _) as t) :: tl -> (* hash -- no title *)
-       main_loop (Text(string_of_t t) :: r) [t] tl
+    | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
+       (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
+       (* main_loop (Text(string_of_t t) :: r) [t] tl *)
 
     (* At least 4 spaces, so it can only be code. *)
     | ([]|[Newline|Newlines _]), (Spaces n)::tl when n>=2 ->
@@ -605,21 +607,22 @@ let main_parse lexemes =
     (* underscores *)
     | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
        (match uemph_or_bold 1 tl with
-        | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
-        | x, new_tl -> main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
+        | [], _      ->
+            (* main_loop (Text(string_of_t t) :: r) [t] tl *)
+            (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
+        | x, new_tl ->
+            main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
        )
     | _, (Underscores((0|1) as n) as t) :: tl ->
        (* 2 or 3 "orphan" underscores, or emph/bold *)
        (match uemph_or_bold (n+2) tl with
         | [], _ ->
-           if n = 0 then
-             main_loop (Text(string_of_t t) :: r) [t] tl
-           else
-             main_loop (Text(string_of_t t) :: r) [t] tl
+            (* main_loop (Text(string_of_t t) :: r) [t] tl *)
+            (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
         | x, new_tl ->
-           if n = 0 then
+           if n = 0 then (* 1 underscore *)
              main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
-           else
+           else (* 2 underscores *)
              main_loop (Emph([Bold(rev_main_loop [] [t] x)]) :: r) [t] new_tl
        )
 
@@ -657,7 +660,9 @@ let main_parse lexemes =
                 main_loop (Hr::r) [Newline] l
              | None ->
                 (match emph_or_bold 1 tl with
-                 | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
+                 | [], _      ->
+                    (* main_loop (Text(string_of_t t) :: r) [t] tl *)
+                    (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
                  | x , new_tl ->
                     main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
                 )
@@ -665,7 +670,9 @@ let main_parse lexemes =
        end
     | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
        (match emph_or_bold 1 tl with
-        | [], _      -> main_loop (Text(string_of_t t) :: r) [t] tl
+        | [], _      ->
+           (* main_loop (Text(string_of_t t) :: r) [t] tl *)
+           (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
         | x , new_tl ->
            main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
        )
@@ -673,10 +680,8 @@ let main_parse lexemes =
        (* 2 or 3 "orphan" stars, or emph/bold *)
        (match emph_or_bold (n+2) tl with
         | [], _ ->
-           if n = 0 then
-             main_loop (Text(string_of_t t) :: r) [t] tl
-           else
-             main_loop (Text(string_of_t t) :: r) [t] tl
+           (* main_loop (Text(string_of_t t) :: r) [t] tl *)
+           (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
         | x, new_tl ->
            if n = 0 then
              main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
@@ -793,16 +798,16 @@ let main_parse lexemes =
        main_loop (Text "\\" :: r) [Backslash] tl
 
     (* < *)
-    | _, (Lessthan|Lessthans _ as lt)
-         :: ((Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)
-             :: Colon::Slashs(n)::tl as fallback) ->
+    | _, (Lessthan|Lessthans _ as t)
+        :: (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)
+        :: Colon::Slashs(n)::tl ->
        (* "semi-automatic" URLs *)
        let rec read_url accu = function
          | (Newline|Newlines _|Return|Returns _)::tl ->
             None
          | Greaterthan::tl ->
             let url =
-              (match lt with Lessthans 0 -> "<"
+              (match t with Lessthans 0 -> "<"
                            | Lessthans n -> String.make (n-2) '<' | _ -> "")
               ^ (string_of_t w) ^ "://"
               ^ (if n = 0 then "" else String.make (n-2) '/')
@@ -817,7 +822,8 @@ let main_parse lexemes =
              | Some(url, new_tl) ->
                 main_loop (Url(url,url,"")::r) [] new_tl
              | None ->
-                main_loop (Text(string_of_t lt)::r) [Lessthan] fallback
+                 (* main_loop (Text(string_of_t t)::r) [Lessthan] fallback *)
+                 (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
        end
 
     (* Word(w) *)
@@ -1027,8 +1033,8 @@ let main_parse lexemes =
        end
 
     (* img *)
-    | _, (Exclamation|Exclamations _ as e)
-         ::(Obracket::Cbracket::Oparenthesis::tl as l) ->
+    | _, (Exclamation|Exclamations _ as t)
+         ::Obracket::Cbracket::Oparenthesis::tl ->
        (* image insertion with no "alt" *)
        (* ![](/path/to/img.jpg) *)
        (try
@@ -1037,36 +1043,38 @@ let main_parse lexemes =
            let url, tls = read_until_space b in
            let title, should_be_empty_list =
              read_until_dq (snd (read_until_dq tls)) in
-           let r = match e with
+           let r = match t with
              | Exclamations 0 -> Text "!" :: r
              | Exclamations n -> Text(String.make (n+1) '!') :: r
              | _ -> r in
            let r = Img("", string_of_tl url, string_of_tl title) :: r in
            main_loop r [Cparenthesis] tl
          with NL_exception ->
-           main_loop (Text(string_of_t e)::r) [Exclamation] l
+           (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+           (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
        )
 
     (* img ref *)
-    | _, (Exclamation|Exclamations _ as e)
-         ::(Obracket::Cbracket::Obracket::tl as l) ->
+    | _, (Exclamation|Exclamations _ as t)
+         ::Obracket::Cbracket::Obracket::tl ->
        (* ref image insertion with no "alt" *)
        (* ![][ref] *)
        (try
            let id, tl = read_until_cbracket ~no_nl:true tl in
-           let r = match e with
+           let r = match t with
              | Exclamations 0 -> Text "!" :: r
              | Exclamations n -> Text(String.make (n+1) '!') :: r
              | _ -> r in
            let r = Img_ref(rc, string_of_tl id, "") :: r in
            main_loop r [Cbracket] tl
          with NL_exception ->
-           main_loop (Text(string_of_t e)::r) [Exclamation] l
+          (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+           (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
        )
 
 
     (* img *)
-    | _, (Exclamation|Exclamations _ as e)::(Obracket::tl as l) ->
+    | _, (Exclamation|Exclamations _ as t)::Obracket::tl ->
        (* image insertion with "alt" *)
        (* ![Alt text](/path/to/img.jpg "Optional title") *)
        (try
@@ -1086,7 +1094,7 @@ let main_parse lexemes =
                   if nothing <> [] then
                     raise NL_exception; (* caught right below *)
                   let r =
-                    match e with
+                    match t with
                     | Exclamations 0 -> Text "!" :: r
                     | Exclamations n -> Text(String.make (n+1) '!') :: r
                     | _ -> r in
@@ -1102,9 +1110,11 @@ let main_parse lexemes =
                         another chance. However Obracket could
                         announce something else, such as a link, so we have
                         to go through it again. *)
-                   main_loop (Text(string_of_t e)::r) [Exclamation] l
+                    (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+                    (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
                 | Premature_ending ->
-                   main_loop (Text(string_of_t e)::r) [Exclamation] l
+                    (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+                    (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
               )
            | alt, Obracket::Word(id)::Cbracket::ntl
            | alt, Obracket::(Space|Spaces _)::Word(id)::Cbracket::ntl
@@ -1122,24 +1132,32 @@ let main_parse lexemes =
                                 ::r) [Cbracket] rest
                 with Premature_ending
                    | NL_exception ->
-                      main_loop (Text(string_of_t e)::r) [Exclamation] l
+                       (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+                       (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
               )
-           | _ -> main_loop (Text(string_of_t e)::r) [Exclamation] l
+           | _ ->
+               (* main_loop (Text(string_of_t e)::r) [Exclamation] l *)
+               (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
          with
          | Premature_ending ->
-            main_loop (Text(string_of_t e)::r) [Exclamation] l (* todo:  *)
+             (* main_loop (Text(string_of_t e)::r) [Exclamation] l (\* todo:  *\) *)
+             (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
        )
 
     | _,
-      ((At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar
+        (At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar
         |Dot|Doublequote|Exclamation|Equal|Minus|Obrace|Oparenthesis
         |Percent|Plus|Question|Quote|Return
-        |Semicolon|Slash|Tab|Tilde|Lessthan|Greaterthan) as t)::tl
+        |Semicolon|Slash|Tab|Tilde|Lessthan|Greaterthan as t)::tl
       ->
-       main_loop (Text(string_of_t t)::r) [t] tl
+        (* main_loop (Text(string_of_t t)::r) [t] tl *)
+        (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
 
-    | _, (Number(_) as t) :: tl -> main_loop (Text(string_of_t t)::r) [t] tl
+    | _, (Number _  as t):: tl -> 
+        (* main_loop (Text(string_of_t t)::r) [t] tl *)
+        (match maybe_extension r previous lexemes with None -> main_loop (Text(string_of_t t)::r) [t] tl | Some (r, p, l) -> main_loop r p l)
 
+    (* TODO: call [trampoline] *)
     (* generated part: *)
     | _, Ats(0) :: tl -> main_loop (Text(string_of_t(At))::r) [At] (At::tl)
     | _, Ats(n) :: tl -> main_loop (Text(string_of_t(At))::r) [At] (Ats(n-1)::tl)
@@ -1201,16 +1219,23 @@ let main_parse lexemes =
     | _, Slashs(n) :: tl -> main_loop (Text(string_of_t(Slash))::r) [Slash] (Slashs(n-1)::tl)
   (* /generated part *)
 
+  (* Temporary note: this function will implement the extension
+     mechanism, so the first step is to change all fall-back calls to
+     main_loop into calls to this function. *)
+  and maybe_extension (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
+      (lexemes:tag Omd_lexer.t list) : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
+    None
+
   and emailstyle_quoting r previous lexemes =
     let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
       function
-      | Newline::Greaterthan::(Newline::_ as tl) ->
-         loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
-      | Newline::Greaterthan::Spaces n::tl ->
-         loop (Newline::cl@block) [Spaces(n-1)] tl
-      (* | Newline::tl -> loop block (Newline::cl) tl *)
+        | Newline::Greaterthan::(Newline::_ as tl) ->
+            loop (Newline::cl@block) [] tl
+        | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
+        | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
+        | Newline::Greaterthan::Spaces n::tl ->
+            loop (Newline::cl@block) [Spaces(n-1)] tl
+              (* | Newline::tl -> loop block (Newline::cl) tl *)
       | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
       | e::tl -> loop block (e::cl) tl
     in
