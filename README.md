@@ -14,14 +14,19 @@ Usage
 -----
 
 - to get the latest version of omd
+
     git clone git@github.com:pw374/omd.git
+
 - or if you don't have git installed but have svn
+
     svn co https://github.com/pw374/omd
 
 - to compile omd using oasis
+
     make
 
 - to compile omd without oasis
+
     cd omd/src && make
 
 
