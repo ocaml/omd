@@ -21,6 +21,10 @@ type tag = Maybe_h1 | Maybe_h2 | Md of Omd_backend.t
 type tmp_list = element list
 and element   = Item of tag Omd_lexer.t list
 
+type extension =
+    Omd_backend.t -> tag Omd_lexer.t list -> tag Omd_lexer.t list
+    -> ((Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) option)
+and extensions = extension list
 
 module StringSet : sig
   type elt = string
@@ -490,8 +494,7 @@ let read_until_cbracket ?(no_nl=false) l =
   in loop [] l
 
 
-
-let main_parse lexemes =
+let main_parse extensions lexemes =
   let rc = new Omd_backend.ref_container in
 
   (* [main_loop] should be called only by itself and [rev_main_loop] *)
@@ -1465,7 +1468,17 @@ let main_parse lexemes =
      main_loop into calls to this function. *)
   and maybe_extension (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
       (lexemes:tag Omd_lexer.t list) : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
-    None
+    match extensions with
+      | [] -> None
+      | _ ->
+          List.fold_left 
+            (function
+               | None -> (fun f -> f r previous lexemes)
+               | Some(r,p,l) as e -> (fun f -> match f r p l with None -> e | Some _ as k -> k)
+            )
+            None
+            extensions
+
 
   and emailstyle_quoting r previous lexemes =
     let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
@@ -1941,5 +1954,5 @@ let main_parse lexemes =
   rev_main_loop [] [] lexemes
 
 
-let parse lexemes =
-  main_parse (tag_setext lexemes)
+let parse ?(extensions=[]) lexemes =
+  main_parse extensions (tag_setext lexemes)
