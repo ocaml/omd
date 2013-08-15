@@ -622,10 +622,10 @@ let main_parse extensions lexemes =
                                  ::_ -> (* maybe hr *)
         begin match hr_m lexemes with
           | None -> (* no hr, so it's a list *)
-              let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
-                main_loop (md@r) new_p new_l
+            let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
+            main_loop md new_p new_l
           | Some l -> (* hr *)
-              main_loop (Hr::r) [Newline] l
+            main_loop (Hr::r) [Newline] l
         end
     | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
        begin match hr_m lexemes with
@@ -715,8 +715,8 @@ let main_parse extensions lexemes =
          | Some l ->
              main_loop (Hr::r) [Newline] l
          | None ->
-             let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
-               main_loop (md) new_p new_l
+           let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
+           main_loop (md) new_p new_l
        end
     | ([]|[(Newline|Newlines _)]), Stars _ :: _ when hr_s lexemes <> None ->
         (* hr *)
