@@ -37,6 +37,7 @@
  * Automatic links: ***todo?***
  * Semi-automatic links: done (but needs more testing)
  * Backslashes: done
+   * as with `pandoc`, escaping a line break with a backslash means `<br/>`. For instance, `"plop\\nhello"` is translated to `"<p>plop<br/>hello</p>"` (this has been implemented on 2013.08.15)
  * Code:
    * verbatim: done (but needs more testing)
    * syntax-highlighted code: *todo*
