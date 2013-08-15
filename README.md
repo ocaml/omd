@@ -21,15 +21,22 @@ Usage
 
         svn co https://github.com/pw374/omd
 
-- to compile omd using oasis
+- to compile omd
+  - using oasis
 
-        make
+          cd omd && make
 
-- to compile omd without oasis
+  - without oasis
 
-        cd omd/src && make
+          cd omd/src && make
 
+- to use omd
 
+      ./omd -help
+
+- to install omd, for the moment, you may do this:
+
+      cd omd/src && make omd && cp omd /path/to/where/you/want/to/install/omd
 
 ----------------
 
