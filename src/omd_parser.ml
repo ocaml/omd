@@ -114,6 +114,25 @@ let rec is_blank = function
   | [] -> true
   | _ -> false
 
+
+let fsplit_norev ?(excl=(fun _ -> false)) ~f l : ('a list * 'a list) option =
+  let rec loop accu = function
+    | [] ->
+      Some(accu, [])
+    | e::tl as l ->
+      if excl e then
+        None
+      else if f e then
+        Some(accu, l)
+      else
+        loop (e::accu) tl
+  in loop [] l
+
+let fsplit ?(excl=(fun _ -> false)) ~f l =
+  match fsplit_norev ~excl:excl ~f:f l with
+  | None -> None
+  | Some(rev, l) -> Some(List.rev rev, l)
+
 (** [emph_or_bold (n:int) (r:t list) (l:Omd_lexer.t list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
@@ -122,35 +141,50 @@ let emph_or_bold (n:int) (l:tag Omd_lexer.t list)
     : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
   assert (n>0 && n<4);
   let rec loop (result:tag Omd_lexer.t list) = function
+    | Newline :: tl ->
+      begin
+        match
+          fsplit_norev
+            ~excl:(function Newlines _ -> true| _ -> false) 
+            ~f:(function (Star|Stars _) -> true| _ -> false)
+            tl
+        with
+        | None -> None
+        | Some(_, []) -> None
+        | Some((Backslash::_ as x), Star::tl) ->
+          loop ((Star::x)@Newline::result) tl
+        | Some(x, tl) ->
+          loop (x@Newline::result) tl
+      end
     | []
-    | (Newline|Newlines _) :: _ ->
-        None
+    | Newlines _ :: _ ->
+      None
     | Backslash::Star::tl ->
-        loop (Star::result) tl
+      loop (Star::result) tl
     | Backslash::Stars 0::tl ->
-        loop (Star::result) tl
+      loop (Star::result) tl
     | Backslash::Stars n::tl ->
-        loop (Star::result) (Stars(n-1)::tl)
+      loop (Star::result) (Stars(n-1)::tl)
     | (Star as t) :: tl ->
-        if n = 1 then
-          Some(List.rev result, tl)
-        else
-          loop (t :: result) tl
-    | ((Stars x) as t) :: tl ->
-        if n = x+2 then
-          Some(List.rev result, tl)
-        else
-          loop (t :: result) tl
-    | t::tl ->
+      if n = 1 then
+        Some(List.rev result, tl)
+      else
         loop (t :: result) tl
+    | ((Stars x) as t) :: tl ->
+      if n = x+2 then
+        Some(List.rev result, tl)
+      else
+        loop (t :: result) tl
+    | t::tl ->
+      loop (t :: result) tl
   in
-    match loop [] l with
-      | None -> None
-      | Some(r, tl) ->
-          if is_blank r then
-            None
-          else
-            Some(r, tl)
+  match loop [] l with
+  | None -> None
+  | Some(r, tl) ->
+    if is_blank r then
+      None
+    else
+      Some(r, tl)
 
 (** [uemph_or_bold (n:int) (r:t list) (l:tag Omd_lexer.t list)]
     returns None if not (emph and/or bold),
@@ -160,9 +194,24 @@ let uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
     : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
   assert (n>0 && n<4);
   let rec loop (result:tag Omd_lexer.t list) = function
+    | Newline :: tl ->
+      begin
+        match
+          fsplit_norev
+            ~excl:(function Newlines _ -> true| _ -> false) 
+            ~f:(function (Underscore|Underscores _) -> true| _ -> false)
+            tl
+        with
+        | None -> None
+        | Some(_, []) -> None
+        | Some((Backslash::_ as x), Underscore::tl) ->
+          loop ((Underscore::x)@Newline::result) tl
+        | Some(x, tl) ->
+          loop (x@Newline::result) tl
+      end
     | []
-    | (Newline|Newlines _) :: _ ->
-        None
+    | Newlines _ :: _ ->
+      None
     | Backslash::Underscore::tl ->
         loop (Underscore::result) tl
     | Backslash::Underscores 0::tl ->
@@ -195,9 +244,24 @@ let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
     : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
   assert (n>0 && n<4);
   let rec loop (result:tag Omd_lexer.t list) = function
+    | Newline :: tl ->
+      begin
+        match
+          fsplit_norev
+            ~excl:(function Newlines _ -> true| _ -> false) 
+            ~f:(function (Underscore|Underscores _) -> true| _ -> false)
+            tl
+        with
+        | None -> None
+        | Some(_, []) -> None
+        | Some((Backslash::_ as x), Underscore::tl) ->
+          loop ((Underscore::x)@Newline::result) tl
+        | Some(x, tl) ->
+          loop (x@Newline::result) tl
+      end
     | []
-    | (Newline|Newlines _) :: _ ->
-        None
+    | Newlines _ :: _ ->
+      None
     | Backslash::Underscore::tl ->
         loop (Underscore::result) tl
     | Backslash::Underscores 0::tl ->
@@ -665,43 +729,50 @@ let main_parse extensions lexemes =
              | Some l ->
                 main_loop (Hr::r) [Newline] l
              | None ->
-                (match emph_or_bold 1 tl with
-                 | None ->
-                     begin match maybe_extension r previous lexemes with
-                       | None -> main_loop (Text(string_of_t t)::r) [t] tl
-                       | Some(r, p, l) -> main_loop r p l
-                     end
-                 | Some(x, new_tl) ->
-                    main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
-                )
+               (match emph_or_bold 1 tl with
+               | Some(x, new_tl) ->
+                 main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
+               | None ->
+                 begin match maybe_extension r previous lexemes with
+                 | None -> main_loop (Text(string_of_t t)::r) [t] tl
+                 | Some(r, p, l) -> main_loop r p l
+                 end
+               )
 
        end
     | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
        (match emph_or_bold 1 tl with
+        | Some(x, new_tl) ->
+           main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
         | None ->
             begin match maybe_extension r previous lexemes with
               | None -> main_loop (Text(string_of_t t)::r) [t] tl
               | Some(r, p, l) -> main_loop r p l
             end
-        | Some(x, new_tl) ->
-           main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
        )
     | _, (Stars((0|1) as n) as t) :: tl ->
        (* 2 or 3 "orphan" stars, or emph/bold *)
        (match emph_or_bold (n+2) tl with
-        | None ->
-            begin match maybe_extension r previous lexemes with
-              | None -> main_loop (Text(string_of_t t)::r) [t] tl
-              | Some(r, p, l) -> main_loop r p l
-            end
         | Some(x, new_tl) ->
            if n = 0 then
              main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
            else
              main_loop (Emph([Bold(rev_main_loop [] [t] x)]) :: r) [t] new_tl
+        | None ->
+            begin match maybe_extension r previous lexemes with
+              | None -> main_loop (Text(string_of_t t)::r) [t] tl
+              | Some(r, p, l) -> main_loop r p l
+            end
        )
 
     (* backslashes *)
+    | _, Backslash :: (Newline as t) :: tl -> (* \\n *)
+      main_loop (Br :: r) [t] tl
+    | _, Backslash :: Newlines 0 :: tl -> (* \\n\n\n\n... *)
+       main_loop (Br :: r) [Backslash; Newline] (Newline :: tl)
+    | _, Backslash :: Newlines n :: tl -> assert (n >= 0); (* \\n\n\n\n... *)
+                                           main_loop (Br :: r) [Backslash; Newline]
+                                                     (Newlines (n-1) :: tl)
     | _, Backslash :: (Backquote as t) :: tl -> (* \` *)
        main_loop (Text ("`") :: r) [t] tl
     | _, Backslash :: Backquotes 0 :: tl -> (* \````... *)
@@ -1052,22 +1123,32 @@ let main_parse extensions lexemes =
        (* image insertion with no "alt" *)
        (* ![](/path/to/img.jpg) *)
        (try
-           let b, tl = read_until_cparenth ~no_nl:false tl in
-           (* new lines there seem to be allowed *)
-           let url, tls = read_until_space b in
-           let title, should_be_empty_list =
-             read_until_dq (snd (read_until_dq tls)) in
-           let r = match t with
-             | Exclamations 0 -> Text "!" :: r
-             | Exclamations n -> Text(String.make (n+1) '!') :: r
-             | _ -> r in
-           let r = Img("", string_of_tl url, string_of_tl title) :: r in
-           main_loop r [Cparenthesis] tl
-         with NL_exception ->
-            begin match maybe_extension r previous lexemes with
-              | None -> main_loop (Text(string_of_t t)::r) [t] tl
-              | Some(r, p, l) -> main_loop r p l
-            end
+          begin
+            let b, tl = read_until_cparenth ~no_nl:false tl in
+          (* new lines there are allowed *)
+            let r (* updated result *) = match t with
+              | Exclamations 0 -> Text "!" :: r
+              | Exclamations n -> Text(String.make (n+1) '!') :: r
+              | _ -> r in
+            match
+              try Some(read_until_space ~no_nl:true b) 
+              with Premature_ending -> None
+            with
+            | Some(url, tls) ->
+              let title, should_be_empty_list =
+                read_until_dq (snd (read_until_dq tls)) in
+              main_loop (Img("", string_of_tl url, string_of_tl title) :: r)
+                [Cparenthesis] tl
+            | None ->
+              main_loop (Img("", string_of_tl b, "") :: r)
+                [Cparenthesis] tl
+          end
+        with
+        | NL_exception ->
+          begin match maybe_extension r previous lexemes with
+          | None -> main_loop (Text(string_of_t t)::r) [t] tl
+          | Some(r, p, l) -> main_loop r p l
+          end
        )
 
     (* img ref *)
