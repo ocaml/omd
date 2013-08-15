@@ -5,18 +5,81 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-let () =
+let old () =
   let b = Buffer.create 42 in
-    try while true do
+  try while true do
       Buffer.add_char b (input_char stdin)
     done; assert false
+  with End_of_file ->
+    let open Omd in
+    print_endline (Omd.to_html
+                     (make_paragraphs
+                        (parse (lex (Buffer.contents b)))));
+    try
+      (try ignore (Sys.getenv "DEBUG") with
+        Not_found -> failwith "2HUIDNBIU2Y782HUIDBZUDBEUBEUB"
+      );
+      print_endline
+        (Omd_backend.sexpr_of_md
+           ((* Md_backend.make_paragraphs *)
+             (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))))
+    with Failure "2HUIDNBIU2Y782HUIDBZUDBEUBEUB" -> ()
+;;
+
+let main () =
+  let input = ref []
+  and output = ref ""
+  in
+  Arg.(
+    parse
+      [
+        "-o", Set_string output, "output_file.html";
+        "--", Rest(fun s -> input := s :: !input), "input_file1.md ... input_fileN.md ";
+      ]
+      (fun s -> input := s :: !input)
+      "omd [inputfile1 .. inputfileN] [-o outputfile]
+omd [-o outputfile] [inputfile1 .. inputfileN]
+omd [-o outputfile] [-- inputfile1 .. inputfileN]"
+  );
+  let input_files =
+    if !input = [] then
+      [stdin]
+    else
+      List.rev_map (open_in) !input
+  in
+  let output =
+    if !output = "" then
+      stdout
+    else
+      open_out_bin !output
+  in
+  List.iter (fun ic ->
+    let b = Buffer.create 42 in
+    try while true do
+        Buffer.add_char b (input_char ic)
+      done; assert false
     with End_of_file ->
       let open Omd in
-      print_endline (Omd.to_html
-                       (make_paragraphs
-                          (parse (lex (Buffer.contents b)))));
-      if try ignore (Sys.getenv "DEBUG"); true with _ -> false then
+      output_string output
+        (Omd.to_html
+           (make_paragraphs
+              (parse (lex (Buffer.contents b)))));
+      flush output;
+      try
+        (try ignore (Sys.getenv "DEBUG") with
+          Not_found -> failwith "2HUIDNBIU2Y782HUIDBZUDBEUBEUB"
+        );
         print_endline
           (Omd_backend.sexpr_of_md
              ((* Md_backend.make_paragraphs *)
                (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))))
+      with Failure "2HUIDNBIU2Y782HUIDBZUDBEUBEUB" -> ()
+  )
+    input_files
+
+let () =
+  try
+    main ()
+  with Sys_error msg ->
+    Printf.eprintf "Error: %s\n" msg;
+    exit 1
