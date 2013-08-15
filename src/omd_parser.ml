@@ -1808,7 +1808,7 @@ let main_parse extensions lexemes =
       if debug then
         eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p)
           (destring_of_tl l);
-      let list_hd e = match e with hd::_ -> hd | _ -> min_int in
+      let list_hd e = match e with hd::_ -> hd | _ -> 0 in
       let rec loop (fi:bool) (ordered:bool)
           (result:(bool*int list*tag Omd_lexer.t list)list)
           (curr_item:tag Omd_lexer.t list)
