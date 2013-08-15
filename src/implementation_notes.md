@@ -21,9 +21,9 @@
  * Lists
    * unordered: done
    * ordered: done
-   * paragraphs in lists: ***todo***
-   * blockquote inside lists: done (todo: more tests)
-   * code inside lists: done (todo: tests) (to check: does it exist in Github flavoured markdown??)
+   * paragraphs in lists: partly done
+   * blockquote inside lists: done (*todo*: more tests)
+   * code inside lists: done (*todo*: tests) (to check: does it exist in Github flavoured markdown??)
  * Horizontal rules:
    * with stars: done
    * with dashes: done
@@ -39,12 +39,8 @@
  * Backslashes: done
  * Code:
    * verbatim: done (but needs more testing)
-   * syntax-highlighted code: todo
+   * syntax-highlighted code: *todo*
 
-## Implementation road map
-
-  * 24 July 2013: first complete version of implementation of ordered and unordered lists with a rather sound semantics. However, testing has not started yet, but will soon.
-  * I'll try to avoid recursion between multiple functions, since it's not well-supported by `Js_of_ocaml`. However I will not try hard, for the first version.
 
 ## Flaws in Markdown
 
@@ -97,3 +93,4 @@ Let N be the indentation level of the current element.
 
 -----
 file implementation_notes.md
+
