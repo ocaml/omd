@@ -38,8 +38,13 @@ omd_lexer_fs.cmx:omd_lexer.cmx
 omd_backend.cmo:
 omd_backend.cmx:
 
+omd.cmi:omd_backend.cmi omd_lexer.cmi omd_parser.cmi
+omd_backend.cmi:omd_backend.cmo
+omd_lexer.cmi:omd_lexer.cmo
+omd_parser.cmi:omd_parser.cmo
+
 omd_main.cmo:omd.cmo
-omd.cmo:omd_backend.cmo omd_lexer.cmo omd_parser.cmo 
+omd.cmo:omd_backend.cmo omd_lexer.cmo omd_parser.cmo
 omd_main.cmx:omd.cmx 
 omd.cmx:omd_backend.cmx omd_lexer.cmx omd_parser.cmx
 
