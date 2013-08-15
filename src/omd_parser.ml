@@ -26,16 +26,6 @@ type extension =
   -> ((Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) option)
 and extensions = extension list
 
-module StringSet : sig
-  type elt = string
-  type t
-  val mem : elt -> t -> bool
-  val of_list : elt list -> t
-end = struct
-  include Set.Make(struct type t = string let compare = String.compare end)
-  let of_list l = List.fold_left (fun r e -> add e r) empty l
-end
-
 let htmlentities_set = StringSet.of_list (* This list should be checked... *)
   (* list extracted from: http://www.ascii.cl/htmlcodes.htm *)
   ["eth";  "ntilde";  "ograve";  "oacute";  "ocirc";  "otilde"; "ouml";
@@ -1920,7 +1910,18 @@ let main_parse extensions lexemes =
           if debug then eprintf "#%d (%s)\n%!" 88 (destring_of_tl lexemes);
           loop false ordered result (e::Space::k::curr_item) indents tl
 
-        | ((Newline|Newlines 0 as k) :: e :: tl) ->
+        | (Newline as k) :: e :: tl ->
+          (* adding e to the current item *)
+          if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
+          loop false ordered result (e::k::curr_item) indents tl
+
+        | Newlines 0 :: (Tag _|Hash|Hashs _) :: _ ->
+          (* Tricky: 2 line breaks, but we're suspecting a H1..H6 and
+             it's probably going to be the case, hence we're out of
+             the list. *)
+          ((ordered,indents,curr_item)::result, lexemes)
+
+        | (Newlines 0 as k) :: e :: tl ->
           (* adding e to the current item *)
           if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
           loop false ordered result (e::k::curr_item) indents tl
@@ -1928,8 +1929,7 @@ let main_parse extensions lexemes =
         | ([] | (Newlines(_) :: _)) ->
           if debug then eprintf "#%d******************************\n%!" 7;
           (* if an empty line appears, then it's the end of the list(s). *)
-          ((ordered,indents,curr_item)
-           ::(result:(bool*int list*tag Omd_lexer.t list) list), lexemes)
+          ((ordered,indents,curr_item)::result, lexemes)
 
         | e :: tl -> (* adding e to the current item *)
           if debug then eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
