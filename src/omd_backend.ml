@@ -342,27 +342,27 @@ let rec html_of_md md =
     | H1 md :: tl ->
       let ih = html_of_md md in
       let id = id_of_string ids ih in
-      Buffer.add_string b "<h1 id='";
+      Buffer.add_string b "<h1 id=\"";
       Buffer.add_string b id;
-      Buffer.add_string b "'>";
+      Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h1>";
       loop indent tl
     | H2 md :: tl ->
       let ih = html_of_md md in
       let id = id_of_string ids ih in
-      Buffer.add_string b "<h2 id='";
+      Buffer.add_string b "<h2 id=\"";
       Buffer.add_string b id;
-      Buffer.add_string b "'>";
+      Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h2>";
       loop indent tl
     | H3 md :: tl ->
       let ih = html_of_md md in
       let id = id_of_string ids ih in
-      Buffer.add_string b "<h3 id='";
+      Buffer.add_string b "<h3 id=\"";
       Buffer.add_string b id;
-      Buffer.add_string b "'>";
+      Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h3>";
       loop indent tl
