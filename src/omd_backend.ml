@@ -127,7 +127,7 @@ let make_paragraphs md =
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Br | Hr
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
        | Html_block _ ) as e :: tl->
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
@@ -340,10 +340,10 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop  tl
     | Ref(rc, name, text) :: tl ->
-        bprintf b "(Ref %s %s)" name text;
+        bprintf b "(Ref %S %S)" name text;
         loop tl
     | Img_ref(rc, name, alt) :: tl ->
-        bprintf b "(Img_ref %s %s)" name alt;
+        bprintf b "(Img_ref %S %S)" name alt;
         loop tl
     | Paragraph md :: tl ->
         Buffer.add_string b "(Paragraph";
@@ -351,12 +351,12 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop tl
     | Img(alt, src, title) :: tl ->
-        bprintf b "(Img %s %s %s)" alt src title;
+        bprintf b "(Img %S %S %S)" alt src title;
         loop tl
     | Text t1 :: Text t2 :: tl ->
         loop (Text(t1^t2)::tl)
     | Text t :: tl ->
-        bprintf b "(Text \"%s\")" (String.escaped t);
+        bprintf b "(Text %S)" t;
         loop tl
     | Emph md :: tl ->
         Buffer.add_string b "(Emph";
@@ -370,19 +370,19 @@ let rec sexpr_of_md md =
         loop tl
     | Ol l :: tl ->
         bprintf b "(Ol";
-        List.iter(fun li -> bprintf b "(Li"; loop li; bprintf b ")") l;
+        List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
         bprintf b ")";
         loop  tl
     | Ul l :: tl ->
         bprintf b "(Ul";
-        List.iter(fun li -> bprintf b "(Li"; loop li;bprintf b ")") l;
+        List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
         bprintf b ")";
         loop  tl
     | Code c :: tl ->
-        bprintf b "(Code \"%s\")" (String.escaped c);
+        bprintf b "(Code %S)" c;
         loop  tl
     | Code_block c :: tl ->
-        bprintf b "(Code_block \"%s\")" (String.escaped c);
+        bprintf b "(Code_block %s)" c;
         loop  tl
     | Br :: tl ->
         Buffer.add_string b "(Br)";
@@ -401,7 +401,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop  tl
     | Url (href,s,title) :: tl ->
-        bprintf b "(Url %s %s %s)" href s title;
+        bprintf b "(Url %S %S %S)" href s title;
         loop  tl
     | H1 md :: tl ->
         Buffer.add_string b "(H1";
