@@ -19,6 +19,45 @@ let raise =
   else
     raise
 
+module StringSet : sig
+  type elt = string
+  type t
+  val empty : t
+  val add : elt -> t -> t
+  val mem : elt -> t -> bool
+  val of_list : elt list -> t
+end = struct
+  include Set.Make(struct type t = string let compare = String.compare end)
+  let of_list l = List.fold_left (fun r e -> add e r) empty l
+end
+
+let id_of_string ids s =
+  let l = String.length s in
+  let gen_id s =
+    let b = Buffer.create l in
+    let rec loop i flag flag2 =
+      (* [flag] prevents trailing dashes; 
+         [flag2] prevents IDs from starting with dashes *)
+      if i = l then
+        ()
+      else
+        match s.[i] with
+        | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
+          (if not (flag2 || flag) then Buffer.add_char b '-');
+          Buffer.add_char b c;
+          loop (i+1) true true
+        | _ ->
+          if flag2 || flag then
+            loop (i+1) false flag2
+          else
+            (Buffer.add_char b '-';
+             loop (i+1) true flag2)
+    in
+    loop 0 true true;
+    Buffer.contents b
+  in
+  let id = gen_id s in
+  ids#mangle id
 
 (** references *)
 module R = Map.Make(String)
@@ -150,6 +189,15 @@ let make_paragraphs md =
 
 
 let rec html_of_md md =
+  let ids = object(this)
+    val mutable ids = StringSet.empty
+    method mangle id =
+      if StringSet.mem id ids then
+        this#mangle (id^"x")
+      else
+        (ids <- StringSet.add id ids;
+         id)
+  end in
   let empty s =
     let rec loop i =
       if i < String.length s then
@@ -292,20 +340,32 @@ let rec html_of_md md =
           Buffer.add_string b "</a>";
           loop indent tl
     | H1 md :: tl ->
-        Buffer.add_string b "<h1>";
-        loop indent md;
-        Buffer.add_string b "</h1>";
-        loop indent tl
+      let ih = html_of_md md in
+      let id = id_of_string ids ih in
+      Buffer.add_string b "<h1 id='";
+      Buffer.add_string b id;
+      Buffer.add_string b "'>";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h1>";
+      loop indent tl
     | H2 md :: tl ->
-        Buffer.add_string b "<h2>";
-        loop indent md;
-        Buffer.add_string b "</h2>";
-        loop indent tl
+      let ih = html_of_md md in
+      let id = id_of_string ids ih in
+      Buffer.add_string b "<h2 id='";
+      Buffer.add_string b id;
+      Buffer.add_string b "'>";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h2>";
+      loop indent tl
     | H3 md :: tl ->
-        Buffer.add_string b "<h3>";
-        loop indent md;
-        Buffer.add_string b "</h3>";
-        loop indent tl
+      let ih = html_of_md md in
+      let id = id_of_string ids ih in
+      Buffer.add_string b "<h3 id='";
+      Buffer.add_string b id;
+      Buffer.add_string b "'>";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h3>";
+      loop indent tl
     | H4 md :: tl ->
         Buffer.add_string b "<h4>";
         loop indent md;
