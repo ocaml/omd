@@ -63,12 +63,14 @@ let unindent n lexemes =
         assert false
       else if n = 1 then
         p::fix 1 x tl
-      else (Omd_lexer.lex(let b = Buffer.create n in
-                          for i = 1 to n do
-                            Buffer.add_string b(string_of_t p)
-                          done;
-                          Buffer.contents b)
-      )
+      else
+        (Omd_lexer.lex(
+          let b = Buffer.create n in
+          for i = 1 to n do
+            Buffer.add_string b(string_of_t p)
+          done;
+          Buffer.contents b)
+        )
         @ fix 1 x tl
     | [] -> []
   in
@@ -293,14 +295,11 @@ let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
 
 
 let uemph_or_bold =
-  if true (* FIXME: provide this option on the command line *) then gh_uemph_or_bold else uemph_or_bold
+  if true (* FIXME: provide this option on the command line *) then
+    gh_uemph_or_bold
+  else
+    uemph_or_bold
 
-
-(* The few following lines are there for development purpose only. *)
-let xspaces = ref None
-let xnew_list = ref None
-let xicode = ref None
-let xmain_loop = ref None
 
 (* [eat f l] removes elements from [l] until [f] meets an element
    for which it returns false. If [l] is empty, then returns [l]. *)
@@ -357,8 +356,16 @@ let tag_setext lexemes =
 
 let setext_title l =
   let rec loop r = function
-    | [] -> if r = [] then None else Some(List.rev r, [])
-    | Newline::(Equal|Equals _|Minus|Minuss _)::tl -> if r = [] then None else Some(List.rev r, tl)
+    | [] ->
+      if r = [] then
+        None
+      else
+        Some(List.rev r, [])
+    | Newline::(Equal|Equals _|Minus|Minuss _)::tl ->
+      if r = [] then
+        None
+      else
+        Some(List.rev r, tl)
     | e::tl -> loop (e::r) tl
   in
   loop [] l
@@ -1537,14 +1544,17 @@ let main_parse extensions lexemes =
       if extensions haven't had  any effect, returns Some(nr, np, nl) if
       at least one extension has applied successfully. *)
   and maybe_extension (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
-      (lexemes:tag Omd_lexer.t list) : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
+      (lexemes:tag Omd_lexer.t list)
+      : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
     match extensions with
     | [] -> None
     | _ ->
       List.fold_left
         (function
-        | None -> (fun f -> f r previous lexemes)
-        | Some(r,p,l) as e -> (fun f -> match f r p l with None -> e | Some _ as k -> k)
+        | None ->
+          (fun f -> f r previous lexemes)
+        | Some(r,p,l) as e ->
+          (fun f -> match f r p l with None -> e | Some _ as k -> k)
         )
         None
         extensions
@@ -1554,8 +1564,10 @@ let main_parse extensions lexemes =
       function
       | Newline::Greaterthan::(Newline::_ as tl) ->
         loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Space::tl -> loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Spaces 0::tl -> loop (Newline::cl@block) [Space] tl
+      | Newline::Greaterthan::Space::tl ->
+        loop (Newline::cl@block) [] tl
+      | Newline::Greaterthan::Spaces 0::tl ->
+        loop (Newline::cl@block) [Space] tl
       | Newline::Greaterthan::Spaces n::tl ->
         loop (Newline::cl@block) [Spaces(n-1)] tl
       (* | Newline::tl -> loop block (Newline::cl) tl *)
@@ -1671,8 +1683,9 @@ let main_parse extensions lexemes =
           let title, rest =
             let rec loop accu = function
               | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
-              | ((Hash|Hashs _)::(Space|Spaces _)::((Newline|Newlines _)::_ as l))
-              | (((Newline|Newlines _)::_) as l)
+              | ((Hash|Hashs _)::(Space|Spaces _)::
+                    ((Newline|Newlines _)::_ as l))
+              | ((Newline|Newlines _)::_ as l)
               | ([] as l) ->
                 rev_main_loop [] [] (List.rev accu), l
               | (Hash|Hashs _)::[] ->
@@ -1742,7 +1755,8 @@ let main_parse extensions lexemes =
           code_block (e::accu) tl
       in
       let cb, l = code_block [] tl in
-      if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb then
+      if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb 
+      then
         (Code_block(string_of_tl cb)::r), [Backquote], l
       else
         let clean_bcode s =
@@ -2014,12 +2028,6 @@ let main_parse extensions lexemes =
 
 
     in
-    ( (* This is temporary, it's just to verify type inference with `ocamlc -i' *)
-      xspaces := Some spaces;
-      xnew_list := Some new_list;
-      xicode := Some icode;
-      xmain_loop := Some main_loop;
-    );
     rev_main_loop [] [] lexemes
 
 
