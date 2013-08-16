@@ -1034,30 +1034,31 @@ let main_parse extensions lexemes =
       ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
          ::tl as l) ->
       let read_html() =
+        let tag s = Tag(Md([Html s])) in
         let rec loop accu n = function
           | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
             (* self-closing tags *)
             if n = 0 then
               let b, tl = read_until_gt tl in
-              (Word(sprintf "<%s%s>" tn (string_of_tl b)) ::accu), tl
+              ((tag(sprintf "<%s%s>" tn (string_of_tl b))) ::accu), tl
             else
               let b, tl = read_until_gt tl in
-              loop (Word(sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
+              loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
           | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
             if tn = tagname then
               if n = 0 then
-                List.rev (Word(sprintf "</%s>" tn)::accu), tl
+                List.rev (tag(sprintf "</%s>" tn)::accu), tl
               else
-                loop (Word(sprintf "</%s>" tn)::accu) (n-1) tl
+                loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
             else
               loop (Word(sprintf "</%s>" tn)::accu) n tl
           | Lessthan::Word(tn)::tl -> (* <word... *)
             let b, tl = read_until_gt tl in
             if tn = tagname then
-              loop (Word(sprintf "<%s%s>" tn (string_of_tl b))::accu)
+              loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu)
                 (n+1) tl
             else
-              loop (Word(Printf.sprintf "<%s%s>" tn (string_of_tl b))
+              loop (tag(Printf.sprintf "<%s%s>" tn (string_of_tl b))
                     :: accu) n tl
           | x::tl ->
             loop (x::accu) n tl
@@ -1068,7 +1069,7 @@ let main_parse extensions lexemes =
         if (try ignore(read_until_lt b); false
           with Premature_ending -> true) then
           (* there must not be any '<' in b *)
-          loop [Word(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
+          loop [tag(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
                        (string_of_tl b))] 0 tl
         else
           raise Premature_ending
