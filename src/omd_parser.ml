@@ -1,3 +1,4 @@
+(******************************************************************************)
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
@@ -554,11 +555,500 @@ let read_until_cbracket ?(no_nl=false) l =
     | [] -> raise Premature_ending
   in loop [] l
 
+(* H1, H2, H3, ... *)
+let read_title rev_main_loop n (r:Omd_backend.t) (p:tag Omd_lexer.t list)
+    (l:tag Omd_lexer.t list) =
+  if true then (* a behaviour closer to github *)
+    begin
+      let title, rest =
+        let rec loop accu = function
+          | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
+          | ((Hash|Hashs _)::(Space|Spaces _)::
+                ((Newline|Newlines _)::_ as l))
+          | ((Newline|Newlines _)::_ as l)
+          | ([] as l) ->
+            rev_main_loop [] [] (List.rev accu), l
+          | (Hash|Hashs _)::[] ->
+            rev_main_loop [] [] (List.rev accu), []
+          | (Hash|Hashs _ as x)::tl ->
+            loop (Word(string_of_t x)::accu) tl
+          | x::tl ->
+            loop (x::accu) tl
+        in
+        loop [] l
+      in
+      match n with
+      | 1 -> H1 title :: r, [Newline], rest
+      | 2 -> H2 title :: r, [Newline], rest
+      | 3 -> H3 title :: r, [Newline], rest
+      | 4 -> H4 title :: r, [Newline], rest
+      | 5 -> H5 title :: r, [Newline], rest
+      | 6 -> H6 title :: r, [Newline], rest
+      | _ -> assert false
+    end
+  else (* a behaviour closer to pandoc *)
+    begin
+      let rec loop accu l =
+        match l with
+        | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
+              | Html _ | Html_block _ | Url _ | Br | Hr
+              | Code _ | Code_block _ | Ol _ | Ul _ | NL )::_ ->
+          List.rev accu, l
+        | x::tl -> loop (x::accu) tl
+        | [] -> List.rev accu, []
+      in
+      let title, rest = loop [] (rev_main_loop [] [] l) in
+      match n with
+      | 1 -> List.rev (H1 title :: rest) @ r, [], []
+      | 2 -> List.rev (H2 title :: rest) @ r, [], []
+      | 3 -> List.rev (H3 title :: rest) @ r, [], []
+      | 4 -> List.rev (H4 title :: rest) @ r, [], []
+      | 5 -> List.rev (H5 title :: rest) @ r, [], []
+      | 6 -> List.rev (H6 title :: rest) @ r, [], []
+      | _ -> assert false
+    end
+
+
+(** [maybe_extension r p l] returns None if there is no extension or
+    if extensions haven't had  any effect, returns Some(nr, np, nl) if
+    at least one extension has applied successfully. *)
+let maybe_extension extensions (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
+    (lexemes:tag Omd_lexer.t list)
+    : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
+  match extensions with
+  | [] -> None
+  | _ ->
+    List.fold_left
+      (function
+      | None ->
+        (fun f -> f r previous lexemes)
+      | Some(r,p,l) as e ->
+        (fun f -> match f r p l with None -> e | Some _ as k -> k)
+      )
+      None
+      extensions
+
+let emailstyle_quoting rev_main_loop r previous lexemes =
+  let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
+    function
+    | Newline::Greaterthan::(Newline::_ as tl) ->
+      loop (Newline::cl@block) [] tl
+    | Newline::Greaterthan::Space::tl ->
+      loop (Newline::cl@block) [] tl
+    | Newline::Greaterthan::Spaces 0::tl ->
+      loop (Newline::cl@block) [Space] tl
+    | Newline::Greaterthan::Spaces n::tl ->
+      loop (Newline::cl@block) [Spaces(n-1)] tl
+      (* | Newline::tl -> loop block (Newline::cl) tl *)
+    | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
+    | e::tl -> loop block (e::cl) tl
+  in
+  match loop [] [] lexemes with
+  | block, tl ->
+    if debug then
+      eprintf "##############################\n%s\n\
+                  ##############################\n%!" (string_of_tl block);
+    (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
+
+(* maybe a reference *)
+let maybe_reference rc r p l =
+    (* this function is called when we know it's not a link although
+       it started with a '[' *)
+    (* So it could be a reference or a link definition. *)
+    let rec maybe_ref l =
+      let text, remains = read_until_cbracket l in
+      let () = if try ignore(read_until_obracket text); true
+        with Premature_ending -> false then raise Premature_ending in
+               let blank, remains = read_until_obracket remains in
+               if eat (function (Space|Spaces _|Newline|Newlines _) -> true
+               | _ -> false) blank <> [] then raise Premature_ending;
+               match read_until_cbracket remains with
+               | [], remains ->
+                 let id = string_of_tl text in (* implicit anchor *)
+                 Some(((Ref(rc, id, id))::r), [Cbracket], remains)
+               | id, remains ->
+                 Some(((Ref(rc, string_of_tl id, string_of_tl text))::r),
+                      [Cbracket], remains)
+      in
+      let rec maybe_def l =
+        match read_until_cbracket l with
+        | _, [] -> None
+        | id, (Colon::(Space|Spaces _)::remains)
+        | id, (Colon::remains) ->
+          let url, remains =
+            split (function (Space|Spaces _|Newline|Newlines _) -> false
+            |_ -> true) remains in
+          let title, remains =
+            match eat (function (Space|Spaces _|Newline|Newlines _) -> true
+            | _ -> false) remains with
+            | Doublequotes(0)::tl -> [], tl
+            | Doublequote::tl -> read_until_dq tl
+            | Quotes(0)::tl -> [], tl
+            | Quote::tl -> read_until_q tl
+            | Oparenthesis::tl-> read_until_cparenth tl
+            | l -> [], l
+          in
+          rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+          Some(r, [Quote], remains)
+        | _ -> None
+      in
+      try maybe_ref l
+      with Premature_ending
+      | NL_exception ->
+        try maybe_def l with Premature_ending | NL_exception -> None
+    (* maybe a link *)
+    and maybe_link r p l =
+      let rec read_title name href res = function
+        | Doublequote::(Cparenthesis as t)::tl ->
+          let title = string_of_tl (List.rev res) in
+          Some(Url(href, name, title)::r, [t], tl)
+        | Doublequote::Cparenthesiss 0::tl ->
+          let title = string_of_tl (List.rev res) in
+          Some(Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl)
+        | Doublequote::Cparenthesiss n::tl ->
+          let title = string_of_tl (List.rev res) in
+          Some(Url(href, name, title)::r, [Cparenthesis],
+               Cparenthesiss(n-1)::tl)
+        | [] ->
+          None
+        | e::tl ->
+          read_title name href (e::res) tl
+      in
+      let rec read_url name res = function
+        | Cparenthesis as t::tl ->
+          let href = string_of_tl (List.rev res) in
+          Some(Url(href, name, "")::r, [t], tl)
+        | Cparenthesiss 0::tl ->
+          let href = string_of_tl (List.rev res) in
+          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl)
+        | Cparenthesiss n::tl ->
+          let href = string_of_tl (List.rev res) in
+          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl)
+        | (Space|Spaces _)::Doublequote::tl ->
+          let href = string_of_tl (List.rev res) in
+          read_title name href [] tl
+        | [] | (Newline|Newlines _)::_  ->
+          None
+        | e::tl ->
+          read_url name (e::res) tl
+      in
+      let rec read_name res = function
+        | Cbracket::Oparenthesis::tl ->
+          read_url (string_of_tl (List.rev res)) [] tl
+        | [] | Cbracket::_ -> (* failed to read a MD-link *)
+          None
+        | e::tl ->
+          read_name (e::res) tl
+      in
+      read_name [] l
+
+(** code that starts with one or several backquote(s) *)
+let bcode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
+    (l:tag Omd_lexer.t list)
+    : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
+  let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl
+    | _ -> (* bcode is wrongly called *) assert false in
+  let rec code_block accu = function
+    | [] ->
+      List.rev accu, []
+    | Backquote::tl ->
+      if e = Backquote then
+        List.rev accu, tl
+      else
+        code_block (Backquote::accu) tl
+    | (Backquotes n as b)::tl ->
+      if e = b then
+        List.rev accu, tl
+      else
+        code_block (b::accu) tl
+    | e::tl ->
+      code_block (e::accu) tl
+  in
+  let cb, l = code_block [] tl in
+  if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
+  then
+    (Code_block(string_of_tl cb)::r), [Backquote], l
+  else
+    let clean_bcode s =
+      let rec loop1 i =
+        if i = String.length s then 0
+        else match s.[i] with
+        | '`' -> i
+        | ' ' -> loop1(i+1)
+        | _ -> 0
+      in
+      let rec loop2 i =
+        if i = -1 then String.length s - 1
+        else match s.[i] with
+        | '`' -> i+1
+        | ' ' -> loop2(i-1)
+        | _ -> String.length s - 1
+      in
+      match loop1 0, loop2 (String.length s - 1) with
+      | 0, n when n = String.length s - 1 -> s
+      | i, n -> String.sub s i (n-i)
+    in
+    (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
+
+let icode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
+    (l:tag Omd_lexer.t list)
+    : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
+      (** indented code:
+          returns (r,p,l) where r is the result, p is the last thing read,
+          l is the remains *)
+  let accu = Buffer.create 42 in
+  let rec loop = function
+    | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->
+          (* 1, 2 or 3 spaces. *)
+      Code_block (Buffer.contents accu)::r, p, tl
+        (* -> Return what's been found as code because it's no more code. *)
+    | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl ->
+          (* At least 4 spaces, it's still code. *)
+      Buffer.add_string accu (String.make (n-2) ' ');
+      loop ([t], tl)
+    | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
+      Code_block (Buffer.contents accu)::r, p, tl
+        (* -> Return what's been found as code because it's no more code. *)
+    | _, e::tl ->
+      Buffer.add_string accu (string_of_t e);
+          (* html entities are to be converted later! *)
+      loop ([e], tl)
+    | p, [] ->
+      Code_block (Buffer.contents accu)::r, p, []
+  in loop ([Newlines 0], l)
+
+(** new_list: returns (r,p,l) where r is the result, p is the last thing
+    read, l is the remains *)
+    (* TODO: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
+let new_list rev_main_loop main_loop
+    (o:bool) (r:Omd_backend.t) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list)
+    : (Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) =
+  if debug then
+    eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p)
+      (destring_of_tl l);
+  let list_hd e = match e with hd::_ -> hd | _ -> 0 in
+  let rec loop (fi:bool) (ordered:bool)
+      (result:(bool*int list*tag Omd_lexer.t list)list)
+      (curr_item:tag Omd_lexer.t list)
+      (indents:int list)
+      (lexemes:tag Omd_lexer.t list) =
+        (* 'fi' means first iteration *)
+    let er = if debug then
+        let to_string r (o,il,e) =
+          r ^ sprintf "(%b," o ^ destring_of_tl e ^ ")" in
+        List.fold_left to_string "" result
+      else "" in
+    if debug then
+      eprintf "new_list>>loop er=(%s) curr_item=(%s) lexemes=%s\n%!"
+        er (destring_of_tl curr_item) (destring_of_tl lexemes);
+    match lexemes with
+        (* Boolean is true if ordered, false otherwise. *)
+        (* first loop: return the list of (indentation level * item) *)
+        (* indent = 0 *)
+    | (Newline|Newlines 0) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+      if debug then eprintf "#%d\n%!" 1;
+      if fi then
+        loop false ordered result [] (0::indents) tl
+      else
+        loop false false ((false,indents,curr_item)::result) []
+          (0::indents) tl
+    | (Newline|Newlines 0) :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
+      if debug then Printf.eprintf "#%d\n%!" 2;
+      if fi then
+        loop false ordered result [] (0::indents) tl
+      else
+        loop false true ((true,indents,curr_item)::result) []
+          (0::indents) tl
+
+        (* indent = 1 *)
+    | (Newline|Newlines 0) :: Space :: (Star|Minus|Plus)
+      :: (Space|Spaces _) :: tl ->
+      if debug then Printf.eprintf "#%d\n%!" 3;
+        if fi then
+          loop false ordered result [] (1::indents) tl
+        else
+          loop false false ((false,indents,curr_item)::result) []
+            (1::indents) tl
+    | (Newline|Newlines 0) :: Space :: Number _ :: Dot
+      :: (Space|Spaces _) :: tl ->
+      if debug then Printf.eprintf "#%d\n%!" 4;
+        if fi then
+          loop false ordered result [] (1::indents) tl
+        else
+          loop false true ((true,indents,curr_item)::result) []
+            (1::indents) tl
+
+        (* indent >= 2 *)
+    | (Newline|Newlines 0) :: ((Spaces(x) :: (Star|Minus|Plus)
+                                :: (Space|Spaces _) :: tl) as p) ->
+      if debug then Printf.eprintf "#%d\n%!" 5;
+      if x+2 > list_hd indents + 4 then
+            (* a single new line & too many spaces -> *not* a new list item. *)
+        loop false ordered result curr_item indents p
+          (* p is what follows the new line *)
+      else
+            (* a new list item, set previous current item as a complete item *)
+        if fi then
+          loop false ordered result [] ((x+2)::indents) tl
+        else
+          loop false false ((false,indents,curr_item)::result)
+            [] ((x+2)::indents) tl
+
+    | (Newline|Newlines 0) :: ((Spaces(x) :: Number _ :: Dot
+                                :: (Space|Spaces _) :: tl) as p) ->
+      if debug then Printf.eprintf "#%d\n%!" 6;
+      if x+2 > list_hd indents + 4 then
+            (* a single new line & too many spaces -> *not* a new list item. *)
+        loop false ordered result curr_item indents p
+          (* p is what follows the new line *)
+      else
+            (* a new list item, set previous current item as a complete item *)
+        if fi then
+          loop false ordered result [] ((x+2)::indents) tl
+        else
+          loop false true ((true,indents,curr_item)::result) []
+            ((x+2)::indents) tl
+    | Newlines(0) :: ((Spaces(2|3|4|5 as n)) :: Greaterthan
+                      :: (Space|Spaces _) :: tl as l) ->
+          (* blockquote inside a list *)
+      let block, rest = unindent (n+2) (Newline::l) in
+      let em, _, _x = emailstyle_quoting rev_main_loop [] [] block in
+      assert(_x = []);
+      loop false ordered result (Tag(Md(em))::curr_item) indents rest
+    | Newlines(0) :: (Spaces(n) :: tl as l)
+    | Newline::Newline:: (Spaces(n) :: tl as l)
+        when (try n+2 >= List.hd indents+4 with _ -> assert false) ->
+          (* code inside a list *)
+      let block, rest = unindent (List.hd indents+4) (Newline::l) in
+      loop false ordered result
+        (Tag(Md(main_loop [] [] block))::curr_item) indents rest
+
+    | ((Newline|Newlines 0 as k) :: Spaces(_) :: e :: tl) ->
+          (* adding e to the current item *)
+      if debug then eprintf "#%d (%s)\n%!" 88 (destring_of_tl lexemes);
+      loop false ordered result (e::Space::k::curr_item) indents tl
+
+    | (Newline as k) :: e :: tl ->
+          (* adding e to the current item *)
+      if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
+      loop false ordered result (e::k::curr_item) indents tl
+
+    | Newlines 0 :: (Tag _|Hash|Hashs _) :: _ ->
+          (* Tricky: 2 line breaks, but we're suspecting a H1..H6 and
+             it's probably going to be the case, hence we're out of
+             the list. *)
+      ((ordered,indents,curr_item)::result, lexemes)
+
+    | (Newlines 0 as k) :: e :: tl ->
+          (* adding e to the current item *)
+      if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
+      loop false ordered result (e::k::curr_item) indents tl
+
+    | ([] | (Newlines(_) :: _)) ->
+      if debug then eprintf "#%d******************************\n%!" 7;
+          (* if an empty line appears, then it's the end of the list(s). *)
+      ((ordered,indents,curr_item)::result, lexemes)
+
+    | e :: tl -> (* adding e to the current item *)
+      if debug then eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
+      loop false ordered result (e::curr_item) indents tl
+  in
+  let rec loop2 (tmp:(bool*int list*tag Omd_lexer.t list) list)
+      (curr_indent:int) (ordered:bool) (accu:Omd_backend.t list)
+      : Omd_backend.t * (bool*int list*tag Omd_lexer.t list) list =
+    let er = if debug then
+        let to_string r (o,il,e) =
+          r ^ sprintf "(%b," o ^ destring_of_tl e ^ ")" in
+        List.fold_left to_string "" tmp
+      else "" in
+    if debug then Printf.eprintf "new_list>>loop2\n%!";
+    match tmp with
+    | (o,(i::indents), item) :: tl ->
+      if debug then Printf.eprintf "@338:loop2 tmp=%s\n%!" er;
+      let item = List.rev item in
+      if i = curr_indent then (
+        if debug then Printf.eprintf "PLOP\n%!";
+        loop2 tl i ordered ((rev_main_loop [] [Space;Star] item)::accu)
+      )
+      else if i > curr_indent then ( (* new sub list *)
+        if debug then Printf.eprintf "NEW SUB LIST\n%!";
+        let md, new_tl =
+          loop2 tl i o [rev_main_loop [] [Space;Star] item] in
+        match accu with
+        | hd :: accu_tl ->
+          loop2 new_tl curr_indent ordered ((hd@md) :: accu_tl)
+        | [] ->
+          if curr_indent = -1 then
+            md, new_tl
+          else
+            loop2 new_tl curr_indent ordered [md]
+      )
+      else (* i < curr_indent *)
+        let accu = List.rev accu in
+        [if ordered then Ol accu else Ul accu], tmp
+    | [(_,[],[])]
+    | [] ->
+      if debug then eprintf "FOO\n%!";
+      if accu = [] then [], []
+      else
+        let accu = List.rev accu in
+        [if ordered then Ol accu else Ul accu], []
+    | (o,[], item) :: tl ->
+      if debug then
+        eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o
+          ((destring_of_tl item)) (List.length tl);
+      loop2 ((o,[0], item) :: tl) curr_indent ordered accu
+  in
+  let tmp_r, new_l = loop true o [] [] [] l in
+      (* tmp_r: (bool*int list*tag Omd_lexer.t list) list) ;
+         new_l:tag Omd_lexer.t list *)
+  if debug then (
+    let p =
+      List.fold_left
+        (fun r (o,indents,item) ->
+          sprintf "%s(%b,#%d,%s)::" r o (List.length indents)
+            (destring_of_tl item))
+        ""
+        (List.rev tmp_r) in
+    eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
+  );
+  let (e:Omd_backend.t), (x:(bool*int list*tag Omd_lexer.t list) list) =
+    loop2 (List.rev tmp_r) (-1) false []
+  in
+  (fix_lists e @ r), [], new_l
+
+(** spaces: returns (r,p,l) where r is the result, p is the last thing
+      read, l is the remains *)
+let spaces rev_main_loop main_loop n r p l =
+  let spaces n r previous l =
+    assert (n > 0);
+    match n, previous, l with (* NOT a recursive function *)
+    | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)
+      ::(Space|Spaces _)::tl ->
+          (* unordered list *)
+      new_list rev_main_loop main_loop false r [] (Newline::make_space n::l)
+    | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot
+      ::(Space|Spaces _)::tl ->
+          (* ordered list *)
+      new_list rev_main_loop main_loop true r [] (Newline::make_space n::l)
+    | (1|2|3), ([]|[(Newlines _)]), t::tl ->
+      Text (" ")::r, p, l
+    | (1|2|3), ([]|[(Newlines _)]), [] ->
+      r, p, []
+    | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
+      (icode r previous (make_space n :: l))
+    | 1, _, _ ->
+      (Text " "::r), [Space], l
+    | n, _, _ -> assert (n>1);
+      (Text (String.make n ' ')::r), [Spaces (n-2)], l
+  in
+  spaces n r p l (* NOT a recursive call *)
+
 
 let main_parse extensions lexemes =
   let rc = new Omd_backend.ref_container in
 
-  (* [main_loop] should be called only by itself and [rev_main_loop] *)
+  (* [main_loop ] should be called only by itself and [rev_main_loop ] *)
   let rec main_loop (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
       (lexemes:tag Omd_lexer.t list) =
     if debug then
@@ -578,7 +1068,8 @@ let main_parse extensions lexemes =
     (* email-style quoting *)
     | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
       begin
-        let r, p, l = emailstyle_quoting r previous (Newline::lexemes)
+        let r, p, l =
+          emailstyle_quoting rev_main_loop r previous (Newline::lexemes)
         in main_loop r p l
       end
 
@@ -588,10 +1079,13 @@ let main_parse extensions lexemes =
       begin
         let new_r, p, rest =
           let foo, rest = unindent (fst(length s)) (Newline::lexemes) in
-          match emailstyle_quoting [] previous (Newline::(foo)) with
+          match
+            emailstyle_quoting rev_main_loop [] previous (Newline::(foo))
+          with
           | new_r, p, [] -> new_r, p, rest
           | _ -> assert false
-        in main_loop (new_r@r) [Newline] rest
+        in
+        main_loop (new_r@r) [Newline] rest
       end
 
     (* maybe tags*)
@@ -619,7 +1113,9 @@ let main_parse extensions lexemes =
       ::_ -> (* maybe hr *)
       begin match hr_m lexemes with
       | None -> (* no hr, so it's a list *)
-        let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
+        let md, new_p, new_l =
+          new_list rev_main_loop main_loop false r [] (Newline::lexemes)
+        in
         main_loop md new_p new_l
       | Some l -> (* hr *)
         main_loop (Hr::r) [Newline] l
@@ -627,7 +1123,7 @@ let main_parse extensions lexemes =
     | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
       begin match hr_m lexemes with
       | None -> (* no hr, but it's not a list *)
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -637,13 +1133,13 @@ let main_parse extensions lexemes =
 
     (* hashes *)
     | ([]|[(Newline|Newlines _)]), Hashs n :: tl -> (* hash titles *)
-      let r, p, l = read_title (n+2) r previous tl in
+      let r, p, l = read_title rev_main_loop (n+2) r previous tl in
       main_loop r p l
     | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
-      let r, p, l = read_title 1 r previous tl in
+      let r, p, l = read_title rev_main_loop 1 r previous tl in
       main_loop r p l
     | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t t)::r) [t] tl
       | Some(r, p, l) -> main_loop r p l
       end
@@ -659,7 +1155,9 @@ let main_parse extensions lexemes =
       | None ->
         begin match hr_m tl with
         | None ->
-          let r, p, l = spaces (fst (length t)) r previous tl in
+          let r, p, l =
+            spaces rev_main_loop main_loop (fst (length t)) r previous tl
+          in
           main_loop r p l
         | Some l ->
           main_loop (Hr::r) [Newline] l
@@ -671,14 +1169,16 @@ let main_parse extensions lexemes =
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
-      let r, p, l = spaces (fst (length t)) r previous tl in
+      let r, p, l =
+        spaces rev_main_loop main_loop (fst (length t)) r previous tl 
+      in
       main_loop r p l
 
     (* underscores *)
     | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
       (match uemph_or_bold 1 tl with
       | None ->
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -689,7 +1189,7 @@ let main_parse extensions lexemes =
       (* 2 or 3 "orphan" underscores, or emph/bold *)
       (match uemph_or_bold (n+2) tl with
       | None ->
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -702,7 +1202,9 @@ let main_parse extensions lexemes =
 
     (* enumerated lists *)
     | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-      let md, new_p, new_l = new_list true r [] (Newline::lexemes) in
+      let md, new_p, new_l =
+        new_list rev_main_loop main_loop true r [] (Newline::lexemes) 
+      in
       main_loop md new_p new_l
 
     (* stars *)
@@ -712,7 +1214,9 @@ let main_parse extensions lexemes =
       | Some l ->
         main_loop (Hr::r) [Newline] l
       | None ->
-        let md, new_p, new_l = new_list false r [] (Newline::lexemes) in
+        let md, new_p, new_l =
+          new_list rev_main_loop main_loop false r [] (Newline::lexemes)
+        in
         main_loop md new_p new_l
       end
     | ([]|[(Newline|Newlines _)]), Stars _ :: _ when hr_s lexemes <> None ->
@@ -730,7 +1234,7 @@ let main_parse extensions lexemes =
         | Some(x, new_tl) ->
           main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
         | None ->
-          begin match maybe_extension r previous lexemes with
+          begin match maybe_extension extensions r previous lexemes with
           | None -> main_loop (Text(string_of_t t)::r) [t] tl
           | Some(r, p, l) -> main_loop r p l
           end
@@ -741,7 +1245,7 @@ let main_parse extensions lexemes =
       | Some(x, new_tl) ->
         main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
       | None ->
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -755,7 +1259,7 @@ let main_parse extensions lexemes =
         else
           main_loop (Emph([Bold(rev_main_loop [] [t] x)]) :: r) [t] new_tl
       | None ->
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -896,7 +1400,7 @@ let main_parse extensions lexemes =
       | Some(url, new_tl) ->
         main_loop (Url(url,url,"")::r) [] new_tl
       | None ->
-        begin match maybe_extension r previous lexemes with
+        begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop r p l
         end
@@ -1070,7 +1574,7 @@ let main_parse extensions lexemes =
           with Premature_ending -> true) then
           (* there must not be any '<' in b *)
           loop [tag(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
-                       (string_of_tl b))] 0 tl
+                      (string_of_tl b))] 0 tl
         else
           raise Premature_ending
       in
@@ -1100,7 +1604,7 @@ let main_parse extensions lexemes =
       begin match maybe_link r previous tl with
       | Some(r, p, l) -> main_loop r p l
       | None ->
-        match maybe_reference r previous tl with
+        match maybe_reference rc r previous tl with
         | Some(r, p, l) -> main_loop r p l
         | None -> main_loop (Text("[")::r) [Obracket] tl
       end
@@ -1133,7 +1637,7 @@ let main_parse extensions lexemes =
          end
        with
        | NL_exception ->
-         begin match maybe_extension r previous lexemes with
+         begin match maybe_extension extensions r previous lexemes with
          | None -> main_loop (Text(string_of_t t)::r) [t] tl
          | Some(r, p, l) -> main_loop r p l
          end
@@ -1153,7 +1657,7 @@ let main_parse extensions lexemes =
          let r = Img_ref(rc, string_of_tl id, "") :: r in
          main_loop r [Cbracket] tl
        with NL_exception ->
-         begin match maybe_extension r previous lexemes with
+         begin match maybe_extension extensions r previous lexemes with
          | None -> main_loop (Text(string_of_t t)::r) [t] tl
          | Some(r, p, l) -> main_loop r p l
          end
@@ -1192,7 +1696,7 @@ let main_parse extensions lexemes =
             | NL_exception
             (* if NL_exception was raised, then fall back to "text" *)
             | Premature_ending ->
-              begin match maybe_extension r previous lexemes with
+              begin match maybe_extension extensions r previous lexemes with
               | None -> main_loop (Text(string_of_t t)::r) [t] tl
               | Some(r, p, l) -> main_loop r p l
               end
@@ -1214,19 +1718,19 @@ let main_parse extensions lexemes =
             with
             | Premature_ending
             | NL_exception ->
-              begin match maybe_extension r previous lexemes with
+              begin match maybe_extension extensions r previous lexemes with
               | None -> main_loop (Text(string_of_t t)::r) [t] tl
               | Some(r, p, l) -> main_loop r p l
               end
            )
          | _ ->
-           begin match maybe_extension r previous lexemes with
+           begin match maybe_extension extensions r previous lexemes with
            | None -> main_loop (Text(string_of_t t)::r) [t] tl
            | Some(r, p, l) -> main_loop r p l
            end
        with
        | Premature_ending ->
-         begin match maybe_extension r previous lexemes with
+         begin match maybe_extension extensions r previous lexemes with
          | None -> main_loop (Text(string_of_t t)::r) [t] tl
          | Some(r, p, l) -> main_loop r p l
          end
@@ -1238,798 +1742,306 @@ let main_parse extensions lexemes =
           |Percent|Plus|Question|Quote|Semicolon|Slash|Tab|Tilde|Lessthan
           |Greaterthan as t)::tl
       ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t t)::r) [t] tl
       | Some(r, p, l) -> main_loop r p l
       end
     | _, (Number _  as t):: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t t)::r) [t] tl
       | Some(r, p, l) -> main_loop r p l
       end
 
     (* generated code: *)
     | _, Ats(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t At)::r) [At] (At::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Ats(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t At)::r) [At] (Ats(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Bars(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Bar)::r) [Bar] (Bar::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Bars(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Bar)::r) [Bar] (Bars(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Carets(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Caret)::r) [Caret] (Caret::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Carets(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Caret)::r) [Caret] (Carets(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cbraces(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cbrace)::r) [Cbrace] (Cbrace::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cbraces(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cbrace)::r) [Cbrace] (Cbraces(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cbrackets(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cbracket)::r) [Cbracket] (Cbracket::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cbrackets(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cbracket)::r) [Cbracket] (Cbrackets(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Colons(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Colon)::r) [Colon] (Colon::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Colons(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Colon)::r) [Colon] (Colons(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Commas(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Comma)::r) [Comma] (Comma::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Commas(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Comma)::r) [Comma] (Commas(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cparenthesiss(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cparenthesis)::r) [Cparenthesis] (Cparenthesis::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Cparenthesiss(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Cparenthesis)::r) [Cparenthesis] (Cparenthesiss(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Dollars(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Dollar)::r) [Dollar] (Dollar::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Dollars(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Dollar)::r) [Dollar] (Dollars(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Dots(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Dot)::r) [Dot] (Dot::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Dots(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Dot)::r) [Dot] (Dots(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Doublequotes(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Doublequote)::r) [Doublequote] (Doublequote::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Doublequotes(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Doublequote)::r) [Doublequote] (Doublequotes(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Equals(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Equal)::r) [Equal] (Equal::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Equals(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Equal)::r) [Equal] (Equals(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Exclamations(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Exclamation)::r) [Exclamation] (Exclamation::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Exclamations(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Exclamation)::r) [Exclamation] (Exclamations(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Greaterthans(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Greaterthan)::r) [Greaterthan] (Greaterthan::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Greaterthans(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Greaterthan)::r) [Greaterthan] (Greaterthans(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Lessthans(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Lessthan)::r) [Lessthan] (Lessthan::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Lessthans(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Lessthan)::r) [Lessthan] (Lessthans(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Minuss(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Minus)::r) [Minus] (Minus::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Minuss(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Minus)::r) [Minus] (Minuss(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Obraces(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Obrace)::r) [Obrace] (Obrace::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Obraces(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Obrace)::r) [Obrace] (Obraces(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Obrackets(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Obracket)::r) [Obracket] (Obracket::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Obrackets(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Obracket)::r) [Obracket] (Obrackets(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Oparenthesiss(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Oparenthesis)::r) [Oparenthesis] (Oparenthesis::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Oparenthesiss(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Oparenthesis)::r) [Oparenthesis] (Oparenthesiss(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Percents(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Percent)::r) [Percent] (Percent::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Percents(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Percent)::r) [Percent] (Percents(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Pluss(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Plus)::r) [Plus] (Plus::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Pluss(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Plus)::r) [Plus] (Pluss(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Questions(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Question)::r) [Question] (Question::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Questions(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Question)::r) [Question] (Questions(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Quotes(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Quote)::r) [Quote] (Quote::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Quotes(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Quote)::r) [Quote] (Quotes(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Semicolons(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Semicolon)::r) [Semicolon] (Semicolon::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Semicolons(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Semicolon)::r) [Semicolon] (Semicolons(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Slashs(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Slash)::r) [Slash] (Slash::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Slashs(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Slash)::r) [Slash] (Slashs(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Stars(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Star)::r) [Star] (Stars(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Tabs(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Tab)::r) [Tab] (Tab::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Tabs(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Tab)::r) [Tab] (Tabs(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Tildes(0) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Tilde)::r) [Tilde] (Tilde::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Tildes(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Tilde)::r) [Tilde] (Tildes(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
     | _, Underscores(n) :: tl ->
-      begin match maybe_extension r previous lexemes with
+      begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop (Text(string_of_t Underscore)::r) [Underscore] (Underscores(n-1)::tl)
       | Some(r, p, l) -> main_loop r p l
       end
   (* /generated code *)
 
-  (** [maybe_extension r p l] returns None if there is no extension or
-      if extensions haven't had  any effect, returns Some(nr, np, nl) if
-      at least one extension has applied successfully. *)
-  and maybe_extension (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
-      (lexemes:tag Omd_lexer.t list)
-      : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
-    match extensions with
-    | [] -> None
-    | _ ->
-      List.fold_left
-        (function
-        | None ->
-          (fun f -> f r previous lexemes)
-        | Some(r,p,l) as e ->
-          (fun f -> match f r p l with None -> e | Some _ as k -> k)
-        )
-        None
-        extensions
 
-  and emailstyle_quoting r previous lexemes =
-    let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
-      function
-      | Newline::Greaterthan::(Newline::_ as tl) ->
-        loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Space::tl ->
-        loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Spaces 0::tl ->
-        loop (Newline::cl@block) [Space] tl
-      | Newline::Greaterthan::Spaces n::tl ->
-        loop (Newline::cl@block) [Spaces(n-1)] tl
-      (* | Newline::tl -> loop block (Newline::cl) tl *)
-      | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
-      | e::tl -> loop block (e::cl) tl
-    in
-    match loop [] [] lexemes with
-    | block, tl ->
-      if debug then
-        eprintf "##############################\n%s\n\
-                  ##############################\n%!" (string_of_tl block);
-      (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
+  and rev_main_loop (r: Omd_backend.t) (previous:tag Omd_lexer.t list)
+      (lexemes:tag Omd_lexer.t list) =
+    List.rev (main_loop r previous lexemes)
 
-  (* maybe a reference *)
-  and maybe_reference r p l =
-    (* this function is called when we know it's not a link although it
-       started with a '[' *)
-    (* So it could be a reference or a link definition. *)
-    let rec maybe_ref l =
-      let text, remains = read_until_cbracket l in
-      let () = if try ignore(read_until_obracket text); true
-        with Premature_ending -> false then raise Premature_ending in
-               let blank, remains = read_until_obracket remains in
-               if eat (function (Space|Spaces _|Newline|Newlines _) -> true
-               | _ -> false) blank <> [] then raise Premature_ending;
-               match read_until_cbracket remains with
-               | [], remains ->
-                 let id = string_of_tl text in (* implicit anchor *)
-                 Some(((Ref(rc, id, id))::r), [Cbracket], remains)
-               | id, remains ->
-                 Some(((Ref(rc, string_of_tl id, string_of_tl text))::r),
-                      [Cbracket], remains)
-      in
-      let rec maybe_def l =
-        match read_until_cbracket l with
-        | _, [] -> None
-        | id, (Colon::(Space|Spaces _)::remains)
-        | id, (Colon::remains) ->
-          let url, remains =
-            split (function (Space|Spaces _|Newline|Newlines _) -> false
-            |_ -> true) remains in
-          let title, remains =
-            match eat (function (Space|Spaces _|Newline|Newlines _) -> true
-            | _ -> false) remains with
-            | Doublequotes(0)::tl -> [], tl
-            | Doublequote::tl -> read_until_dq tl
-            | Quotes(0)::tl -> [], tl
-            | Quote::tl -> read_until_q tl
-            | Oparenthesis::tl-> read_until_cparenth tl
-            | l -> [], l
-          in
-          rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
-          Some(r, [Quote], remains)
-
-        | _ -> None
-      in
-      try maybe_ref l
-      with Premature_ending
-      | NL_exception ->
-        try maybe_def l with Premature_ending | NL_exception -> None
-
-    (* maybe a link *)
-    and maybe_link r p l =
-      let rec read_title name href res = function
-        | Doublequote::(Cparenthesis as t)::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [t], tl)
-        | Doublequote::Cparenthesiss 0::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl)
-        | Doublequote::Cparenthesiss n::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [Cparenthesis],
-               Cparenthesiss(n-1)::tl)
-        | [] ->
-          None
-        | e::tl ->
-          read_title name href (e::res) tl
-      in
-      let rec read_url name res = function
-        | Cparenthesis as t::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [t], tl)
-        | Cparenthesiss 0::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl)
-        | Cparenthesiss n::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl)
-        | (Space|Spaces _)::Doublequote::tl ->
-          let href = string_of_tl (List.rev res) in
-          read_title name href [] tl
-        | [] | (Newline|Newlines _)::_  ->
-          None
-        | e::tl ->
-          read_url name (e::res) tl
-      in
-      let rec read_name res = function
-        | Cbracket::Oparenthesis::tl ->
-          read_url (string_of_tl (List.rev res)) [] tl
-        | [] | Cbracket::_ -> (* failed to read a MD-link *)
-          None
-        | e::tl ->
-          read_name (e::res) tl
-      in
-      read_name [] l
-
-    (* H1, H2, H3, ... *)
-    and read_title n (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-        (l:tag Omd_lexer.t list) =
-      if true then (* a behaviour closer to github *)
-        begin
-          let title, rest =
-            let rec loop accu = function
-              | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
-              | ((Hash|Hashs _)::(Space|Spaces _)::
-                    ((Newline|Newlines _)::_ as l))
-              | ((Newline|Newlines _)::_ as l)
-              | ([] as l) ->
-                rev_main_loop [] [] (List.rev accu), l
-              | (Hash|Hashs _)::[] ->
-                rev_main_loop [] [] (List.rev accu), []
-              | (Hash|Hashs _ as x)::tl ->
-                loop (Word(string_of_t x)::accu) tl
-              | x::tl ->
-                loop (x::accu) tl
-            in
-            loop [] l
-          in
-          match n with
-          | 1 -> H1 title :: r, [Newline], rest
-          | 2 -> H2 title :: r, [Newline], rest
-          | 3 -> H3 title :: r, [Newline], rest
-          | 4 -> H4 title :: r, [Newline], rest
-          | 5 -> H5 title :: r, [Newline], rest
-          | 6 -> H6 title :: r, [Newline], rest
-          | _ -> assert false
-        end
-      else (* a behaviour closer to pandoc *)
-        begin
-          let rec loop accu l =
-            match l with
-            | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
-                  | Html _ | Html_block _ | Url _ | Br | Hr
-                  | Code _ | Code_block _ | Ol _ | Ul _ | NL )::_ ->
-              List.rev accu, l
-            | x::tl -> loop (x::accu) tl
-            | [] -> List.rev accu, []
-          in
-          let title, rest = loop [] (rev_main_loop [] [] l) in
-          match n with
-          | 1 -> List.rev (H1 title :: rest) @ r, [], []
-          | 2 -> List.rev (H2 title :: rest) @ r, [], []
-          | 3 -> List.rev (H3 title :: rest) @ r, [], []
-          | 4 -> List.rev (H4 title :: rest) @ r, [], []
-          | 5 -> List.rev (H5 title :: rest) @ r, [], []
-          | 6 -> List.rev (H6 title :: rest) @ r, [], []
-          | _ -> assert false
-        end
-
-    and rev_main_loop (r: Omd_backend.t) (previous:tag Omd_lexer.t list)
-        (lexemes:tag Omd_lexer.t list) =
-      List.rev (main_loop r previous lexemes)
-
-    (** code that starts with one or several backquote(s) *)
-    and bcode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-        (l:tag Omd_lexer.t list)
-      : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
-      let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl
-        | _ -> (* bcode is wrongly called *) assert false in
-      let rec code_block accu = function
-        | [] ->
-          List.rev accu, []
-        | Backquote::tl ->
-          if e = Backquote then
-            List.rev accu, tl
-          else
-            code_block (Backquote::accu) tl
-        | (Backquotes n as b)::tl ->
-          if e = b then
-            List.rev accu, tl
-          else
-            code_block (b::accu) tl
-        | e::tl ->
-          code_block (e::accu) tl
-      in
-      let cb, l = code_block [] tl in
-      if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb 
-      then
-        (Code_block(string_of_tl cb)::r), [Backquote], l
-      else
-        let clean_bcode s =
-          let rec loop1 i =
-            if i = String.length s then 0
-            else match s.[i] with
-            | '`' -> i
-            | ' ' -> loop1(i+1)
-            | _ -> 0
-          in
-          let rec loop2 i =
-            if i = -1 then String.length s - 1
-            else match s.[i] with
-            | '`' -> i+1
-            | ' ' -> loop2(i-1)
-            | _ -> String.length s - 1
-          in
-          match loop1 0, loop2 (String.length s - 1) with
-          | 0, n when n = String.length s - 1 -> s
-          | i, n -> String.sub s i (n-i)
-        in
-        (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
-
-    and icode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-        (l:tag Omd_lexer.t list)
-      : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
-      (** indented code:
-          returns (r,p,l) where r is the result, p is the last thing read,
-          l is the remains *)
-      let accu = Buffer.create 42 in
-      let rec loop = function
-        | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->
-          (* 1, 2 or 3 spaces. *)
-          Code_block (Buffer.contents accu)::r, p, tl
-        (* -> Return what's been found as code because it's no more code. *)
-        | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl ->
-          (* At least 4 spaces, it's still code. *)
-          Buffer.add_string accu (String.make (n-2) ' ');
-          loop ([t], tl)
-        | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
-          Code_block (Buffer.contents accu)::r, p, tl
-        (* -> Return what's been found as code because it's no more code. *)
-        | _, e::tl ->
-          Buffer.add_string accu (string_of_t e);
-          (* html entities are to be converted later! *)
-          loop ([e], tl)
-        | p, [] ->
-          Code_block (Buffer.contents accu)::r, p, []
-      in loop ([Newlines 0], l)
-
-
-    (*************************************************************************)
-    (** new_list: returns (r,p,l) where r is the result, p is the last thing
-        read, l is the remains *)
-    (* TODO: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
-    and new_list (o:bool) (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-        (l:tag Omd_lexer.t list)
-      : (Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) =
-      if debug then
-        eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p)
-          (destring_of_tl l);
-      let list_hd e = match e with hd::_ -> hd | _ -> 0 in
-      let rec loop (fi:bool) (ordered:bool)
-          (result:(bool*int list*tag Omd_lexer.t list)list)
-          (curr_item:tag Omd_lexer.t list)
-          (indents:int list)
-          (lexemes:tag Omd_lexer.t list) =
-        (* 'fi' means first iteration *)
-        let er = if debug then
-            let to_string r (o,il,e) =
-              r ^ sprintf "(%b," o ^ destring_of_tl e ^ ")" in
-            List.fold_left to_string "" result
-          else "" in
-        if debug then
-          eprintf "new_list>>loop er=(%s) curr_item=(%s) lexemes=%s\n%!"
-            er (destring_of_tl curr_item) (destring_of_tl lexemes);
-        match lexemes with
-        (* Boolean is true if ordered, false otherwise. *)
-        (* first loop: return the list of (indentation level * item) *)
-        (* indent = 0 *)
-        | (Newline|Newlines 0) :: (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
-          if debug then eprintf "#%d\n%!" 1;
-          if fi then
-            loop false ordered result [] (0::indents) tl
-          else
-            loop false false ((false,indents,curr_item)::result) []
-              (0::indents) tl
-        | (Newline|Newlines 0) :: (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-          if debug then Printf.eprintf "#%d\n%!" 2;
-          if fi then
-            loop false ordered result [] (0::indents) tl
-          else
-            loop false true ((true,indents,curr_item)::result) []
-              (0::indents) tl
-
-        (* indent = 1 *)
-        | (Newline|Newlines 0) :: Space :: (Star|Minus|Plus)
-          :: (Space|Spaces _) :: tl ->
-          if debug then Printf.eprintf "#%d\n%!" 3;
-            if fi then
-              loop false ordered result [] (1::indents) tl
-            else
-              loop false false ((false,indents,curr_item)::result) []
-                (1::indents) tl
-        | (Newline|Newlines 0) :: Space :: Number _ :: Dot
-          :: (Space|Spaces _) :: tl ->
-          if debug then Printf.eprintf "#%d\n%!" 4;
-            if fi then
-              loop false ordered result [] (1::indents) tl
-            else
-              loop false true ((true,indents,curr_item)::result) []
-                (1::indents) tl
-
-        (* indent >= 2 *)
-        | (Newline|Newlines 0) :: ((Spaces(x) :: (Star|Minus|Plus)
-                                    :: (Space|Spaces _) :: tl) as p) ->
-          if debug then Printf.eprintf "#%d\n%!" 5;
-          if x+2 > list_hd indents + 4 then
-            (* a single new line & too many spaces -> *not* a new list item. *)
-            loop false ordered result curr_item indents p
-          (* p is what follows the new line *)
-          else
-            (* a new list item, set previous current item as a complete item *)
-            if fi then
-              loop false ordered result [] ((x+2)::indents) tl
-            else
-              loop false false ((false,indents,curr_item)::result)
-                [] ((x+2)::indents) tl
-
-        | (Newline|Newlines 0) :: ((Spaces(x) :: Number _ :: Dot
-                                    :: (Space|Spaces _) :: tl) as p) ->
-          if debug then Printf.eprintf "#%d\n%!" 6;
-          if x+2 > list_hd indents + 4 then
-            (* a single new line & too many spaces -> *not* a new list item. *)
-            loop false ordered result curr_item indents p
-          (* p is what follows the new line *)
-          else
-            (* a new list item, set previous current item as a complete item *)
-            if fi then
-              loop false ordered result [] ((x+2)::indents) tl
-            else
-              loop false true ((true,indents,curr_item)::result) []
-                ((x+2)::indents) tl
-        | Newlines(0) :: ((Spaces(2|3|4|5 as n)) :: Greaterthan
-                          :: (Space|Spaces _) :: tl as l) ->
-          (* blockquote inside a list *)
-          let block, rest = unindent (n+2) (Newline::l) in
-          let em, _, _x = emailstyle_quoting [] [] block in
-          assert(_x = []);
-          loop false ordered result (Tag(Md(em))::curr_item) indents rest
-        | Newlines(0) :: (Spaces(n) :: tl as l)
-        | Newline::Newline:: (Spaces(n) :: tl as l)
-            when (try n+2 >= List.hd indents+4 with _ -> assert false) ->
-          (* code inside a list *)
-          let block, rest = unindent (List.hd indents+4) (Newline::l) in
-          loop false ordered result
-            (Tag(Md(main_loop [] [] block))::curr_item) indents rest
-
-        | ((Newline|Newlines 0 as k) :: Spaces(_) :: e :: tl) ->
-          (* adding e to the current item *)
-          if debug then eprintf "#%d (%s)\n%!" 88 (destring_of_tl lexemes);
-          loop false ordered result (e::Space::k::curr_item) indents tl
-
-        | (Newline as k) :: e :: tl ->
-          (* adding e to the current item *)
-          if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
-          loop false ordered result (e::k::curr_item) indents tl
-
-        | Newlines 0 :: (Tag _|Hash|Hashs _) :: _ ->
-          (* Tricky: 2 line breaks, but we're suspecting a H1..H6 and
-             it's probably going to be the case, hence we're out of
-             the list. *)
-          ((ordered,indents,curr_item)::result, lexemes)
-
-        | (Newlines 0 as k) :: e :: tl ->
-          (* adding e to the current item *)
-          if debug then eprintf "#%d (%s)\n%!" 8 (destring_of_tl lexemes);
-          loop false ordered result (e::k::curr_item) indents tl
-
-        | ([] | (Newlines(_) :: _)) ->
-          if debug then eprintf "#%d******************************\n%!" 7;
-          (* if an empty line appears, then it's the end of the list(s). *)
-          ((ordered,indents,curr_item)::result, lexemes)
-
-        | e :: tl -> (* adding e to the current item *)
-          if debug then eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
-          loop false ordered result (e::curr_item) indents tl
-      in
-      let rec loop2 (tmp:(bool*int list*tag Omd_lexer.t list) list)
-          (curr_indent:int) (ordered:bool) (accu:Omd_backend.t list)
-          : Omd_backend.t * (bool*int list*tag Omd_lexer.t list) list =
-        let er = if debug then
-            let to_string r (o,il,e) =
-              r ^ sprintf "(%b," o ^ destring_of_tl e ^ ")" in
-            List.fold_left to_string "" tmp
-          else "" in
-        if debug then Printf.eprintf "new_list>>loop2\n%!";
-        match tmp with
-        | (o,(i::indents), item) :: tl ->
-          if debug then Printf.eprintf "@338:loop2 tmp=%s\n%!" er;
-          let item = List.rev item in
-          if i = curr_indent then (
-            if debug then Printf.eprintf "PLOP\n%!";
-            loop2 tl i ordered ((rev_main_loop [] [Space;Star] item)::accu)
-          )
-          else if i > curr_indent then ( (* new sub list *)
-            if debug then Printf.eprintf "NEW SUB LIST\n%!";
-            let md, new_tl =
-              loop2 tl i o [rev_main_loop [] [Space;Star] item] in
-            match accu with
-            | hd :: accu_tl ->
-              loop2 new_tl curr_indent ordered ((hd@md) :: accu_tl)
-            | [] ->
-              if curr_indent = -1 then
-                md, new_tl
-              else
-                loop2 new_tl curr_indent ordered [md]
-          )
-          else (* i < curr_indent *)
-            let accu = List.rev accu in
-            [if ordered then Ol accu else Ul accu], tmp
-        | [(_,[],[])]
-        | [] ->
-          if debug then eprintf "FOO\n%!";
-          if accu = [] then [], []
-          else
-            let accu = List.rev accu in
-            [if ordered then Ol accu else Ul accu], []
-        | (o,[], item) :: tl ->
-          if debug then
-            eprintf "@386:loop2 tmp=(%b,[],%s)::(%n)\n%!" o
-              ((destring_of_tl item)) (List.length tl);
-          loop2 ((o,[0], item) :: tl) curr_indent ordered accu
-      in
-      let tmp_r, new_l = loop true o [] [] [] l in
-    (* tmp_r: (bool*int list*tag Omd_lexer.t list) list) ;
-       new_l:tag Omd_lexer.t list *)
-      if debug then (
-        let p =
-          List.fold_left
-            (fun r (o,indents,item) ->
-              sprintf "%s(%b,#%d,%s)::" r o (List.length indents)
-                (destring_of_tl item))
-            ""
-            (List.rev tmp_r) in
-        eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
-      );
-      let (e:Omd_backend.t), (x:(bool*int list*tag Omd_lexer.t list) list) =
-        loop2 (List.rev tmp_r) (-1) false []
-      in
-      (fix_lists e @ r), [], new_l
-
-  (** spaces: returns (r,p,l) where r is the result, p is the last thing
-      read, l is the remains *)
-    and spaces n r p l =
-      let spaces n r previous l =
-        assert (n > 0);
-        match n, previous, l with (* NOT a recursive function *)
-        | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)
-          ::(Space|Spaces _)::tl ->
-         (* unordered list *)
-          new_list false r [] (Newline::make_space n::l)
-        | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot
-          ::(Space|Spaces _)::tl ->
-         (* ordered list *)
-          new_list true r [] (Newline::make_space n::l)
-        | (1|2|3), ([]|[(Newlines _)]), t::tl ->
-          Text (" ")::r, p, l
-        | (1|2|3), ([]|[(Newlines _)]), [] ->
-          r, p, []
-        | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-          (icode r previous (make_space n :: l))
-        | 1, _, _ ->
-          (Text " "::r), [Space], l
-        | n, _, _ -> assert (n>1);
-          (Text (String.make n ' ')::r), [Spaces (n-2)], l
-      in
-      spaces n r p l (* NOT a recursive call *)
-
-
-    in
-    rev_main_loop [] [] lexemes
+  in
+  rev_main_loop [] [] lexemes
 
 
 let parse ?(extensions=[]) lexemes =
