@@ -13,6 +13,8 @@
    * external tools) as possible.
 *)
 
+let gh_uemph_or_bold_style = ref true
+
 open Printf
 open Omd_backend
 open Omd_lexer
@@ -230,7 +232,7 @@ let uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
     if is_blank r then
       None
     else
-      Some(r, l)
+      Some(r, tl)
 
 
 let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
@@ -285,11 +287,11 @@ let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
       Some(r, tl)
 
 
-let uemph_or_bold =
-  if true (* FIXME: provide this option on the command line *) then
-    gh_uemph_or_bold
+let uemph_or_bold n l =
+  if !gh_uemph_or_bold_style then
+    gh_uemph_or_bold n l
   else
-    uemph_or_bold
+    uemph_or_bold n l
 
 
 (* [eat f l] removes elements from [l] until [f] meets an element
