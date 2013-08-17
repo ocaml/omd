@@ -32,10 +32,11 @@ let main () =
   in
   Arg.(
     parse
-      [
-        "-o", Set_string output, "output_file.html";
-        "--", Rest(fun s -> input := s :: !input), "input_file1.md ... input_fileN.md ";
-      ]
+      (align[
+        "-o", Set_string output, "file.html Specify the output file (default is stdout).";
+        "-u", Clear(Omd_parser.gh_uemph_or_bold_style), " Use standard Markdown style for emph/bold when using `_'.";
+        "--", Rest(fun s -> input := s :: !input), " Consider all remaining arguments as input file names.";
+      ])
       (fun s -> input := s :: !input)
       "omd [inputfile1 .. inputfileN] [-o outputfile]
 omd [-o outputfile] [inputfile1 .. inputfileN]
