@@ -25,6 +25,7 @@ module StringSet : sig
   val empty : t
   val add : elt -> t -> t
   val mem : elt -> t -> bool
+  val union : t -> t -> t
   val of_list : elt list -> t
 end = struct
   include Set.Make(struct type t = string let compare = String.compare end)

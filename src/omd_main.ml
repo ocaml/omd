@@ -5,6 +5,8 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
+exception Break
+
 let old () =
   let b = Buffer.create 42 in
   try while true do
@@ -17,13 +19,12 @@ let old () =
                         (parse (lex (Buffer.contents b)))));
     try
       (try ignore (Sys.getenv "DEBUG") with
-        Not_found -> failwith "2HUIDNBIU2Y782HUIDBZUDBEUBEUB"
+        Not_found -> raise Break
       );
       print_endline
         (Omd_backend.sexpr_of_md
-           ((* Md_backend.make_paragraphs *)
-             (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))))
-    with Failure "2HUIDNBIU2Y782HUIDBZUDBEUBEUB" -> ()
+           (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b))))
+    with Break -> ()
 ;;
 
 let main () =
@@ -34,8 +35,10 @@ let main () =
     parse
       (align[
         "-o", Set_string output, "file.html Specify the output file (default is stdout).";
-        "-u", Clear(Omd_parser.gh_uemph_or_bold_style), " Use standard Markdown style for emph/bold when using `_'.";
         "--", Rest(fun s -> input := s :: !input), " Consider all remaining arguments as input file names.";
+        "-u", Clear(Omd_parser.gh_uemph_or_bold_style), " Use standard Markdown style for emph/bold when using `_'.";
+        "-b", Set(Omd_parser.blind_html), " Don't check validity of HTML tag names.";
+        "-s", Set(Omd_parser.strict_html), " (might not work as expected yet) Block HTML only in block HTML, inline HTML only in inline HTML (semantics undefined if use both -b and -s).";
       ])
       (fun s -> input := s :: !input)
       "omd [inputfile1 .. inputfileN] [-o outputfile]
@@ -68,13 +71,12 @@ omd [-o outputfile] [-- inputfile1 .. inputfileN]"
       flush output;
       try
         (try ignore (Sys.getenv "DEBUG") with
-          Not_found -> failwith "2HUIDNBIU2Y782HUIDBZUDBEUBEUB"
+          Not_found -> raise Break
         );
         print_endline
           (Omd_backend.sexpr_of_md
-             ((* Md_backend.make_paragraphs *)
-               (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b)))))
-      with Failure "2HUIDNBIU2Y782HUIDBZUDBEUBEUB" -> ()
+             (Omd_parser.parse (Omd_lexer.lex (Buffer.contents b))))
+      with Break -> ()
   )
     input_files
 

@@ -1,4 +1,3 @@
-(******************************************************************************)
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
@@ -14,6 +13,8 @@
 *)
 
 let gh_uemph_or_bold_style = ref true
+let blind_html = ref false
+let strict_html = ref false
 
 open Printf
 open Omd_backend
@@ -45,6 +46,44 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "frac34";  "iquest";  "nbsp";  "iexcl"; "cent";  "pound";  "curren";
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
+
+(* inline HTML tags *)
+let inline_htmltags_set = StringSet.of_list
+  (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
+  [ "b";"big";"i";"small";"tt";
+    "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
+    "a";"bdo";"br";"img";"map";"object";"q";"script";"span";"sub";"sup";
+    "button";"input";"label";"select";"textarea";]
+
+(* N.B. it seems that there is no clear distinction between
+   inline tags and block-level tags: in HTML4 it was not clear,
+   in HTML5 it's even more complicated. So, the choice here is
+   to specify a set of tags considered as "inline", 
+   cf. [inline_htmltags_set].
+   So there will be inline tags, non-inline tags, and unknown tags.*)
+
+(* All HTML tags *)
+let htmltags_set =
+  (* some impossible HTML tags: body; head; html; link; meta; title *)
+  StringSet.union inline_htmltags_set
+    (StringSet.of_list
+     [
+       "a";"abbr";"acronym";"address";"applet";"area";"article";"aside"
+       ;"audio";"b";"base";"basefont";"bdi";"bdo";"big";"blockquote"
+       ;"br";"button";"canvas";"caption";"center";"cite";"code";"col"
+       ;"colgroup";"command";"datalist";"dd";"del";"details";"dfn"
+       ;"dialog";"dir";"div";"dl";"dt";"em";"embed";"fieldset"
+       ;"figcaption";"figure";"font";"footer";"form";"frame";"frameset"
+       ;"h1";"header";"hr";"i";"iframe";"img";"input";"ins";"kbd"
+       ;"keygen";"label";"legend";"li";"map";"mark";"menu";"meter";"nav"
+       ;"noframes";"noscript";"object";"ol";"optgroup";"option";"output"
+       ;"p";"param";"pre";"progress";"q";"rp";"rt";"ruby";"s";"samp"
+       ;"script";"section";"select";"small";"source";"span";"strike"
+       ;"strong";"style";"sub";"summary";"sup";"table";"tbody";"td"
+       ;"textarea";"tfoot";"th";"thead";"time";"tr";"track";"tt";"u"
+       ;"ul";"var";"video";"wbr" 
+     ])
+
 
 let unindent n lexemes =
   let rec fix n p = function
@@ -1172,7 +1211,7 @@ let main_parse extensions lexemes =
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let r, p, l =
-        spaces rev_main_loop main_loop (fst (length t)) r previous tl 
+        spaces rev_main_loop main_loop (fst (length t)) r previous tl
       in
       main_loop r p l
 
@@ -1205,7 +1244,7 @@ let main_parse extensions lexemes =
     (* enumerated lists *)
     | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
       let md, new_p, new_l =
-        new_list rev_main_loop main_loop true r [] (Newline::lexemes) 
+        new_list rev_main_loop main_loop true r [] (Newline::lexemes)
       in
       main_loop md new_p new_l
 
@@ -1466,132 +1505,117 @@ let main_parse extensions lexemes =
       end
 
     (* HTML *)
-    | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as opening)::
-      (* Block HTML.  FIXME: pattern matcing on strings is inefficient. *)
-      Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
-              (* |"body"|"head"|"html"|"link"|"meta"|"title" *)
-              |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote"
-              |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
-              |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"
-              |"dialog"|"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"
-              |"figcaption"|"figure"|"font"|"footer"|"form"|"frame"|"frameset"
-              |"h1"|"header"|"hr"|"i"|"iframe"|"img"|"input"|"ins"|"kbd"
-              |"keygen"|"label"|"legend"|"li"|"map"|"mark"|"menu"|"meter"|"nav"
-              |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"
-              |"p"|"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"
-              |"script"|"section"|"select"|"small"|"source"|"span"|"strike"
-              |"strong"|"style"|"sub"|"summary"|"sup"|"table"|"tbody"|"td"
-              |"textarea"|"tfoot"|"th"|"thead"|"time"|"tr"|"track"|"tt"|"u"
-              |"ul"|"var"|"video"|"wbr" as tagname)
+    (* block html *)
+    | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as t)::
+      Word(tagname)
       ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
       ::tl ->
-      let read_html() =
-        let rec loop accu n = function
-          | Lessthan::Slash::Word(tn)::Greaterthan::tl ->
-            if tn = tagname then
-              if n = 0 then
-                List.rev (Greaterthan::Word(tn)::Slash::Lessthan::accu), tl
+      if StringSet.mem tagname inline_htmltags_set then
+        main_loop r [Word ""] lexemes
+      else if not (!blind_html || StringSet.mem tagname htmltags_set) then
+        begin match maybe_extension extensions r previous lexemes with
+        | None -> main_loop (Text(string_of_t t)::r) [t] tl
+        | Some(r, p, l) -> main_loop r p l
+        end
+      else
+        let read_html() =
+          let rec loop accu n = function
+            | Lessthan::Slash::Word(tn)::Greaterthan::tl ->
+              if tn = tagname then
+                if n = 0 then
+                  List.rev (Greaterthan::Word(tn)::Slash::Lessthan::accu), tl
+                else
+                  loop (Greaterthan::Word(tn)::Slash::Lessthan::accu)
+                    (n-1) tl
               else
-                loop (Greaterthan::Word(tn)::Slash::Lessthan::accu)
-                  (n-1) tl
-            else
-              loop (Greaterthan::Word(tn)::Slash::Lessthan::accu) n tl
-          | Lessthan::Word(tn)::tl ->
-            if tn = tagname then
-              loop (Word(tn)::Lessthan::accu) (n+1) tl
-            else
-              loop (Word(tn)::Lessthan::accu) n tl
-          | x::tl ->
-            loop (x::accu) n tl
-          | [] ->
-            List.rev accu, []
+                loop (Greaterthan::Word(tn)::Slash::Lessthan::accu) n tl
+            | Lessthan::Word(tn)::tl ->
+              if tn = tagname then
+                loop (Word(tn)::Lessthan::accu) (n+1) tl
+              else
+                loop (Word(tn)::Lessthan::accu) n tl
+            | x::tl ->
+              loop (x::accu) n tl
+            | [] ->
+              List.rev accu, []
+          in
+          loop [x;Word(tagname);Lessthan] 0 tl
         in
-        loop [x;Word(tagname);Lessthan] 0 tl
-      in
-      begin
-        let r = match opening with
+        let r = match t with
           | Lessthan -> r
           | Lessthans 0 -> Text("<")::r
           | Lessthans n -> Text(String.make (n-3) '<')::r
           | _ -> assert false
         in
-        match read_html() with
-        | html, tl -> main_loop (Html_block(string_of_tl html)::r)
-          [Greaterthan] tl
-      end
-    | _, (Lessthan|Lessthans _ as opening)::
-      (* inline HTML.  FIXME: pattern matching on strings is inefficient.
-         Moreover this looks like the duplicate of an above expression. *)
-      (Word("a"|"abbr"|"acronym"|"address"|"applet"|"area"|"article"|"aside"
-               (* |"body"|"head"|"html"|"link"|"meta"|"title" *)
-               |"audio"|"b"|"base"|"basefont"|"bdi"|"bdo"|"big"|"blockquote"
-               |"br"|"button"|"canvas"|"caption"|"center"|"cite"|"code"|"col"
-               |"colgroup"|"command"|"datalist"|"dd"|"del"|"details"|"dfn"
-               |"dialog"|"dir"|"div"|"dl"|"dt"|"em"|"embed"|"fieldset"
-               |"figcaption"|"figure"|"font"|"footer"|"form"|"frame"|"frameset"
-               |"h1"|"header"|"hr"|"i"|"iframe"|"img"|"input"|"ins"|"kbd"
-               |"keygen"|"label"|"legend"|"li"|"map"|"mark"|"menu"|"meter"|"nav"
-               |"noframes"|"noscript"|"object"|"ol"|"optgroup"|"option"|"output"
-               |"p"|"param"|"pre"|"progress"|"q"|"rp"|"rt"|"ruby"|"s"|"samp"
-               |"script"|"section"|"select"|"small"|"source"|"span"|"strike"
-               |"strong"|"style"|"sub"|"summary"|"sup"|"table"|"tbody"|"td"
-               |"textarea"|"tfoot"|"th"|"thead"|"time"|"tr"|"track"|"tt"|"u"
-               |"ul"|"var"|"video"|"wbr" as tagname) as w)
+        let html, tl = read_html() in
+        main_loop (Html_block(string_of_tl html)::r) [Greaterthan] tl
+
+    (* inline html *)
+    | _, (Lessthan|Lessthans _ as t)::
+      (Word(tagname) as w)
       ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
          ::tl as l) ->
-      let read_html() =
-        let tag s = Tag(Md([Html s])) in
-        let rec loop accu n = function
-          | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
-            (* self-closing tags *)
-            if n = 0 then
-              let b, tl = read_until_gt tl in
-              ((tag(sprintf "<%s%s>" tn (string_of_tl b))) ::accu), tl
-            else
-              let b, tl = read_until_gt tl in
-              loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
-          | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
-            if tn = tagname then
+      if (!strict_html && not(StringSet.mem tagname inline_htmltags_set))
+        || not(!blind_html || StringSet.mem tagname htmltags_set)
+      then
+        begin match maybe_extension extensions r previous lexemes with
+        | None -> main_loop (Text(string_of_t t)::r) [t] tl
+        | Some(r, p, l) -> main_loop r p l
+        end
+      else
+        let read_html() =
+          let tag s = Tag(Md([Html s])) in
+          let rec loop accu n = function
+            | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
+              (* self-closing tags *)
               if n = 0 then
-                List.rev (tag(sprintf "</%s>" tn)::accu), tl
+                let b, tl = read_until_gt tl in
+                ((tag(sprintf "<%s%s>" tn (string_of_tl b))) ::accu), tl
               else
-                loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
-            else
-              loop (Word(sprintf "</%s>" tn)::accu) n tl
-          | Lessthan::Word(tn)::tl -> (* <word... *)
-            let b, tl = read_until_gt tl in
-            if tn = tagname then
-              loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu)
-                (n+1) tl
-            else
-              loop (tag(Printf.sprintf "<%s%s>" tn (string_of_tl b))
-                    :: accu) n tl
-          | x::tl ->
-            loop (x::accu) n tl
-          | [] ->
-            List.rev accu, []
+                let b, tl = read_until_gt tl in
+                loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
+            | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
+              if tn = tagname then
+                if n = 0 then
+                  List.rev (tag(sprintf "</%s>" tn)::accu), tl
+                else
+                  loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
+              else
+                loop (Word(sprintf "</%s>" tn)::accu) n tl
+            | Lessthan::Word(tn)::tl -> (* <word... *)
+              let b, tl = read_until_gt tl in
+              if tn = tagname then
+                loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu)
+                  (n+1) tl
+              else
+                loop (tag(Printf.sprintf "<%s%s>" tn (string_of_tl b))
+                      :: accu) n tl
+            | x::tl ->
+              loop (x::accu) n tl
+            | [] ->
+              List.rev accu, []
+          in
+          let b, tl = read_until_gt l in
+          if (try ignore(read_until_lt b); false
+            with Premature_ending -> true) then
+            (* there must not be any '<' in b *)
+            loop [tag(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
+                        (string_of_tl b))] 0 tl
+          else
+            raise Premature_ending
         in
-        let b, tl = read_until_gt l in
-        if (try ignore(read_until_lt b); false
-          with Premature_ending -> true) then
-          (* there must not be any '<' in b *)
-          loop [tag(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
-                      (string_of_tl b))] 0 tl
-        else
-          raise Premature_ending
-      in
-      (match try Some(read_html()) with Premature_ending -> None with
-      | Some(html, tl) ->
-        let r = match opening with
-          | Lessthan -> r
-          | Lessthans 0 -> Text("<")::r
-          | Lessthans n -> Text(String.make (n-3) '<')::r
-          | _ -> assert false
-        in
-        main_loop (main_loop [] [] html @ r) [Greaterthan] tl
-      | None ->
-        main_loop (Text(string_of_t opening^tagname)::r) [w] l
-      )
+        (match try Some(read_html()) with Premature_ending -> None with
+        | Some(html, tl) ->
+          let r = match t with
+            | Lessthan -> r
+            | Lessthans 0 -> Text("<")::r
+            | Lessthans n -> Text(String.make (n-3) '<')::r
+            | _ -> assert false
+          in
+          main_loop (main_loop [] [] html @ r) [Greaterthan] tl
+        | None ->
+          main_loop (Text(string_of_t t^tagname)::r) [w] l
+        )
     (* / end of inline HTML. *)
 
 
@@ -2048,3 +2072,5 @@ let main_parse extensions lexemes =
 
 let parse ?(extensions=[]) lexemes =
   main_parse extensions (tag_setext lexemes)
+
+(******************************************************************************)
