@@ -6,12 +6,10 @@
 (***********************************************************************)
 
 (* Implementation notes *********************************************
+ * The entry point is the function [parse].
+ *)
 
-   * - This module should depend on OCaml's standard library only and
-   * should be as 'pure OCaml' (i.e. depend as least as possible on
-   * external tools) as possible.
-*)
-
+(** options *)
 let gh_uemph_or_bold_style = ref true
 let blind_html = ref false
 let strict_html = ref false
@@ -1117,6 +1115,8 @@ let main_parse extensions lexemes =
     (* email-style quoting, with lines starting with spaces! *)
     | ([]|[Newline|Newlines _]), (Space|Spaces(0|1) as s)
       :: Greaterthan :: (Space|Spaces _)::_ ->
+      (* It's 1, 2 or 3 spaces, not more because it wouldn't mean
+         quoting anymore but code. *)
       begin
         let new_r, p, rest =
           let foo, rest = unindent (fst(length s)) (Newline::lexemes) in
