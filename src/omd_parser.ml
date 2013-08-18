@@ -17,16 +17,9 @@ let strict_html = ref false
 open Printf
 open Omd_backend
 open Omd_lexer
+open Omd_utils
+open Omd_representation
 
-type tag = Maybe_h1 | Maybe_h2 | Md of Omd_backend.t
-
-type tmp_list = element list
-and element   = Item of tag Omd_lexer.t list
-
-type extension =
-  Omd_backend.t -> tag Omd_lexer.t list -> tag Omd_lexer.t list
-  -> ((Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) option)
-and extensions = extension list
 
 let htmlentities_set = StringSet.of_list (* This list should be checked... *)
   (* list extracted from: http://www.ascii.cl/htmlcodes.htm *)
@@ -165,14 +158,14 @@ let fsplit ?(excl=(fun _ -> false)) ~f l =
   | None -> None
   | Some(rev, l) -> Some(List.rev rev, l)
 
-(** [emph_or_bold (n:int) (r:t list) (l:Omd_lexer.t list)]
+(** [emph_or_bold (n:int) (r:t list) (l:Omd_representation.tok list)]
     returns [] if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
-let emph_or_bold (n:int) (l:tag Omd_lexer.t list)
-    : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
+let emph_or_bold (n:int) (l:Omd_representation.tok list)
+    : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
-  let rec loop (result:tag Omd_lexer.t list) = function
+  let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
@@ -218,14 +211,14 @@ let emph_or_bold (n:int) (l:tag Omd_lexer.t list)
     else
       Some(r, tl)
 
-(** [uemph_or_bold (n:int) (r:t list) (l:tag Omd_lexer.t list)]
+(** [uemph_or_bold (n:int) (r:t list) (l:tag Omd_representation.tok list)]
     returns None if not (emph and/or bold),
     else returns the contents intended to be formatted,
     along with the rest of the stream that hasn't been processed. *)
-let uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
-    : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
+let uemph_or_bold (n:int) (l:Omd_representation.tok list)
+    : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
-  let rec loop (result:tag Omd_lexer.t list) = function
+  let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
@@ -272,10 +265,10 @@ let uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
       Some(r, tl)
 
 
-let gh_uemph_or_bold (n:int) (l:tag Omd_lexer.t list)
-    : (tag Omd_lexer.t list * tag Omd_lexer.t list) option =
+let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
+    : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
-  let rec loop (result:tag Omd_lexer.t list) = function
+  let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
@@ -356,34 +349,6 @@ let is_space_or_minus = function
   | Space | Spaces _ | Minus | Minuss _ -> true
   |_ -> false
 
-(* Let's tag the lines that *might* be titles using setext-style.
-   "might" because if they are, for instance, in a code section,
-   then they are not titles at all. *)
-let tag_setext lexemes =
-  let rec loop pl res = function
-    | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
-      begin match split_norev is_space_or_equal tl with
-      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
-        loop [] (rleft@(e2::e1::pl@(Tag(Maybe_h1)::res))) right
-      | rleft, right ->
-        loop [] (rleft@(e2::e1::pl@res)) right
-      end
-    | (Newline as e1)::(Minus|Minuss _ as e2)::tl -> (* might be a H2. *)
-      begin match split_norev is_space_or_minus tl with
-      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
-        loop [] (rleft@(e2::e1::pl@(Tag(Maybe_h2)::res))) right
-      | rleft, right ->
-        loop [] (rleft@(e2::e1::pl@res)) right
-      end
-    | (Newlines _ as e1)::tl ->
-      loop [] (e1::pl@res) tl
-    | e::tl ->
-      loop (e::pl) res tl
-    | [] ->
-      pl@res
-  in
-  List.rev (loop [] [] lexemes)
-
 let setext_title l =
   let rec loop r = function
     | [] ->
@@ -399,6 +364,67 @@ let setext_title l =
     | e::tl -> loop (e::r) tl
   in
   loop [] l
+
+
+let tag_maybe_h1 rev_main_loop =
+  Tag(fun r p l ->
+    match p with
+    | ([]|[Newline|Newlines _]) ->
+      begin match setext_title l with
+      | None ->
+        None
+      | Some(title, tl) ->
+        let title = H1(rev_main_loop [] [] title) in
+        Some((title::r), [Newline], l)
+      end
+    | _ -> assert false (* -> the tag generator would be broken *)
+  )
+
+let tag_maybe_h2 rev_main_loop =
+  Tag(fun r p l ->
+    match p with
+    | ([]|[Newline|Newlines _]) ->
+      begin match setext_title l with
+      | None ->
+        None
+      | Some(title, tl) ->
+        let title = H2(rev_main_loop [] [] title) in
+        Some((title::r), [Newline], tl)
+      end
+    | _ -> assert false (* -> the tag generator would be broken *)
+  )
+
+let tag_md md = (* [md] should be in reverse *)
+  Tag(fun r p l -> Some(md@r, [], l))
+
+(* Let's tag the lines that *might* be titles using setext-style.
+   "might" because if they are, for instance, in a code section,
+   then they are not titles at all. *)
+let tag_setext rev_main_loop lexemes =
+  let rec loop pl res = function
+    | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
+      begin match split_norev is_space_or_equal tl with
+      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
+        loop [] (rleft@(e2::e1::pl@(tag_maybe_h1 rev_main_loop::res))) right
+      | rleft, right ->
+        loop [] (rleft@(e2::e1::pl@res)) right
+      end
+    | (Newline as e1)::(Minus|Minuss _ as e2)::tl -> (* might be a H2. *)
+      begin match split_norev is_space_or_minus tl with
+      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
+        loop [] (rleft@(e2::e1::pl@(tag_maybe_h2 rev_main_loop::res))) right
+      | rleft, right ->
+        loop [] (rleft@(e2::e1::pl@res)) right
+      end
+    | (Newlines _ as e1)::tl ->
+      loop [] (e1::pl@res) tl
+    | e::tl ->
+      loop (e::pl) res tl
+    | [] ->
+      pl@res
+  in
+  List.rev (loop [] [] lexemes)
+
 
 (** [hr_m l] returns [Some nl] where [nl] is the remaining of [l] if [l]
     contains a horizontal rule drawn with dashes. If it doesn't, then
@@ -595,8 +621,8 @@ let read_until_cbracket ?(no_nl=false) l =
   in loop [] l
 
 (* H1, H2, H3, ... *)
-let read_title rev_main_loop n (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-    (l:tag Omd_lexer.t list) =
+let read_title rev_main_loop n (r:t) (p:Omd_representation.tok list)
+    (l:Omd_representation.tok list) =
   if true then (* a behaviour closer to github *)
     begin
       let title, rest =
@@ -651,9 +677,9 @@ let read_title rev_main_loop n (r:Omd_backend.t) (p:tag Omd_lexer.t list)
 (** [maybe_extension r p l] returns None if there is no extension or
     if extensions haven't had  any effect, returns Some(nr, np, nl) if
     at least one extension has applied successfully. *)
-let maybe_extension extensions (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
-    (lexemes:tag Omd_lexer.t list)
-    : ((Omd_backend.t*tag Omd_lexer.t list*tag Omd_lexer.t list) option) =
+let maybe_extension extensions (r:t) (previous:Omd_representation.tok list)
+    (lexemes:Omd_representation.tok list)
+    : ((t*Omd_representation.tok list*Omd_representation.tok list) option) =
   match extensions with
   | [] -> None
   | _ ->
@@ -668,7 +694,7 @@ let maybe_extension extensions (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
       extensions
 
 let emailstyle_quoting rev_main_loop r previous lexemes =
-  let rec loop (block:tag Omd_lexer.t list) (cl:tag Omd_lexer.t list) =
+  let rec loop (block:Omd_representation.tok list) (cl:Omd_representation.tok list) =
     function
     | Newline::Greaterthan::(Newline::_ as tl) ->
       loop (Newline::cl@block) [] tl
@@ -782,9 +808,9 @@ let maybe_reference rc r p l =
       read_name [] l
 
 (** code that starts with one or several backquote(s) *)
-let bcode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-    (l:tag Omd_lexer.t list)
-    : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
+let bcode (r:t) (p:Omd_representation.tok list)
+    (l:Omd_representation.tok list)
+    : t * Omd_representation.tok list * Omd_representation.tok list =
   let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl
     | _ -> (* bcode is wrongly called *) assert false in
   let rec code_block accu = function
@@ -829,9 +855,9 @@ let bcode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
     in
     (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
 
-let icode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
-    (l:tag Omd_lexer.t list)
-    : Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list =
+let icode (r:t) (p:Omd_representation.tok list)
+    (l:Omd_representation.tok list)
+    : t * Omd_representation.tok list * Omd_representation.tok list =
       (** indented code:
           returns (r,p,l) where r is the result, p is the last thing read,
           l is the remains *)
@@ -860,17 +886,17 @@ let icode (r:Omd_backend.t) (p:tag Omd_lexer.t list)
     read, l is the remains *)
     (* TODO: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
 let new_list rev_main_loop main_loop
-    (o:bool) (r:Omd_backend.t) (p:tag Omd_lexer.t list) (l:tag Omd_lexer.t list)
-    : (Omd_backend.t * tag Omd_lexer.t list * tag Omd_lexer.t list) =
+    (o:bool) (r:t) (p:Omd_representation.tok list) (l:Omd_representation.tok list)
+    : (t * Omd_representation.tok list * Omd_representation.tok list) =
   if debug then
     eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p)
       (destring_of_tl l);
   let list_hd e = match e with hd::_ -> hd | _ -> 0 in
   let rec loop (fi:bool) (ordered:bool)
-      (result:(bool*int list*tag Omd_lexer.t list)list)
-      (curr_item:tag Omd_lexer.t list)
+      (result:(bool*int list*Omd_representation.tok list)list)
+      (curr_item:Omd_representation.tok list)
       (indents:int list)
-      (lexemes:tag Omd_lexer.t list) =
+      (lexemes:Omd_representation.tok list) =
         (* 'fi' means first iteration *)
     let er = if debug then
         let to_string r (o,il,e) =
@@ -937,11 +963,11 @@ let new_list rev_main_loop main_loop
                                 :: (Space|Spaces _) :: tl) as p) ->
       if debug then Printf.eprintf "#%d\n%!" 6;
       if x+2 > list_hd indents + 4 then
-            (* a single new line & too many spaces -> *not* a new list item. *)
+        (* a single new line & too many spaces -> *not* a new list item. *)
         loop false ordered result curr_item indents p
-          (* p is what follows the new line *)
+      (* p is what follows the new line *)
       else
-            (* a new list item, set previous current item as a complete item *)
+        (* a new list item, set previous current item as a complete item *)
         if fi then
           loop false ordered result [] ((x+2)::indents) tl
         else
@@ -953,14 +979,14 @@ let new_list rev_main_loop main_loop
       let block, rest = unindent (n+2) (Newline::l) in
       let em, _, _x = emailstyle_quoting rev_main_loop [] [] block in
       assert(_x = []);
-      loop false ordered result (Tag(Md(em))::curr_item) indents rest
+      loop false ordered result (tag_md(em)::curr_item) indents rest
     | Newlines(0) :: (Spaces(n) :: tl as l)
     | Newline::Newline:: (Spaces(n) :: tl as l)
         when (try n+2 >= List.hd indents+4 with _ -> assert false) ->
           (* code inside a list *)
       let block, rest = unindent (List.hd indents+4) (Newline::l) in
       loop false ordered result
-        (Tag(Md(main_loop [] [] block))::curr_item) indents rest
+        (tag_md(main_loop [] [] block)::curr_item) indents rest
 
     | ((Newline|Newlines 0 as k) :: Spaces(_) :: e :: tl) ->
           (* adding e to the current item *)
@@ -973,9 +999,10 @@ let new_list rev_main_loop main_loop
       loop false ordered result (e::k::curr_item) indents tl
 
     | Newlines 0 :: (Tag _|Hash|Hashs _) :: _ ->
-          (* Tricky: 2 line breaks, but we're suspecting a H1..H6 and
-             it's probably going to be the case, hence we're out of
-             the list. *)
+      (* FIXME: do something else when Tag *)
+      (* Tricky: 2 line breaks, but we're suspecting a H1..H6 and
+         it's probably going to be the case, hence we're out of
+         the list. *)
       ((ordered,indents,curr_item)::result, lexemes)
 
     | (Newlines 0 as k) :: e :: tl ->
@@ -992,9 +1019,9 @@ let new_list rev_main_loop main_loop
       if debug then eprintf "#%d (%s)\n%!" 9 (destring_of_tl lexemes);
       loop false ordered result (e::curr_item) indents tl
   in
-  let rec loop2 (tmp:(bool*int list*tag Omd_lexer.t list) list)
-      (curr_indent:int) (ordered:bool) (accu:Omd_backend.t list)
-      : Omd_backend.t * (bool*int list*tag Omd_lexer.t list) list =
+  let rec loop2 (tmp:(bool*int list*Omd_representation.tok list) list)
+      (curr_indent:int) (ordered:bool) (accu:t list)
+      : t * (bool*int list*Omd_representation.tok list) list =
     let er = if debug then
         let to_string r (o,il,e) =
           r ^ sprintf "(%b," o ^ destring_of_tl e ^ ")" in
@@ -1039,8 +1066,8 @@ let new_list rev_main_loop main_loop
       loop2 ((o,[0], item) :: tl) curr_indent ordered accu
   in
   let tmp_r, new_l = loop true o [] [] [] l in
-      (* tmp_r: (bool*int list*tag Omd_lexer.t list) list) ;
-         new_l:tag Omd_lexer.t list *)
+      (* tmp_r: (bool*int list*Omd_representation.tok list) list) ;
+         new_l:Omd_representation.tok list *)
   if debug then (
     let p =
       List.fold_left
@@ -1051,7 +1078,7 @@ let new_list rev_main_loop main_loop
         (List.rev tmp_r) in
     eprintf "tmp_r=%s[] new_l=%s\n%!" (p) ("")
   );
-  let (e:Omd_backend.t), (x:(bool*int list*tag Omd_lexer.t list) list) =
+  let (e:t), (x:(bool*int list*Omd_representation.tok list) list) =
     loop2 (List.rev tmp_r) (-1) false []
   in
   (fix_lists e @ r), [], new_l
@@ -1084,12 +1111,14 @@ let spaces rev_main_loop main_loop n r p l =
   spaces n r p l (* NOT a recursive call *)
 
 
+
+
 let main_parse extensions lexemes =
-  let rc = new Omd_backend.ref_container in
+  let rc = new Omd_representation.ref_container in
 
   (* [main_loop ] should be called only by itself and [rev_main_loop ] *)
-  let rec main_loop (r:Omd_backend.t) (previous:tag Omd_lexer.t list)
-      (lexemes:tag Omd_lexer.t list) =
+  let rec main_loop (r:t) (previous:Omd_representation.tok list)
+      (lexemes:Omd_representation.tok list) =
     if debug then
       eprintf "main_loop r=%s p=(%s) l=(%s)\n%!"
         (Omd_backend.sexpr_of_md (List.rev r))
@@ -1100,9 +1129,14 @@ let main_parse extensions lexemes =
       (* return the result (/!\ it has to be reversed as some point) *)
       r
 
-    (* previously processed *)
-    | _, Tag(Md(md))::tl -> (* md should be in reverse, just as r *)
-      main_loop (md@r) [] tl
+      (* Tag: tag system $\cup$ high-priority extension mechanism *)
+    | _, Tag(e) :: tl ->
+      begin match e r previous tl with
+      | Some(r, p, l) ->
+        main_loop r p l
+      | None ->
+        main_loop r previous tl
+      end
 
     (* email-style quoting *)
     | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
@@ -1128,26 +1162,6 @@ let main_parse extensions lexemes =
         in
         main_loop (new_r@r) [Newline] rest
       end
-
-    (* maybe tags*)
-    | ([]|[Newline|Newlines _]), Tag(Maybe_h1)::tl ->
-      begin match setext_title tl with
-      | None ->
-        main_loop [] [] tl
-      | Some(title, tl) ->
-        let title = H1(rev_main_loop [] [] title) in
-        main_loop (title::r) [] tl
-      end
-    | ([]|[Newline|Newlines _]), Tag(Maybe_h2)::tl ->
-      begin match setext_title tl with
-      | None ->
-        main_loop [] [] tl
-      | Some(title, tl) ->
-        let title = H2(rev_main_loop [] [] title) in
-        main_loop (title::r) [] tl
-      end
-    | _, Tag(Maybe_h1|Maybe_h2)::tl ->
-      assert false
 
     (* minus *)
     | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _)
@@ -1564,7 +1578,7 @@ let main_parse extensions lexemes =
         end
       else
         let read_html() =
-          let tag s = Tag(Md([Html s])) in
+          let tag s = tag_md [Html s] in
           let rec loop accu n = function
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
               (* self-closing tags *)
@@ -2062,15 +2076,15 @@ let main_parse extensions lexemes =
   (* /generated code *)
 
 
-  and rev_main_loop (r: Omd_backend.t) (previous:tag Omd_lexer.t list)
-      (lexemes:tag Omd_lexer.t list) =
+  and rev_main_loop (r: t) (previous:Omd_representation.tok list)
+      (lexemes:Omd_representation.tok list) =
     List.rev (main_loop r previous lexemes)
 
   in
-  rev_main_loop [] [] lexemes
+  rev_main_loop [] [] (tag_setext rev_main_loop lexemes)
 
 
 let parse ?(extensions=[]) lexemes =
-  main_parse extensions (tag_setext lexemes)
+  main_parse extensions lexemes
 
 (******************************************************************************)

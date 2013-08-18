@@ -14,7 +14,7 @@ let old () =
     done; assert false
   with End_of_file ->
     let open Omd in
-    print_endline (Omd.to_html
+    print_endline (to_html
                      (make_paragraphs
                         (parse (lex (Buffer.contents b)))));
     try
@@ -65,7 +65,7 @@ omd [-o outputfile] [-- inputfile1 .. inputfileN]"
     with End_of_file ->
       let open Omd in
       output_string output
-        (Omd.to_html
+        (to_html
            (make_paragraphs
               (parse (lex (Buffer.contents b)))));
       flush output;

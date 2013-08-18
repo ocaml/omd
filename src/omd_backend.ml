@@ -6,31 +6,13 @@
 (***********************************************************************)
 
 open Printf
+open Omd_representation
+open Omd_utils
 
 let pindent = false
 let pindent = true
 let smdnl = true (* about standard markdown new lines *)
 
-let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
-
-let raise =
-  if debug then
-    (fun e -> eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
-  else
-    raise
-
-module StringSet : sig
-  type elt = string
-  type t
-  val empty : t
-  val add : elt -> t -> t
-  val mem : elt -> t -> bool
-  val union : t -> t -> t
-  val of_list : elt list -> t
-end = struct
-  include Set.Make(struct type t = string let compare = String.compare end)
-  let of_list l = List.fold_left (fun r e -> add e r) empty l
-end
 
 let id_of_string ids s =
   let l = String.length s in
@@ -60,53 +42,6 @@ let id_of_string ids s =
   let id = gen_id s in
   ids#mangle id
 
-(** references *)
-module R = Map.Make(String)
-class ref_container = object
-  val broken_url = "", "Broken URL"
-  val mutable c = R.empty
-  method add_ref name title url =
-    c <- R.add name (url, title) c
-  method get_ref name =
-    let (url, title) as r =
-      try R.find name c
-      with Not_found ->
-        if debug then eprintf "Could not find reference (%s)\n%!" (name);
-        broken_url
-    in r
-end
-
-type element =
-  | Paragraph of t
-  | Text of string
-  | Emph of t
-  | Bold of t
-  | Ul of t list
-  | Ol of t list
-  | Code of string (* html entities are to be converted *later* *)
-  | Code_block of string (* html entities are to be converted *later* *)
-  | Br
-  | Hr
-  | Url of href * string * title
-  | Ref of ref_container * name * string
-  | Img_ref of ref_container * name * alt
-  | Html of string
-  | Html_block of string
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
-  | Blockquote of t
-  | Img of alt * src * title
-  | NL
-and name = string
-and alt = string
-and src = string
-and href = string
-and title = string
-and t = element list
 
 
 let htmlentities s =

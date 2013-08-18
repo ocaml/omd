@@ -5,22 +5,15 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
+include Omd_representation
 include Omd_backend
 
-type extension = Omd_parser.extension 
-and extensions = Omd_parser.extensions
+let lex : string -> tok list = Omd_lexer.lex
 
-type token = Omd_parser.tag Omd_lexer.t
-
-let lex : string -> token list = Omd_lexer.lex
-
-let parse : ?extensions:extensions -> token list -> t = Omd_parser.parse
+let parse : ?extensions:extensions -> tok list -> t = Omd_parser.parse
 
 let to_html : t -> string = html_of_md
 
 let html_of_string (html:string) : string =
   html_of_md (parse (lex html))
-
-
-
 

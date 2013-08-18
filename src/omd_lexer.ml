@@ -21,81 +21,9 @@
 
 *)
 
+(* class type tag = object method is_me : 'a. 'a -> bool end *)
 
-type 'a t = (* "of int":  *)
-  | Ampersand
-  | Ampersands of int
-  | At
-  | Ats of int
-  | Backquote
-  | Backquotes of int
-  | Backslash
-  | Backslashs of int
-  | Bar
-  | Bars of int
-  | Caret
-  | Carets of int
-  | Cbrace
-  | Cbraces of int
-  | Colon
-  | Colons of int
-  | Comma
-  | Commas of int
-  | Cparenthesis
-  | Cparenthesiss of int
-  | Cbracket
-  | Cbrackets of int
-  | Dollar
-  | Dollars of int
-  | Dot
-  | Dots of int
-  | Doublequote
-  | Doublequotes of int
-  | Exclamation
-  | Exclamations of int
-  | Equal
-  | Equals of int
-  | Greaterthan
-  | Greaterthans of int
-  | Hash
-  | Hashs of int
-  | Lessthan
-  | Lessthans of int
-  | Minus
-  | Minuss of int
-  | Newline
-  | Newlines of int
-  | Number of string
-  | Obrace
-  | Obraces of int
-  | Oparenthesis
-  | Oparenthesiss of int
-  | Obracket
-  | Obrackets of int
-  | Percent
-  | Percents of int
-  | Plus
-  | Pluss of int
-  | Question
-  | Questions of int
-  | Quote
-  | Quotes of int
-  | Semicolon
-  | Semicolons of int
-  | Slash
-  | Slashs of int
-  | Space
-  | Spaces of int
-  | Star
-  | Stars of int
-  | Tab
-  | Tabs of int
-  | Tilde
-  | Tildes of int
-  | Underscore
-  | Underscores of int
-  | Word of string
-  | Tag of 'a
+open Omd_representation
 
 let string_of_t = function
   | Tag _ -> ""
@@ -365,7 +293,7 @@ let string_of_tl, estring_of_tl =
 
 let string_of_tl tl =
   let b = Buffer.create 42 in
-  let rec loop : 'a t list -> unit = function
+  let rec loop : tok list -> unit = function
     | e::tl ->
         Buffer.add_string b (string_of_t e);
         loop tl
@@ -377,7 +305,7 @@ let string_of_tl tl =
 
 let destring_of_tl tl =
   let b = Buffer.create 42 in
-  let rec loop : 'a t list -> unit = function
+  let rec loop : tok list -> unit = function
     | e::tl ->
         Buffer.add_string b (String.escaped (string_of_t e));
         Buffer.add_string b "::";

@@ -1,6 +1,19 @@
 (** A markdown parser in OCaml, with no extra dependencies.
-    N.B. This module is supposed to be reentrant, if it's not then please report the bug. *)
+    
+    This module represents this entire Markdown library written in
+    OCaml only. 
 
+    Its main purpose is to allow you to use the Markdown library while
+    keeping you away from the other modules. 
+
+    If you want to extend the Markdown parser, you can do it without
+    accessing any module of this library but this one, and by doing
+    so, you are free from having to maintain a fork of this library.
+
+    N.B. This module is supposed to be reentrant, 
+    if it's not then please report the bug. *)
+
+(********************** TYPES **************************************)
 type ref_container
 (** abstract type for references container *)
 
@@ -49,16 +62,86 @@ and href = string
 and title = string
 (** HTML attribute. *)
 
+type tok = 
+| Ampersand
+| Ampersands of int
+| At
+| Ats of int
+| Backquote
+| Backquotes of int
+| Backslash
+| Backslashs of int
+| Bar
+| Bars of int
+| Caret
+| Carets of int
+| Cbrace
+| Cbraces of int
+| Colon
+| Colons of int
+| Comma
+| Commas of int
+| Cparenthesis
+| Cparenthesiss of int
+| Cbracket
+| Cbrackets of int
+| Dollar
+| Dollars of int
+| Dot
+| Dots of int
+| Doublequote
+| Doublequotes of int
+| Exclamation
+| Exclamations of int
+| Equal
+| Equals of int
+| Greaterthan
+| Greaterthans of int
+| Hash
+| Hashs of int
+| Lessthan
+| Lessthans of int
+| Minus
+| Minuss of int
+| Newline
+| Newlines of int
+| Number of string
+| Obrace
+| Obraces of int
+| Oparenthesis
+| Oparenthesiss of int
+| Obracket
+| Obrackets of int
+| Percent
+| Percents of int
+| Plus
+| Pluss of int
+| Question
+| Questions of int
+| Quote
+| Quotes of int
+| Semicolon
+| Semicolons of int
+| Slash
+| Slashs of int
+| Space
+| Spaces of int
+| Star
+| Stars of int
+| Tab
+| Tabs of int
+| Tilde
+| Tildes of int
+| Underscore
+| Underscores of int
+| Word of string
+| Tag of extension
+(** Lexer's tokens. If you want to use the parser with an extended
+    lexer, you may use the constructor [Tag] to implement
+    the parser's extension. In the parser, [Tag] is used (at least) 
+    3 times in order to represent metadata or to store data. *)
 
-type token
-(** Abstract representation of the lexer's tokens *)
-
-val lex : string -> token list
-(** Translate a raw string into tokens for the parser *)
-
-type extension =
-    Omd_backend.t -> Omd_parser.tag Omd_lexer.t list -> Omd_parser.tag Omd_lexer.t list
-    -> ((Omd_backend.t * Omd_parser.tag Omd_lexer.t list * Omd_parser.tag Omd_lexer.t list) option)
+and extension = t -> tok list -> tok list -> ((t * tok list * tok list) option)
   (** A function that takes the current state of the parser's data and
       returns None if nothing has been changed, otherwise it returns
       the new state.  The current state of the parser's data is [(r,
@@ -69,19 +152,39 @@ type extension =
 
 and extensions = extension list
 (** One must use this type to extend the parser. It's a list of
-    functions of type [extension]. They are processed in order (the head is applied first), so
-    be careful about it. If you use it wrong, it will behave wrong. *)
+    functions of type [extension]. They are processed in order (the
+    head is applied first), so be careful about it. If you use it
+    wrong, it will behave wrong. *)
 
-val parse : ?extensions:extensions -> token list -> t
+
+(********************** VALUES **************************************)
+
+val lex : string -> tok list
+(** Translate a raw string into tokens for the parser.  To implement
+    an extension to the lexer, one may process its result before
+    giving it to the parser. To implement an extension to the 
+    parser, one may extend it using the constructor [Tag]
+    from type [tok] and/or using the extensions mechanism
+    of the parser (cf. the optional argument [extensions]).
+    The main difference is that [Tag] is processed by the parser
+    in highest priority whereas functions in [extensions] are applied
+    with lowest priority. *)
+
+
+val parse : ?extensions:extensions -> tok list -> t
 (** Translate tokens to Markdown representation *)
 
 val make_paragraphs : t -> t
-(** Build Markdown paragraphs. *)
+(** Build Markdown paragraphs. This Markdown parser doesn't
+    build paragraph directly, one has to call this function
+    to build them. On the other hand, if you don't want
+    automatic Markdown-style paragraphs, don't call this function! *)
 
 val to_html : t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
-    convert [Html of string] into your HTML representation.  *)
+    convert [Html of string] and [Html_block of string]
+    into your HTML representation.  *)
 
 
 ;;
