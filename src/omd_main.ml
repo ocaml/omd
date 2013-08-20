@@ -39,7 +39,7 @@ let main () =
         "-u", Clear(Omd_parser.gh_uemph_or_bold_style), " Use standard Markdown style for emph/bold when using `_'.";
         "-b", Set(Omd_parser.blind_html), " Don't check validity of HTML tag names.";
         "-x", String(fun s -> ignore s), "ext Activate extension ext (not yet implemented).";
-        "-l", ignore, " List available extensions ext (not yet implemented).";
+        "-l", Unit ignore, " List available extensions ext (not yet implemented).";
         "-s", Set(Omd_parser.strict_html), " (might not work as expected yet) Block HTML only in block HTML, inline HTML only in inline HTML (semantics undefined if use both -b and -s).";
       ])
       (fun s -> input := s :: !input)
