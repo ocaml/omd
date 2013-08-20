@@ -7,7 +7,7 @@
 
 (* Implementation notes *********************************************
  * The entry point is the function [parse].
- *)
+*)
 
 (** options *)
 let gh_uemph_or_bold_style = ref true
@@ -49,7 +49,7 @@ let inline_htmltags_set = StringSet.of_list
 (* N.B. it seems that there is no clear distinction between
    inline tags and block-level tags: in HTML4 it was not clear,
    in HTML5 it's even more complicated. So, the choice here is
-   to specify a set of tags considered as "inline", 
+   to specify a set of tags considered as "inline",
    cf. [inline_htmltags_set].
    So there will be inline tags, non-inline tags, and unknown tags.*)
 
@@ -72,7 +72,7 @@ let htmltags_set =
        ;"script";"section";"select";"small";"source";"span";"strike"
        ;"strong";"style";"sub";"summary";"sup";"table";"tbody";"td"
        ;"textarea";"tfoot";"th";"thead";"time";"tr";"track";"tt";"u"
-       ;"ul";"var";"video";"wbr" 
+       ;"ul";"var";"video";"wbr"
      ])
 
 
@@ -158,10 +158,7 @@ let fsplit ?(excl=(fun _ -> false)) ~f l =
   | None -> None
   | Some(rev, l) -> Some(List.rev rev, l)
 
-(** [emph_or_bold (n:int) (r:t list) (l:Omd_representation.tok list)]
-    returns [] if not (emph and/or bold),
-    else returns the contents intended to be formatted,
-    along with the rest of the stream that hasn't been processed. *)
+(* FIXME: use rpl call/return convention *)
 let emph_or_bold (n:int) (l:Omd_representation.tok list)
     : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
@@ -211,10 +208,7 @@ let emph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-(** [uemph_or_bold (n:int) (r:t list) (l:tag Omd_representation.tok list)]
-    returns None if not (emph and/or bold),
-    else returns the contents intended to be formatted,
-    along with the rest of the stream that hasn't been processed. *)
+(* FIXME: use rpl call/return convention *)
 let uemph_or_bold (n:int) (l:Omd_representation.tok list)
     : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
@@ -264,7 +258,7 @@ let uemph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-
+(* FIXME: use rpl call/return convention *)
 let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
     : (Omd_representation.tok list * Omd_representation.tok list) option =
   assert (n>0 && n<4);
@@ -316,7 +310,7 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-
+(* FIXME: use rpl call/return convention *)
 let uemph_or_bold n l =
   if !gh_uemph_or_bold_style then
     gh_uemph_or_bold n l
@@ -364,7 +358,8 @@ let setext_title l =
         None
       else
         Some(List.rev r, tl)
-    | e::tl -> loop (e::r) tl
+    | e::tl ->
+      loop (e::r) tl
   in
   loop [] l
 
@@ -464,15 +459,15 @@ let hr_s l =
   in loop 0 l
 
 
-(* This function is intended to fix lists that "look wrong" in
-   Markdown. First, nothing being "wrong" in Markdown means that what
-   doesn't have a clear semantics has to be attributed one. Lists are
-   based on indentation and sometimes it appears that we can't count
-   on human beings to write only good looking Markdown. Second, it
-   appeared hard to write a simple lists parser that would generate
-   the tree that I expected to see. For those 2 reasons, I wrote this
-   function that fixes what's generated at some point by this
-   parser. It seems to work fine.
+(* This function is intended to "fix" lists that "look wrong" in
+   Markdown. First, nothing being really "wrong" in Markdown means
+   that what doesn't have a clear semantics has to be attributed
+   one. Lists are based on indentation and sometimes it appears that
+   we can't count on human beings to write only good looking
+   Markdown. Second, it appeared hard to write a simple lists parser
+   that would generate the tree that I expected to see. For those 2
+   reasons, I wrote this function that fixes what's generated at some
+   point by this parser. It seems to work fine.
 
    However, if this parser benefits from some optimizations at some
    point, one of them should probably be about getting rid of this
@@ -526,7 +521,7 @@ let rec fix_lists = function
 exception NL_exception
 exception Premature_ending
 
-(*
+(* The program that generates the generated part that follows right after.
   List.iter (fun (a,b,c) ->
   print_endline ("let read_until_"^a^" ?(no_nl=false) l =
   let rec loop accu n = function
@@ -620,7 +615,7 @@ let read_until_gt ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_lt ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -645,7 +640,7 @@ let read_until_lt ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_cparenth ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -677,7 +672,7 @@ let read_until_cparenth ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_oparenth ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -703,7 +698,7 @@ let read_until_oparenth ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_dq ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -729,7 +724,7 @@ let read_until_dq ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_q ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -754,7 +749,7 @@ let read_until_q ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_obracket ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -779,7 +774,7 @@ let read_until_obracket ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_cbracket ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -810,7 +805,7 @@ let read_until_cbracket ?(no_nl = false) l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-  
+
 let read_until_space ?(no_nl = false) l =
   let rec loop accu n =
     function
@@ -836,7 +831,7 @@ let read_until_space ?(no_nl = false) l =
     | [] -> raise Premature_ending
   in loop [] 0 l
 
-let read_until_newline l =
+let read_until_newline l = (* this has been patched post-generation *)
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Newline as b)) :: tl ->
@@ -858,87 +853,60 @@ let read_until_newline l =
     | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
   in loop [] 0 l
-
 (* /end generated part *)
 
 
 
 
 (* H1, H2, H3, ... *)
-let read_title rev_main_loop n (r:t) (p:Omd_representation.tok list)
-    (l:Omd_representation.tok list) =
-  if true then (* a behaviour closer to github *)
-    begin
-      let title, rest =
-        let rec loop accu = function
-          | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
-          | ((Hash|Hashs _)::(Space|Spaces _)::
-                ((Newline|Newlines _)::_ as l))
-          | ((Newline|Newlines _)::_ as l)
-          | ([] as l) ->
-            rev_main_loop [] [] (List.rev accu), l
-          | (Hash|Hashs _)::[] ->
-            rev_main_loop [] [] (List.rev accu), []
-          | (Hash|Hashs _ as x)::tl ->
-            loop (Word(string_of_t x)::accu) tl
-          | x::tl ->
-            loop (x::accu) tl
-        in
-        loop [] l
-      in
-      match n with
-      | 1 -> H1 title :: r, [Newline], rest
-      | 2 -> H2 title :: r, [Newline], rest
-      | 3 -> H3 title :: r, [Newline], rest
-      | 4 -> H4 title :: r, [Newline], rest
-      | 5 -> H5 title :: r, [Newline], rest
-      | 6 -> H6 title :: r, [Newline], rest
-      | _ -> assert false
-    end
-  else (* a behaviour closer to pandoc *)
-    begin
-      let rec loop accu l =
-        match l with
-        | (Paragraph _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
-              | Html _ | Html_block _ | Url _ | Br | Hr
-              | Code _ | Code_block _ | Ol _ | Ul _ | NL )::_ ->
-          List.rev accu, l
-        | x::tl -> loop (x::accu) tl
-        | [] -> List.rev accu, []
-      in
-      let title, rest = loop [] (rev_main_loop [] [] l) in
-      match n with
-      | 1 -> List.rev (H1 title :: rest) @ r, [], []
-      | 2 -> List.rev (H2 title :: rest) @ r, [], []
-      | 3 -> List.rev (H3 title :: rest) @ r, [], []
-      | 4 -> List.rev (H4 title :: rest) @ r, [], []
-      | 5 -> List.rev (H5 title :: rest) @ r, [], []
-      | 6 -> List.rev (H6 title :: rest) @ r, [], []
-      | _ -> assert false
-    end
+let read_title rev_main_loop n r p l =
+  let title, rest =
+    let rec loop accu = function
+      | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
+      | ((Hash|Hashs _)::(Space|Spaces _)::
+           ((Newline|Newlines _)::_ as l))
+      | ((Newline|Newlines _)::_ as l)
+      | ([] as l) ->
+        rev_main_loop [] [] (List.rev accu), l
+      | (Hash|Hashs _)::[] ->
+        rev_main_loop [] [] (List.rev accu), []
+      | (Hash|Hashs _ as x)::tl ->
+        loop (Word(string_of_t x)::accu) tl
+      | x::tl ->
+        loop (x::accu) tl
+    in
+    loop [] l
+  in
+  match n with
+  | 1 -> H1 title :: r, [Newline], rest
+  | 2 -> H2 title :: r, [Newline], rest
+  | 3 -> H3 title :: r, [Newline], rest
+  | 4 -> H4 title :: r, [Newline], rest
+  | 5 -> H5 title :: r, [Newline], rest
+  | 6 -> H6 title :: r, [Newline], rest
+  | _ -> assert false
 
 
-(** [maybe_extension r p l] returns None if there is no extension or
+
+(** [maybe_extension e r p l] returns None if there is no extension or
     if extensions haven't had  any effect, returns Some(nr, np, nl) if
     at least one extension has applied successfully. *)
-let maybe_extension extensions (r:t) (previous:Omd_representation.tok list)
-    (lexemes:Omd_representation.tok list)
-    : ((t*Omd_representation.tok list*Omd_representation.tok list) option) =
+let maybe_extension extensions r p l =
   match extensions with
   | [] -> None
   | _ ->
     List.fold_left
       (function
       | None ->
-        (fun f -> f r previous lexemes)
-      | Some(r,p,l) as e ->
-        (fun f -> match f r p l with None -> e | Some _ as k -> k)
+        (fun f -> f r p l)
+      | Some(nr, np, nl) as e ->
+        (fun f -> match f nr np nl with None -> e | Some _ as k -> k)
       )
       None
       extensions
 
-let emailstyle_quoting rev_main_loop r previous lexemes =
-  let rec loop (block:Omd_representation.tok list) (cl:Omd_representation.tok list) =
+let emailstyle_quoting rev_main_loop r _p lexemes =
+  let rec loop block cl =
     function
     | Newline::Greaterthan::(Newline::_ as tl) ->
       loop (Newline::cl@block) [] tl
@@ -966,14 +934,12 @@ let maybe_reference main_loop rc r p l =
   (* So it could be a reference or a link definition. *)
   let rec maybe_ref l =
     let text, remains = read_until_cbracket l in
-    let () =
-      if (try ignore(read_until_obracket text); true
+    if (try ignore(read_until_obracket text); true
         with Premature_ending -> false) then
-        raise Premature_ending 
-    in
+      raise Premature_ending;
     let blank, remains = read_until_obracket remains in
-    if eat (function (Space|Spaces _|Newline|Newlines _) -> true
-    | _ -> false) blank <> [] then raise Premature_ending;
+    if eat (function | (Space|Spaces _|Newline|Newlines _) -> true
+                     | _ -> false) blank <> [] then raise Premature_ending;
     match read_until_cbracket remains with
     | [], remains ->
       let id = string_of_tl text in (* implicit anchor *)
@@ -989,13 +955,17 @@ let maybe_reference main_loop rc r p l =
     | id, (Colon::remains) ->
       let url, remains =
         split
-          (function (Space|Spaces _|Newline|Newlines _) -> false
-          |_ -> true)
+          (function | (Space|Spaces _|Newline|Newlines _) -> false
+                    |_ -> true)
           remains
       in
       let title, remains =
-        match eat (function (Space|Spaces _|Newline|Newlines _) -> true
-        | _ -> false) remains with
+        match
+          eat
+            (function | (Space|Spaces _|Newline|Newlines _) -> true
+                      | _ -> false)
+            remains
+        with
         | Doublequotes(0)::tl -> [], tl
         | Doublequote::tl -> read_until_dq tl
         | Quotes(0)::tl -> [], tl
@@ -1007,12 +977,13 @@ let maybe_reference main_loop rc r p l =
       Some(r, [Quote], remains)
     | _ -> None
   in
-  begin
-    try maybe_ref l
-    with Premature_ending
-    | NL_exception ->
-      try maybe_def l with Premature_ending | NL_exception -> None
-  end
+    try
+      maybe_ref l
+    with | Premature_ending | NL_exception ->
+      try
+        maybe_def l 
+      with
+      | Premature_ending | NL_exception -> None
 
 (* maybe a link *)
 and maybe_link rev_main_loop r p l =
@@ -1026,11 +997,14 @@ and maybe_link rev_main_loop r p l =
           Some(Url(url,name,string_of_tl title)::r,[Cparenthesis],tl)
         | title, (Cparenthesiss 0::tl)
         | title, ((Space|Spaces _)::Cparenthesiss 0::tl) ->
-          Some(Url(url,name,string_of_tl title)::r,[Cparenthesis],Cparenthesis::tl)
+          Some(Url(url,name,string_of_tl title)::r,
+               [Cparenthesis],
+               Cparenthesis::tl)
         | title, (Cparenthesiss n::tl)
         | title, ((Space|Spaces _)::Cparenthesiss n::tl) ->
           Some(Url(url,name,string_of_tl title)::r,
-               [Cparenthesis],Cparenthesiss(n-1)::tl)
+               [Cparenthesis],
+               Cparenthesiss(n-1)::tl)
         | x,y ->
           eprintf "x=%s y=%s\n%!"
             (destring_of_tl x) (destring_of_tl y);
@@ -1063,11 +1037,12 @@ and maybe_link rev_main_loop r p l =
   read_name l
 
 (** code that starts with one or several backquote(s) *)
-let bcode (r:t) (p:Omd_representation.tok list)
-    (l:Omd_representation.tok list)
-    : t * Omd_representation.tok list * Omd_representation.tok list =
-  let e, tl = match l with ((Backquote|Backquotes _) as e)::tl -> e, tl
-    | _ -> (* bcode is wrongly called *) assert false in
+let bcode r p l =
+  let e, tl =
+    match l with
+    | (Backquote|Backquotes _ as e)::tl -> e, tl
+    | _ -> (* bcode is wrongly called *) assert false 
+  in
   let rec code_block accu = function
     | [] ->
       List.rev accu, []
@@ -1110,12 +1085,10 @@ let bcode (r:t) (p:Omd_representation.tok list)
     in
     (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
 
-let icode (r:t) (p:Omd_representation.tok list)
-    (l:Omd_representation.tok list)
-    : t * Omd_representation.tok list * Omd_representation.tok list =
-      (** indented code:
-          returns (r,p,l) where r is the result, p is the last thing read,
-          l is the remains *)
+let icode r p l =
+  (* indented code:
+     returns (r,p,l) where r is the result, p is the last thing read,
+     l is the remains *)
   let accu = Buffer.create 42 in
   let rec loop = function
     | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->
@@ -1139,10 +1112,8 @@ let icode (r:t) (p:Omd_representation.tok list)
 
 (** new_list: returns (r,p,l) where r is the result, p is the last thing
     read, l is the remains *)
-    (* TODO: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
-let new_list rev_main_loop main_loop
-    (o:bool) (r:t) (p:Omd_representation.tok list) (l:Omd_representation.tok list)
-    : (t * Omd_representation.tok list * Omd_representation.tok list) =
+    (* FIXME: make [o] use [type o = Ordered | Unordered] instead of [bool]  *)
+let new_list rev_main_loop main_loop (o:bool) r p l =
   if debug then
     eprintf "new_list p=(%s) l=(%s)\n%!" (destring_of_tl p)
       (destring_of_tl l);
@@ -1419,8 +1390,8 @@ let main_parse extensions lexemes =
       end
 
     (* minus *)
-    | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _)
-      ::_ -> (* maybe hr *)
+    | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _) ::_ ->
+      (* maybe hr *)
       begin match hr_m lexemes with
       | None -> (* no hr, so it's a list *)
         let md, new_p, new_l =
