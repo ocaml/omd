@@ -3,3 +3,12 @@ _build/
 *.log
 *.native
 *.byte
+#*
+.#*
+*~
+*.cmi
+*.cma
+*.cmo
+*.cmx
+*.cmxa
+
