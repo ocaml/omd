@@ -156,7 +156,7 @@ let rec html_of_md md =
         let href, title =
           rc#get_ref name
         in
-        loop indent (Url(href,text,title)::tl)
+        loop indent (Url(href,[Text text],title)::tl)
     | Img_ref(rc, name, alt) :: tl ->
         let src, title =
           rc#get_ref name
@@ -261,7 +261,7 @@ let rec html_of_md md =
         Buffer.add_string b s;
         loop indent tl
     | Url (href,s,title) :: tl ->
-        let s = htmlentities s in
+        let s = html_of_md s in
           Buffer.add_string b "<a href='";
           Buffer.add_string b (htmlentities href);
           Buffer.add_string b "'";
@@ -397,7 +397,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop  tl
     | Url (href,s,title) :: tl ->
-        bprintf b "(Url %S %S %S)" href s title;
+        bprintf b "(Url %S %s %S)" href (html_of_md s) title;
         loop  tl
     | H1 md :: tl ->
         Buffer.add_string b "(H1";

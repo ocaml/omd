@@ -328,7 +328,10 @@ let uemph_or_bold n l =
    for which it returns false. If [l] is empty, then returns [l]. *)
 let rec eat f = function
   | [] -> []
-  | e::tl -> if f e then eat f tl else e::tl
+  | e::tl as l -> if f e then eat f tl else l
+
+let eat_blank =
+  eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
 
 let split_norev f =
   let rec loop r = function
@@ -523,102 +526,343 @@ let rec fix_lists = function
 exception NL_exception
 exception Premature_ending
 
-let read_until_gt ?(no_nl=false) l =
-  let rec loop accu = function
-    | Greaterthan :: tl -> (List.rev (accu)), tl
-    | Greaterthans 0 :: tl -> (List.rev (accu)), Greaterthan::tl
-    | Greaterthans n :: tl -> (List.rev (accu)), Greaterthans(n-1)::tl
+(*
+  List.iter (fun (a,b,c) ->
+  print_endline ("let read_until_"^a^" ?(no_nl=false) l =
+  let rec loop accu n = function
+    | (Backslash as a) :: ("^b^" as b) :: tl ->
+      loop (b::a::accu) n tl
+    | Backslash :: ("^b^"s 0) :: tl ->
+      loop ("^b^"::Backslash::accu) n ("^b^"::tl)
+    | (Backslashs 0 as e) :: tl ->
+      loop (e::accu) n tl
+    | (Backslashs x as e) :: tl ->
+      if x mod 2 = 0 then
+        loop (e::accu) n tl
+      else
+        loop (Backslashs(x-1)::accu) n (Backslash::tl)
+"^(if c<>"" then "
+    | (Backslash as a) :: ("^c^" as b) :: tl ->
+      loop (b::a::accu) n tl
+    | Backslash :: ("^c^"s 0) :: tl ->
+      loop ("^c^"::Backslash::accu) n ("^c^"::tl)
+    | "^c^" as e :: tl ->
+      loop (e::accu) (n+1) tl
+    | "^c^"s x as e :: tl ->
+      loop (e::accu) (n+x+2) tl
+" else "")^
+"    | "^b^" as e :: tl ->
+      if n = 0 then
+        List.rev accu, tl
+      else
+        loop (e::accu) (n-1) tl
+    | "^b^"s 0 :: tl ->
+      if n = 0 then
+        List.rev accu, "^b^"::tl
+      else
+        loop ("^b^"::accu) (n-1) ("^b^"::tl)
+    | "^b^"s n :: tl ->
+      List.rev accu, "^b^"s(n-1)::tl
     | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
+      if no_nl then
+        raise NL_exception
+      else
+        loop (e::accu) n tl
+    | e::tl ->
+      loop (e::accu) n tl
+    | [] ->
+      raise Premature_ending
+  in loop [] 0 l
+"))
 
-let read_until_lt ?(no_nl=false) l =
-  let rec loop accu = function
-    | Lessthan :: tl -> (List.rev (accu)), tl
-    | Lessthans 0 :: tl -> (List.rev (accu)), Lessthan::tl
-    | Lessthans n :: tl -> (List.rev (accu)), Lessthans(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
+[ "gt", "Greaterthan", "Lessthan";
+  "lt", "Lessthan", "";
+  "cparenth", "Cparenthesis", "Oparenthesis";
+  "oparenth", "Oparenthesis", "";
+  "dq", "Doublequote", "";
+  "q", "Quote", "";
+  "obracket", "Obracket", "";
+  "cbracket", "Cbracket", "Obracket";
+  "space", "Space", "";
+  "newline", "Newline", "";
+  ]
+*)
+
+(* begin generated part *)
+let read_until_gt ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Greaterthan as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Greaterthans 0 :: tl ->
+        loop (Greaterthan :: Backslash :: accu) n (Greaterthan :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Backslash as a)) :: ((Lessthan as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Lessthans 0 :: tl ->
+        loop (Lessthan :: Backslash :: accu) n (Lessthan :: tl)
+    | ((Lessthan as e)) :: tl -> loop (e :: accu) (n + 1) tl
+    | ((Lessthans x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
+    | ((Greaterthan as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Greaterthans 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Greaterthan :: tl))
+        else loop (Greaterthan :: accu) (n - 1) (Greaterthan :: tl)
+    | Greaterthans n :: tl ->
+        ((List.rev accu), ((Greaterthans (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
     | [] -> raise Premature_ending
-  in loop [] l
+  in loop [] 0 l
+  
+let read_until_lt ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Lessthan as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Lessthans 0 :: tl ->
+        loop (Lessthan :: Backslash :: accu) n (Lessthan :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Lessthan as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Lessthans 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Lessthan :: tl))
+        else loop (Lessthan :: accu) (n - 1) (Lessthan :: tl)
+    | Lessthans n :: tl -> ((List.rev accu), ((Lessthans (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_cparenth ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Cparenthesis as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Cparenthesiss 0 :: tl ->
+        loop (Cparenthesis :: Backslash :: accu) n (Cparenthesis :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Backslash as a)) :: ((Oparenthesis as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Oparenthesiss 0 :: tl ->
+        loop (Oparenthesis :: Backslash :: accu) n (Oparenthesis :: tl)
+    | ((Oparenthesis as e)) :: tl -> loop (e :: accu) (n + 1) tl
+    | ((Oparenthesiss x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
+    | ((Cparenthesis as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Cparenthesiss 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Cparenthesis :: tl))
+        else loop (Cparenthesis :: accu) (n - 1) (Cparenthesis :: tl)
+    | Cparenthesiss n :: tl ->
+        ((List.rev accu), ((Cparenthesiss (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_oparenth ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Oparenthesis as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Oparenthesiss 0 :: tl ->
+        loop (Oparenthesis :: Backslash :: accu) n (Oparenthesis :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Oparenthesis as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Oparenthesiss 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Oparenthesis :: tl))
+        else loop (Oparenthesis :: accu) (n - 1) (Oparenthesis :: tl)
+    | Oparenthesiss n :: tl ->
+        ((List.rev accu), ((Oparenthesiss (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_dq ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Doublequote as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Doublequotes 0 :: tl ->
+        loop (Doublequote :: Backslash :: accu) n (Doublequote :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Doublequote as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Doublequotes 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Doublequote :: tl))
+        else loop (Doublequote :: accu) (n - 1) (Doublequote :: tl)
+    | Doublequotes n :: tl ->
+        ((List.rev accu), ((Doublequotes (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_q ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Quote as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Quotes 0 :: tl ->
+        loop (Quote :: Backslash :: accu) n (Quote :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Quote as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Quotes 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Quote :: tl))
+        else loop (Quote :: accu) (n - 1) (Quote :: tl)
+    | Quotes n :: tl -> ((List.rev accu), ((Quotes (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_obracket ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Obracket as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Obrackets 0 :: tl ->
+        loop (Obracket :: Backslash :: accu) n (Obracket :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Obracket as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Obrackets 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Obracket :: tl))
+        else loop (Obracket :: accu) (n - 1) (Obracket :: tl)
+    | Obrackets n :: tl -> ((List.rev accu), ((Obrackets (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_cbracket ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Cbracket as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Cbrackets 0 :: tl ->
+        loop (Cbracket :: Backslash :: accu) n (Cbracket :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Backslash as a)) :: ((Obracket as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Obrackets 0 :: tl ->
+        loop (Obracket :: Backslash :: accu) n (Obracket :: tl)
+    | ((Obracket as e)) :: tl -> loop (e :: accu) (n + 1) tl
+    | ((Obrackets x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
+    | ((Cbracket as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Cbrackets 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Cbracket :: tl))
+        else loop (Cbracket :: accu) (n - 1) (Cbracket :: tl)
+    | Cbrackets n :: tl -> ((List.rev accu), ((Cbrackets (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+  
+let read_until_space ?(no_nl = false) l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Space as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Spaces 0 :: tl ->
+        loop (Space :: Backslash :: accu) n (Space :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Space as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Spaces 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Space :: tl))
+        else loop (Space :: accu) (n - 1) (Space :: tl)
+    | Spaces n :: tl -> ((List.rev accu), ((Spaces (n - 1)) :: tl))
+    | ((Newline | Newlines _ as e)) :: tl ->
+        if no_nl then raise NL_exception else loop (e :: accu) n tl
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+
+let read_until_newline l =
+  let rec loop accu n =
+    function
+    | ((Backslash as a)) :: ((Newline as b)) :: tl ->
+        loop (b :: a :: accu) n tl
+    | Backslash :: Newlines 0 :: tl ->
+        loop (Newline :: Backslash :: accu) n (Newline :: tl)
+    | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
+    | ((Backslashs x as e)) :: tl ->
+        if (x mod 2) = 0
+        then loop (e :: accu) n tl
+        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
+    | ((Newline as e)) :: tl ->
+        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+    | Newlines 0 :: tl ->
+        if n = 0
+        then ((List.rev accu), (Newline :: tl))
+        else loop (Newline :: accu) (n - 1) (Newline :: tl)
+    | Newlines n :: tl -> ((List.rev accu), ((Newlines (n - 1)) :: tl))
+    | e :: tl -> loop (e :: accu) n tl
+    | [] -> raise Premature_ending
+  in loop [] 0 l
+
+(* /end generated part *)
 
 
-let read_until_cparenth ?(no_nl=false) l =
-  let rec loop accu = function
-    | Cparenthesis :: tl -> (List.rev (accu)), tl
-    | Cparenthesiss 0 :: tl -> (List.rev (accu)), Cparenthesis::tl
-    | Cparenthesiss n :: tl -> (List.rev (accu)), Cparenthesiss(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
 
-let read_until_dq ?(no_nl=false) l =
-  let rec loop accu = function
-    | Doublequote :: tl -> (List.rev (accu)), tl
-    | Doublequotes 0 :: tl -> (List.rev (accu)), Doublequote::tl
-    | Doublequotes n :: tl -> (List.rev (accu)), Doublequotes(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
-
-let read_until_q ?(no_nl=false) l =
-  let rec loop accu = function
-    | Quote :: tl -> (List.rev (accu)), tl
-    | Quotes 0 :: tl -> (List.rev (accu)), Quote::tl
-    | Quotes n :: tl -> (List.rev (accu)), Quotes(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
-
-let read_until_space ?(no_nl=false) l =
-  let rec loop accu = function
-    | Space :: tl -> (List.rev (accu)), tl
-    | Spaces 0 :: tl -> (List.rev (accu)), Space::tl
-    | Spaces n :: tl -> (List.rev (accu)), Spaces(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
-
-let read_until_obracket ?(no_nl=false) l =
-  let rec loop accu = function
-    | Obracket :: tl -> (List.rev (accu)), tl
-    | Obrackets 0 :: tl -> (List.rev (accu)), Obracket::tl
-    | Obrackets n :: tl -> (List.rev (accu)), Obrackets(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
-
-let read_until_cbracket ?(no_nl=false) l =
-  let rec loop accu = function
-    | Cbracket :: tl -> (List.rev (accu)), tl
-    | Cbrackets 0 :: tl -> (List.rev (accu)), Cbracket::tl
-    | Cbrackets n :: tl -> (List.rev (accu)), Cbrackets(n-1)::tl
-    | (Newline|Newlines _ as e)::tl ->
-      if no_nl then raise NL_exception;
-      loop (e::accu) tl
-    | e::tl -> loop (e::accu) tl
-    | [] -> raise Premature_ending
-  in loop [] l
 
 (* H1, H2, H3, ... *)
 let read_title rev_main_loop n (r:t) (p:Omd_representation.tok list)
@@ -716,96 +960,107 @@ let emailstyle_quoting rev_main_loop r previous lexemes =
     (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
 
 (* maybe a reference *)
-let maybe_reference rc r p l =
-    (* this function is called when we know it's not a link although
-       it started with a '[' *)
-    (* So it could be a reference or a link definition. *)
-    let rec maybe_ref l =
-      let text, remains = read_until_cbracket l in
-      let () = if try ignore(read_until_obracket text); true
-        with Premature_ending -> false then raise Premature_ending in
-               let blank, remains = read_until_obracket remains in
-               if eat (function (Space|Spaces _|Newline|Newlines _) -> true
-               | _ -> false) blank <> [] then raise Premature_ending;
-               match read_until_cbracket remains with
-               | [], remains ->
-                 let id = string_of_tl text in (* implicit anchor *)
-                 Some(((Ref(rc, id, id))::r), [Cbracket], remains)
-               | id, remains ->
-                 Some(((Ref(rc, string_of_tl id, string_of_tl text))::r),
-                      [Cbracket], remains)
+let maybe_reference main_loop rc r p l =
+  (* this function is called when we know it's not a link although
+     it started with a '[' *)
+  (* So it could be a reference or a link definition. *)
+  let rec maybe_ref l =
+    let text, remains = read_until_cbracket l in
+    let () =
+      if (try ignore(read_until_obracket text); true
+        with Premature_ending -> false) then
+        raise Premature_ending 
+    in
+    let blank, remains = read_until_obracket remains in
+    if eat (function (Space|Spaces _|Newline|Newlines _) -> true
+    | _ -> false) blank <> [] then raise Premature_ending;
+    match read_until_cbracket remains with
+    | [], remains ->
+      let id = string_of_tl text in (* implicit anchor *)
+      Some(((Ref(rc, id, id))::r), [Cbracket], remains)
+    | id, remains ->
+      Some(((Ref(rc, string_of_tl id, string_of_tl text))::r),
+           [Cbracket], remains)
+  in
+  let rec maybe_def l =
+    match read_until_cbracket l with
+    | _, [] -> None
+    | id, (Colon::(Space|Spaces _)::remains)
+    | id, (Colon::remains) ->
+      let url, remains =
+        split
+          (function (Space|Spaces _|Newline|Newlines _) -> false
+          |_ -> true)
+          remains
       in
-      let rec maybe_def l =
-        match read_until_cbracket l with
-        | _, [] -> None
-        | id, (Colon::(Space|Spaces _)::remains)
-        | id, (Colon::remains) ->
-          let url, remains =
-            split (function (Space|Spaces _|Newline|Newlines _) -> false
-            |_ -> true) remains in
-          let title, remains =
-            match eat (function (Space|Spaces _|Newline|Newlines _) -> true
-            | _ -> false) remains with
-            | Doublequotes(0)::tl -> [], tl
-            | Doublequote::tl -> read_until_dq tl
-            | Quotes(0)::tl -> [], tl
-            | Quote::tl -> read_until_q tl
-            | Oparenthesis::tl-> read_until_cparenth tl
-            | l -> [], l
-          in
-          rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
-          Some(r, [Quote], remains)
-        | _ -> None
+      let title, remains =
+        match eat (function (Space|Spaces _|Newline|Newlines _) -> true
+        | _ -> false) remains with
+        | Doublequotes(0)::tl -> [], tl
+        | Doublequote::tl -> read_until_dq tl
+        | Quotes(0)::tl -> [], tl
+        | Quote::tl -> read_until_q tl
+        | Oparenthesis::tl-> read_until_cparenth tl
+        | l -> [], l
       in
-      try maybe_ref l
-      with Premature_ending
+      rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+      Some(r, [Quote], remains)
+    | _ -> None
+  in
+  begin
+    try maybe_ref l
+    with Premature_ending
+    | NL_exception ->
+      try maybe_def l with Premature_ending | NL_exception -> None
+  end
+
+(* maybe a link *)
+and maybe_link rev_main_loop r p l =
+  let read_title name url l =
+    match l with
+    | Doublequote::l ->
+      begin
+        match read_until_dq l with
+        | title, (Cparenthesis::tl)
+        | title, ((Space|Spaces _)::Cparenthesis::tl) ->
+          Some(Url(url,name,string_of_tl title)::r,[Cparenthesis],tl)
+        | title, (Cparenthesiss 0::tl)
+        | title, ((Space|Spaces _)::Cparenthesiss 0::tl) ->
+          Some(Url(url,name,string_of_tl title)::r,[Cparenthesis],Cparenthesis::tl)
+        | title, (Cparenthesiss n::tl)
+        | title, ((Space|Spaces _)::Cparenthesiss n::tl) ->
+          Some(Url(url,name,string_of_tl title)::r,
+               [Cparenthesis],Cparenthesiss(n-1)::tl)
+        | x,y ->
+          eprintf "x=%s y=%s\n%!"
+            (destring_of_tl x) (destring_of_tl y);
+          None
+      end
+    | _ -> None
+  in
+  let read_url name _ l =
+    try
+      try
+        let url, tl = read_until_space ~no_nl:true l in
+        read_title name (string_of_tl url) (eat_blank tl)
+      with
       | NL_exception ->
-        try maybe_def l with Premature_ending | NL_exception -> None
-    (* maybe a link *)
-    and maybe_link r p l =
-      let rec read_title name href res = function
-        | Doublequote::(Cparenthesis as t)::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [t], tl)
-        | Doublequote::Cparenthesiss 0::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [Cparenthesis], Cparenthesis::tl)
-        | Doublequote::Cparenthesiss n::tl ->
-          let title = string_of_tl (List.rev res) in
-          Some(Url(href, name, title)::r, [Cparenthesis],
-               Cparenthesiss(n-1)::tl)
-        | [] ->
-          None
-        | e::tl ->
-          read_title name href (e::res) tl
-      in
-      let rec read_url name res = function
-        | Cparenthesis as t::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [t], tl)
-        | Cparenthesiss 0::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesis::tl)
-        | Cparenthesiss n::tl ->
-          let href = string_of_tl (List.rev res) in
-          Some(Url(href, name, "")::r, [Cparenthesis], Cparenthesiss(n-1)::tl)
-        | (Space|Spaces _)::Doublequote::tl ->
-          let href = string_of_tl (List.rev res) in
-          read_title name href [] tl
-        | [] | (Newline|Newlines _)::_  ->
-          None
-        | e::tl ->
-          read_url name (e::res) tl
-      in
-      let rec read_name res = function
-        | Cbracket::Oparenthesis::tl ->
-          read_url (string_of_tl (List.rev res)) [] tl
-        | [] | Cbracket::_ -> (* failed to read a MD-link *)
-          None
-        | e::tl ->
-          read_name (e::res) tl
-      in
-      read_name [] l
+        let url, tl = read_until_newline l in
+        read_title name (string_of_tl url) (eat_blank tl)
+    with
+    | Premature_ending ->
+      let url, tl = read_until_cparenth l in
+      Some(Url(string_of_tl url, name, "")::r,[Cparenthesis],tl)
+  in
+  let read_name l =
+    try
+      match read_until_cbracket l with
+      | name, (Oparenthesis::tl) ->
+        read_url (rev_main_loop [] [] name) [] (eat_blank tl)
+      | _ -> None
+    with Premature_ending | NL_exception -> None
+  in
+  read_name l
 
 (** code that starts with one or several backquote(s) *)
 let bcode (r:t) (p:Omd_representation.tok list)
@@ -1453,7 +1708,7 @@ let main_parse extensions lexemes =
       in
       begin match read_url [] tl with
       | Some(url, new_tl) ->
-        main_loop (Url(url,url,"")::r) [] new_tl
+        main_loop (Url(url,[Text url],"")::r) [] new_tl
       | None ->
         begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop (Text(string_of_t t)::r) [t] tl
@@ -1640,13 +1895,17 @@ let main_parse extensions lexemes =
       main_loop (NL::NL::r) [Newline] tl
 
     (* [ *)
-    | _, Obracket::tl ->
-      begin match maybe_link r previous tl with
+    | _, (Obracket as t)::tl ->
+      begin match maybe_link main_loop r previous tl with
       | Some(r, p, l) -> main_loop r p l
       | None ->
-        match maybe_reference rc r previous tl with
+        match maybe_reference main_loop rc r previous tl with
         | Some(r, p, l) -> main_loop r p l
-        | None -> main_loop (Text("[")::r) [Obracket] tl
+        | None ->
+          begin match maybe_extension extensions r previous lexemes with
+          | None -> main_loop (Text(string_of_t t)::r) [t] tl
+          | Some(r, p, l) -> main_loop r p l
+          end
       end
 
     (* img *)

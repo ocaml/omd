@@ -32,7 +32,7 @@ and element =
   | Code_block of string (* html entities are to be converted *later* *)
   | Br
   | Hr
-  | Url of href * string * title
+  | Url of href * t * title
   | Ref of ref_container * name * string
   | Img_ref of ref_container * name * alt
   | Html of string
