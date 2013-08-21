@@ -1014,14 +1014,26 @@ and maybe_link rev_main_loop r p l =
       end
     | _ -> None
   in
-  let read_url name _ l =
+  let read_url name l =
     try
       try
         let url, tl = read_until_space ~no_nl:true l in
-        read_title name (string_of_tl url) (eat_blank tl)
+        try
+          ignore(read_until_cparenth url);
+          (* there actually is no title *)
+          let url, tl = read_until_cparenth ~no_nl:true l in
+            Some(Url(string_of_tl url,name,"")::r, [Cparenthesis],tl)
+        with Premature_ending ->
+          read_title name (string_of_tl url) (eat_blank tl)
       with
       | NL_exception ->
         let url, tl = read_until_newline l in
+        try
+          ignore(read_until_cparenth url);
+          (* there actually is no title *)
+          let url, tl = read_until_cparenth ~no_nl:true l in
+            Some(Url(string_of_tl url,name,"")::r, [Cparenthesis],tl)
+        with Premature_ending ->
         read_title name (string_of_tl url) (eat_blank tl)
     with
     | Premature_ending ->
@@ -1032,8 +1044,9 @@ and maybe_link rev_main_loop r p l =
     try
       match read_until_cbracket l with
       | name, (Oparenthesis::tl) ->
-        read_url (rev_main_loop [] [] name) [] (eat_blank tl)
-      | _ -> None
+        read_url (rev_main_loop [] [] name) (eat_blank tl)
+      | _ -> 
+        None
     with Premature_ending | NL_exception -> None
   in
   read_name l
