@@ -930,7 +930,7 @@ let emailstyle_quoting rev_main_loop r _p lexemes =
     (Blockquote(rev_main_loop [] [] block)::r), [Newline], tl
 
 (* maybe a reference *)
-let maybe_reference main_loop rc r p l =
+let maybe_reference ___rev_main_loop rc r p l =
   (* this function is called when we know it's not a link although
      it started with a '[' *)
   (* So it could be a reference or a link definition. *)
@@ -988,7 +988,7 @@ let maybe_reference main_loop rc r p l =
       | Premature_ending | NL_exception -> None
 
 (* maybe a link *)
-and maybe_link rev_main_loop r p l =
+let maybe_link rev_main_loop r p l =
   let read_title name url l =
     match l with
     | Doublequote::l ->
@@ -1104,26 +1104,32 @@ let icode r p l =
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
      l is the remains *)
+  let dummy_tag = Tag(fun r p l -> None) in
   let accu = Buffer.create 42 in
   let rec loop = function
-    | (([]|[Newline|Newlines _]) as p), (((Space|Spaces(0|1))::_) as tl) ->
-          (* 1, 2 or 3 spaces. *)
-      Code_block (Buffer.contents accu)::r, p, tl
+    | (Newline|Newlines _ as p), ((Space|Spaces(0|1))::_ as tl) ->
+      (* 1, 2 or 3 spaces. *)
+      (* -> Return what's been found as code because what follows isn't. *)
+      Code_block (Buffer.contents accu)::r, [p], tl
+    | (Newline|Newlines _ as p), Spaces(n)::tl ->
+      (* At least 4 spaces, it's still code. *)
+      Buffer.add_string accu (string_of_t p);
+      loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
+    | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
+      Code_block (Buffer.contents accu)::r, [p], tl
         (* -> Return what's been found as code because it's no more code. *)
-    | ([]|[Newline|Newlines _]), (Spaces(n) as t)::tl ->
-          (* At least 4 spaces, it's still code. *)
-      Buffer.add_string accu (String.make (n-2) ' ');
-      loop ([t], tl)
-    | ([(Newline|Newlines _)] as p), (not_spaces::_ as tl) -> (* stop *)
-      Code_block (Buffer.contents accu)::r, p, tl
-        (* -> Return what's been found as code because it's no more code. *)
-    | _, e::tl ->
-      Buffer.add_string accu (string_of_t e);
-          (* html entities are to be converted later! *)
-      loop ([e], tl)
+    | p, e::tl ->
+      Buffer.add_string accu (string_of_t p);
+      (* html entities are to be converted later! *)
+      loop (e, tl)
     | p, [] ->
-      Code_block (Buffer.contents accu)::r, p, []
-  in loop ([Newlines 0], l)
+      Buffer.add_string accu (string_of_t p);
+      Code_block (Buffer.contents accu)::r, [p], []
+  in
+    match l with
+      | Spaces n::tl ->
+          loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
+      | _ -> assert false
 
 (** new_list: returns (r,p,l) where r is the result, p is the last thing
     read, l is the remains *)
@@ -1882,10 +1888,10 @@ let main_parse extensions lexemes =
 
     (* [ *)
     | _, (Obracket as t)::tl ->
-      begin match maybe_link main_loop r previous tl with
+      begin match maybe_link rev_main_loop r previous tl with
       | Some(r, p, l) -> main_loop r p l
       | None ->
-        match maybe_reference main_loop rc r previous tl with
+        match maybe_reference rev_main_loop rc r previous tl with
         | Some(r, p, l) -> main_loop r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with

@@ -14,14 +14,15 @@
     if it's not then please report the bug. *)
 
 (********************** TYPES **************************************)
-type ref_container
-(** abstract type for references container *)
-
-type t = element list
+type t = Omd_representation.t
 (** Representation of a Markdown document.  *)
 
+and ref_container =
+    (< add_ref: string -> string -> string -> unit ; 
+     get_ref : string -> (string*string); >)
+
 (** A element of a Markdown document. *)
-and element =
+and element = Omd_representation.element =
   | Paragraph of t
   | Text of string
   | Emph of t
@@ -70,7 +71,7 @@ and href = string
 and title = string
 (** HTML attribute. *)
 
-type tok = 
+type tok = Omd_representation.tok =
 | Ampersand
 | Ampersands of int
 | At
@@ -149,7 +150,6 @@ type tok =
     the parser's extension. In the parser, [Tag] is used (at least) 
     3 times in order to represent metadata or to store data. *)
 
-and extension = t -> tok list -> tok list -> ((t * tok list * tok list) option)
   (** A function that takes the current state of the parser's data and
       returns None if nothing has been changed, otherwise it returns
       the new state.  The current state of the parser's data is [(r,
@@ -158,11 +158,15 @@ and extension = t -> tok list -> tok list -> ((t * tok list * tok list) option)
       how many newlines we've just seen), and [l] is the remaining
       tokens to parse. *)
 
-and extensions = extension list
+
 (** One must use this type to extend the parser. It's a list of
     functions of type [extension]. They are processed in order (the
     head is applied first), so be careful about it. If you use it
     wrong, it will behave wrong. *)
+
+and extensions = extension list
+and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option)) 
+
 
 
 (********************** VALUES **************************************)

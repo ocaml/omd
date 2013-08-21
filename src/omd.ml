@@ -10,7 +10,7 @@ include Omd_backend
 
 let lex : string -> tok list = Omd_lexer.lex
 
-let parse : ?extensions:extensions -> tok list -> t = Omd_parser.parse
+let parse : ?extensions:(Omd_representation.t -> Omd_representation.tok list -> Omd_representation.tok list -> ((t * Omd_representation.tok list * Omd_representation.tok list) option)) list -> tok list -> t = Omd_parser.parse
 
 let to_html : t -> string = html_of_md
 

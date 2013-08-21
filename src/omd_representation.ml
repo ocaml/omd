@@ -18,7 +18,6 @@ class ref_container = object
     in r
 end
 
-
 type element =
 | Paragraph of t
 | Text of string
@@ -31,8 +30,8 @@ type element =
 | Br
 | Hr
 | Url of href * t * title
-| Ref of ref_container * name * string
-| Img_ref of ref_container * name * alt
+  | Ref of ref_container * name * string
+  | Img_ref of ref_container * name * alt
 | Html of string
 | Html_block of string
 | H1 of t
@@ -51,6 +50,7 @@ and src = string
 and href = string
 and title = string
 and t = element list
+
 
 type tok = (* Cs(n) means (n+2) times C *)
 | Ampersand
@@ -127,6 +127,7 @@ type tok = (* Cs(n) means (n+2) times C *)
 | Word of string
 | Tag of extension
 
-and extension =
-  t -> tok list -> tok list -> ((t * tok list * tok list) option)
-and extensions = extension list
+and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option))
+
+type extensions = extension list
+
