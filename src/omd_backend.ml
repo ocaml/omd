@@ -148,7 +148,12 @@ let rec html_of_md md =
   let b = Buffer.create 42 in
   let rec loop indent = function
     | X x :: tl ->
-        Buffer.add_string b (x#to_html ~indent:indent ());
+        (match x#to_t() with
+           | Some t -> loop indent t
+           | None ->
+               match x#to_html ~indent:indent () with
+                 | Some s -> Buffer.add_string b s
+                 | None -> ());
         loop indent tl
     | Blockquote q :: tl ->
         Buffer.add_string b "<blockquote>";
@@ -334,7 +339,16 @@ let rec sexpr_of_md md =
   let b = Buffer.create 42 in
   let rec loop = function
     | X x :: tl ->
-        Buffer.add_string b (x#to_sexpr ());
+
+        (match x#to_t() with
+           | Some t -> loop t
+           | None ->
+               match x#to_sexpr() with
+                 | Some s -> Buffer.add_string b s
+                 | None ->
+                     match x#to_html() with
+                       | Some s -> Buffer.add_string b s
+                       | None -> ());
         loop tl
     | Blockquote q :: tl ->
         Buffer.add_string b "(Blockquote";

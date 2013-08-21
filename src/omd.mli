@@ -48,10 +48,11 @@ and element =
   | NL
   | X of (< (* extension of [element]. *) 
             name: string;
-            to_html: ?indent:int -> unit -> string;
+            to_html: ?indent:int -> unit -> string option;
             (* N.B. [to_html] means that htmlentities will not
                be applied to its output. *)
-            to_sexpr: unit -> string;
+            to_sexpr: unit -> string option;
+            to_t: unit -> t option;
             >)
 
 and name = string

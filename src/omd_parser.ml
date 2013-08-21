@@ -1101,7 +1101,7 @@ let icode r p l =
           (* At least 4 spaces, it's still code. *)
       Buffer.add_string accu (String.make (n-2) ' ');
       loop ([t], tl)
-    | ([(Newline|Newlines _)] as p), not_spaces::tl -> (* stop *)
+    | ([(Newline|Newlines _)] as p), (not_spaces::_ as tl) -> (* stop *)
       Code_block (Buffer.contents accu)::r, p, tl
         (* -> Return what's been found as code because it's no more code. *)
     | _, e::tl ->

@@ -44,7 +44,7 @@ type element =
 | Blockquote of t
 | Img of alt * src * title
 | NL
-| X of < name:string; to_html: ?indent:int -> unit -> string; to_sexpr:unit -> string; >
+| X of < name:string; to_html: ?indent:int -> unit -> string option; to_sexpr:unit -> string option; to_t: unit -> t option >
 and name = string
 and alt = string
 and src = string
