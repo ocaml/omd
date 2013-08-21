@@ -373,7 +373,7 @@ let tag_maybe_h1 rev_main_loop =
         None
       | Some(title, tl) ->
         let title = H1(rev_main_loop [] [] title) in
-        Some((title::r), [Newline], l)
+        Some((title::r), [Newline], tl)
       end
     | _ -> assert false (* -> the tag generator would be broken *)
   )
