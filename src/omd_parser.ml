@@ -474,6 +474,8 @@ let hr_s l =
    function.
 *)
 let rec fix_lists = function
+  | X _ as x :: tl ->
+      x :: fix_lists tl
   | Ul[] :: tl ->
     fix_lists tl
   | Ol[] :: tl ->

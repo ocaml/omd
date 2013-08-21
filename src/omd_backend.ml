@@ -147,6 +147,9 @@ let rec html_of_md md =
   in
   let b = Buffer.create 42 in
   let rec loop indent = function
+    | X x :: tl ->
+        Buffer.add_string b (x#to_html ~indent:indent ());
+        loop indent tl
     | Blockquote q :: tl ->
         Buffer.add_string b "<blockquote>";
         loop indent q;
@@ -330,11 +333,14 @@ let rec html_of_md md =
 let rec sexpr_of_md md =
   let b = Buffer.create 42 in
   let rec loop = function
+    | X x :: tl ->
+        Buffer.add_string b (x#to_sexpr ());
+        loop tl
     | Blockquote q :: tl ->
         Buffer.add_string b "(Blockquote";
-        loop  q;
+        loop q;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | Ref(rc, name, text) :: tl ->
         bprintf b "(Ref %S %S)" name text;
         loop tl
@@ -368,70 +374,70 @@ let rec sexpr_of_md md =
         bprintf b "(Ol";
         List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
         bprintf b ")";
-        loop  tl
+        loop tl
     | Ul l :: tl ->
         bprintf b "(Ul";
         List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
         bprintf b ")";
-        loop  tl
+        loop tl
     | Code c :: tl ->
         bprintf b "(Code %S)" c;
-        loop  tl
+        loop tl
     | Code_block c :: tl ->
         bprintf b "(Code_block %s)" c;
-        loop  tl
+        loop tl
     | Br :: tl ->
         Buffer.add_string b "(Br)";
-        loop  tl
+        loop tl
     | Hr :: tl ->
         Buffer.add_string b "(Hr)";
-        loop  tl
+        loop tl
     | Html s :: tl ->
         Buffer.add_string b "(Html ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | Html_block s :: tl ->
         Buffer.add_string b "(Html_block ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | Url (href,s,title) :: tl ->
         bprintf b "(Url %S %s %S)" href (html_of_md s) title;
-        loop  tl
+        loop tl
     | H1 md :: tl ->
         Buffer.add_string b "(H1";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | H2 md :: tl ->
         Buffer.add_string b "(H2";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | H3 md :: tl ->
         Buffer.add_string b "(H3";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | H4 md :: tl ->
         Buffer.add_string b "(H4";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | H5 md :: tl ->
         Buffer.add_string b "(H5";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | H6 md :: tl ->
         Buffer.add_string b "(H6";
-        loop  md;
+        loop md;
         Buffer.add_string b ")";
-        loop  tl
+        loop tl
     | NL :: tl ->
         Buffer.add_string b "(NL)";
-        loop  tl
+        loop tl
     | [] -> ()
   in
     loop md;

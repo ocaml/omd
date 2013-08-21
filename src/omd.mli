@@ -46,6 +46,13 @@ and element =
   | Blockquote of t
   | Img of alt * src * title
   | NL
+  | X of (< (* extension of [element]. *) 
+            name: string;
+            to_html: ?indent:int -> unit -> string;
+            (* N.B. [to_html] means that htmlentities will not
+               be applied to its output. *)
+            to_sexpr: unit -> string;
+            >)
 
 and name = string
 (** Markdown reference name. *)
