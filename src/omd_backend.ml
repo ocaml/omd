@@ -123,8 +123,75 @@ let make_paragraphs md =
   in
     loop [] [] md
 
+let text_of_md md =
+  let b = Buffer.create 42 in
+  let rec loop = function
+    | X _ :: tl ->
+        loop tl
+    | Blockquote q :: tl ->
+        loop q;
+        loop tl
+    | Ref(rc, name, text) :: tl ->
+        Buffer.add_string b (htmlentities name);
+        loop tl
+    | Img_ref(rc, name, alt) :: tl ->
+        Buffer.add_string b (htmlentities name);
+        loop tl
+    | Paragraph md :: tl ->
+        loop md;
+        loop tl
+    | Img(alt, src, title) :: tl ->
+        Buffer.add_string b (htmlentities alt);
+        loop tl
+    | Text t :: tl ->
+        Buffer.add_string b (htmlentities t);
+        loop tl
+    | Emph md :: tl ->
+        loop md;
+        loop tl
+    | Bold md :: tl ->
+        loop md;
+        loop tl
+    | Ul l :: tl ->
+        List.iter loop l;
+        loop tl
+    | Ol l :: tl ->
+        List.iter loop l;
+        loop tl
+    | Code_block c :: tl ->
+        Buffer.add_string b (htmlentities c);
+        loop tl
+    | Code c :: tl ->
+        Buffer.add_string b (htmlentities c);
+        loop tl
+    | Br :: tl ->
+        loop tl
+    | Hr :: tl ->
+        loop tl
+    | Html s :: tl ->
+        loop tl
+    | Html_block s :: tl ->
+        loop tl
+    | Url (href,s,title) :: tl ->
+        loop s;
+        loop tl
+    | H1 md :: tl 
+    | H2 md :: tl
+    | H3 md :: tl
+    | H4 md :: tl
+    | H5 md :: tl
+    | H6 md :: tl ->
+        loop md;
+        loop tl
+    | NL :: tl ->
+        loop tl
+    | [] -> ()
+  in
+    loop md;
+    Buffer.contents b
 
-let rec html_of_md md =
+
+let rec html_and_headers_of_md md =
   let ids = object(this)
     val mutable ids = StringSet.empty
     method mangle id =
@@ -146,12 +213,13 @@ let rec html_of_md md =
       loop 0
   in
   let b = Buffer.create 42 in
+  let headers = ref [] in
   let rec loop indent = function
     | X x :: tl ->
-        (match x#to_t() with
+        (match x#to_t md with
            | Some t -> loop indent t
            | None ->
-               match x#to_html ~indent:indent () with
+               match x#to_html ~indent:indent html_of_md md with
                  | Some s -> Buffer.add_string b s
                  | None -> ());
         loop indent tl
@@ -164,12 +232,17 @@ let rec html_of_md md =
         let href, title =
           rc#get_ref name
         in
-        loop indent (Url(href,[Text text],title)::tl)
+        loop indent
+          (Url(htmlentities href,
+              [Text(text)],
+              htmlentities title)
+            ::tl)
     | Img_ref(rc, name, alt) :: tl ->
         let src, title =
           rc#get_ref name
         in
-        loop indent (Img(alt,src,title)::tl)
+        loop indent
+          (Img(htmlentities alt,htmlentities src,htmlentities title)::tl)
     | Paragraph md :: tl ->
         (let s = html_of_md md in
            if empty s then
@@ -245,7 +318,6 @@ let rec html_of_md md =
         Buffer.add_string b "</ol>";
         if pindent then Buffer.add_char b '\n';
         loop indent tl
-
     | Code_block c :: tl ->
         Buffer.add_string b "<pre><code>";
         Buffer.add_string b (htmlentities c);
@@ -283,48 +355,66 @@ let rec html_of_md md =
           Buffer.add_string b s;
           Buffer.add_string b "</a>";
           loop indent tl
-    | H1 md :: tl ->
+    | (H1 md as e) :: tl ->
       let ih = html_of_md md in
-      let id = id_of_string ids ih in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
       Buffer.add_string b "<h1 id=\"";
       Buffer.add_string b id;
       Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h1>";
       loop indent tl
-    | H2 md :: tl ->
+    | (H2 md as e) :: tl ->
       let ih = html_of_md md in
-      let id = id_of_string ids ih in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
       Buffer.add_string b "<h2 id=\"";
       Buffer.add_string b id;
       Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h2>";
       loop indent tl
-    | H3 md :: tl ->
+    | (H3 md as e) :: tl ->
       let ih = html_of_md md in
-      let id = id_of_string ids ih in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
       Buffer.add_string b "<h3 id=\"";
       Buffer.add_string b id;
       Buffer.add_string b "\">";
       Buffer.add_string b ih;
       Buffer.add_string b "</h3>";
       loop indent tl
-    | H4 md :: tl ->
-        Buffer.add_string b "<h4>";
-        loop indent md;
-        Buffer.add_string b "</h4>";
-        loop indent tl
-    | H5 md :: tl ->
-        Buffer.add_string b "<h5>";
-        loop indent md;
-        Buffer.add_string b "</h5>";
-        loop indent tl
-    | H6 md :: tl ->
-        Buffer.add_string b "<h6>";
-        loop indent md;
-        Buffer.add_string b "</h6>";
-        loop indent tl
+    | (H4 md as e) :: tl ->
+      let ih = html_of_md md in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
+      Buffer.add_string b "<h4 id=\"";
+      Buffer.add_string b id;
+      Buffer.add_string b "\">";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h4>";
+      loop indent tl
+    | (H5 md as e) :: tl ->
+      let ih = html_of_md md in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
+      Buffer.add_string b "<h5 id=\"";
+      Buffer.add_string b id;
+      Buffer.add_string b "\">";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h5>";
+      loop indent tl
+    | (H6 md as e) :: tl ->
+      let ih = html_of_md md in
+      let id = id_of_string ids (text_of_md md) in
+      headers := (e, id, ih) :: !headers;
+      Buffer.add_string b "<h6 id=\"";
+      Buffer.add_string b id;
+      Buffer.add_string b "\">";
+      Buffer.add_string b ih;
+      Buffer.add_string b "</h6>";
+      loop indent tl
     | NL :: tl ->
         if not(smdnl) then Buffer.add_string b "<br />";
         Buffer.add_char b '\n';
@@ -332,7 +422,12 @@ let rec html_of_md md =
     | [] -> ()
   in
     loop 0 md;
-    Buffer.contents b
+    Buffer.contents b, List.rev !headers
+
+and html_of_md md =
+  fst (html_and_headers_of_md md)
+and headers_of_md md =
+  snd (html_and_headers_of_md md)
 
 
 let rec sexpr_of_md md =
@@ -340,13 +435,13 @@ let rec sexpr_of_md md =
   let rec loop = function
     | X x :: tl ->
 
-        (match x#to_t() with
+        (match x#to_t md with
            | Some t -> loop t
            | None ->
-               match x#to_sexpr() with
+               match x#to_sexpr sexpr_of_md md with
                  | Some s -> Buffer.add_string b s
                  | None ->
-                     match x#to_html() with
+                     match x#to_html ~indent:0 html_of_md md with
                        | Some s -> Buffer.add_string b s
                        | None -> ());
         loop tl

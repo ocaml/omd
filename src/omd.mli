@@ -48,13 +48,12 @@ and element = Omd_representation.element =
   | Img of alt * src * title
   | NL
   | X of (< (* extension of [element]. *) 
-            name: string;
-            to_html: ?indent:int -> unit -> string option;
-            (* N.B. [to_html] means that htmlentities will not
-               be applied to its output. *)
-            to_sexpr: unit -> string option;
-            to_t: unit -> t option;
-            >)
+           name: string;
+           (* N.B. [to_html] means that htmlentities will not
+              be applied to its output. *)
+           to_html: ?indent:int -> (t -> string) -> t -> string option;
+           to_sexpr: (t -> string) -> t -> string option;
+           to_t: t -> t option >)
 
 and name = string
 (** Markdown reference name. *)
@@ -197,6 +196,10 @@ val to_html : t -> string
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] and [Html_block of string]
     into your HTML representation.  *)
+
+
+val to_text : t -> string
+(** Translate markdown representation into raw text. *)
 
 
 ;;

@@ -14,6 +14,8 @@ let parse : ?extensions:(Omd_representation.t -> Omd_representation.tok list -> 
 
 let to_html : t -> string = html_of_md
 
+let to_text : t -> string = text_of_md
+
 let html_of_string (html:string) : string =
   html_of_md (parse (lex html))
 

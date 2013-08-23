@@ -30,8 +30,8 @@ type element =
 | Br
 | Hr
 | Url of href * t * title
-  | Ref of ref_container * name * string
-  | Img_ref of ref_container * name * alt
+| Ref of ref_container * name * string
+| Img_ref of ref_container * name * alt
 | Html of string
 | Html_block of string
 | H1 of t
@@ -43,7 +43,11 @@ type element =
 | Blockquote of t
 | Img of alt * src * title
 | NL
-| X of < name:string; to_html: ?indent:int -> unit -> string option; to_sexpr:unit -> string option; to_t: unit -> t option >
+| X of (<
+        name: string;
+        to_html: ?indent:int -> (t -> string) -> t -> string option;
+        to_sexpr: (t -> string) -> t -> string option;
+        to_t: t -> t option >)
 and name = string
 and alt = string
 and src = string
