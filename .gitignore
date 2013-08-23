@@ -2,6 +2,7 @@ _build/
 *.data
 *.log
 *.native
+*.opt
 *.byte
 #*
 .#*
@@ -11,4 +12,5 @@ _build/
 *.cmo
 *.cmx
 *.cmxa
-
+*.o
+omd
