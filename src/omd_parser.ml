@@ -131,8 +131,6 @@ let unindent n lexemes =
   | (e::tl), right -> fix 1 e tl, right
 
 
-
-
 let rec is_blank = function
   | (Space | Spaces _ | Newline | Newlines _) :: tl ->
     is_blank tl
@@ -147,9 +145,10 @@ let fsplit_norev ?(excl=(fun _ -> false)) ~f l : ('a list * 'a list) option =
     | e::tl as l ->
       if excl e then
         None
-      else if f e then
-        Some(accu, l)
-      else
+      else match f l with
+      | Some(left, right) ->
+        Some(left@accu, right)
+      | None ->
         loop (e::accu) tl
   in loop [] l
 
@@ -168,7 +167,7 @@ let emph_or_bold (n:int) (l:Omd_representation.tok list)
         match
           fsplit_norev
             ~excl:(function Newlines _ -> true| _ -> false)
-            ~f:(function (Star|Stars _) -> true| _ -> false)
+            ~f:(function (Star|Stars _ as s)::tl -> Some([s],tl)| _ -> None)
             tl
         with
         | None -> None
@@ -218,7 +217,9 @@ let uemph_or_bold (n:int) (l:Omd_representation.tok list)
         match
           fsplit_norev
             ~excl:(function Newlines _ -> true| _ -> false)
-            ~f:(function (Underscore|Underscores _) -> true| _ -> false)
+            ~f:(function
+            | (Underscore|Underscores _ as u)::tl -> Some([u],tl)
+            | _ -> None)
             tl
         with
         | None -> None
@@ -268,7 +269,9 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
         match
           fsplit_norev
             ~excl:(function Newlines _ -> true| _ -> false)
-            ~f:(function (Underscore|Underscores _) -> true| _ -> false)
+            ~f:(function
+            |(Underscore|Underscores _ as u)::tl -> Some([u],tl)
+            | _ -> None)
             tl
         with
         | None -> None
@@ -1383,6 +1386,28 @@ let main_parse extensions lexemes =
         main_loop r p l
       | None ->
         main_loop r previous tl
+      end
+
+    (* HTML comments *)
+    | _, (Lessthan as t)::(Exclamation::Minuss 0::c as tl) ->
+      begin
+        let f = function
+          | (Minuss _ as m)::(Greaterthan|Greaterthans _ as g)::tl ->
+            Some([g;m], tl)
+          | _ -> None
+        in
+        match fsplit ~f:f lexemes with
+        | None ->
+          begin match maybe_extension extensions r previous lexemes with
+          | None -> main_loop (Text(string_of_t t)::r) [t] tl
+          | Some(r, p, l) -> main_loop r p l
+          end
+        | Some (comments, new_tl) ->
+          main_loop
+            (Html(string_of_tl comments)::r)
+            [Greaterthan]
+            new_tl
+
       end
 
     (* email-style quoting *)
