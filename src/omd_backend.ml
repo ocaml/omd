@@ -102,8 +102,13 @@ let make_paragraphs md =
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
+    | Html_comments _ as e :: tl ->
+      if cp = [] then
+        loop cp (e::accu) tl
+      else
+        loop (e::cp) accu tl
     | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
-       | Html_block _ ) as e :: tl->
+       | Html_block _) as e :: tl->
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
         else
@@ -171,6 +176,8 @@ let text_of_md md =
     | Html s :: tl ->
         loop tl
     | Html_block s :: tl ->
+        loop tl
+    | Html_comments s :: tl ->
         loop tl
     | Url (href,s,title) :: tl ->
         loop s;
@@ -338,6 +345,9 @@ let rec html_and_headers_of_md md =
         Buffer.add_string b s;
         loop indent tl
     | Html_block s :: tl ->
+        Buffer.add_string b s;
+        loop indent tl
+    | Html_comments s :: tl ->
         Buffer.add_string b s;
         loop indent tl
     | Url (href,s,title) :: tl ->
@@ -508,6 +518,11 @@ let rec sexpr_of_md md =
         loop tl
     | Html_block s :: tl ->
         Buffer.add_string b "(Html_block ";
+        Buffer.add_string b s;
+        Buffer.add_string b ")";
+        loop tl
+    | Html_comments s :: tl ->
+        Buffer.add_string b "(Html_comments ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
         loop tl
