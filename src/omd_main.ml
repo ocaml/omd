@@ -67,8 +67,9 @@ let otoc = ref false
 let toc = ref false
 let omarkdown = ref false
 let notags = ref false
+let toc_level = ref 2
 
-let make_toc md =
+let make_toc ?(level=2) md =
   (* bad performance but particularly simple to implement *)
   let b = Buffer.create 42 in
   let rec loop = function
@@ -76,18 +77,23 @@ let make_toc md =
       Printf.bprintf b "* [%s](#%s)\n" ih id;
       loop tl
     | (H2 e, id, ih) :: tl ->
+      if level >= 2 then
       Printf.bprintf b " * [%s](#%s)\n" ih id;
       loop tl
     | (H3 e, id, ih) :: tl ->
+      if level >= 3 then
       Printf.bprintf b "  * [%s](#%s)\n" ih id;
       loop tl
     | (H4 e, id, ih) :: tl ->
+      if level >= 4 then
       Printf.bprintf b "   * [%s](#%s)\n" ih id;
       loop tl
     | (H5 e, id, ih) :: tl ->
+      if level >= 5 then
       Printf.bprintf b "    * [%s](#%s)\n" ih id;
       loop tl
     | (H6 e, id, ih) :: tl ->
+      if level >= 6 then
       Printf.bprintf b "     * [%s](#%s)\n" ih id;
       loop tl
     | [] -> ()
@@ -167,6 +173,7 @@ let main () =
         "-notags", Set(notags), " Output without the HTML tags.";
         "-toc", Set(toc), "n Replace `*Table of contents*' by the table of contents of depth n.";
         "-otoc", Set(otoc), "f Only output the table of contents to file f instead of inplace.";
+        "-tl", Set_int(toc_level), "f Only output the table of contents to file f instead of inplace.";
 
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
@@ -204,7 +211,7 @@ let main () =
       let open Omd in
       output_string output
         ((if !notags then to_text else to_html)
-            ((if !otoc then make_toc else make_paragraphs)
+            ((if !otoc then make_toc ~level:!toc_level else make_paragraphs)
                 (parse (* ~extension:(Omd_xtxt.get()) *)
                    (preprocess(lex (Buffer.contents b)))))
         );

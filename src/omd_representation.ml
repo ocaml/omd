@@ -34,6 +34,7 @@ type element =
 | Img_ref of ref_container * name * alt
 | Html of string
 | Html_block of string
+| Html_comments of string
 | H1 of t
 | H2 of t
 | H3 of t

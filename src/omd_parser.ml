@@ -504,7 +504,7 @@ let rec fix_lists = function
   | Bold e :: tl ->
     Bold(fix_lists e)::fix_lists tl
   | (Code _ |Code_block _ | Br | Hr | Ref _ | Img_ref _ | Url _ |
-      Html _ | Html_block _ as e) :: tl ->
+      Html _ | Html_block _ | Html_comments _ as e) :: tl ->
     e::fix_lists tl
   | H1 e :: tl ->
     H1(fix_lists e)::fix_lists tl
@@ -1404,7 +1404,7 @@ let main_parse extensions lexemes =
           end
         | Some (comments, new_tl) ->
           main_loop
-            (Html(string_of_tl comments)::r)
+            (Html_comments(string_of_tl comments)::r)
             [Greaterthan]
             new_tl
 
