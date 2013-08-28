@@ -68,6 +68,7 @@ let toc = ref false
 let omarkdown = ref false
 let notags = ref false
 let toc_level = ref 2
+let protect_html_comments = ref false
 
 let make_toc ?(level=2) md =
   (* bad performance but particularly simple to implement *)
@@ -101,6 +102,31 @@ let make_toc ?(level=2) md =
   in
   loop (Omd_backend.headers_of_md md);
   parse(lex(Buffer.contents b))
+
+let patch_html_comments l =
+  let htmlcomments s =
+    let b = Buffer.create (String.length s) in
+      for i = 0 to 3 do
+        Buffer.add_char b s.[i]
+      done;
+      for i = 4 to String.length s - 4 do
+        match s.[i] with
+          | '-' as c -> Printf.bprintf b "&#%d;" (int_of_char c)
+          | c -> Buffer.add_char b c
+      done;
+      for i = String.length s - 3 to String.length s - 1 do
+        Buffer.add_char b s.[i]
+      done;
+      Buffer.contents b
+  in
+  let rec loop accu = function
+  | Html_comments s :: tl ->
+      loop (Html_comments(htmlcomments s)::accu) tl
+  | e :: tl ->
+      loop (e :: accu) tl
+  | [] -> List.rev accu
+  in loop [] l
+
 
 let tag_toc l =
   if !toc then
@@ -174,7 +200,7 @@ let main () =
         "-toc", Set(toc), "n Replace `*Table of contents*' by the table of contents of depth n.";
         "-otoc", Set(otoc), "f Only output the table of contents to file f instead of inplace.";
         "-tl", Set_int(toc_level), "f Only output the table of contents to file f instead of inplace.";
-
+        "-H", Set(protect_html_comments), " Protect HTML comments.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,
@@ -209,21 +235,28 @@ let main () =
       done; assert false
     with End_of_file ->
       let open Omd in
-      output_string output
-        ((if !notags then to_text else to_html)
-            ((if !otoc then make_toc ~level:!toc_level else make_paragraphs)
-                (parse (* ~extension:(Omd_xtxt.get()) *)
-                   (preprocess(lex (Buffer.contents b)))))
-        );
-      flush output;
-      try
-        (try ignore (Sys.getenv "DEBUG") with
-          Not_found -> raise Break
-        );
-        print_endline
-          (Omd_backend.sexpr_of_md
-             (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))))
-      with Break -> ()
+      let lexed = lex (Buffer.contents b) in
+      let preprocessed = preprocess lexed in
+      let parsed1 = parse preprocessed in
+      let parsed2 =
+        if !protect_html_comments then 
+          patch_html_comments parsed1
+        else
+          parsed1
+      in
+      let parsed = parsed2 in
+      let o1 = (* make either TOC or paragraphs *)
+        (if !otoc then make_toc ~level:!toc_level else make_paragraphs)
+          parsed in
+      let o2 = (* output either Text or HTML *)
+        (if !notags then to_text else to_html) o1
+      in
+        output_string output o2;
+        flush output;
+        if Omd_utils.debug then
+          print_endline
+            (Omd_backend.sexpr_of_md
+               (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))));
   )
     input_files
 
