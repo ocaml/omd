@@ -67,34 +67,36 @@ let otoc = ref false
 let toc = ref false
 let omarkdown = ref false
 let notags = ref false
-let toc_level = ref 2
+let toc_depth = ref 2
+let toc_start = ref 1
 let protect_html_comments = ref false
 
-let make_toc ?(level=2) md =
+let make_toc ?(start_level=1) ?(depth=2) md =
   (* bad performance but particularly simple to implement *)
   let b = Buffer.create 42 in
   let rec loop = function
     | (H1 e, id, ih) :: tl ->
+      if start_level <= 1 && start_level + depth > 1 then
       Printf.bprintf b "* [%s](#%s)\n" ih id;
       loop tl
     | (H2 e, id, ih) :: tl ->
-      if level >= 2 then
+      if start_level <= 2 && start_level + depth > 2 then
       Printf.bprintf b " * [%s](#%s)\n" ih id;
       loop tl
     | (H3 e, id, ih) :: tl ->
-      if level >= 3 then
+      if start_level <= 3 && start_level + depth > 3 then
       Printf.bprintf b "  * [%s](#%s)\n" ih id;
       loop tl
     | (H4 e, id, ih) :: tl ->
-      if level >= 4 then
+      if start_level <= 4 && start_level + depth > 4 then
       Printf.bprintf b "   * [%s](#%s)\n" ih id;
       loop tl
     | (H5 e, id, ih) :: tl ->
-      if level >= 5 then
+      if start_level <= 5 && start_level + depth > 5 then
       Printf.bprintf b "    * [%s](#%s)\n" ih id;
       loop tl
     | (H6 e, id, ih) :: tl ->
-      if level >= 6 then
+      if start_level <= 6 && start_level + depth > 6 then
       Printf.bprintf b "     * [%s](#%s)\n" ih id;
       loop tl
     | [] -> ()
@@ -210,7 +212,8 @@ let main () =
         "-notags", Set(notags), " Output without the HTML tags.";
         "-toc", Set(toc), "n Replace `*Table of contents*' by the table of contents of depth n.";
         "-otoc", Set(otoc), "f Only output the table of contents to file f instead of inplace.";
-        "-tl", Set_int(toc_level), "f Only output the table of contents to file f instead of inplace.";
+        "-ts", Set_int(toc_start), "f Table of contents minimum level.";
+        "-td", Set_int(toc_depth), "f Table of contents depth.";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
@@ -257,7 +260,7 @@ let main () =
       in
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs *)
-        (if !otoc then make_toc ~level:!toc_level else make_paragraphs)
+        (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth else make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML *)
         (if !notags then to_text else to_html) o1
