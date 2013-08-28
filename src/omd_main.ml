@@ -261,6 +261,7 @@ let main () =
         "-ts", Set_int(toc_start), "f Table of contents minimum level.";
         "-td", Set_int(toc_depth), "f Table of contents depth.";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
+        "-nl2br", Set(Omd_backend.nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,

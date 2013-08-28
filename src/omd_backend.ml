@@ -11,7 +11,7 @@ open Omd_utils
 
 let pindent = false
 let pindent = true
-let smdnl = true (* about standard markdown new lines *)
+let nl2br = ref false (* about standard markdown new lines *)
 
 
 let id_of_string ids s =
@@ -428,7 +428,7 @@ let rec html_and_headers_of_md md =
       Buffer.add_string b "</h6>";
       loop indent tl
     | NL :: tl ->
-        if not(smdnl) then Buffer.add_string b "<br />";
+        if !nl2br then Buffer.add_string b "<br />";
         Buffer.add_char b '\n';
         loop indent tl
     | [] -> ()
