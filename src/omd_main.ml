@@ -72,7 +72,7 @@ let toc_start = ref 1
 let protect_html_comments = ref false
 
 let make_toc ?(start_level=1) ?(depth=2) md =
-  (* bad performance but particularly simple to implement *)
+  (* probably poor performance but particularly simple to implement *)
   let b = Buffer.create 42 in
   let rec loop = function
     | (H1 e, id, ih) :: tl ->
