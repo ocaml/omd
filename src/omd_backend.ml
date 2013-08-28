@@ -11,7 +11,7 @@ open Omd_utils
 
 let pindent = false
 let pindent = true
-let nl2br = ref false (* about standard markdown new lines *)
+let nl2br = ref false
 
 
 let id_of_string ids s =
