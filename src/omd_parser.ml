@@ -5,13 +5,21 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-(* Implementation notes *********************************************
- * The entry point is the function [parse].
-*)
+(** N.B. Please do not use tabulations in your Markdown file! *)
 
-(** options *)
+(** flag: bold/emph using using underscores is by default
+    github-style, which means that underscores inside words are left
+    as underscore, rather than special characters, because it's more
+    convenient. However it is also less expressive because then you
+    can't bold/emph a part of a word. You might want to reverse this
+    flag. *)
 let gh_uemph_or_bold_style = ref true
+
+(** flag: if true, will not check whether a used HTML tag actually
+    exists in HTML. *)
 let blind_html = ref false
+
+(** flag: if true, will only accept known inline HTML tags in inline HTML. *)
 let strict_html = ref false
 
 open Printf
@@ -20,8 +28,8 @@ open Omd_lexer
 open Omd_utils
 open Omd_representation
 
-
-let htmlentities_set = StringSet.of_list (* This list should be checked... *)
+(** set of known HTML codes *)
+let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
   (* list extracted from: http://www.ascii.cl/htmlcodes.htm *)
   ["eth";  "ntilde";  "ograve";  "oacute";  "ocirc";  "otilde"; "ouml";
    "divide"; "oslash";  "ugrave"; "uacute"; "ucirc";  "uuml"; "yacute";
@@ -38,7 +46,7 @@ let htmlentities_set = StringSet.of_list (* This list should be checked... *)
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
    "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; ]
 
-(* inline HTML tags *)
+(** set of known inline HTML tags *)
 let inline_htmltags_set = StringSet.of_list
   (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
   [ "b";"big";"i";"small";"tt";
@@ -46,14 +54,14 @@ let inline_htmltags_set = StringSet.of_list
     "a";"bdo";"br";"img";"map";"object";"q";"script";"span";"sub";"sup";
     "button";"input";"label";"select";"textarea";]
 
-(* N.B. it seems that there is no clear distinction between
-   inline tags and block-level tags: in HTML4 it was not clear,
-   in HTML5 it's even more complicated. So, the choice here is
-   to specify a set of tags considered as "inline",
-   cf. [inline_htmltags_set].
-   So there will be inline tags, non-inline tags, and unknown tags.*)
+(** N.B. it seems that there is no clear distinction between
+    inline tags and block-level tags: in HTML4 it was not clear,
+    in HTML5 it's even more complicated. So, the choice here is
+    to specify a set of tags considered as "inline",
+    cf. [inline_htmltags_set].
+    So there will be inline tags, non-inline tags, and unknown tags.*)
 
-(* All HTML tags *)
+(** All known HTML tags *)
 let htmltags_set =
   (* some impossible HTML tags: body; head; html; link; meta; title *)
   StringSet.union inline_htmltags_set
@@ -75,7 +83,11 @@ let htmltags_set =
        ;"ul";"var";"video";"wbr"
      ])
 
-
+(** [unindent n l] returns [(unindented, rest)] where [unindented] is
+    the consecutive lines of [l] that are indented with at least [n]
+    spaces, and de-indented by [n] spaces. If [l] starts with a line
+    that is indented by less than [n] spaces, then it returns [([], l)].
+*)
 let unindent n lexemes =
   let rec fix n p = function
     (* reproduce the property that twice the same token can't happen *)
@@ -130,44 +142,57 @@ let unindent n lexemes =
   | [], right -> [], right
   | (e::tl), right -> fix 1 e tl, right
 
-
+(** [is_blank l] returns [true] if [l] only contains blanks, which are
+    spaces and newlines. *)
 let rec is_blank = function
   | (Space | Spaces _ | Newline | Newlines _) :: tl ->
-    is_blank tl
+      is_blank tl
   | [] -> true
   | _ -> false
 
-
+(** [fsplit_norev ?excl ~f l] returns [Some(x,y)] where [x] is the
+    **reversed** list of the consecutive elements of [l] that satisfy [f].
+    Note that [f] is applied to a list of elements and not just an
+    element, so that [f] can look farther in the list when applied. If
+    [excl] is given, then [excl] is applied before [f] is, to check if
+    the splitting should be stopped right away. When the split fails,
+    it returns [None]. *)
 let fsplit_norev ?(excl=(fun _ -> false)) ~f l : ('a list * 'a list) option =
   let rec loop accu = function
     | [] ->
-      Some(accu, [])
+        Some(accu, [])
     | e::tl as l ->
-      if excl e then
-        None
-      else match f l with
-      | Some(left, right) ->
-        Some(left@accu, right)
-      | None ->
-        loop (e::accu) tl
+        if excl l then
+          None
+        else match f l with
+          | Some(left, right) ->
+              Some(left@accu, right)
+          | None ->
+              loop (e::accu) tl
   in loop [] l
 
+(** [fsplit ?excl ~f l] returns [Some(List.rev x, y)] if [fsplit ?excl
+    ~f l] returns [Some(x,y)], else it returns [None]. *)
 let fsplit ?(excl=(fun _ -> false)) ~f l =
   match fsplit_norev ~excl:excl ~f:f l with
-  | None -> None
-  | Some(rev, l) -> Some(List.rev rev, l)
+    | None -> None
+    | Some(rev, l) -> Some(List.rev rev, l)
 
-(* FIXME: use rpl call/return convention *)
-let emph_or_bold (n:int) (l:Omd_representation.tok list)
-    : (Omd_representation.tok list * Omd_representation.tok list) option =
+
+(** [semph_or_bold n l] returns [None] if [l] doesn't start with
+    a bold/emph phrase (marked using stars), else it returns [Some(x,y)]
+    where [x] is the emph and/or bold phrase at the beginning of [l]
+    and [y] is the rest of [l]. *)
+let semph_or_bold (n:int) (l:Omd_representation.tok list) =
+  (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
   let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
           fsplit_norev
-            ~excl:(function Newlines _ -> true| _ -> false)
-            ~f:(function (Star|Stars _ as s)::tl -> Some([s],tl)| _ -> None)
+            ~excl:(function Newlines _ :: _ -> true| _ -> false)
+            ~f:(function (Star|Stars _ as s)::tl -> Some([s],tl) | _ -> None)
             tl
         with
         | None -> None
@@ -207,16 +232,19 @@ let emph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-(* FIXME: use rpl call/return convention *)
-let uemph_or_bold (n:int) (l:Omd_representation.tok list)
-    : (Omd_representation.tok list * Omd_representation.tok list) option =
+(** [sm_uemph_or_bold n l] returns [None] if [l] doesn't start with
+    a bold/emph phrase (marked using underscores), else it returns [Some(x,y)]
+    where [x] is the emph and/or bold phrase at the beginning of [l]
+    and [y] is the rest of [l]. *)
+let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+  (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
   let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
           fsplit_norev
-            ~excl:(function Newlines _ -> true| _ -> false)
+            ~excl:(function Newlines _ :: _ -> true| _ -> false)
             ~f:(function
             | (Underscore|Underscores _ as u)::tl -> Some([u],tl)
             | _ -> None)
@@ -259,16 +287,19 @@ let uemph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-(* FIXME: use rpl call/return convention *)
-let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
-    : (Omd_representation.tok list * Omd_representation.tok list) option =
+(** [gh_uemph_or_bold n l] returns [None] if [l] doesn't start with
+    a bold/emph phrase (marked using underscores), else it returns [Some(x,y)]
+    where [x] is the emph and/or bold phrase at the beginning of [l]
+    and [y] is the rest of [l]. *)
+let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+  (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
   let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
       begin
         match
           fsplit_norev
-            ~excl:(function Newlines _ -> true| _ -> false)
+            ~excl:(function Newlines _ :: _ -> true| _ -> false)
             ~f:(function
             |(Underscore|Underscores _ as u)::tl -> Some([u],tl)
             | _ -> None)
@@ -313,33 +344,43 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list)
     else
       Some(r, tl)
 
-(* FIXME: use rpl call/return convention *)
+
+(** [uemph_or_bold n l] returns [None] if [l] doesn't start with a
+    bold/emph phrase (marked using underscores), else it returns
+    [Some(x,y)] where [x] is the emph and/or bold phrase at the
+    beginning of [l] and [y] is the rest of [l]. N.B. if
+    [!gh_uemph_or_bold_style] then in Github style (i.e., underscores
+    inside words are considered as underscores). *)
 let uemph_or_bold n l =
+  (* FIXME: use rpl call/return convention *)
   if !gh_uemph_or_bold_style then
     gh_uemph_or_bold n l
   else
-    uemph_or_bold n l
+    sm_uemph_or_bold n l
 
 
-(* [eat f l] removes elements from [l] until [f] meets an element
-   for which it returns false. If [l] is empty, then returns [l]. *)
+(** [eat f l] returns [l] where elements satisfying [f] have been removed,
+    but it stops removing as soon as one element doesn't satisfy [f]. *)
 let rec eat f = function
   | [] -> []
   | e::tl as l -> if f e then eat f tl else l
 
+(** [eat_blank l] returns [l] where all blanks at the beginning of the
+    list have been removed (it stops removing as soon as it meets an element
+    that is not a blank). Blanks are spaces and newlines only. *)
 let eat_blank =
   eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
 
-let split_norev f =
-  let rec loop r = function
-    | [] -> r, []
-    | e::tl as l -> if f e then loop (e::r) tl else r, l
-  in loop []
+(* let split_norev f = *)
+(*   let rec loop r = function *)
+(*     | [] -> r, [] *)
+(*     | e::tl as l -> if f e then loop (e::r) tl else r, l *)
+(*   in loop [] *)
 
-(* [split f l] *)
-let split f l =
-  let r, l = split_norev f l in
-  List.rev r, l
+(* (\* [split f l] *\) *)
+(* let split f l = *)
+(*   let r, l = split_norev f l in *)
+(*   List.rev r, l *)
 
 let is_space_or_equal = function
   | Space | Spaces _ | Equal | Equals _ -> true
@@ -404,18 +445,38 @@ let tag_md md = (* [md] should be in reverse *)
 let tag_setext rev_main_loop lexemes =
   let rec loop pl res = function
     | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
-      begin match split_norev is_space_or_equal tl with
-      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
-        loop [] (rleft@(e2::e1::pl@(tag_maybe_h1 rev_main_loop::res))) right
-      | rleft, right ->
-        loop [] (rleft@(e2::e1::pl@res)) right
+      begin
+        match 
+          fsplit_norev
+            ~f:(function
+                  |(Space|Spaces _|Equal|Equals _ as e)::tl -> Some([e],tl)
+                  | [] -> Some([],[])
+                  |_ -> None)
+            tl
+        with
+        | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
+          loop [] (rleft@(e2::e1::pl@(tag_maybe_h1 rev_main_loop::res))) right
+        | Some(rleft, right) ->
+          loop [] (rleft@(e2::e1::pl@res)) right
+        | None ->
+          loop [] (e2::e1::pl@res) []
       end
     | (Newline as e1)::(Minus|Minuss _ as e2)::tl -> (* might be a H2. *)
-      begin match split_norev is_space_or_minus tl with
-      | rleft, (([]|(Newline|Newlines _)::_) as right) ->
+      begin
+        match
+          fsplit_norev
+            ~f:(function
+                  |(Space|Spaces _|Minus|Minuss _ as e)::tl -> Some([e],tl)
+                  | [] -> Some([],[])
+                  |_ -> None)
+            tl
+        with
+      | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
         loop [] (rleft@(e2::e1::pl@(tag_maybe_h2 rev_main_loop::res))) right
-      | rleft, right ->
+      | Some(rleft, right) ->
         loop [] (rleft@(e2::e1::pl@res)) right
+      | None ->
+        loop [] (e2::e1::pl@res) []
       end
     | (Newlines _ as e1)::tl ->
       loop [] (e1::pl@res) tl
@@ -958,28 +1019,34 @@ let maybe_reference ___rev_main_loop rc r p l =
     | _, [] -> None
     | id, (Colon::(Space|Spaces _)::remains)
     | id, (Colon::remains) ->
-      let url, remains =
-        split
-          (function | (Space|Spaces _|Newline|Newlines _) -> false
-                    |_ -> true)
-          remains
-      in
-      let title, remains =
-        match
-          eat
-            (function | (Space|Spaces _|Newline|Newlines _) -> true
-                      | _ -> false)
-            remains
-        with
-        | Doublequotes(0)::tl -> [], tl
-        | Doublequote::tl -> read_until_dq tl
-        | Quotes(0)::tl -> [], tl
-        | Quote::tl -> read_until_q tl
-        | Oparenthesis::tl-> read_until_cparenth tl
-        | l -> [], l
-      in
-      rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
-      Some(r, [Quote], remains)
+        begin
+          match
+            fsplit
+              ~f:(function
+                    | (Space|Spaces _|Newline|Newlines _)::_ -> None
+                    | e::tl -> Some([e],tl)
+                    | [] -> None)
+              remains
+          with
+            | None -> raise Premature_ending
+            | Some(url, remains) ->
+                let title, remains =
+                  match
+                    eat
+                      (function | (Space|Spaces _|Newline|Newlines _) -> true
+                         | _ -> false)
+                      remains
+                  with
+                    | Doublequotes(0)::tl -> [], tl
+                    | Doublequote::tl -> read_until_dq tl
+                    | Quotes(0)::tl -> [], tl
+                    | Quote::tl -> read_until_q tl
+                    | Oparenthesis::tl-> read_until_cparenth tl
+                    | l -> [], l
+                in
+                  rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+                  Some(r, [Quote], remains)
+        end
     | _ -> None
   in
     try
@@ -1557,7 +1624,7 @@ let main_parse extensions lexemes =
       | Some l ->
         main_loop (Hr::r) [Newline] l
       | None ->
-        (match emph_or_bold 1 tl with
+        (match semph_or_bold 1 tl with
         | Some(x, new_tl) ->
           main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
         | None ->
@@ -1568,7 +1635,7 @@ let main_parse extensions lexemes =
         )
       end
     | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
-      (match emph_or_bold 1 tl with
+      (match semph_or_bold 1 tl with
       | Some(x, new_tl) ->
         main_loop (Emph(rev_main_loop [] [t] x) :: r) [t] new_tl
       | None ->
@@ -1579,7 +1646,7 @@ let main_parse extensions lexemes =
       )
     | _, (Stars((0|1) as n) as t) :: tl ->
       (* 2 or 3 "orphan" stars, or emph/bold *)
-      (match emph_or_bold (n+2) tl with
+      (match semph_or_bold (n+2) tl with
       | Some(x, new_tl) ->
         if n = 0 then
           main_loop (Bold(rev_main_loop [] [t] x) :: r) [t] new_tl
@@ -1743,7 +1810,7 @@ let main_parse extensions lexemes =
 
     (* named html entity *)
     | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
-      if StringSet.mem w htmlentities_set then
+      if StringSet.mem w htmlcodes_set then
         begin match s with
         | Semicolon ->
           main_loop (Html("&"^w^";")::r) [s] tl
