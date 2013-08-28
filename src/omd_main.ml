@@ -103,6 +103,11 @@ let make_toc ?(level=2) md =
   loop (Omd_backend.headers_of_md md);
   parse(lex(Buffer.contents b))
 
+(** It's not valid to have double dashes inside HTML comments
+    (cf. http://validator.w3.org/check). So one way to make
+    life easier is to patch the comments and transform inner
+    dashed to &#45;. All inner dashes are therefore converted
+    to &#45;. *)
 let patch_html_comments l =
   let htmlcomments s =
     let b = Buffer.create (String.length s) in
@@ -111,7 +116,13 @@ let patch_html_comments l =
       done;
       for i = 4 to String.length s - 4 do
         match s.[i] with
-          | '-' as c -> Printf.bprintf b "&#%d;" (int_of_char c)
+          | '-' as c ->
+              if (i > 4 && s.[i-1] = '-')
+                || (i < String.length s - 5 && s.[i+1] = '-')
+              then
+                Printf.bprintf b "&#%d;" (int_of_char c)
+              else
+                Buffer.add_char b c
           | c -> Buffer.add_char b c
       done;
       for i = String.length s - 3 to String.length s - 1 do
