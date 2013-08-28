@@ -104,7 +104,9 @@ let make_paragraphs md =
           loop [] (e::Paragraph(List.rev cp)::accu) tl
     | Html_comments _ as e :: tl ->
       if cp = [] then
-        loop cp (e::accu) tl
+        loop [] (e::accu) tl
+      else if cp = [NL] then
+        loop [] (e::NL::accu) tl
       else
         loop (e::cp) accu tl
     | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
