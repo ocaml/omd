@@ -15,6 +15,15 @@ let slurp filename =
     buf
   end
 
+let remove_blank s =
+  let b = Buffer.create (String.length s) in
+    for i = 0 to String.length s - 1 do
+      match s.[i] with
+        | ' ' | '\t' | '\n' -> ()
+        | c -> Buffer.add_char b c
+    done;
+    Buffer.contents b
+
 let process successes failures file =
   let html = (Filename.chop_extension file) ^ ".html" in
   if not (Sys.file_exists html) then (
@@ -22,13 +31,16 @@ let process successes failures file =
     exit 2;
   );
   let expected = slurp html in
-  let observed = Omd.(to_html (parse (lex (slurp file)))) in
-  if expected = observed then (
+  let observed =
+    Omd.(to_html (make_paragraphs (parse (lex (slurp file))))) in
+  if expected = observed || remove_blank expected = remove_blank observed then (
     eprintf "SUCCESS: %s\n" file;
     incr successes
   )
   else (
     eprintf "FAILURE: %s\n" file;
+    eprintf "expected = %S\n" (remove_blank expected);
+    eprintf "observed = %S\n" (remove_blank observed);
     incr failures
   )
 
