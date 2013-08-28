@@ -294,7 +294,6 @@ let main () =
         Buffer.add_char b (input_char ic)
       done; assert false
     with End_of_file ->
-      let open Omd in
       let lexed = lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
       let parsed1 = parse preprocessed in
