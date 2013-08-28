@@ -371,16 +371,16 @@ let rec eat f = function
 let eat_blank =
   eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
 
-(* let split_norev f = *)
-(*   let rec loop r = function *)
-(*     | [] -> r, [] *)
-(*     | e::tl as l -> if f e then loop (e::r) tl else r, l *)
-(*   in loop [] *)
+let split_norev f =
+  let rec loop r = function
+    | [] -> r, []
+    | e::tl as l -> if f e then loop (e::r) tl else r, l
+  in loop []
 
-(* (\* [split f l] *\) *)
-(* let split f l = *)
-(*   let r, l = split_norev f l in *)
-(*   List.rev r, l *)
+(* [split f l] *)
+let split f l =
+  let r, l = split_norev f l in
+  List.rev r, l
 
 let is_space_or_equal = function
   | Space | Spaces _ | Equal | Equals _ -> true
@@ -449,9 +449,9 @@ let tag_setext rev_main_loop lexemes =
         match 
           fsplit_norev
             ~f:(function
-                  |(Space|Spaces _|Equal|Equals _ as e)::tl -> Some([e],tl)
-                  | [] -> Some([],[])
-                  |_ -> None)
+                  | (Space|Spaces _|Equal|Equals _ as e)::tl -> Some([e],tl)
+                  | [] -> None
+                  | _ -> None)
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
@@ -466,9 +466,9 @@ let tag_setext rev_main_loop lexemes =
         match
           fsplit_norev
             ~f:(function
-                  |(Space|Spaces _|Minus|Minuss _ as e)::tl -> Some([e],tl)
-                  | [] -> Some([],[])
-                  |_ -> None)
+                  | (Space|Spaces _|Minus|Minuss _ as e)::tl -> Some([e],tl)
+                  | [] -> None
+                  | _ -> None)
             tl
         with
       | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
@@ -1023,8 +1023,8 @@ let maybe_reference ___rev_main_loop rc r p l =
           match
             fsplit
               ~f:(function
-                    | (Space|Spaces _|Newline|Newlines _)::_ -> None
-                    | e::tl -> Some([e],tl)
+                    | (Space|Spaces _|Newline|Newlines _):: _ as l -> Some([], l)
+                    | e::tl -> None
                     | [] -> None)
               remains
           with
@@ -1053,7 +1053,7 @@ let maybe_reference ___rev_main_loop rc r p l =
       maybe_ref l
     with | Premature_ending | NL_exception ->
       try
-        maybe_def l 
+        maybe_def l
       with
       | Premature_ending | NL_exception -> None
 
