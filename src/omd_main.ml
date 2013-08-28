@@ -4,10 +4,24 @@
 (* Licence : ISC                                                       *)
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
+
+(** This module implements a end-user interface for OMD.  It mainly
+    uses the module [Omd], which implements the main interface to the
+    library OMD. There are still a few uses of other modules from the
+    OMD library but this may change.
+
+    Treatments that are not specific to Markdown (such as table of
+    contents generation) are done here. If you want to build an
+    alternative end-user Markdown tool using OMD, you might want to
+    fork this file or get inspiration from it.
+
+    Happy coding!
+*)
+
+
 open Omd
 
-exception Break
-
+(** [remove_comments l] returns [l] without OMD comments. *)
 let remove_comments l =
   let open Omd in
   let rec loop = function
@@ -21,6 +35,7 @@ let remove_comments l =
     | _, [] -> []
   in loop (true, l)
 
+(** [remove_endline_comments l] returns [l] without OMD endline-comments. *)
 let remove_endline_comments l =
   let open Omd in
   let rec loop = function
@@ -35,7 +50,7 @@ let remove_endline_comments l =
     | [] -> []
   in loop l
 
-(* [minimalize_blanks s] returns [s] where the first and last
+(** [minimalize_blanks s] returns [s] where the first and last
    characters are never blank, and two consecutive blanks never
    happen. *)
 let minimalize_blanks s =
@@ -54,23 +69,44 @@ let minimalize_blanks s =
         loop false (succ i)
   in loop false 0
 
+(** [preprocess_functions] contains the list of preprocessing functions *)
 let preprocess_functions = ref []
+
+(** [a ++ b] is a shortcut for [a := b :: !a] *)
 let (++) a b = a := b :: !a
 
+(** [preprocess l] returns [l] to which all preprocessing functions
+    (in reference [preprocess_functions]) have been applied. *)
 let preprocess l =
   List.fold_left (fun r e -> e r)
     l
     !preprocess_functions
 
-
+(** flag: output the table of contents only. *)
 let otoc = ref false
+
+(** flag: replace "*Table of contents*" by the table of contents. *)
 let toc = ref false
+
+(** flag: output Markdown instead of HTML. *)
 let omarkdown = ref false
+
+(** flag: output HTML but without HTML tags, so it's not really HTML anymore. *)
 let notags = ref false
+
+(** flag: depth of table of contents *) 
 let toc_depth = ref 2
+
+(** flag: first header level for table of contents *) 
 let toc_start = ref 1
+
+(** flag: for multiple dashes in HTML comments, replace dashes by &#45;  *)
 let protect_html_comments = ref false
 
+(** [make_toc ?(start_level=1) ?(depth=2) md] returns a table of
+    contents when [md] is a list of section headers. If [md] contains
+    tags other than section header tags, an exception is raised.
+ *)
 let make_toc ?(start_level=1) ?(depth=2) md =
   (* probably poor performance but particularly simple to implement *)
   let b = Buffer.create 42 in
@@ -100,16 +136,20 @@ let make_toc ?(start_level=1) ?(depth=2) md =
       Printf.bprintf b "     * [%s](#%s)\n" ih id;
       loop tl
     | [] -> ()
-    | _ -> assert false
+    | _ -> failwith "Omd_main.make_toc: wrong argument, \
+                     please read the documentation and/or file a bug report."
   in
-  loop (Omd_backend.headers_of_md md);
+  loop(Omd_backend.headers_of_md md);
   parse(lex(Buffer.contents b))
 
-(** It's not valid to have double dashes inside HTML comments
-    (cf. http://validator.w3.org/check). So one way to make
-    life easier is to patch the comments and transform inner
-    dashed to &#45;. All inner dashes are therefore converted
-    to &#45;. *)
+(** [patch_html_comments l] returns the list [l] where
+    all [Html_comments s] have been converted to [Html_comments s'],
+    where [s'] means [s] with dashes replaced by &#45; except for
+    single dashes (which are left untouched).
+
+    N.B. It seems that it's not valid to have double dashes inside HTML comments
+    (cf. http://validator.w3.org/check). So one way to make life somewhat easier
+    is to patch the comments and transform inner dashed to &#45;.  *)
 let patch_html_comments l =
   let htmlcomments s =
     let b = Buffer.create (String.length s) in
@@ -141,6 +181,8 @@ let patch_html_comments l =
   in loop [] l
 
 
+(** [tag_toc l] returns [l] where *Table of contents* has been replaced
+    by a tag that can generate a table of contents. *)
 let tag_toc l =
   if !toc then
     let rec loop = function
@@ -151,7 +193,10 @@ let tag_toc l =
         Tag(fun r p l ->
           Some(X(
                 object
-                    (* to prevent endless loops *)
+                  (* [shield] is used to prevent endless loops.
+                     If one wants to use system threads at some point, 
+                     and calls methods of this object  concurrently,
+                     then there is a real problem. *)
                   val mutable shield = false
                   method name="toc"
                   method to_html ?indent f md =
@@ -191,6 +236,7 @@ let tag_toc l =
   else
     l
 
+(** main function *)
 let main () =
   let input = ref []
   and output = ref ""
@@ -270,10 +316,12 @@ let main () =
         if Omd_utils.debug then
           print_endline
             (Omd_backend.sexpr_of_md
-               (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))));
+               (parse (preprocess(lex (Buffer.contents b)))));
   )
     input_files
 
+
+(* call the main function *)
 let () =
   try
     main ()
