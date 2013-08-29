@@ -449,9 +449,9 @@ let tag_setext rev_main_loop lexemes =
         match 
           fsplit_norev
             ~f:(function
-                  | (Space|Spaces _|Equal|Equals _ as e)::tl -> Some([e],tl)
+                  | (Space|Spaces _|Equal|Equals _)::tl -> None
                   | [] -> None
-                  | _ -> None)
+                  | _::_ as l -> Some([], l))
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
@@ -466,9 +466,9 @@ let tag_setext rev_main_loop lexemes =
         match
           fsplit_norev
             ~f:(function
-                  | (Space|Spaces _|Minus|Minuss _ as e)::tl -> Some([e],tl)
+                  | (Space|Spaces _|Minus|Minuss _)::tl -> None
                   | [] -> None
-                  | _ -> None)
+                  | _::_ as l -> Some([], l))
             tl
         with
       | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
