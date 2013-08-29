@@ -188,19 +188,25 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
   assert (n>0 && n<4);
   let rec loop (result:Omd_representation.tok list) = function
     | Newline :: tl ->
-      begin
+        begin
         match
           fsplit_norev
-            ~excl:(function Newlines _ :: _ -> true| _ -> false)
-            ~f:(function (Star|Stars _ as s)::tl -> Some([s],tl) | _ -> None)
+            ~excl:(function Newlines _ :: _ -> true | _ -> false)
+            ~f:(function
+                  | (Star|Stars _ as s)::tl ->
+                      if String.length(string_of_t s) = n then
+                        Some([s],tl)
+                      else
+                        None
+                  | _ -> None)
             tl
         with
-        | None -> None
-        | Some(_, []) -> None
+        | None ->
+          None
         | Some((Backslash::_ as x), Star::tl) ->
           loop ((Star::x)@Newline::result) tl
-        | Some(x, tl) ->
-          loop (x@Newline::result) tl
+        | Some(_, _) ->
+          loop result tl
       end
     | []
     | Newlines _ :: _ ->
@@ -254,8 +260,8 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
         | Some(_, []) -> None
         | Some((Backslash::_ as x), Underscore::tl) ->
           loop ((Underscore::x)@Newline::result) tl
-        | Some(x, tl) ->
-          loop (x@Newline::result) tl
+        | Some(_, _) ->
+          loop result tl
       end
     | []
     | Newlines _ :: _ ->
@@ -306,11 +312,10 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
             tl
         with
         | None -> None
-        | Some(_, []) -> None
         | Some((Backslash::_ as x), Underscore::tl) ->
           loop ((Underscore::x)@Newline::result) tl
-        | Some(x, tl) ->
-          loop (x@Newline::result) tl
+        | Some(_, _) ->
+          loop result tl
       end
     | []
     | Newlines _ :: _ ->
