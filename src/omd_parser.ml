@@ -1019,7 +1019,7 @@ let emailstyle_quoting main_loop r _p lexemes =
     (Blockquote(main_loop [] [] block)::r), [Newline], tl
 
 (* maybe a reference *)
-let maybe_reference ___main_loop rc r p l =
+let maybe_reference rc r p l =
   (* this function is called when we know it's not a link although
      it started with a '[' *)
   (* So it could be a reference or a link definition. *)
@@ -2040,7 +2040,7 @@ let main_parse extensions lexemes =
       begin match maybe_link main_loop r previous tl with
       | Some(r, p, l) -> main_loop_rev r p l
       | None ->
-        match maybe_reference main_loop rc r previous tl with
+        match maybe_reference rc r previous tl with
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
