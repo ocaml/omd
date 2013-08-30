@@ -221,6 +221,20 @@ let rec html_and_headers_of_md md =
     in
       loop 0
   in
+  let remove_trailing_blanks s =
+    let rec loop i =
+      if i < 0 then ""
+      else
+        match s.[i] with
+        | ' '|'\t'|'\n' ->
+          loop (pred i)
+        | _ ->
+          if i = String.length s - 1 then
+            s
+          else
+            String.sub s 0 (i+1)
+    in loop (String.length s - 1)
+  in
   let b = Buffer.create 42 in
   let headers = ref [] in
   let rec loop indent = function
@@ -259,8 +273,8 @@ let rec html_and_headers_of_md md =
            else
              begin
                Buffer.add_string b "<p>";
-               Buffer.add_string b s;
-               Buffer.add_string b "</p>\n";
+               Buffer.add_string b (remove_trailing_blanks s);
+               Buffer.add_string b "</p>";
              end);
         loop indent tl
     | Img(alt, src, title) :: tl ->
@@ -301,6 +315,11 @@ let rec html_and_headers_of_md md =
                             done;
             Buffer.add_string b "<li>";
             loop (indent+2) li;
+            if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
+            then
+              if pindent then for i = 0 to indent + 1 do
+                  Buffer.add_char b ' '
+                done;
             Buffer.add_string b "</li>";
             if pindent then Buffer.add_char b '\n')
           l;
@@ -320,6 +339,11 @@ let rec html_and_headers_of_md md =
                             done;
             Buffer.add_string b "<li>";
             loop (indent+2) li;
+            if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
+            then
+              if pindent then for i = 0 to indent + 1 do
+                  Buffer.add_char b ' '
+                done;
             Buffer.add_string b "</li>";
             if pindent then Buffer.add_char b '\n')
           l;
