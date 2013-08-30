@@ -1069,7 +1069,15 @@ let maybe_reference ___main_loop rc r p l =
                     | Oparenthesis::tl-> read_until_cparenth tl
                     | l -> [], l
                 in
-                  rc#add_ref (string_of_tl id) (string_of_tl title) (string_of_tl url);
+                let url =
+                  let url = string_of_tl url in
+                    if String.length url > 2 && url.[0] = '<'
+                      && url.[String.length url - 1] = '>' then
+                      String.sub url 1 (String.length url - 2)
+                    else
+                      url
+                in
+                  rc#add_ref (string_of_tl id) (string_of_tl title) url;
                   Some(r, [Quote], remains)
         end
     | _ -> None
