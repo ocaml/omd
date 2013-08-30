@@ -42,8 +42,6 @@ let id_of_string ids s =
   let id = gen_id s in
   ids#mangle id
 
-
-
 let htmlentities s =
   let b = Buffer.create 42 in
     for i = 0 to String.length s - 1 do
@@ -90,13 +88,13 @@ let make_paragraphs md =
             loop cp (e::accu) tl
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | (Ul b) :: tl ->
+    | (Ulp b) :: tl ->
         let e = Ul(List.map (fun li -> loop [] [] li) b) in
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | (Ol b) :: tl ->
+    | (Olp b) :: tl ->
         let e = Ol(List.map (fun li -> loop [] [] li) b) in
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
@@ -163,6 +161,12 @@ let text_of_md md =
         List.iter loop l;
         loop tl
     | Ol l :: tl ->
+        List.iter loop l;
+        loop tl
+    | Ulp l :: tl ->
+        List.iter loop l;
+        loop tl
+    | Olp l :: tl ->
         List.iter loop l;
         loop tl
     | Code_block c :: tl ->
@@ -303,10 +307,14 @@ let rec html_and_headers_of_md md =
         loop indent md;
         Buffer.add_string b "</strong>";
         loop indent tl
-    | Ul l :: tl ->
+    | (Ul l|Ol l|Ulp l|Olp l as e) :: tl ->
         if pindent then Buffer.add_char b '\n';
         if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
-        Buffer.add_string b "<ul>";
+        (match e with
+           | Ol _|Olp _ ->
+               Buffer.add_string b "<ol>";
+           | _ ->
+               Buffer.add_string b "<ul>");
         if pindent then Buffer.add_char b '\n';
         List.iter
           (fun li ->
@@ -324,31 +332,11 @@ let rec html_and_headers_of_md md =
             if pindent then Buffer.add_char b '\n')
           l;
         if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
-        Buffer.add_string b "</ul>";
-        if pindent then Buffer.add_char b '\n';
-        loop indent tl
-    | Ol l :: tl ->
-        if pindent then Buffer.add_char b '\n';
-        if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
-        Buffer.add_string b "<ol>";
-        if pindent then Buffer.add_char b '\n';
-        List.iter
-          (fun li ->
-            if pindent then for i = 0 to indent + 1 do
-                              Buffer.add_char b ' '
-                            done;
-            Buffer.add_string b "<li>";
-            loop (indent+2) li;
-            if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
-            then
-              if pindent then for i = 0 to indent + 1 do
-                  Buffer.add_char b ' '
-                done;
-            Buffer.add_string b "</li>";
-            if pindent then Buffer.add_char b '\n')
-          l;
-        if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
-        Buffer.add_string b "</ol>";
+        (match e with
+           | Ol _|Olp _ ->
+               Buffer.add_string b "</ol>";
+           | _ ->
+               Buffer.add_string b "</ul>");
         if pindent then Buffer.add_char b '\n';
         loop indent tl
     | Code_block c :: tl ->
@@ -522,6 +510,16 @@ let rec sexpr_of_md md =
         loop tl
     | Ul l :: tl ->
         bprintf b "(Ul";
+        List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
+        bprintf b ")";
+        loop tl
+    | Olp l :: tl ->
+        bprintf b "(Olp";
+        List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
+        bprintf b ")";
+        loop tl
+    | Ulp l :: tl ->
+        bprintf b "(Ulp";
         List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
         bprintf b ")";
         loop tl

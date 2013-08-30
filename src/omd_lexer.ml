@@ -224,7 +224,7 @@ let lex s =
   done;
   List.rev !result
 
-let length = function
+let size = function
   | Tag _ -> (0, 0)
   | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
   | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
@@ -263,7 +263,7 @@ let position orig spot =
         if l == spot then
           r
         else
-          loop (r ++ length hd) tl
+          loop (r ++ size hd) tl
     | [] -> r
   in
     loop (0,0)
