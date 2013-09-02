@@ -18,16 +18,14 @@
     Happy coding!
 *)
 
-
 open Omd
 
-(** [remove_comments l] returns [l] without OMD comments. *)
 let remove_comments l =
   let open Omd in
   let rec loop = function
     | true, Exclamations n :: tl when n > 0 ->
       loop (true,
-            Omd_parser.eat (function Newline|Newlines _ -> false|_-> true) tl)
+            Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
     | _, (Newline|Newlines _ as e)::tl ->
       e::loop (true, tl)
     | _, e::tl ->
@@ -35,7 +33,6 @@ let remove_comments l =
     | _, [] -> []
   in loop (true, l)
 
-(** [remove_endline_comments l] returns [l] without OMD endline-comments. *)
 let remove_endline_comments l =
   let open Omd in
   let rec loop = function
@@ -44,69 +41,39 @@ let remove_endline_comments l =
     | Backslashs b :: (Exclamations n as e) :: tl when n > 0 && b mod 2 = 1 ->
       Backslashs(b-1) :: e :: loop tl
     | Exclamations n :: tl when n > 0 ->
-      loop (Omd_parser.eat (function Newline|Newlines _ -> false|_-> true) tl)
+      loop (Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
     | e::tl ->
       e::loop tl
     | [] -> []
   in loop l
 
-(** [minimalize_blanks s] returns [s] where the first and last
-   characters are never blank, and two consecutive blanks never
-   happen. *)
-let minimalize_blanks s =
-  let l = String.length s in
-  let b = Buffer.create l in
-  let rec loop f i =
-    if i = l then
-      Buffer.contents b
-    else
-      match s.[i] with
-      | ' ' | '\t' | '\n' ->
-        loop true (succ i)
-      | c ->
-        if Buffer.length b > 0 && f then
-          Buffer.add_char b ' ';
-        loop false (succ i)
-  in loop false 0
 
-(** [preprocess_functions] contains the list of preprocessing functions *)
 let preprocess_functions = ref []
 
-(** [a ++ b] is a shortcut for [a := b :: !a] *)
+(** [a ++ b] is a shortcut for [a := b :: !a] // NON-EXPORTED *)
 let (++) a b = a := b :: !a
 
-(** [preprocess l] returns [l] to which all preprocessing functions
-    (in reference [preprocess_functions]) have been applied. *)
 let preprocess l =
   List.fold_left (fun r e -> e r)
     l
     !preprocess_functions
 
-(** flag: output the table of contents only. *)
 let otoc = ref false
 
-(** flag: replace "*Table of contents*" by the table of contents. *)
 let toc = ref false
 
-(** flag: output Markdown instead of HTML. *)
 let omarkdown = ref false
 
-(** flag: output HTML but without HTML tags, so it's not really HTML anymore. *)
 let notags = ref false
 
-(** flag: depth of table of contents *) 
 let toc_depth = ref 2
 
-(** flag: first header level for table of contents *) 
 let toc_start = ref 1
 
-(** flag: for multiple dashes in HTML comments, replace dashes by &#45;  *)
+let nl2br = ref false
+
 let protect_html_comments = ref false
 
-(** [make_toc ?(start_level=1) ?(depth=2) md] returns a table of
-    contents when [md] is a list of section headers. If [md] contains
-    tags other than section header tags, an exception is raised.
- *)
 let make_toc ?(start_level=1) ?(depth=2) md =
   (* probably poor performance but particularly simple to implement *)
   let b = Buffer.create 42 in
@@ -142,14 +109,6 @@ let make_toc ?(start_level=1) ?(depth=2) md =
   loop(Omd_backend.headers_of_md md);
   parse(lex(Buffer.contents b))
 
-(** [patch_html_comments l] returns the list [l] where
-    all [Html_comments s] have been converted to [Html_comments s'],
-    where [s'] means [s] with dashes replaced by &#45; except for
-    single dashes (which are left untouched).
-
-    N.B. It seems that it's not valid to have double dashes inside HTML comments
-    (cf. http://validator.w3.org/check). So one way to make life somewhat easier
-    is to patch the comments and transform inner dashed to &#45;.  *)
 let patch_html_comments l =
   let htmlcomments s =
     let b = Buffer.create (String.length s) in
@@ -181,8 +140,6 @@ let patch_html_comments l =
   in loop [] l
 
 
-(** [tag_toc l] returns [l] where *Table of contents* has been replaced
-    by a tag that can generate a table of contents. *)
 let tag_toc l =
   if !toc then
     let rec loop = function
@@ -236,7 +193,7 @@ let tag_toc l =
   else
     l
 
-(** main function *)
+
 let main () =
   let input = ref []
   and output = ref ""
@@ -261,7 +218,7 @@ let main () =
         "-ts", Set_int(toc_start), "f Table of contents minimum level.";
         "-td", Set_int(toc_depth), "f Table of contents depth.";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
-        "-nl2br", Set(Omd_backend.nl2br), " Convert new lines to <br/>.";
+        "-nl2br", Set(nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,

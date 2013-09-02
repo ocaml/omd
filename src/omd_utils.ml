@@ -68,3 +68,67 @@ let fsplit ?(excl=(fun _ -> false)) ~f l =
   match fsplit_rev ~excl:excl ~f:f l with
     | None -> None
     | Some(rev, l) -> Some(List.rev rev, l)
+
+
+let id_of_string ids s =
+  let l = String.length s in
+  let gen_id s =
+    let b = Buffer.create l in
+    let rec loop i flag flag2 =
+      (* [flag] prevents trailing dashes; 
+         [flag2] prevents IDs from starting with dashes *)
+      if i = l then
+        ()
+      else
+        match s.[i] with
+        | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
+          (if not (flag2 || flag) then Buffer.add_char b '-');
+          Buffer.add_char b c;
+          loop (i+1) true true
+        | _ ->
+          if flag2 || flag then
+            loop (i+1) false flag2
+          else
+            (Buffer.add_char b '-';
+             loop (i+1) true flag2)
+    in
+    loop 0 true true;
+    Buffer.contents b
+  in
+  let id = gen_id s in
+  ids#mangle id
+
+let htmlentities s =
+  let b = Buffer.create 42 in
+    for i = 0 to String.length s - 1 do
+      match s.[i] with
+        | ( '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' ) as c -> Buffer.add_char b c
+        | '"' -> Buffer.add_string b "&quot;"
+        | '\'' -> Buffer.add_string b "&apos;"
+        | '&' -> Buffer.add_string b "&amp;"
+        | '<' -> Buffer.add_string b "&lt;"
+        | '>' -> Buffer.add_string b "&gt;"
+        | '\\' -> Buffer.add_string b "&#92;"
+        | c -> Buffer.add_char b c
+    done;
+    Buffer.contents b
+
+let minimalize_blanks s =
+  let l = String.length s in
+  let b = Buffer.create l in
+  let rec loop f i =
+    if i = l then
+      Buffer.contents b
+    else
+      match s.[i] with
+      | ' ' | '\t' | '\n' ->
+        loop true (succ i)
+      | c ->
+        if Buffer.length b > 0 && f then
+          Buffer.add_char b ' ';
+        loop false (succ i)
+  in loop false 0
+
+let rec eat f = function
+  | [] -> []
+  | e::tl as l -> if f e then eat f tl else l

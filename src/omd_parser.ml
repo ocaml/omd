@@ -83,8 +83,6 @@ let htmltags_set =
        ;"ul";"var";"video";"wbr"
      ])
 
-(** [unindent_rev n l] returns the same couple as [unindent n l]
-    except that the first element (which is a list) is reversed. *)
 let unindent_rev n lexemes =
   let rec fix n p = function
     (* FIXME: find why this is needed, fix it, and get rid of this! *)
@@ -140,27 +138,16 @@ let unindent_rev n lexemes =
   | [], right -> [], right
   | (e::tl), right -> fix 1 e tl, right
 
-(** [unindent n l] returns [(unindented, rest)] where [unindented] is
-    the consecutive lines of [l] that are indented with at least [n]
-    spaces, and de-indented by [n] spaces. If [l] starts with a line
-    that is indented by less than [n] spaces, then it returns [([], l)].
-*)
 let unindent n lexemes =
   let fst, snd = unindent_rev n lexemes in
     List.rev fst, snd
 
-(** [is_blank l] returns [true] if [l] only contains blanks, which are
-    spaces and newlines. *)
 let rec is_blank = function
   | (Space | Spaces _ | Newline | Newlines _) :: tl ->
       is_blank tl
   | [] -> true
   | _ -> false
 
-(** [semph_or_bold n l] returns [None] if [l] doesn't start with
-    a bold/emph phrase (marked using stars), else it returns [Some(x,y)]
-    where [x] is the emph and/or bold phrase at the beginning of [l]
-    and [y] is the rest of [l]. *)
 let semph_or_bold (n:int) (l:Omd_representation.tok list) =
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -204,10 +191,6 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
     | Some(left,right) ->
         if is_blank left then None else Some(left,right)
 
-(** [sm_uemph_or_bold n l] returns [None] if [l] doesn't start with
-    a bold/emph phrase (marked using underscores), else it returns [Some(x,y)]
-    where [x] is the emph and/or bold phrase at the beginning of [l]
-    and [y] is the rest of [l]. *)
 let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -252,68 +235,6 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
         if is_blank left then None else Some(left,right)
 
 
-
-
-(** [gh_uemph_or_bold n l] returns [None] if [l] doesn't start with
-    a bold/emph phrase (marked using underscores), else it returns [Some(x,y)]
-    where [x] is the emph and/or bold phrase at the beginning of [l]
-    and [y] is the rest of [l]. *)
-(* let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) = *)
-(*   (\* FIXME: use rpl call/return convention *\) *)
-(*   assert (n>0 && n<4); *)
-(*   let rec loop (result:Omd_representation.tok list) = function *)
-(*     | Newline :: tl -> *)
-(*       begin *)
-(*         match *)
-(*           fsplit_rev *)
-(*             ~excl:(function Newlines _ :: _ -> true| _ -> false) *)
-(*             ~f:(function *)
-(*             |(Underscore|Underscores _ as u)::tl -> Split([u],tl) *)
-(*             | _ -> Continue) *)
-(*             tl *)
-(*         with *)
-(*         | None -> None *)
-(*         | Some((Backslash::_ as x), Underscore::tl) -> *)
-(*           loop ((Underscore::x)@Newline::result) tl *)
-(*         | Some(_, _) -> *)
-(*           loop result tl *)
-(*       end *)
-(*     | [] *)
-(*     | Newlines _ :: _ -> *)
-(*       None *)
-(*     | Backslash::Underscore::tl -> *)
-(*       loop (Underscore::result) tl *)
-(*     | Backslash::Underscores 0::tl -> *)
-(*       loop (Underscore::result) tl *)
-(*     | Backslash::Underscores n::tl -> *)
-(*       loop (Underscore::result) (Underscores(n-1)::tl) *)
-(*     | (Underscore | Underscores _ as t) :: (Word _ as w) :: tl -> *)
-(*       loop (w :: t :: result) tl *)
-(*     | (Underscore as t) :: tl -> *)
-(*       if n = 1 then *)
-(*         Some(List.rev result, tl) *)
-(*       else *)
-(*         loop (t :: result) tl *)
-(*     | ((Underscores x) as t) :: tl -> *)
-(*       if n = x+2 then *)
-(*         Some(List.rev result, tl) *)
-(*       else *)
-(*         loop (t :: result) tl *)
-(*     | t::tl -> *)
-(*       loop (t :: result) tl *)
-(*   in *)
-(*   match loop [] l with *)
-(*   | None -> None *)
-(*   | Some(r, tl) -> *)
-(*     if is_blank r then *)
-(*       None *)
-(*     else *)
-(*       Some(r, tl) *)
-
-(** [gh_uemph_or_bold n l] returns [None] if [l] doesn't start with
-    a bold/emph phrase (marked using underscores), else it returns [Some(x,y)]
-    where [x] is the emph and/or bold phrase at the beginning of [l]
-    and [y] is the rest of [l]. *)
 let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -360,12 +281,6 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
         if is_blank left then None else Some(left,right)
 
 
-(** [uemph_or_bold n l] returns [None] if [l] doesn't start with a
-    bold/emph phrase (marked using underscores), else it returns
-    [Some(x,y)] where [x] is the emph and/or bold phrase at the
-    beginning of [l] and [y] is the rest of [l]. N.B. if
-    [!gh_uemph_or_bold_style] then in Github style (i.e., underscores
-    inside words are considered as underscores). *)
 let uemph_or_bold n l =
   (* FIXME: use rpl call/return convention *)
   if !gh_uemph_or_bold_style then
@@ -373,29 +288,9 @@ let uemph_or_bold n l =
   else
     sm_uemph_or_bold n l
 
-
-(** [eat f l] returns [l] where elements satisfying [f] have been removed,
-    but it stops removing as soon as one element doesn't satisfy [f]. *)
-let rec eat f = function
-  | [] -> []
-  | e::tl as l -> if f e then eat f tl else l
-
-(** [eat_blank l] returns [l] where all blanks at the beginning of the
-    list have been removed (it stops removing as soon as it meets an element
-    that is not a blank). Blanks are spaces and newlines only. *)
 let eat_blank =
   eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
 
-let split_norev f =
-  let rec loop r = function
-    | [] -> r, []
-    | e::tl as l -> if f e then loop (e::r) tl else r, l
-  in loop []
-
-(* [split f l] *)
-let split f l =
-  let r, l = split_norev f l in
-  List.rev r, l
 
 let is_space_or_equal = function
   | Space | Spaces _ | Equal | Equals _ -> true
@@ -503,9 +398,6 @@ let tag_setext main_loop lexemes =
   List.rev (loop [] [] lexemes)
 
 
-(** [hr_m l] returns [Some nl] where [nl] is the remaining of [l] if [l]
-    contains a horizontal rule drawn with dashes. If it doesn't, then
-    returns [None].*)
 let hr_m l =
   let rec loop n = function
     | ((Newlines _|Newline)::tl) | ([] as tl) ->
@@ -520,9 +412,6 @@ let hr_m l =
       None
   in loop 0 l
 
-(** [hr_s l] returns [Some nl] where [nl] is the remaining of [l] if [l]
-    contains a horizontal rule drawn with dashes. If it doesn't, then
-    returns [None].*)
 let hr_s l =
   let rec loop n = function
     | ((Newline|Newlines _)::tl) | ([] as tl) ->
@@ -538,81 +427,11 @@ let hr_s l =
   in loop 0 l
 
 
-(* This function is intended to "fix" lists that "look wrong" in
-   Markdown. First, nothing being really "wrong" in Markdown means
-   that what doesn't have a clear semantics has to be attributed
-   one. Lists are based on indentation and sometimes it appears that
-   we can't count on human beings to write only good looking
-   Markdown. Second, it appeared hard to write a simple lists parser
-   that would generate the tree that I expected to see. For those 2
-   reasons, I wrote this function that fixes what's generated at some
-   point by this parser. It seems to work fine.
-
-   However, if this parser benefits from some optimizations at some
-   point, one of them should probably be about getting rid of this
-   function.
-*)
-(* let rec fix_lists = function *)
-(*   | X _ as x :: tl -> *)
-(*       x :: fix_lists tl *)
-(*   | Ul[] :: tl -> *)
-(*     fix_lists tl *)
-(*   | Ol[] :: tl -> *)
-(*     fix_lists tl *)
-(*   | Ul((Ul(_) :: _ as l) :: l2) :: tl *)
-(*   | Ul((Ol(_) :: _ as l) :: l2) :: tl -> *)
-(*     fix_lists [Ul(l2)] @ fix_lists l @ fix_lists tl *)
-(*   | Ol((Ul(_) :: _ as l) :: l2) :: tl *)
-(*   | Ol((Ol(_) :: _ as l) :: l2) :: tl -> *)
-(*     fix_lists [Ol(l2)] @ fix_lists l @ fix_lists tl *)
-(*   | Ul(l) :: tl -> Ul(List.map (fun e -> fix_lists e) l) :: fix_lists tl *)
-(*   | Ol(l) :: tl -> Ol(List.map (fun e -> fix_lists e) l) :: fix_lists tl *)
-(*   | Olp[] :: tl -> *)
-(*     fix_lists tl *)
-(*   | Ulp((Ulp(_) :: _ as l) :: l2) :: tl *)
-(*   | Ulp((Olp(_) :: _ as l) :: l2) :: tl -> *)
-(*     fix_lists [Ulp(l2)] @ fix_lists l @ fix_lists tl *)
-(*   | Olp((Ulp(_) :: _ as l) :: l2) :: tl *)
-(*   | Olp((Olp(_) :: _ as l) :: l2) :: tl -> *)
-(*     fix_lists [Olp(l2)] @ fix_lists l @ fix_lists tl *)
-(*   | Ulp(l) :: tl -> Ulp(List.map (fun e -> fix_lists e) l) :: fix_lists tl *)
-(*   | Olp(l) :: tl -> Olp(List.map (fun e -> fix_lists e) l) :: fix_lists tl *)
-(*   | Blockquote(q) :: tl -> *)
-(*     Blockquote(fix_lists q) :: fix_lists tl *)
-(*   | Img _ as i :: tl -> *)
-(*     i :: fix_lists tl *)
-(*   | Paragraph p ::  tl -> *)
-(*     Paragraph (fix_lists p) :: fix_lists tl *)
-(*   | Text _ as e :: tl -> *)
-(*     e::fix_lists tl *)
-(*   | Emph e :: tl -> *)
-(*     Emph(fix_lists e)::fix_lists tl *)
-(*   | Bold e :: tl -> *)
-(*     Bold(fix_lists e)::fix_lists tl *)
-(*   | (Code _ |Code_block _ | Br | Hr | Ref _ | Img_ref _ | Url _ | *)
-(*       Html _ | Html_block _ | Html_comments _ as e) :: tl -> *)
-(*     e::fix_lists tl *)
-(*   | H1 e :: tl -> *)
-(*     H1(fix_lists e)::fix_lists tl *)
-(*   | H2 e :: tl -> *)
-(*     H2(fix_lists e)::fix_lists tl *)
-(*   | H3 e :: tl -> *)
-(*     H3(fix_lists e)::fix_lists tl *)
-(*   | H4 e :: tl -> *)
-(*     H4(fix_lists e)::fix_lists tl *)
-(*   | H5 e :: tl -> *)
-(*     H5(fix_lists e)::fix_lists tl *)
-(*   | H6 e :: tl -> *)
-(*     H6(fix_lists e)::fix_lists tl *)
-(*   | NL :: tl -> *)
-(*     NL :: fix_lists tl *)
-(*   | [] -> *)
-(*     [] *)
-
 exception NL_exception
 exception Premature_ending
 
-(* The program that generates the generated part that follows right after.
+(* !!DO NOT DELETE THIS!!
+The program that generates the generated part that follows right after.
   List.iter (fun (a,b,c) ->
   print_endline ("let read_until_"^a^" ?(no_nl=false) l =
   let rec loop accu n = function
@@ -979,9 +798,6 @@ let read_title main_loop n r p l =
 
 
 
-(** [maybe_extension e r p l] returns None if there is no extension or
-    if extensions haven't had  any effect, returns Some(nr, np, nl) if
-    at least one extension has applied successfully. *)
 let maybe_extension extensions r p l =
   match extensions with
   | [] -> None
@@ -1454,8 +1270,6 @@ let parse_list main_loop main_loop_rev r p l =
   rp::r, [Newline], l
 
 
-(** spaces: returns (r,p,l) where r is the result, p is the last thing
-      read, l is the remains *)
 let spaces main_loop main_loop_rev n r p l =
   let spaces n r previous l =
     assert (n > 0);
