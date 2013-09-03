@@ -926,9 +926,8 @@ let maybe_reference rc r p l =
                     else
                       url
                 in
-                
                   rc#add_ref (string_of_tl id) (string_of_tl title) url;
-                  Some(r, [Quote], remains)
+                  Some(r, [Newline], remains)
         end
     | _ -> None
   in
@@ -1509,7 +1508,7 @@ let main_parse extensions lexemes =
       main_loop_rev r p l
 
     (* spaces after a newline: could lead to hr *)
-    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as xxxt) :: tl ->
+    | ([]|[Newline|Newlines _]), ((Space|Spaces(0|1)) as xxxt) :: tl ->
       begin match hr_s tl with
       | None ->
         begin match hr_m tl with
