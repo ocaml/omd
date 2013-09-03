@@ -7,22 +7,22 @@
 
 (* xtxt = eXTernal eXTension *)
 
-let extensions = ref []
+(* let extensions = ref [] *)
 
-let get () =
-  !extensions
+(* let get () = *)
+(*   !extensions *)
 
-let register e =
-  extensions := e :: !extensions
+(* let register e = *)
+(*   extensions := e :: !extensions *)
 
-let set es = extensions := es
+(* let set es = extensions := es *)
 
-let activate ...
+(* let activate ... *)
 
-(* let deactivate ... *)
+(* (\* let deactivate ... *\) *)
 
-priority (integer?)
-pre-extension
-post-extension
+(* priority (integer?) *)
+(* pre-extension *)
+(* post-extension *)
 
 
