@@ -211,7 +211,7 @@ let main () =
         " Ignore lines that start with `!!!' (3 or more exclamation points).";
         "-C", Unit(fun () -> preprocess_functions ++ remove_comments),
         " Ignore everything on a line after `!!!' (3 or more exclamation points).";
-        "-m", Set(omarkdown), " Output Markdown instead of HTML (not yet implemented).";
+        "-m", Set(omarkdown), " Output Markdown instead of HTML.";
         "-notags", Set(notags), " Output without the HTML tags.";
         "-toc", Set(toc), "n Replace `*Table of contents*' by the table of contents of depth n.";
         "-otoc", Set(otoc), "f Only output the table of contents to file f instead of inplace.";
@@ -263,10 +263,14 @@ let main () =
       in
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs *)
-        (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth else make_paragraphs)
+        (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth
+         else make_paragraphs)
           parsed in
-      let o2 = (* output either Text or HTML *)
-        (if !notags then to_text else to_html ~pindent:true ~nl2br:false) o1
+      let o2 = (* output either Text or HTML, or markdown *)
+        (if !notags then to_text
+         else if !omarkdown then to_markdown
+         else to_html ~pindent:true ~nl2br:false)
+          o1
       in
         output_string output o2;
         flush output;

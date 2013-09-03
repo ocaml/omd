@@ -1880,9 +1880,9 @@ let main_parse extensions lexemes =
 
     (* inline html *)
     | _, (Lessthan|Lessthans _ as t)::
-      (Word(tagname) as w)
-      ::((Space|Spaces _|Greaterthan|Greaterthans _ as x)
-         ::tl as l) ->
+      ((Word(tagname) as w)
+      ::((Space|Spaces _|Greaterthan|Greaterthans _)
+         ::_ as html_stuff) as tl) ->
       if (!strict_html && not(StringSet.mem tagname inline_htmltags_set))
         || not(!blind_html || StringSet.mem tagname htmltags_set)
       then
@@ -1923,11 +1923,11 @@ let main_parse extensions lexemes =
             | [] ->
               List.rev accu, []
           in
-          let b, tl = read_until_gt l in
+          let b, tl = read_until_gt html_stuff in
           if (try ignore(read_until_lt b); false
             with Premature_ending -> true) then
             (* there must not be any '<' in b *)
-            loop [tag(Printf.sprintf "<%s%s%s>" tagname (string_of_t x)
+            loop [tag(Printf.sprintf "<%s%s>" tagname 
                         (string_of_tl b))] 0 tl
           else
             raise Premature_ending
@@ -1942,7 +1942,7 @@ let main_parse extensions lexemes =
           in
           main_loop_rev (main_loop_rev [] [] html @ r) [Greaterthan] tl
         | None ->
-          main_loop_rev (Text(string_of_t t^tagname)::r) [w] l
+          main_loop_rev (Text(string_of_t t^tagname)::r) [w] html_stuff
         )
     (* / end of inline HTML. *)
 

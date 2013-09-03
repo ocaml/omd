@@ -261,7 +261,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) md =
         loop indent tl
     | (Ul l|Ol l|Ulp l|Olp l as e) :: tl ->
         if pindent then Buffer.add_char b '\n';
-        if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
+        if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
         (match e with
            | Ol _|Olp _ ->
                Buffer.add_string b "<ol>";
@@ -270,20 +270,20 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) md =
         if pindent then Buffer.add_char b '\n';
         List.iter
           (fun li ->
-            if pindent then for i = 0 to indent + 1 do
+            if pindent then for i = 1 to indent + 1 do
                               Buffer.add_char b ' '
                             done;
             Buffer.add_string b "<li>";
             loop (indent+2) li;
             if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
             then
-              if pindent then for i = 0 to indent + 1 do
+              if pindent then for i = 1 to indent + 1 do
                   Buffer.add_char b ' '
                 done;
             Buffer.add_string b "</li>";
             if pindent then Buffer.add_char b '\n')
           l;
-        if pindent then for i = 0 to indent do Buffer.add_char b ' ' done;
+        if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
         (match e with
            | Ol _|Olp _ ->
                Buffer.add_string b "</ol>";
@@ -410,7 +410,6 @@ let rec sexpr_of_md md =
   let b = Buffer.create 42 in
   let rec loop = function
     | X x :: tl ->
-
         (match x#to_t md with
            | Some t -> loop t
            | None ->
@@ -544,4 +543,143 @@ let rec sexpr_of_md md =
     Buffer.contents b
 
 
-let markdown_of_md _ = ""
+let rec markdown_of_md md =
+  let quote s =
+    let b = Buffer.create (String.length s) in
+    let l = String.length s in
+    let rec loop nl i =
+      if i < l then
+        begin
+          if nl then Buffer.add_string b "> ";
+          match s.[i] with
+          | '\n' ->
+            Buffer.add_char b '\n';
+            loop true (succ i)
+          | c ->
+            Buffer.add_char b c;
+            loop false (succ i)
+        end
+      else
+        Buffer.contents b
+    in loop true 0
+  in
+  let b = Buffer.create 42 in
+  let rec loop = function
+    | X x :: tl ->
+        (match x#to_t md with
+           | Some t -> loop t
+           | None ->
+             match x#to_html ~indent:0 html_of_md md with
+             | Some s -> Buffer.add_string b s
+             | None -> ());
+        loop tl
+    | Blockquote q :: tl ->
+      Buffer.add_string b (quote(markdown_of_md q));
+      loop tl
+    | Ref(rc, name, text) :: tl ->
+      Printf.bprintf b "[%s][%s]\n" name text;
+      loop tl
+    | Img_ref(rc, name, alt) :: tl ->
+      Printf.bprintf b "![%s][%s]\n" name alt;
+      loop tl
+    | Paragraph md :: tl ->
+      loop md;
+      Printf.bprintf b "\n\n";
+      loop tl
+    | Img(alt, src, title) :: tl ->
+      Printf.bprintf b "![%s](%s \"%s\")" alt src title;
+      loop tl
+    | Text t :: tl ->
+      Printf.bprintf b "%s" t;
+      loop tl
+    | Emph md :: tl ->
+      Buffer.add_string b "*";
+      loop md;
+      Buffer.add_string b "*";
+      loop tl
+    | Bold md :: tl ->
+      Buffer.add_string b "**";
+      loop md;
+      Buffer.add_string b "**";
+      loop md;
+      Buffer.add_string b "**";
+      loop tl
+    | Ol l :: tl ->
+      List.iter(fun li -> Printf.bprintf b "1. "; loop li) l;
+      loop tl
+    | Ul l :: tl ->
+      List.iter(fun li -> Printf.bprintf b "* "; loop li) l;
+      loop tl
+    | Olp l :: tl ->
+      List.iter(fun li -> Printf.bprintf b "1. "; loop li) l;
+      loop tl
+    | Ulp l :: tl ->
+      List.iter(fun li -> Printf.bprintf b "- "; loop li) l;
+      loop tl
+    | Code c :: tl ->
+      Printf.bprintf b "``` "; (* FIXME *)
+      Printf.bprintf b "%s" c;
+      Printf.bprintf b " ```";
+      loop tl
+    | Code_block c :: tl ->
+      Printf.bprintf b "```\n";
+      Printf.bprintf b "%s" c;
+      Printf.bprintf b "```\n";
+      loop tl
+    | Br :: tl ->
+      Buffer.add_string b "<br />";
+      loop tl
+    | Hr :: tl ->
+      Buffer.add_string b "<hr />";
+      loop tl
+    | Html s :: tl ->
+      Buffer.add_string b s;
+      loop tl
+    | Html_block s :: tl ->
+      Buffer.add_string b "\n\n";
+      Buffer.add_string b s;
+      Buffer.add_string b "\n\n";
+      loop tl
+    | Html_comments s :: tl ->
+      Buffer.add_string b s;
+      loop tl
+    | Url (href,s,title) :: tl ->
+      bprintf b "[%s](%s \"%s\")" (html_of_md s) href title;
+      loop tl
+    | H1 md :: tl ->
+      Buffer.add_string b "# ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | H2 md :: tl ->
+      Buffer.add_string b "## ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | H3 md :: tl ->
+      Buffer.add_string b "### ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | H4 md :: tl ->
+      Buffer.add_string b "#### ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | H5 md :: tl ->
+      Buffer.add_string b "##### ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | H6 md :: tl ->
+      Buffer.add_string b "###### ";
+      loop md;
+      Buffer.add_string b "";
+      loop tl
+    | NL :: tl ->
+        Buffer.add_string b "\n";
+        loop tl
+    | [] -> ()
+  in
+    loop md;
+    Buffer.contents b
