@@ -89,6 +89,7 @@ let htmltags_set =
        ;"colgroup";"command";"datalist";"dd";"del";"details";"dfn"
        ;"dialog";"dir";"div";"dl";"dt";"em";"embed";"fieldset"
        ;"figcaption";"figure";"font";"footer";"form";"frame";"frameset"
+       ;"h2";"h3";"h4";"h5";"h6"
        ;"h1";"header";"hr";"i";"iframe";"img";"input";"ins";"kbd"
        ;"keygen";"label";"legend";"li";"map";"mark";"menu";"meter";"nav"
        ;"noframes";"noscript";"object";"ol";"optgroup";"option";"output"
