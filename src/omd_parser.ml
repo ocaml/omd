@@ -1164,7 +1164,8 @@ let parse_list main_loop r p l =
         Olp((List.rev_map(fun (_,_,i) -> i) items))
       else
         Ol((List.rev_map(fun (_,_,i) -> i) items))
-    | [] -> assert false
+    | [] ->
+      failwith "make_up called with []" (* assert false *)
   in
   let rec list_items ~p indents items l =
     if debug then eprintf "list_items: l=(%s)\n%!" (destring_of_tl l);
@@ -1309,12 +1310,23 @@ let parse_list main_loop r p l =
       ->
         list_items ~p:true indents items l
     | _ ->
-      if debug then eprintf "NALI parse_list: l=(%S)\n%!" (string_of_tl l);
+      if debug then
+        begin
+          let rec string_of_items items =
+            match items with
+            | [] -> ""
+            | (O,indent::_,item)::tl -> sprintf "(O,%d,%s)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
+            | (U,indent::_,item)::tl -> sprintf "(U,%d,%s)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
+            | _ -> "(weird)"
+          in
+          eprintf "NALI parse_list: l=(%S) items=%s\n%!" (string_of_tl l) (string_of_items items)
+        end;
     (* not a list item *)
       make_up p items, l
   in
-  let rp, l = list_items ~p:false [] [] l in
-  rp::r, [Newline], l
+  match list_items ~p:false [] [] l with
+  | rp, l ->
+    rp::r, [Newline], l
 
 
 let spaces main_loop n r p l =
@@ -1447,14 +1459,22 @@ let main_parse extensions lexemes =
       end
 
     (* minus *)
-    | ([]|[Newline|Newlines _]), (Minus|Minuss _)::(Space|Spaces _) ::_ ->
+    | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::((Space|Spaces _) ::_ as tl) ->
       (* maybe hr *)
       begin match hr_m lexemes with
-      | None -> (* no hr, so it's a list *)
-        let md, new_p, new_l =
-          parse_list main_loop r [] lexemes
-        in
-        main_loop_rev md new_p new_l
+      | None -> (* no hr, so it could be a list *)
+          begin match t with
+          | Minus -> (* it's a list *)
+            let md, new_p, new_l =
+              parse_list main_loop r [] lexemes
+            in
+            main_loop_rev md new_p new_l
+          | _ -> (* not a list *)
+            begin match maybe_extension extensions r previous lexemes with
+            | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+            | Some(r, p, l) -> main_loop_rev r p l
+            end
+          end
       | Some l -> (* hr *)
         main_loop_rev (Hr::r) [Newline] l
       end
