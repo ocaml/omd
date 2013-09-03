@@ -5,6 +5,22 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
+type r = Omd_representation.t
+(** accumulator (beware, reversed tokens) *)
+
+and p = Omd_representation.tok list
+(** context information: previous elements *)
+
+and l = Omd_representation.tok list
+(** tokens to parse *)
+
+and main_loop =
+  r -> (* accumulator (beware, reversed tokens) *)
+  p -> (* info: previous elements *)
+  l -> (* tokens to parse *)
+  Omd_representation.t (* final result *)
+(** most important loop, which has to be given as an argument *)
+
 val gh_uemph_or_bold_style : bool ref
 val blind_html : bool ref
 val strict_html : bool ref
@@ -83,34 +99,31 @@ val eat_blank : Omd_representation.tok list -> Omd_representation.tok list
     list have been removed (it stops removing as soon as it meets an element
     that is not a blank). Blanks are spaces and newlines only. *)
 
-val is_space_or_equal : Omd_representation.tok -> bool
-val is_space_or_minus : Omd_representation.tok -> bool
-val setext_title :
-  Omd_representation.tok list ->
-  (Omd_representation.tok list * Omd_representation.tok list) option
-val tag_maybe_h1 :
-  ('a list -> 'b list -> Omd_representation.tok list -> Omd_representation.t) ->
-  Omd_representation.tok
-val tag_maybe_h2 :
-  ('a list -> 'b list -> Omd_representation.tok list -> Omd_representation.t) ->
-  Omd_representation.tok
-val tag_md : Omd_representation.element list -> Omd_representation.tok
+val tag__maybe_h1 : main_loop -> Omd_representation.tok
+(** [tag__maybe_h1] is a tag that is injected everywhere that might preceed
+    a H1 title. It needs [main_loop] as argument because when it builds
+    a...................... *)
 
+val tag__maybe_h2 : main_loop -> Omd_representation.tok
+
+val tag__md : Omd_representation.t -> Omd_representation.tok
+(** [tag__md] is basically a sort of [t_to_tok] function as its type
+    tells. Its purpose is to inject pre-parsed markdown in a
+    yet-to-parse token stream. *)
 
 val tag_setext :
-  (Omd_representation.t -> Omd_representation.tok list -> Omd_representation.tok list -> Omd_representation.t) ->
-  Omd_representation.tok list -> Omd_representation.tok list
+  main_loop -> Omd_representation.tok list -> Omd_representation.tok list
 (** Let's tag the lines that *might* be titles using setext-style.
     "might" because if they are, for instance, in a code section,
     then they are not titles at all. *)
 
 
-val hr_m : Omd_representation.tok list -> Omd_representation.tok list option
+val hr_m : l -> l option
 (** [hr_m l] returns [Some nl] where [nl] is the remaining of [l] if [l]
     contains a horizontal rule drawn with dashes. If it doesn't, then
     returns [None].*)
 
-val hr_s : Omd_representation.tok list -> Omd_representation.tok list option
+val hr_s : l -> l option
 (** [hr_s l] returns [Some nl] where [nl] is the remaining of [l] if [l]
     contains a horizontal rule drawn with stars. If it doesn't, then
     returns [None].*)
@@ -118,6 +131,7 @@ val hr_s : Omd_representation.tok list -> Omd_representation.tok list option
 
 exception NL_exception
 exception Premature_ending
+
 val read_until_gt :
   ?no_nl:bool ->
   Omd_representation.tok list ->
@@ -157,97 +171,33 @@ val read_until_space :
 val read_until_newline :
   Omd_representation.tok list ->
   Omd_representation.tok list * Omd_representation.tok list
-val read_title :
-  ('a list -> 'b list -> Omd_representation.tok list -> Omd_representation.t) ->
-  int ->
-  Omd_representation.element list ->
-  'c ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
 
+
+val read_title : main_loop -> int -> r -> p -> l -> r * p * l
 
 val maybe_extension :
-  ('a -> 'b -> 'c -> ('a * 'b * 'c) option) list ->
-  'a -> 'b -> 'c -> ('a * 'b * 'c) option
-(** [maybe_extension e r p l] returns None if there is no extension or
-    if extensions haven't had  any effect, returns Some(nr, np, nl) if
+  (r -> p -> l -> (r * p * l) option) list ->
+  r -> p -> l -> (r * p * l) option
+(** [maybe_extension e r p l] returns [None] if there is no extension or
+    if extensions haven't had  any effect, returns [Some(nr, np, nl)] if
     at least one extension has applied successfully. *)
 
-val emailstyle_quoting :
-  ('a list -> 'b list -> Omd_representation.tok list -> Omd_representation.t) ->
-  Omd_representation.element list ->
-  'c ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
-val maybe_reference :
-  Omd_representation.ref_container ->
-  Omd_representation.element list ->
-  'a ->
-  Omd_representation.tok list ->
-  (Omd_representation.element list * Omd_representation.tok list *
-   Omd_representation.tok list)
-  option
-val maybe_link :
-  ('a list -> 'b list -> Omd_representation.tok list -> Omd_representation.t) ->
-  Omd_representation.element list ->
-  'c ->
-  Omd_representation.tok list ->
-  (Omd_representation.element list * Omd_representation.tok list *
-   Omd_representation.tok list)
-  option
-val bcode :
-  Omd_representation.element list ->
-  'a ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
-val icode :
-  Omd_representation.element list ->
-  'a ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
-val parse_list :
-  ('a list ->
-   Omd_representation.tok list ->
-   Omd_representation.tok list -> Omd_representation.t) ->
-  'b ->
-  Omd_representation.element list ->
-  'c ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
+val emailstyle_quoting : main_loop -> r -> p -> l -> r * p * l
 
-val spaces :
-  ('a list ->
-   Omd_representation.tok list ->
-   Omd_representation.tok list -> Omd_representation.t) ->
-  'b ->
-  int ->
-  Omd_representation.element list ->
-  Omd_representation.tok list ->
-  Omd_representation.tok list ->
-  Omd_representation.element list * Omd_representation.tok list *
-  Omd_representation.tok list
+val maybe_reference :
+  Omd_representation.ref_container -> r -> p -> l -> (r * p * l) option
+
+val maybe_link : main_loop -> r -> p -> l -> (r * p * l) option
+
+val bcode : r -> p -> l -> r * p * l
+
+val icode : r -> p -> l -> r * p * l
+
+val parse_list : main_loop -> r -> p -> l -> r * p * l
+
+val spaces : main_loop -> int -> r -> p -> l -> r * p * l
 (** spaces: returns (r,p,l) where r is the result, p is the last thing
       read, l is the remains *)
 
-val main_parse :
-  (Omd_representation.t ->
-   Omd_representation.tok list ->
-   Omd_representation.tok list ->
-   (Omd_representation.t * Omd_representation.tok list *
-    Omd_representation.tok list)
-   option)
-  list -> Omd_representation.tok list -> Omd_representation.t
-val parse :
-  ?extensions:(Omd_representation.t ->
-               Omd_representation.tok list ->
-               Omd_representation.tok list ->
-               (Omd_representation.t * Omd_representation.tok list *
-                Omd_representation.tok list)
-               option)
-              list ->
-  Omd_representation.tok list -> Omd_representation.t
+val parse : ?extensions:(r -> p -> l -> (r * p * l) option) list -> l
+  -> Omd_representation.t

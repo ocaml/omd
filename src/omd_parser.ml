@@ -4,6 +4,22 @@
 (* Licence : ISC                                                       *)
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
+type r = Omd_representation.t
+(** accumulator (beware, reversed tokens) *)
+
+and p = Omd_representation.tok list
+(** context information: previous elements *)
+
+and l = Omd_representation.tok list
+(** tokens to parse *)
+
+and main_loop =
+  r -> (* accumulator (beware, reversed tokens) *)
+  p -> (* info: previous elements *)
+  l -> (* tokens to parse *)
+  Omd_representation.t (* final result *)
+(** most important loop *)
+
 
 (** N.B. Please do not use tabulations in your Markdown file! *)
 
@@ -119,6 +135,7 @@ let unindent_rev n lexemes =
       else
         (cl@accu), l
     | Newline::Spaces(s)::tl as l ->
+      assert(s>0);
       if s+2 = n then
         loop (Newline::cl@accu) [] tl
       else if s+2 > n then
@@ -292,15 +309,11 @@ let eat_blank =
   eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
 
 
-let is_space_or_equal = function
-  | Space | Spaces _ | Equal | Equals _ -> true
-  |_ -> false
-
-let is_space_or_minus = function
-  | Space | Spaces _ | Minus | Minuss _ -> true
-  |_ -> false
-
+(* used by tag__maybe_h1 and tag__maybe_h2 *)
 let setext_title l =
+(* val setext_title :
+  Omd_representation.tok list ->
+  (Omd_representation.tok list * Omd_representation.tok list) option *)
   let rec loop r = function
     | [] ->
       if r = [] then
@@ -318,7 +331,7 @@ let setext_title l =
   loop [] l
 
 
-let tag_maybe_h1 main_loop =
+let tag__maybe_h1 main_loop =
   Tag(fun r p l ->
     match p with
     | ([]|[Newline|Newlines _]) ->
@@ -332,7 +345,7 @@ let tag_maybe_h1 main_loop =
     | _ -> assert false (* -> the tag generator would be broken *)
   )
 
-let tag_maybe_h2 main_loop =
+let tag__maybe_h2 main_loop =
   Tag(fun r p l ->
     match p with
     | ([]|[Newline|Newlines _]) ->
@@ -346,7 +359,7 @@ let tag_maybe_h2 main_loop =
     | _ -> assert false (* -> the tag generator would be broken *)
   )
 
-let tag_md md = (* [md] should be in reverse *)
+let tag__md md = (* [md] should be in reverse *)
   Tag(fun r p l -> Some(md@r, [], l))
 
 (* Let's tag the lines that *might* be titles using setext-style.
@@ -365,7 +378,7 @@ let tag_setext main_loop lexemes =
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-          loop [] (rleft@(e2::e1::pl@(tag_maybe_h1 main_loop::res))) right
+          loop [] (rleft@(e2::e1::pl@(tag__maybe_h1 main_loop::res))) right
         | Some(rleft, right) ->
           loop [] (rleft@(e2::e1::pl@res)) right
         | None ->
@@ -382,7 +395,7 @@ let tag_setext main_loop lexemes =
             tl
         with
       | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-        loop [] (rleft@(e2::e1::pl@(tag_maybe_h2 main_loop::res))) right
+        loop [] (rleft@(e2::e1::pl@(tag__maybe_h2 main_loop::res))) right
       | Some(rleft, right) ->
         loop [] (rleft@(e2::e1::pl@res)) right
       | None ->
@@ -734,7 +747,7 @@ let read_until_space ?(no_nl = false) l =
         if n = 0
         then ((List.rev accu), (Space :: tl))
         else loop (Space :: accu) (n - 1) (Space :: tl)
-    | Spaces n :: tl -> ((List.rev accu), ((Spaces (n - 1)) :: tl))
+    | Spaces n :: tl -> assert(n>0); ((List.rev accu), ((Spaces(n - 1)) :: tl))
     | ((Newline | Newlines _ as e)) :: tl ->
         if no_nl then raise NL_exception else loop (e :: accu) n tl
     | e :: tl -> loop (e :: accu) n tl
@@ -812,7 +825,17 @@ let maybe_extension extensions r p l =
       None
       extensions
 
+(* blockquotes *)
 let emailstyle_quoting main_loop r _p lexemes =
+  let rec fix = function
+    (* FIXME: find why this is needed, fix it, and get rid of this! *)
+    | Newline::Newline::tl -> fix (Newlines(0)::tl)
+    | Newline::Newlines(n)::tl -> fix (Newlines(n+1)::tl)
+    | Newlines(n)::Newlines(m)::tl -> fix (Newlines(n+m+2)::tl)
+    | Newlines(n)::Newline::tl -> fix (Newlines(n+1)::tl)
+    | [] -> []
+    | e::tl -> e::fix tl
+  in
   let rec loop block cl =
     function
     | Newline::Greaterthan::(Newline::_ as tl) ->
@@ -822,12 +845,21 @@ let emailstyle_quoting main_loop r _p lexemes =
     | Newline::Greaterthan::Spaces 0::tl ->
       loop (Newline::cl@block) [Space] tl
     | Newline::Greaterthan::Spaces n::tl ->
+      assert(n>0);
       loop (Newline::cl@block) [Spaces(n-1)] tl
-      (* | Newline::tl -> loop block (Newline::cl) tl *)
+
+    | Newlines 0::Greaterthan::Space::tl ->
+      loop (Newlines 0::cl@block) [] tl
+    | Newlines 0::Greaterthan::Spaces 0::tl ->
+      loop (Newlines 0::cl@block) [Space] tl
+    | Newlines 0::Greaterthan::Spaces n::tl ->
+      assert(n>0);
+      loop (Newlines 0::cl@block) [Spaces(n-1)] tl
+
     | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
     | e::tl -> loop block (e::cl) tl
   in
-  match loop [] [] lexemes with
+  match loop [] [] (fix lexemes) with
   | block, tl ->
     if debug then
       eprintf "##############################\n%s\n\
@@ -893,6 +925,7 @@ let maybe_reference rc r p l =
                     else
                       url
                 in
+                
                   rc#add_ref (string_of_tl id) (string_of_tl title) url;
                   Some(r, [Quote], remains)
         end
@@ -927,8 +960,6 @@ let maybe_link main_loop r p l =
                [Cparenthesis],
                Cparenthesiss(n-1)::tl)
         | x,y ->
-          eprintf "x=%s y=%s\n%!"
-            (destring_of_tl x) (destring_of_tl y);
           None
       end
     | _ -> None
@@ -1031,6 +1062,7 @@ let icode r p l =
       (* -> Return what's been found as code because what follows isn't. *)
       Code_block (Buffer.contents accu)::r, [p], tl
     | (Newline|Newlines _ as p), Spaces(n)::tl ->
+      assert(n>0);
       (* At least 4 spaces, it's still code. *)
       Buffer.add_string accu (string_of_t p);
       loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
@@ -1047,11 +1079,11 @@ let icode r p l =
   in
     match l with
       | Spaces n::tl ->
-          loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
+        loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
       | _ -> assert false
 
 
-let parse_list main_loop main_loop_rev r p l =
+let parse_list main_loop r p l =
   let module UO = struct type ordered = O | U end in
   let open UO in
   if debug then eprintf "parse_list: l=(%s)\n%!" (destring_of_tl l);
@@ -1068,22 +1100,25 @@ let parse_list main_loop main_loop_rev r p l =
     | [] ->
        Split([],[])
     | Newlines 0 :: ((Spaces n) :: Greaterthan :: (Space | Spaces _) :: tl as s) ->
-        if n+2 = indent+4 then (* blockquote *)
-          let block, rest = unindent (n+2) (Newline::s) in
-            Continue_with(List.rev(Newlines 0::block), rest)
-        else if n+2 >= indent+8 then (* code inside item *)
-          let block, rest = unindent (n+2+4) (Newline::s) in
-            Continue_with(List.rev(Newlines 0::block), rest)
-        else
-          Split([], l)
+      assert(n>=0);
+      if n+2 = indent+4 then (* blockquote *)
+        let block, rest = unindent_rev (n+2) (Newline::s) in
+        Continue_with(block@[Newlines 0], rest)
+      else if n+2 >= indent+8 then (* code inside item *)
+        let block, rest = unindent_rev (indent+4) (Newline::s) in
+        Continue_with(block@[Newlines 0], rest)
+      else
+        Split([], l)
     | Newlines 0 :: (Spaces n :: tl as s) ->
-       if n+2 >= indent+8 then (* code inside item *)
-         let block, rest = unindent_rev (n+2+4) (Newline::s) in
-           Continue_with(List.rev (Newline::block), rest)
-       else if n+2 >= indent+4 then (* new paragraph inside item *)
-         Continue_with([Spaces(n-4);Newlines 0], tl)
-       else
-         Split([], l)
+      assert(n>=0);
+      if n+2 >= indent+8 then (* code inside item *)
+        let block, rest = unindent_rev (indent+4) (Newline::s) in
+        Continue_with(block@[Newline], rest)
+      else if n+2 >= indent+4 then (* new paragraph inside item *)
+        let block, rest = unindent_rev (indent+4) (Newline::s) in
+        Continue_with(block@[Newlines 0], rest)
+      else
+        Split([], l)
     | (Newlines _) :: _ -> (* n > 0 *)
        (* End of item, stop *)
        Split([], l)
@@ -1095,6 +1130,14 @@ let parse_list main_loop main_loop_rev r p l =
             | (Number _ :: Dot :: (Space|Spaces _) :: _)
                 as tl) ->
        Split([Newline], tl)
+    | Newline :: (Spaces _ as s) :: tl ->
+      Continue_with
+        ([s;
+          Tag(fun r p ->
+              function Spaces _::tl -> Some(r,p,Space::tl)
+                     | _ -> None);
+           Newline],
+         tl)
     | _::_ ->
        Continue
   in
@@ -1137,6 +1180,10 @@ let parse_list main_loop main_loop_rev r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            match indents with
            | [] ->
              assert(items = []);
@@ -1270,20 +1317,18 @@ let parse_list main_loop main_loop_rev r p l =
   rp::r, [Newline], l
 
 
-let spaces main_loop main_loop_rev n r p l =
+let spaces main_loop n r p l =
   let spaces n r previous l =
     assert (n > 0);
     match n, previous, l with (* NOT a recursive function *)
     | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)
       ::(Space|Spaces _)::tl ->
           (* unordered list *)
-      (* new_list main_loop main_loop_rev false r [] (Newline::make_space n::l) *)
-      parse_list main_loop main_loop_rev r [] (make_space n::l)
+      parse_list main_loop r [] (make_space n::l)
     | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot
       ::(Space|Spaces _)::tl ->
           (* ordered list *)
-      (* new_list main_loop main_loop_rev true r [] (Newline::make_space n::l) *)
-      parse_list main_loop main_loop_rev r [] (make_space n::l)
+      parse_list main_loop r [] (make_space n::l)
     | (1|2|3), ([]|[(Newlines _)]), t::tl ->
       Text (" ")::r, p, l
     | (1|2|3), ([]|[(Newlines _)]), [] ->
@@ -1298,10 +1343,41 @@ let spaces main_loop main_loop_rev n r p l =
   spaces n r p l (* NOT a recursive call *)
 
 
+let maybe_autoemail r p l =
+  match l with
+  | Lessthan::tl ->
+    begin
+      match
+        fsplit ~excl:(function (Newline|Newlines _|Space|Spaces _) :: _-> true
+                             | [] -> true
+                             | _ -> false)
+          ~f:(function At::tl -> Split([],tl) | _ -> Continue)
+          tl
+      with
+      | None -> None
+      | Some(left, right) ->
+        match
+          fsplit ~excl:(function (Newline|Newlines _|Space|Spaces _) :: _-> true
+                               | [] -> true
+                               | _ -> false)
+          ~f:(function Greaterthan::tl -> Split([],tl)
+                     | Greaterthans 0::tl -> Split([],Greaterthan::tl)
+                     | Greaterthans n::tl -> Split([],Greaterthans(n-1)::tl)
+                     | _ -> Continue)
+          right
+        with
+        | None -> None
+        | Some(domain, tl) ->
+          let email = string_of_tl left ^ "@" ^ string_of_tl domain in
+          Some(Url("mailto:"^email,[Text email],"")::r,[Greaterthan],tl)
+    end
+  | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
+
+
+
 let main_parse extensions lexemes =
   let rc = new Omd_representation.ref_container in
 
-  (* [main_loop_rev ] should be called only by itself and [main_loop ] *)
   let rec main_loop_rev (r:t) (previous:Omd_representation.tok list)
       (lexemes:Omd_representation.tok list) =
     if debug then
@@ -1345,7 +1421,7 @@ let main_parse extensions lexemes =
             new_tl
       end
 
-    (* email-style quoting *)
+    (* email-style quoting / blockquote *)
     | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
       begin
         let r, p, l =
@@ -1376,8 +1452,7 @@ let main_parse extensions lexemes =
       begin match hr_m lexemes with
       | None -> (* no hr, so it's a list *)
         let md, new_p, new_l =
-          (* new_list main_loop main_loop_rev false r [] (Newline::lexemes) *)
-          parse_list main_loop main_loop_rev r [] lexemes
+          parse_list main_loop r [] lexemes
         in
         main_loop_rev md new_p new_l
       | Some l -> (* hr *)
@@ -1413,13 +1488,13 @@ let main_parse extensions lexemes =
       main_loop_rev r p l
 
     (* spaces after a newline: could lead to hr *)
-    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as t) :: tl ->
+    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as xxxt) :: tl ->
       begin match hr_s tl with
       | None ->
         begin match hr_m tl with
         | None ->
           let r, p, l =
-            spaces main_loop main_loop_rev (fst(size t)) r previous tl
+            spaces main_loop (fst(size xxxt)) r previous tl
           in
           main_loop_rev r p l
         | Some l ->
@@ -1433,7 +1508,7 @@ let main_parse extensions lexemes =
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let r, p, l =
-        spaces main_loop main_loop_rev (fst(size t)) r previous tl
+        spaces main_loop (fst(size t)) r previous tl
       in
       main_loop_rev r p l
 
@@ -1466,8 +1541,14 @@ let main_parse extensions lexemes =
     (* enumerated lists *)
     | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
       let md, new_p, new_l =
-        (* new_list main_loop main_loop_rev true r [] (Newline::lexemes) *)
-        parse_list main_loop main_loop_rev r [] lexemes
+        parse_list main_loop r [] lexemes
+      in
+      main_loop_rev md new_p new_l
+
+    (* plus *)
+    | ([]|[(Newline|Newlines _)]), Plus :: (Space|Spaces _) :: _ ->
+      let md, new_p, new_l =
+        parse_list main_loop r [] lexemes
       in
       main_loop_rev md new_p new_l
 
@@ -1479,8 +1560,7 @@ let main_parse extensions lexemes =
         main_loop_rev (Hr::r) [Newline] l
       | None ->
         let md, new_p, new_l =
-          (* new_list main_loop main_loop_rev false r [] (Newline::lexemes) *)
-          parse_list main_loop main_loop_rev r [] lexemes
+          parse_list main_loop r [] lexemes
         in
         main_loop_rev md new_p new_l
       end
@@ -1632,9 +1712,9 @@ let main_parse extensions lexemes =
       main_loop_rev (Text ("\\") :: r) [t] tl
     | _, (Backslashs n as t) :: tl -> (* \\\\... *)
       if n mod 2 = 0 then
-        main_loop_rev (Text (String.make ((n-2)/2) '\\') :: r) [t] tl
+        main_loop_rev (Text(String.make ((n-2)/2) '\\') :: r) [t] tl
       else
-        main_loop_rev (Text (String.make ((n-2)/2) '\\') :: r) [t] (Backslash :: tl)
+        main_loop_rev (Text(String.make ((n-2)/2) '\\') :: r) [t] (Backslash :: tl)
     | _, Backslash::[] ->
       main_loop_rev (Text "\\" :: r) [] []
     | _, Backslash::tl ->
@@ -1788,7 +1868,7 @@ let main_parse extensions lexemes =
         end
       else
         let read_html() =
-          let tag s = tag_md [Html s] in
+          let tag s = tag__md [Html s] in
           let rec loop accu n = function
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
               (* self-closing tags *)
@@ -1842,6 +1922,16 @@ let main_parse extensions lexemes =
         )
     (* / end of inline HTML. *)
 
+    (* < : emails *)
+    | _, (Lessthan as t)::tl ->
+      begin match maybe_autoemail r previous lexemes with
+        | Some(r,p,l) -> main_loop_rev r p l
+        | None -> 
+        begin match maybe_extension extensions r previous lexemes with
+        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | Some(r, p, l) -> main_loop_rev r p l
+        end
+      end
 
     (* line breaks *)
     | _, Newline::tl ->
@@ -1967,8 +2057,10 @@ let main_parse extensions lexemes =
               match read_until_cbracket ~no_nl:false ntl with
               | [], rest -> raise Premature_ending
               | id, rest ->
-                main_loop_rev (Img_ref(rc, string_of_tl id, string_of_tl alt)
-                           ::r) [Cbracket] rest
+                main_loop_rev 
+                  (Img_ref(rc, string_of_tl id, string_of_tl alt)::r)
+                  [Cbracket]
+                  rest
             with
             | Premature_ending
             | NL_exception ->
@@ -1993,7 +2085,7 @@ let main_parse extensions lexemes =
     | _,
       (At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar
           |Dot|Doublequote|Exclamation|Equal|Minus|Obrace|Oparenthesis
-          |Percent|Plus|Question|Quote|Semicolon|Slash|Tab|Tilde|Lessthan
+          |Percent|Plus|Question|Quote|Semicolon|Slash|Tab|Tilde
           |Greaterthan as t)::tl
       ->
       begin match maybe_extension extensions r previous lexemes with
@@ -2290,8 +2382,7 @@ let main_parse extensions lexemes =
   (* /generated code *)
 
 
-  and main_loop (r: t) (previous:Omd_representation.tok list)
-      (lexemes:Omd_representation.tok list) =
+  and main_loop (r:r) (previous:p) (lexemes:l) =
     List.rev (main_loop_rev r previous lexemes)
 
   in

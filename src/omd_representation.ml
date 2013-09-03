@@ -7,14 +7,23 @@ module R = Map.Make(String)
 class ref_container = object
   val broken_url = "", "Broken URL"
   val mutable c = R.empty
+  val mutable c2 = R.empty
   method add_ref name title url =
-    c <- R.add name (url, title) c
+    c <- R.add name (url, title) c;
+    let ln = String.lowercase (String.copy name) in
+    if ln <> name then c2 <- R.add ln (url, title) c2
+
   method get_ref name =
     let (url, title) as r =
       try R.find name c
       with Not_found ->
-        if debug then eprintf "Could not find reference (%s)\n%!" (name);
-        broken_url
+        let ln = String.lowercase (String.copy name) in
+        try R.find ln c
+        with Not_found ->
+          try R.find ln c2
+          with Not_found ->
+            if debug then eprintf "Could not find reference (%s)\n%!" (name);
+            broken_url
     in r
 end
 

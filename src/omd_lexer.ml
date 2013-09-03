@@ -28,78 +28,77 @@ open Omd_representation
 let string_of_t = function
   | Tag _ -> ""
   | Ampersand -> "&"
-  | Ampersands n -> String.make (2+n) '&'
+  | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
   | At -> "@"
-  | Ats  n -> String.make (2+n) '@'
+  | Ats n -> assert (n >= 0); String.make (2+n) '@'
   | Backquote -> "`"
-  | Backquotes  n -> String.make (2+n) '`'
+  | Backquotes n -> assert (n >= 0); String.make (2+n) '`'
   | Backslash -> "\\"
-  | Backslashs  n -> String.make (2+n) '\\'
+  | Backslashs n -> assert (n >= 0); String.make (2+n) '\\'
   | Bar -> "|"
-  | Bars  n -> String.make (2+n) '|'
+  | Bars n -> assert (n >= 0); String.make (2+n) '|'
   | Caret -> "^"
-  | Carets  n -> String.make (2+n) '^'
+  | Carets n -> assert (n >= 0); String.make (2+n) '^'
   | Cbrace -> "}"
-  | Cbraces  n -> String.make (2+n) '}'
+  | Cbraces n -> assert (n >= 0); String.make (2+n) '}'
   | Colon -> ":"
-  | Colons  n -> String.make (2+n) ':'
+  | Colons n -> assert (n >= 0); String.make (2+n) ':'
   | Comma -> ","
-  | Commas  n -> String.make (2+n) ','
+  | Commas n -> assert (n >= 0); String.make (2+n) ','
   | Cparenthesis -> ")"
-  | Cparenthesiss  n -> String.make (2+n) ')'
+  | Cparenthesiss n -> assert (n >= 0); String.make (2+n) ')'
   | Cbracket -> "]"
-  | Cbrackets  n -> String.make (2+n) ']'
+  | Cbrackets n -> assert (n >= 0); String.make (2+n) ']'
   | Dollar -> "$"
-  | Dollars  n -> String.make (2+n) '$'
+  | Dollars n -> assert (n >= 0); String.make (2+n) '$'
   | Dot -> "."
-  | Dots  n -> String.make (2+n) '.'
+  | Dots n -> assert (n >= 0); String.make (2+n) '.'
   | Doublequote -> "\""
-  | Doublequotes  n -> String.make (2+n) '"'
+  | Doublequotes n -> assert (n >= 0); String.make (2+n) '"'
   | Exclamation -> "!"
-  | Exclamations  n -> String.make (2+n) '!'
+  | Exclamations n -> assert (n >= 0); String.make (2+n) '!'
   | Equal -> "="
-  | Equals  n -> String.make (2+n) '='
+  | Equals n -> assert (n >= 0); String.make (2+n) '='
   | Greaterthan -> ">"
-  | Greaterthans  n -> String.make (2+n) '>'
+  | Greaterthans n -> assert (n >= 0); String.make (2+n) '>'
   | Hash -> "#"
-  | Hashs  n -> String.make (2+n) '#'
+  | Hashs n -> assert (n >= 0); String.make (2+n) '#'
   | Lessthan -> "<"
-  | Lessthans  n -> String.make (2+n) '<'
+  | Lessthans n -> assert (n >= 0); String.make (2+n) '<'
   | Minus -> "-"
-  | Minuss  n -> String.make (2+n) '-'
+  | Minuss n -> assert (n >= 0); String.make (2+n) '-'
   | Newline -> "\n"
-  | Newlines  n -> String.make (2+n) '\n'
+  | Newlines n -> assert (n >= 0); String.make (2+n) '\n'
   | Number s -> s
   | Obrace -> "{"
-  | Obraces  n -> String.make (2+n) '{'
+  | Obraces n -> assert (n >= 0); String.make (2+n) '{'
   | Oparenthesis -> "("
-  | Oparenthesiss  n -> String.make (2+n) '('
+  | Oparenthesiss n -> assert (n >= 0); String.make (2+n) '('
   | Obracket -> "["
-  | Obrackets  n -> String.make (2+n) '['
+  | Obrackets n -> assert (n >= 0); String.make (2+n) '['
   | Percent -> "%"
-  | Percents  n -> String.make (2+n) '%'
+  | Percents n -> assert (n >= 0); String.make (2+n) '%'
   | Plus -> "+"
-  | Pluss  n -> String.make (2+n) '+'
+  | Pluss n -> assert (n >= 0); String.make (2+n) '+'
   | Question -> "?"
-  | Questions  n -> String.make (2+n) '?'
+  | Questions n -> assert (n >= 0); String.make (2+n) '?'
   | Quote -> "'"
-  | Quotes  n -> String.make (2+n) '\''
+  | Quotes n -> assert (n >= 0); String.make (2+n) '\''
   | Semicolon -> ";"
-  | Semicolons  n -> String.make (2+n) ';'
+  | Semicolons n -> assert (n >= 0); String.make (2+n) ';'
   | Slash -> "/"
-  | Slashs  n -> String.make (2+n) '/'
+  | Slashs n -> assert (n >= 0); String.make (2+n) '/'
   | Space -> " "
-  | Spaces  n -> String.make (2+n) ' '
+  | Spaces n -> assert (n >= 0); String.make (2+n) ' '
   | Star -> "*"
-  | Stars  n -> String.make (2+n) '*'
+  | Stars n -> assert (n >= 0); String.make (2+n) '*'
   | Tab -> "\t"
-  | Tabs  n -> String.make (2+n) '\t'
+  | Tabs n -> assert (n >= 0); String.make (2+n) '\t'
   | Tilde -> "~"
-  | Tildes  n -> String.make (2+n) '~'
+  | Tildes n -> assert (n >= 0); String.make (2+n) '~'
   | Underscore -> "_"
-  | Underscores  n -> String.make (2+n) '_'
+  | Underscores n -> assert (n >= 0); String.make (2+n) '_'
   | Word s -> s
-
 
 
 let lex s =

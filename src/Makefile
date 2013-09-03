@@ -22,10 +22,10 @@ omd.opt:omd_utils.cmx omd_representation.cmx omd_backend.cmx omd_lexer.cmx omd_p
 omd.cma:omd_utils.cmo omd_representation.cmo omd_backend.cmo omd_lexer.cmo omd_parser.cmo omd.cmo
 	$(OCAMLCG) -a -o $@ $+
 
-%.cmo:%.ml
+%.cmo:%.ml %.cmi
 	$(OCAMLCG) -c $<
 
-%.cmx:%.ml
+%.cmx:%.ml %.cmi
 	$(OCAMLOPT) -c $<
 
 %.cmi:%.mli
@@ -37,8 +37,12 @@ clean:
 test: omd.cma
 	ocaml omd.cma cow_tests/test.ml
 
+omd.cmx:omd_parser.cmx
+omd_main.cmx:omd_parser.cmx
+omd_parser.cmx:omd_representation.cmx omd_backend.cmx
+
 
 include .depend
 
-.depend:omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml
+.depend:omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli
 	ocamldep $? > .depend
