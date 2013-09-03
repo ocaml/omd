@@ -194,12 +194,14 @@ val make_paragraphs : t -> t
     to build them. On the other hand, if you don't want
     automatic Markdown-style paragraphs, don't call this function! *)
 
-val to_html : t -> string
+val to_html : ?pindent:bool -> ?nl2br:bool -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] and [Html_block of string]
     into your HTML representation.  *)
 
+val to_markdown : t -> string
+(** Translate markdown representation into textual markdown. *)
 
 val to_text : t -> string
 (** Translate markdown representation into raw text. *)

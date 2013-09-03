@@ -266,7 +266,7 @@ let main () =
         (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth else make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML *)
-        (if !notags then to_text else to_html) o1
+        (if !notags then to_text else to_html ~pindent:true ~nl2br:false) o1
       in
         output_string output o2;
         flush output;
