@@ -1829,6 +1829,10 @@ let main_parse extensions lexemes =
       end
 
     (* HTML *)
+    (* <br/> and <hr/> with no space *)
+    | _, Lessthan::Word("br"|"hr" as w)::Slash::Greaterthan::tl ->
+      main_loop_rev (Html("<"^w^"/>")::r) [Greaterthan] tl
+
     (* block html *)
     | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as t)::
       Word(tagname)
