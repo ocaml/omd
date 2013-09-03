@@ -6,6 +6,7 @@ Synopsis:    A Markdown frontend in pure OCaml.
 Description: This Markdown library has no dependency besides the OCaml
   compiler.  The implementation targets the original Markdown with a few Github markdown features.
 Authors:     Philippe Wang <philippe.wang@gmail.com>
+Maintainers: [Philippe Wang <philippe.wang@gmail.com>]
 License:     ISC
 Homepage:    https://github.com/pw374/omd
 Plugins:     META (0.3), StdFiles (0.3)
