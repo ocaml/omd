@@ -92,8 +92,8 @@ let string_of_t = function
   | Spaces n -> assert (n >= 0); String.make (2+n) ' '
   | Star -> "*"
   | Stars n -> assert (n >= 0); String.make (2+n) '*'
-  | Tab -> "\t"
-  | Tabs n -> assert (n >= 0); String.make (2+n) '\t'
+  | Tab -> "    "
+  | Tabs n -> assert (n >= 0); String.make ((2+n)*4) ' '
   | Tilde -> "~"
   | Tildes n -> assert (n >= 0); String.make (2+n) '~'
   | Underscore -> "_"
@@ -121,15 +121,14 @@ let lex s =
     let rec loop () =
       begin
         if !i = l then
-          Word (String.sub s start (!i-start))
+          Word(String.sub s start (!i-start))
         else
           match s.[!i] with
-          (* FIXME: pattern matching on chars is inefficient *)
           | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\''
           | '"' | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':'
           | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
           | '$' | '%' | '!' | '?' ->
-                               Word (String.sub s start (!i-start))
+              Word(String.sub s start (!i-start))
           | c -> incr i; loop()
       end
     in
@@ -145,7 +144,6 @@ let lex s =
       incr i
     done;
     match s.[!i] with
-    (* FIXME: pattern matching on chars is inefficient *)
     | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
     | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
     | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
@@ -161,9 +159,9 @@ let lex s =
   while !i < l do
     let c = s.[!i] in
     let w = match c with
-      (* FIXME: pattern matching on chars is inefficient *)
       | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
-      | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2)
+(*       | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2) *)
+      | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
       | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
       | '\r' -> (* eliminating \r by converting all styles to unix style *)
           let n = n_occ c in
