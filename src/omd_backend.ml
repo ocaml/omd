@@ -59,7 +59,7 @@ let make_paragraphs md =
         loop [] (e::NL::accu) tl
       else
         loop (e::cp) accu tl
-    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
        | Html_block _) as e :: tl->
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
