@@ -33,6 +33,9 @@ dist tar: $(DISTFILES)
 	mkdir $(PKGNAME)-$(PKGVERSION)
 	cp --parents -r $(DISTFILES) $(PKGNAME)-$(PKGVERSION)/
 #	setup.ml independent of oasis:
+#	and remove test_cow!
+	test "$(wc -l < _oasis)" == 42 ; echo $?
+	head -n 31 _oasis > $(PKGNAME)-$(PKGVERSION)/_oasis
 	cd $(PKGNAME)-$(PKGVERSION) && oasis setup
 	tar -zcvf $(PKG_TARBALL) $(PKGNAME)-$(PKGVERSION)
 	$(RM) -rf $(PKGNAME)-$(PKGVERSION)
@@ -45,3 +48,11 @@ clean:
 distclean dist-clean:: clean
 	ocaml setup.ml -distclean
 	$(RM) $(wildcard *.ba[0-9] *.bak *~ *.odocl)
+
+opam:
+	test "$(wc -l < _oasis)" == 42 ; echo $?
+	cp _oasis _oasis_orig
+	head -n 31 _oasis_orig > _oasis
+	oasis2opam http://pw374.github.io/distrib/omd/$(PKGNAME)-$(PKGVERSION).tar.gz
+	mv _oasis_orig _oasis
+
