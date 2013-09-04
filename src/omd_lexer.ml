@@ -137,21 +137,26 @@ let lex s =
   let maybe_number () =
     let start = !i in
     while
+      !i < l &&
       match s.[!i] with
       | '0' .. '9' -> true
       | _ -> false
     do
       incr i
     done;
-    match s.[!i] with
-    | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
-    | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
-    | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
-    | '?' ->
-       Number(String.sub s start (!i-start))
-    | _ ->
-       i := start;
-       word()
+    if !i = l then
+      Number(String.sub s start (!i-start))
+    else
+      begin match s.[!i] with
+        | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
+        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
+        | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
+        | '?' ->
+            Number(String.sub s start (!i-start))
+        | _ ->
+            i := start;
+            word()
+      end
   in
 
   let n_occ c = incr i; rcount c in
