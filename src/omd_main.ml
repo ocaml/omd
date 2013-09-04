@@ -213,10 +213,10 @@ let main () =
         " Ignore everything on a line after `!!!' (3 or more exclamation points).";
         "-m", Set(omarkdown), " Output Markdown instead of HTML.";
         "-notags", Set(notags), " Output without the HTML tags.";
-        "-toc", Set(toc), "n Replace `*Table of contents*' by the table of contents of depth n.";
-        "-otoc", Set(otoc), "f Only output the table of contents to file f instead of inplace.";
-        "-ts", Set_int(toc_start), "f Table of contents minimum level.";
-        "-td", Set_int(toc_depth), "f Table of contents depth.";
+        "-toc", Set(toc), " Replace `*Table of contents*' by the table of contents.";
+        "-otoc", Set(otoc), " Output only the table of contents.";
+        "-ts", Set_int(toc_start), "f Table of contents minimum level (default is 1).";
+        "-td", Set_int(toc_depth), "f Table of contents depth (default is 2).";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
         "-nl2br", Set(nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
