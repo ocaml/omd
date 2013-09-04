@@ -36,6 +36,7 @@ dist tar: $(DISTFILES)
 #	and remove test_cow!
 	test "$(wc -l < _oasis)" == 42 ; echo $?
 	head -n 31 _oasis > $(PKGNAME)-$(PKGVERSION)/_oasis
+	sed -e "s/VERSION/$(PKGVERSION) of $$(date -u)/" src/omd_main.ml > $(PKGNAME)-$(PKGVERSION)/src/omd_main.ml
 	cd $(PKGNAME)-$(PKGVERSION) && oasis setup
 	tar -zcvf $(PKG_TARBALL) $(PKGNAME)-$(PKGVERSION)
 	$(RM) -rf $(PKGNAME)-$(PKGVERSION)

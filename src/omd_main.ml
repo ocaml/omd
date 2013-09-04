@@ -230,6 +230,7 @@ let main () =
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
+        "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0), "Print version.";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
