@@ -74,6 +74,8 @@ let nl2br = ref false
 
 let protect_html_comments = ref false
 
+let no_paragraphs = ref false
+
 let make_toc ?(start_level=1) ?(depth=2) md =
   (* probably poor performance but particularly simple to implement *)
   let b = Buffer.create 42 in
@@ -223,13 +225,14 @@ let main () =
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,
         " List available extensions ext (not yet implemented).";
-
+        "-P", Set(no_paragraphs)," Don't make paragraphs.";
         "-b", Set(Omd_parser.blind_html),
         " Don't check validity of HTML tag names.";
         "-s", Set(Omd_parser.strict_html),
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
+        "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0), "Print version.";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
@@ -262,8 +265,9 @@ let main () =
           parsed1
       in
       let parsed = parsed2 in
-      let o1 = (* make either TOC or paragraphs *)
+      let o1 = (* make either TOC or paragraphs, or leave as it is *)
         (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth
+         else if !no_paragraphs then fun x -> x
          else make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML, or markdown *)

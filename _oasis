@@ -1,7 +1,7 @@
 #								-*-conf-*-
 OASISFormat: 0.3
 Name:        omd
-Version:     0.1
+Version:     0.3
 Synopsis:    A Markdown frontend in pure OCaml.
 Description: This Markdown library has no dependency besides the OCaml
   compiler.  The implementation targets the original Markdown with a few
@@ -24,6 +24,11 @@ Executable "omd"
   BuildDepends: omd
   CompiledObject: best
 
+SourceRepository master
+  Type:       git
+  Location:   https://github.com/pw374/omd.git
+  Browser:    https://github.com/pw374/omd
+
 Executable "test_cow"
   Path:         tests/cow
   BuildTools:   ocamlbuild
@@ -35,7 +40,3 @@ Test "cow"
   Type: Custom (0.0.1)
   Command: $test_cow
 
-SourceRepository master
-  Type:       git
-  Location:   https://github.com/pw374/omd.git
-  Browser:    https://github.com/pw374/omd
