@@ -579,122 +579,191 @@ let rec markdown_of_md md =
     in loop true 0
   in
   let b = Buffer.create 42 in
-  let rec loop = function
+  let add_spaces n = for i = 1 to n do Buffer.add_char b ' ' done in
+  let rec loop list_indent = function
     | X x :: tl ->
         (match x#to_t md with
-           | Some t -> loop t
+           | Some t -> loop list_indent t
            | None ->
              match x#to_html ~indent:0 html_of_md md with
              | Some s -> Buffer.add_string b s
              | None -> ());
-        loop tl
+        loop list_indent tl
     | Blockquote q :: tl ->
       Buffer.add_string b (quote(markdown_of_md q));
-      loop tl
+      loop list_indent tl
     | Ref(rc, name, text) :: tl ->
-      Printf.bprintf b "[%s][%s]\n" name text;
-      loop tl
+      Printf.bprintf b "[%s][%s]" text name;
+      loop list_indent tl
     | Img_ref(rc, name, alt) :: tl ->
-      Printf.bprintf b "![%s][%s]\n" name alt;
-      loop tl
+      Printf.bprintf b "![%s][%s]" name alt;
+      loop list_indent tl
     | Paragraph md :: tl ->
-      loop md;
+      loop list_indent md;
       Printf.bprintf b "\n\n";
-      loop tl
+      loop list_indent tl
     | Img(alt, src, title) :: tl ->
       Printf.bprintf b "![%s](%s \"%s\")" alt src title;
-      loop tl
+      loop list_indent tl
     | Text t :: tl ->
       Printf.bprintf b "%s" t;
-      loop tl
+      loop list_indent tl
     | Emph md :: tl ->
       Buffer.add_string b "*";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "*";
-      loop tl
+      loop list_indent tl
     | Bold md :: tl ->
       Buffer.add_string b "**";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "**";
-      loop md;
-      Buffer.add_string b "**";
-      loop tl
+      loop list_indent tl
     | Ol l :: tl ->
-      List.iter(fun li -> Printf.bprintf b "1. "; loop li) l;
-      loop tl
+      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "1. "; loop (list_indent+4) li) l;
+      if list_indent = 0 then Buffer.add_char b '\n';
+      loop list_indent tl
     | Ul l :: tl ->
-      List.iter(fun li -> Printf.bprintf b "* "; loop li) l;
-      loop tl
+      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "* "; loop (list_indent+4) li) l;
+      if list_indent = 0 then Buffer.add_char b '\n';
+      loop list_indent tl
     | Olp l :: tl ->
-      List.iter(fun li -> Printf.bprintf b "1. "; loop li) l;
-      loop tl
+      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "1. "; loop (list_indent+4) li) l;
+      if list_indent = 0 then Buffer.add_char b '\n';
+      loop list_indent tl
     | Ulp l :: tl ->
-      List.iter(fun li -> Printf.bprintf b "- "; loop li) l;
-      loop tl
-    | Code c :: tl ->
-      Printf.bprintf b "``` "; (* FIXME *)
-      Printf.bprintf b "%s" c;
-      Printf.bprintf b " ```";
-      loop tl
-    | Code_block c :: tl ->
-      Printf.bprintf b "```\n";
-      Printf.bprintf b "%s" c;
-      Printf.bprintf b "\n```\n";
-      loop tl
+      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "- "; loop (list_indent+4) li) l;
+      if list_indent = 0 then Buffer.add_char b '\n';
+      loop list_indent tl
+    | Code c :: tl -> (* FIXME *)
+      let n = (* compute how many backquotes we need to use *)
+        let filter (n:int) (s:int list) =
+          if n > 0 && n < 10 then
+            List.filter (fun e -> e <> n) s
+          else
+            s
+        in
+        let l = String.length c in
+        let rec loop s x b i =
+          if i = l then
+            match filter b s with
+            | hd::_ -> hd
+            | [] -> x+1
+          else
+            match c.[i] with
+            | '`' -> loop s x (succ b) (succ i)
+            | _ -> loop (filter b s) (max b x) 0 (succ i)
+        in
+          loop [1;2;3;4;5;6;7;8;9;10] 0 0 0
+      in
+        begin
+          Printf.bprintf b "%s " (String.make n '`');
+          Printf.bprintf b "%s" c;
+          Printf.bprintf b " %s" (String.make n '`');
+        end;
+        loop list_indent tl
+    | Code_block c :: tl ->  (* FIXME *)
+      let n = (* compute how many backquotes we need to use *)
+        let filter n s =
+          if n > 0 && n < 10 then
+            List.filter (fun e -> e <> n) s
+          else
+            s
+        in
+        let l = String.length c in
+        let rec loop s b i =
+          if i = l then
+            match filter b s with
+              | hd::_ -> hd
+              | [] -> 0
+          else
+            match c.[i] with
+            | '`' -> loop s (succ b) (succ i)
+            | _ -> loop (filter b s) 0 (succ i)
+        in
+          loop [3;4;5;6;7;8;9;10] 0 0
+      in
+        if n = 0 then
+          (* can't use backquotes *)
+          let output_indented_block n s =
+            let rec loop p i =
+              if i = String.length s then
+                ()
+              else
+                match p with
+                | '\n' ->
+                    Printf.bprintf b "%s" (String.make n ' ');
+                    Buffer.add_char b s.[i];
+                    loop s.[i] (succ i)
+                | _ ->
+                    Buffer.add_char b s.[i];
+                    loop s.[i] (succ i)
+            in loop 'x' 0
+          in
+          output_indented_block (4+list_indent) c
+        else
+          begin
+            Printf.bprintf b "%s\n" (String.make n '`');
+            Printf.bprintf b "%s" c;
+            Printf.bprintf b "\n%s\n" (String.make n '`');
+          end;
+        loop list_indent tl
     | Br :: tl ->
       Buffer.add_string b "<br />";
-      loop tl
+      loop list_indent tl
     | Hr :: tl ->
-      Buffer.add_string b "<hr />";
-      loop tl
+      Buffer.add_string b "* * *";
+      loop list_indent tl
     | Html s :: tl ->
       Buffer.add_string b s;
-      loop tl
+      loop list_indent tl
     | Html_block s :: tl ->
       Buffer.add_string b "\n\n";
       Buffer.add_string b s;
       Buffer.add_string b "\n\n";
-      loop tl
+      loop list_indent tl
     | Html_comments s :: tl ->
       Buffer.add_string b s;
-      loop tl
+      loop list_indent tl
     | Url (href,s,title) :: tl ->
-      bprintf b "[%s](%s \"%s\")" (html_of_md s) href title;
-      loop tl
+      if title = "" then
+        bprintf b "[%s](%s)" (html_of_md s) href
+      else
+        bprintf b "[%s](%s \"%s\")" (html_of_md s) href title;
+      loop list_indent tl
     | H1 md :: tl ->
       Buffer.add_string b "# ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | H2 md :: tl ->
       Buffer.add_string b "## ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | H3 md :: tl ->
       Buffer.add_string b "### ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | H4 md :: tl ->
       Buffer.add_string b "#### ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | H5 md :: tl ->
       Buffer.add_string b "##### ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | H6 md :: tl ->
       Buffer.add_string b "###### ";
-      loop md;
+      loop list_indent md;
       Buffer.add_string b "";
-      loop tl
+      loop list_indent tl
     | NL :: tl ->
         Buffer.add_string b "\n";
-        loop tl
+        loop list_indent tl
     | [] -> ()
   in
-    loop md;
+    loop 0 md;
     Buffer.contents b
