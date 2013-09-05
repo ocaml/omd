@@ -1333,12 +1333,12 @@ let spaces main_loop n r p l =
   let spaces n r previous l =
     assert (n > 0);
     match n, previous, l with (* NOT a recursive function *)
-    | (1|2|3), ([]|[(Newline|Newlines _)]), (Star|Minus|Plus)
-      ::(Space|Spaces _)::tl ->
+    | (1|2|3), ([]|[(Newline|Newlines _)]),
+      (Star|Minus|Plus)::(Space|Spaces _)::tl ->
           (* unordered list *)
       parse_list main_loop r [] (make_space n::l)
-    | (1|2|3), ([]|[(Newline|Newlines _)]), (Number _)::Dot
-      ::(Space|Spaces _)::tl ->
+    | (1|2|3), ([]|[(Newline|Newlines _)]),
+      (Number _)::Dot::(Space|Spaces _)::tl ->
           (* ordered list *)
       parse_list main_loop r [] (make_space n::l)
     | (1|2|3), ([]|[(Newlines _)]), t::tl ->
@@ -1349,8 +1349,10 @@ let spaces main_loop n r p l =
       (icode r previous (make_space n :: l))
     | 1, _, _ ->
       (Text " "::r), [Space], l
+    | n, _, (Newline|Newlines _)::_ -> (* 2 or more spaces before a newline *)
+      Br::r, [Spaces(n-2)], l
     | n, _, _ -> assert (n>1);
-      (Text (String.make n ' ')::r), [Spaces (n-2)], l
+      (Text (String.make n ' ')::r), [Spaces(n-2)], l
   in
   spaces n r p l (* NOT a recursive call *)
 
