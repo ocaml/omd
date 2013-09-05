@@ -6,4 +6,4 @@ val position :
   'a ->
   Omd_representation.tok list -> Omd_representation.tok list -> int * int
 val string_of_tl : Omd_representation.tok list -> string
-val destring_of_tl : Omd_representation.tok list -> string
+val destring_of_tl : ?limit:int -> Omd_representation.tok list -> string

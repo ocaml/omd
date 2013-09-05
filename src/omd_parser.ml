@@ -100,28 +100,176 @@ let htmltags_set =
        ;"ul";"var";"video";"wbr"
      ])
 
+(** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
+    This function has an effect only if [trackfix] is [true].
+ *)
+let assert_well_formed (l:tok list) : unit =
+  if trackfix then
+    let rec loop accu = function
+(* code to generate what follows...
+List.iter (fun e ->
+Printf.printf "
+| %s::%s::tl -> if trackfix then eprintf \"%s 1\\n%!\"; loop accu (%ss 0::tl)
+| %ss n::%s::tl -> if trackfix then eprintf \"%s 2\\n%!\"; loop accu (%ss(n+1)::tl)
+| %s::%ss n::tl -> if trackfix then eprintf \"%s 3\\n%!\"; loop accu (%ss(n+1)::tl)
+| %ss a::%ss b::tl -> if trackfix then eprintf \"%s 4\\n%!\"; loop accu (%ss(a+b+2)::tl)"
+e e e e e e e e e e e e e e e e)
+["Ampersand"; "At"; "Backquote"; "Backslash"; "Bar"; "Caret"; "Cbrace"; "Colon"; "Comma"; "Cparenthesis"; "Cbracket"; "Dollar"; "Dot"; "Doublequote"; "Exclamation"; "Equal"; "Greaterthan"; "Hash"; "Lessthan"; "Minus"; "Newline"; "Obrace"; "Oparenthesis"; "Obracket"; "Percent"; "Plus"; "Question"; "Quote"; "Semicolon"; "Slash"; "Space"; "Star"; "Tab"; "Tilde"; "Underscore"];
+print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
+      | Ampersand::Ampersand::tl -> if trackfix then eprintf "Ampersand 1\n"; loop accu (Ampersands 0::tl)
+      | Ampersands n::Ampersand::tl -> if trackfix then eprintf "Ampersand 2\n"; loop accu (Ampersands(n+1)::tl)
+      | Ampersand::Ampersands n::tl -> if trackfix then eprintf "Ampersand 3\n"; loop accu (Ampersands(n+1)::tl)
+      | Ampersands a::Ampersands b::tl -> if trackfix then eprintf "Ampersand 4\n"; loop accu (Ampersands(a+b+2)::tl)
+      | At::At::tl -> if trackfix then eprintf "At 1\n"; loop accu (Ats 0::tl)
+      | Ats n::At::tl -> if trackfix then eprintf "At 2\n"; loop accu (Ats(n+1)::tl)
+      | At::Ats n::tl -> if trackfix then eprintf "At 3\n"; loop accu (Ats(n+1)::tl)
+      | Ats a::Ats b::tl -> if trackfix then eprintf "At 4\n"; loop accu (Ats(a+b+2)::tl)
+      | Backquote::Backquote::tl -> if trackfix then eprintf "Backquote 1\n"; loop accu (Backquotes 0::tl)
+      | Backquotes n::Backquote::tl -> if trackfix then eprintf "Backquote 2\n"; loop accu (Backquotes(n+1)::tl)
+      | Backquote::Backquotes n::tl -> if trackfix then eprintf "Backquote 3\n"; loop accu (Backquotes(n+1)::tl)
+      | Backquotes a::Backquotes b::tl -> if trackfix then eprintf "Backquote 4\n"; loop accu (Backquotes(a+b+2)::tl)
+      | Backslash::Backslash::tl -> if trackfix then eprintf "Backslash 1\n"; loop accu (Backslashs 0::tl)
+      | Backslashs n::Backslash::tl -> if trackfix then eprintf "Backslash 2\n"; loop accu (Backslashs(n+1)::tl)
+      | Backslash::Backslashs n::tl -> if trackfix then eprintf "Backslash 3\n"; loop accu (Backslashs(n+1)::tl)
+      | Backslashs a::Backslashs b::tl -> if trackfix then eprintf "Backslash 4\n"; loop accu (Backslashs(a+b+2)::tl)
+      | Bar::Bar::tl -> if trackfix then eprintf "Bar 1\n"; loop accu (Bars 0::tl)
+      | Bars n::Bar::tl -> if trackfix then eprintf "Bar 2\n"; loop accu (Bars(n+1)::tl)
+      | Bar::Bars n::tl -> if trackfix then eprintf "Bar 3\n"; loop accu (Bars(n+1)::tl)
+      | Bars a::Bars b::tl -> if trackfix then eprintf "Bar 4\n"; loop accu (Bars(a+b+2)::tl)
+      | Caret::Caret::tl -> if trackfix then eprintf "Caret 1\n"; loop accu (Carets 0::tl)
+      | Carets n::Caret::tl -> if trackfix then eprintf "Caret 2\n"; loop accu (Carets(n+1)::tl)
+      | Caret::Carets n::tl -> if trackfix then eprintf "Caret 3\n"; loop accu (Carets(n+1)::tl)
+      | Carets a::Carets b::tl -> if trackfix then eprintf "Caret 4\n"; loop accu (Carets(a+b+2)::tl)
+      | Cbrace::Cbrace::tl -> if trackfix then eprintf "Cbrace 1\n"; loop accu (Cbraces 0::tl)
+      | Cbraces n::Cbrace::tl -> if trackfix then eprintf "Cbrace 2\n"; loop accu (Cbraces(n+1)::tl)
+      | Cbrace::Cbraces n::tl -> if trackfix then eprintf "Cbrace 3\n"; loop accu (Cbraces(n+1)::tl)
+      | Cbraces a::Cbraces b::tl -> if trackfix then eprintf "Cbrace 4\n"; loop accu (Cbraces(a+b+2)::tl)
+      | Colon::Colon::tl -> if trackfix then eprintf "Colon 1\n"; loop accu (Colons 0::tl)
+      | Colons n::Colon::tl -> if trackfix then eprintf "Colon 2\n"; loop accu (Colons(n+1)::tl)
+      | Colon::Colons n::tl -> if trackfix then eprintf "Colon 3\n"; loop accu (Colons(n+1)::tl)
+      | Colons a::Colons b::tl -> if trackfix then eprintf "Colon 4\n"; loop accu (Colons(a+b+2)::tl)
+      | Comma::Comma::tl -> if trackfix then eprintf "Comma 1\n"; loop accu (Commas 0::tl)
+      | Commas n::Comma::tl -> if trackfix then eprintf "Comma 2\n"; loop accu (Commas(n+1)::tl)
+      | Comma::Commas n::tl -> if trackfix then eprintf "Comma 3\n"; loop accu (Commas(n+1)::tl)
+      | Commas a::Commas b::tl -> if trackfix then eprintf "Comma 4\n"; loop accu (Commas(a+b+2)::tl)
+      | Cparenthesis::Cparenthesis::tl -> if trackfix then eprintf "Cparenthesis 1\n"; loop accu (Cparenthesiss 0::tl)
+      | Cparenthesiss n::Cparenthesis::tl -> if trackfix then eprintf "Cparenthesis 2\n"; loop accu (Cparenthesiss(n+1)::tl)
+      | Cparenthesis::Cparenthesiss n::tl -> if trackfix then eprintf "Cparenthesis 3\n"; loop accu (Cparenthesiss(n+1)::tl)
+      | Cparenthesiss a::Cparenthesiss b::tl -> if trackfix then eprintf "Cparenthesis 4\n"; loop accu (Cparenthesiss(a+b+2)::tl)
+      | Cbracket::Cbracket::tl -> if trackfix then eprintf "Cbracket 1\n"; loop accu (Cbrackets 0::tl)
+      | Cbrackets n::Cbracket::tl -> if trackfix then eprintf "Cbracket 2\n"; loop accu (Cbrackets(n+1)::tl)
+      | Cbracket::Cbrackets n::tl -> if trackfix then eprintf "Cbracket 3\n"; loop accu (Cbrackets(n+1)::tl)
+      | Cbrackets a::Cbrackets b::tl -> if trackfix then eprintf "Cbracket 4\n"; loop accu (Cbrackets(a+b+2)::tl)
+      | Dollar::Dollar::tl -> if trackfix then eprintf "Dollar 1\n"; loop accu (Dollars 0::tl)
+      | Dollars n::Dollar::tl -> if trackfix then eprintf "Dollar 2\n"; loop accu (Dollars(n+1)::tl)
+      | Dollar::Dollars n::tl -> if trackfix then eprintf "Dollar 3\n"; loop accu (Dollars(n+1)::tl)
+      | Dollars a::Dollars b::tl -> if trackfix then eprintf "Dollar 4\n"; loop accu (Dollars(a+b+2)::tl)
+      | Dot::Dot::tl -> if trackfix then eprintf "Dot 1\n"; loop accu (Dots 0::tl)
+      | Dots n::Dot::tl -> if trackfix then eprintf "Dot 2\n"; loop accu (Dots(n+1)::tl)
+      | Dot::Dots n::tl -> if trackfix then eprintf "Dot 3\n"; loop accu (Dots(n+1)::tl)
+      | Dots a::Dots b::tl -> if trackfix then eprintf "Dot 4\n"; loop accu (Dots(a+b+2)::tl)
+      | Doublequote::Doublequote::tl -> if trackfix then eprintf "Doublequote 1\n"; loop accu (Doublequotes 0::tl)
+      | Doublequotes n::Doublequote::tl -> if trackfix then eprintf "Doublequote 2\n"; loop accu (Doublequotes(n+1)::tl)
+      | Doublequote::Doublequotes n::tl -> if trackfix then eprintf "Doublequote 3\n"; loop accu (Doublequotes(n+1)::tl)
+      | Doublequotes a::Doublequotes b::tl -> if trackfix then eprintf "Doublequote 4\n"; loop accu (Doublequotes(a+b+2)::tl)
+      | Exclamation::Exclamation::tl -> if trackfix then eprintf "Exclamation 1\n"; loop accu (Exclamations 0::tl)
+      | Exclamations n::Exclamation::tl -> if trackfix then eprintf "Exclamation 2\n"; loop accu (Exclamations(n+1)::tl)
+      | Exclamation::Exclamations n::tl -> if trackfix then eprintf "Exclamation 3\n"; loop accu (Exclamations(n+1)::tl)
+      | Exclamations a::Exclamations b::tl -> if trackfix then eprintf "Exclamation 4\n"; loop accu (Exclamations(a+b+2)::tl)
+      | Equal::Equal::tl -> if trackfix then eprintf "Equal 1\n"; loop accu (Equals 0::tl)
+      | Equals n::Equal::tl -> if trackfix then eprintf "Equal 2\n"; loop accu (Equals(n+1)::tl)
+      | Equal::Equals n::tl -> if trackfix then eprintf "Equal 3\n"; loop accu (Equals(n+1)::tl)
+      | Equals a::Equals b::tl -> if trackfix then eprintf "Equal 4\n"; loop accu (Equals(a+b+2)::tl)
+      | Greaterthan::Greaterthan::tl -> if trackfix then eprintf "Greaterthan 1\n"; loop accu (Greaterthans 0::tl)
+      | Greaterthans n::Greaterthan::tl -> if trackfix then eprintf "Greaterthan 2\n"; loop accu (Greaterthans(n+1)::tl)
+      | Greaterthan::Greaterthans n::tl -> if trackfix then eprintf "Greaterthan 3\n"; loop accu (Greaterthans(n+1)::tl)
+      | Greaterthans a::Greaterthans b::tl -> if trackfix then eprintf "Greaterthan 4\n"; loop accu (Greaterthans(a+b+2)::tl)
+      | Hash::Hash::tl -> if trackfix then eprintf "Hash 1\n"; loop accu (Hashs 0::tl)
+      | Hashs n::Hash::tl -> if trackfix then eprintf "Hash 2\n"; loop accu (Hashs(n+1)::tl)
+      | Hash::Hashs n::tl -> if trackfix then eprintf "Hash 3\n"; loop accu (Hashs(n+1)::tl)
+      | Hashs a::Hashs b::tl -> if trackfix then eprintf "Hash 4\n"; loop accu (Hashs(a+b+2)::tl)
+      | Lessthan::Lessthan::tl -> if trackfix then eprintf "Lessthan 1\n"; loop accu (Lessthans 0::tl)
+      | Lessthans n::Lessthan::tl -> if trackfix then eprintf "Lessthan 2\n"; loop accu (Lessthans(n+1)::tl)
+      | Lessthan::Lessthans n::tl -> if trackfix then eprintf "Lessthan 3\n"; loop accu (Lessthans(n+1)::tl)
+      | Lessthans a::Lessthans b::tl -> if trackfix then eprintf "Lessthan 4\n"; loop accu (Lessthans(a+b+2)::tl)
+      | Minus::Minus::tl -> if trackfix then eprintf "Minus 1\n"; loop accu (Minuss 0::tl)
+      | Minuss n::Minus::tl -> if trackfix then eprintf "Minus 2\n"; loop accu (Minuss(n+1)::tl)
+      | Minus::Minuss n::tl -> if trackfix then eprintf "Minus 3\n"; loop accu (Minuss(n+1)::tl)
+      | Minuss a::Minuss b::tl -> if trackfix then eprintf "Minus 4\n"; loop accu (Minuss(a+b+2)::tl)
+      | Newline::Newline::tl -> if trackfix then eprintf "Newline 1\n"; loop accu (Newlines 0::tl)
+      | Newlines n::Newline::tl -> if trackfix then eprintf "Newline 2\n"; loop accu (Newlines(n+1)::tl)
+      | Newline::Newlines n::tl -> if trackfix then eprintf "Newline 3\n"; loop accu (Newlines(n+1)::tl)
+      | Newlines a::Newlines b::tl -> if trackfix then eprintf "Newline 4\n"; loop accu (Newlines(a+b+2)::tl)
+      | Obrace::Obrace::tl -> if trackfix then eprintf "Obrace 1\n"; loop accu (Obraces 0::tl)
+      | Obraces n::Obrace::tl -> if trackfix then eprintf "Obrace 2\n"; loop accu (Obraces(n+1)::tl)
+      | Obrace::Obraces n::tl -> if trackfix then eprintf "Obrace 3\n"; loop accu (Obraces(n+1)::tl)
+      | Obraces a::Obraces b::tl -> if trackfix then eprintf "Obrace 4\n"; loop accu (Obraces(a+b+2)::tl)
+      | Oparenthesis::Oparenthesis::tl -> if trackfix then eprintf "Oparenthesis 1\n"; loop accu (Oparenthesiss 0::tl)
+      | Oparenthesiss n::Oparenthesis::tl -> if trackfix then eprintf "Oparenthesis 2\n"; loop accu (Oparenthesiss(n+1)::tl)
+      | Oparenthesis::Oparenthesiss n::tl -> if trackfix then eprintf "Oparenthesis 3\n"; loop accu (Oparenthesiss(n+1)::tl)
+      | Oparenthesiss a::Oparenthesiss b::tl -> if trackfix then eprintf "Oparenthesis 4\n"; loop accu (Oparenthesiss(a+b+2)::tl)
+      | Obracket::Obracket::tl -> if trackfix then eprintf "Obracket 1\n"; loop accu (Obrackets 0::tl)
+      | Obrackets n::Obracket::tl -> if trackfix then eprintf "Obracket 2\n"; loop accu (Obrackets(n+1)::tl)
+      | Obracket::Obrackets n::tl -> if trackfix then eprintf "Obracket 3\n"; loop accu (Obrackets(n+1)::tl)
+      | Obrackets a::Obrackets b::tl -> if trackfix then eprintf "Obracket 4\n"; loop accu (Obrackets(a+b+2)::tl)
+      | Percent::Percent::tl -> if trackfix then eprintf "Percent 1\n"; loop accu (Percents 0::tl)
+      | Percents n::Percent::tl -> if trackfix then eprintf "Percent 2\n"; loop accu (Percents(n+1)::tl)
+      | Percent::Percents n::tl -> if trackfix then eprintf "Percent 3\n"; loop accu (Percents(n+1)::tl)
+      | Percents a::Percents b::tl -> if trackfix then eprintf "Percent 4\n"; loop accu (Percents(a+b+2)::tl)
+      | Plus::Plus::tl -> if trackfix then eprintf "Plus 1\n"; loop accu (Pluss 0::tl)
+      | Pluss n::Plus::tl -> if trackfix then eprintf "Plus 2\n"; loop accu (Pluss(n+1)::tl)
+      | Plus::Pluss n::tl -> if trackfix then eprintf "Plus 3\n"; loop accu (Pluss(n+1)::tl)
+      | Pluss a::Pluss b::tl -> if trackfix then eprintf "Plus 4\n"; loop accu (Pluss(a+b+2)::tl)
+      | Question::Question::tl -> if trackfix then eprintf "Question 1\n"; loop accu (Questions 0::tl)
+      | Questions n::Question::tl -> if trackfix then eprintf "Question 2\n"; loop accu (Questions(n+1)::tl)
+      | Question::Questions n::tl -> if trackfix then eprintf "Question 3\n"; loop accu (Questions(n+1)::tl)
+      | Questions a::Questions b::tl -> if trackfix then eprintf "Question 4\n"; loop accu (Questions(a+b+2)::tl)
+      | Quote::Quote::tl -> if trackfix then eprintf "Quote 1\n"; loop accu (Quotes 0::tl)
+      | Quotes n::Quote::tl -> if trackfix then eprintf "Quote 2\n"; loop accu (Quotes(n+1)::tl)
+      | Quote::Quotes n::tl -> if trackfix then eprintf "Quote 3\n"; loop accu (Quotes(n+1)::tl)
+      | Quotes a::Quotes b::tl -> if trackfix then eprintf "Quote 4\n"; loop accu (Quotes(a+b+2)::tl)
+      | Semicolon::Semicolon::tl -> if trackfix then eprintf "Semicolon 1\n"; loop accu (Semicolons 0::tl)
+      | Semicolons n::Semicolon::tl -> if trackfix then eprintf "Semicolon 2\n"; loop accu (Semicolons(n+1)::tl)
+      | Semicolon::Semicolons n::tl -> if trackfix then eprintf "Semicolon 3\n"; loop accu (Semicolons(n+1)::tl)
+      | Semicolons a::Semicolons b::tl -> if trackfix then eprintf "Semicolon 4\n"; loop accu (Semicolons(a+b+2)::tl)
+      | Slash::Slash::tl -> if trackfix then eprintf "Slash 1\n"; loop accu (Slashs 0::tl)
+      | Slashs n::Slash::tl -> if trackfix then eprintf "Slash 2\n"; loop accu (Slashs(n+1)::tl)
+      | Slash::Slashs n::tl -> if trackfix then eprintf "Slash 3\n"; loop accu (Slashs(n+1)::tl)
+      | Slashs a::Slashs b::tl -> if trackfix then eprintf "Slash 4\n"; loop accu (Slashs(a+b+2)::tl)
+      | Space::Space::tl -> if trackfix then eprintf "Space 1\n"; loop accu (Spaces 0::tl)
+      | Spaces n::Space::tl -> if trackfix then eprintf "Space 2\n"; loop accu (Spaces(n+1)::tl)
+      | Space::Spaces n::tl -> if trackfix then eprintf "Space 3\n"; loop accu (Spaces(n+1)::tl)
+      | Spaces a::Spaces b::tl -> if trackfix then eprintf "Space 4\n"; loop accu (Spaces(a+b+2)::tl)
+      | Star::Star::tl -> if trackfix then eprintf "Star 1\n"; loop accu (Stars 0::tl)
+      | Stars n::Star::tl -> if trackfix then eprintf "Star 2\n"; loop accu (Stars(n+1)::tl)
+      | Star::Stars n::tl -> if trackfix then eprintf "Star 3\n"; loop accu (Stars(n+1)::tl)
+      | Stars a::Stars b::tl -> if trackfix then eprintf "Star 4\n"; loop accu (Stars(a+b+2)::tl)
+      | Tab::Tab::tl -> if trackfix then eprintf "Tab 1\n"; loop accu (Tabs 0::tl)
+      | Tabs n::Tab::tl -> if trackfix then eprintf "Tab 2\n"; loop accu (Tabs(n+1)::tl)
+      | Tab::Tabs n::tl -> if trackfix then eprintf "Tab 3\n"; loop accu (Tabs(n+1)::tl)
+      | Tabs a::Tabs b::tl -> if trackfix then eprintf "Tab 4\n"; loop accu (Tabs(a+b+2)::tl)
+      | Tilde::Tilde::tl -> if trackfix then eprintf "Tilde 1\n"; loop accu (Tildes 0::tl)
+      | Tildes n::Tilde::tl -> if trackfix then eprintf "Tilde 2\n"; loop accu (Tildes(n+1)::tl)
+      | Tilde::Tildes n::tl -> if trackfix then eprintf "Tilde 3\n"; loop accu (Tildes(n+1)::tl)
+      | Tildes a::Tildes b::tl -> if trackfix then eprintf "Tilde 4\n"; loop accu (Tildes(a+b+2)::tl)
+      | Underscore::Underscore::tl -> if trackfix then eprintf "Underscore 1\n"; loop accu (Underscores 0::tl)
+      | Underscores n::Underscore::tl -> if trackfix then eprintf "Underscore 2\n"; loop accu (Underscores(n+1)::tl)
+      | Underscore::Underscores n::tl -> if trackfix then eprintf "Underscore 3\n"; loop accu (Underscores(n+1)::tl)
+      | Underscores a::Underscores b::tl -> if trackfix then eprintf "Underscore 4\n"; loop accu (Underscores(a+b+2)::tl)| x::tl -> loop (x::accu) tl
+      | [] -> List.rev accu
+    in
+    let rec equiv l1 l2 = match l1, l2 with
+      | [], [] -> true
+      | Tag _::tl1, Tag _::tl2-> equiv tl1 tl2
+      | e1::tl1, e2::tl2 -> e1 = e2 && equiv tl1 tl2
+      | _ -> false
+    in
+    assert(equiv (loop [] l) l);
+    ()
+
 let unindent_rev n lexemes =
-  let rec fix n p = function
-    (* FIXME: find why this is needed, fix it, and get rid of this! *)
-    (* restore the property that twice the same token can't happen *)
-    | x::tl ->
-      if x = p then
-        fix (n+1) p tl
-      else if n = 0 then
-        assert false
-      else if n = 1 then
-        p::fix 1 x tl
-      else
-        (Omd_lexer.lex(
-          let b = Buffer.create n in
-          for i = 1 to n do
-            Buffer.add_string b(string_of_t p)
-          done;
-          Buffer.contents b)
-        )
-        @ fix 1 x tl
-    | [] -> []
-  in
+  if debug then eprintf "CALL: Omd_parser.unindent_rev\n%!";
+  assert_well_formed lexemes;
   let rec loop accu cl = function
     | Newline::Space::tl as l ->
       if n = 1 then
@@ -154,9 +302,12 @@ let unindent_rev n lexemes =
   in
   match loop [] [] lexemes with
   | [], right -> [], right
-  | (e::tl), right -> fix 1 e tl, right
+  | l, right ->
+      assert_well_formed l;
+      l, right
 
 let unindent n lexemes =
+  if debug then eprintf "CALL: Omd_parser.unindent\n%!";
   let fst, snd = unindent_rev n lexemes in
     List.rev fst, snd
 
@@ -168,6 +319,7 @@ let rec is_blank = function
 
 let semph_or_bold (n:int) (l:Omd_representation.tok list) =
   (* FIXME: use rpl call/return convention *)
+  assert_well_formed l;
   assert (n>0 && n<4);
   match
     fsplit
@@ -210,6 +362,7 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
         if is_blank left then None else Some(left,right)
 
 let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+  assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
   match
@@ -254,6 +407,7 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
 
 
 let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+  assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
   match
@@ -300,6 +454,7 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
 
 
 let uemph_or_bold n l =
+  assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   if !gh_uemph_or_bold_style then
     gh_uemph_or_bold n l
@@ -312,6 +467,7 @@ let eat_blank =
 
 (* used by tag__maybe_h1 and tag__maybe_h2 *)
 let setext_title l =
+  assert_well_formed l;
 (* val setext_title :
   Omd_representation.tok list ->
   (Omd_representation.tok list * Omd_representation.tok list) option *)
@@ -367,6 +523,7 @@ let tag__md md = (* [md] should be in reverse *)
    "might" because if they are, for instance, in a code section,
    then they are not titles at all. *)
 let tag_setext main_loop lexemes =
+  assert_well_formed lexemes;
   let rec loop pl res = function
     | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
       begin
@@ -413,6 +570,7 @@ let tag_setext main_loop lexemes =
 
 
 let hr_m l =
+  assert_well_formed l;
   let rec loop n = function
     | ((Newlines _|Newline)::tl) | ([] as tl) ->
       if n >= 3 then Some tl else None
@@ -427,6 +585,7 @@ let hr_m l =
   in loop 0 l
 
 let hr_s l =
+  assert_well_formed l;
   let rec loop n = function
     | ((Newline|Newlines _)::tl) | ([] as tl) ->
       if n >= 3 then Some tl else None
@@ -509,6 +668,7 @@ The program that generates the generated part that follows right after.
 
 (* begin generated part *)
 let read_until_gt ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Greaterthan as b)) :: tl ->
@@ -541,6 +701,7 @@ let read_until_gt ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_lt ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Lessthan as b)) :: tl ->
@@ -566,6 +727,7 @@ let read_until_lt ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_cparenth ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Cparenthesis as b)) :: tl ->
@@ -598,6 +760,7 @@ let read_until_cparenth ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_oparenth ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Oparenthesis as b)) :: tl ->
@@ -624,6 +787,7 @@ let read_until_oparenth ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_dq ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Doublequote as b)) :: tl ->
@@ -650,6 +814,7 @@ let read_until_dq ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_q ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Quote as b)) :: tl ->
@@ -675,6 +840,7 @@ let read_until_q ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_obracket ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Obracket as b)) :: tl ->
@@ -700,6 +866,7 @@ let read_until_obracket ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_cbracket ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Cbracket as b)) :: tl ->
@@ -731,6 +898,7 @@ let read_until_cbracket ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_space ?(no_nl = false) l =
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Space as b)) :: tl ->
@@ -756,6 +924,7 @@ let read_until_space ?(no_nl = false) l =
   in loop [] 0 l
 
 let read_until_newline l = (* this has been patched post-generation *)
+  assert_well_formed l;
   let rec loop accu n =
     function
     | ((Backslash as a)) :: ((Newline as b)) :: tl ->
@@ -828,15 +997,8 @@ let maybe_extension extensions r p l =
 
 (* blockquotes *)
 let emailstyle_quoting main_loop r _p lexemes =
-  let rec fix = function
-    (* FIXME: find why this is needed, fix it, and get rid of this! *)
-    | Newline::Newline::tl -> fix (Newlines(0)::tl)
-    | Newline::Newlines(n)::tl -> fix (Newlines(n+1)::tl)
-    | Newlines(n)::Newlines(m)::tl -> fix (Newlines(n+m+2)::tl)
-    | Newlines(n)::Newline::tl -> fix (Newlines(n+1)::tl)
-    | [] -> []
-    | e::tl -> e::fix tl
-  in
+  assert_well_formed lexemes;
+  if debug then eprintf "CALL: Omd_parser.emailstyle_quoting\n%!";
   let rec loop block cl =
     function
     | Newline::Greaterthan::(Newline::_ as tl) ->
@@ -848,7 +1010,6 @@ let emailstyle_quoting main_loop r _p lexemes =
     | Newline::Greaterthan::Spaces n::tl ->
       assert(n>0);
       loop (Newline::cl@block) [Spaces(n-1)] tl
-
     | Newlines 0::Greaterthan::Space::tl ->
       loop (Newlines 0::cl@block) [] tl
     | Newlines 0::Greaterthan::Spaces 0::tl ->
@@ -856,12 +1017,12 @@ let emailstyle_quoting main_loop r _p lexemes =
     | Newlines 0::Greaterthan::Spaces n::tl ->
       assert(n>0);
       loop (Newlines 0::cl@block) [Spaces(n-1)] tl
-
     | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
     | e::tl -> loop block (e::cl) tl
   in
-  match loop [] [] (fix lexemes) with
+  match loop [] [] lexemes with
   | block, tl ->
+    assert_well_formed block;
     if debug then
       eprintf "##############################\n%s\n\
                   ##############################\n%!" (string_of_tl block);
@@ -869,6 +1030,7 @@ let emailstyle_quoting main_loop r _p lexemes =
 
 (* maybe a reference *)
 let maybe_reference rc r p l =
+  assert_well_formed l;
   (* this function is called when we know it's not a link although
      it started with a '[' *)
   (* So it could be a reference or a link definition. *)
@@ -941,6 +1103,7 @@ let maybe_reference rc r p l =
 
 (* maybe a link *)
 let maybe_link main_loop r p l =
+  assert_well_formed l;
   let read_title name url l =
     match l with
     | Doublequote::l ->
@@ -1003,6 +1166,7 @@ let maybe_link main_loop r p l =
 
 (** code that starts with one or several backquote(s) *)
 let bcode r p l =
+  assert_well_formed l;
   let e, tl =
     match l with
     | (Backquote|Backquotes _ as e)::tl -> e, tl
@@ -1051,6 +1215,7 @@ let bcode r p l =
     (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
 
 let icode r p l =
+  assert_well_formed l;
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
      l is the remains *)
@@ -1079,44 +1244,65 @@ let icode r p l =
   in
     match l with
       | Spaces n::tl ->
-        loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
+        loop ((if n >= 4 then Spaces(n-4)
+               else if n = 3 then Space
+               else dummy_tag),
+              tl)
       | _ -> assert false
 
 
 let parse_list main_loop r p l =
+  assert_well_formed l;
+  if debug then begin
+    eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
+      "" (* (Omd_backend.sexpr_of_md (List.rev r)) *)
+      "" (* (destring_of_tl p) *)
+      (destring_of_tl ~limit:40 l);
+  end;
   let module UO = struct type ordered = O | U end in
   let open UO in
   if debug then eprintf "parse_list: l=(%s)\n%!" (destring_of_tl l);
-  let rec fix = function
-    (* FIXME: find why this is needed, fix it, and get rid of this! *)
-    | Newline::Newline::tl -> fix (Newlines(0)::tl)
-    | Newline::Newlines(n)::tl -> fix (Newlines(n+1)::tl)
-    | Newlines(n)::Newlines(m)::tl -> fix (Newlines(n+m+2)::tl)
-    | Newlines(n)::Newline::tl -> fix (Newlines(n+1)::tl)
-    | [] -> []
-    | e::tl -> e::fix tl
-  in
-  let end_of_item (indent:int) l : tok split_action  = match fix l with
+  let end_of_item (indent:int) l : tok split_action  = match l with
     | [] ->
        Split([],[])
     | Newlines 0 :: ((Spaces n) :: Greaterthan :: (Space | Spaces _) :: tl as s) ->
       assert(n>=0);
       if n+2 = indent+4 then (* blockquote *)
-        let block, rest = unindent_rev (n+2) (Newline::s) in
-        Continue_with(block@[Newlines 0], rest)
+        match unindent (n+2) (Newline::s) with
+          | Newline::block, rest ->
+              Continue_with(List.rev(Newlines(1)::block), rest)
+          | Newlines n::block, rest ->
+              Continue_with(List.rev(Newlines(n+2)::block), rest)
+          | block, rest ->
+              Continue_with(Newlines 0::block, rest)
       else if n+2 >= indent+8 then (* code inside item *)
-        let block, rest = unindent_rev (indent+4) (Newline::s) in
-        Continue_with(block@[Newlines 0], rest)
+        match unindent (indent+4) (Newline::s) with
+          | Newline::block, rest ->
+              Continue_with(List.rev(Newlines(1)::block), rest)
+          | Newlines n::block, rest ->
+              Continue_with(List.rev(Newlines(n+2)::block), rest)
+          | block, rest ->
+              Continue_with(Newlines 0::block, rest)
       else
         Split([], l)
     | Newlines 0 :: (Spaces n :: tl as s) ->
       assert(n>=0);
       if n+2 >= indent+8 then (* code inside item *)
-        let block, rest = unindent_rev (indent+4) (Newline::s) in
-        Continue_with(block@[Newline], rest)
+        match unindent (indent+4) (Newline::s) with
+          | Newline::block, rest ->
+              Continue_with(List.rev(Newlines(0)::block), rest)
+          | Newlines n::block, rest ->
+              Continue_with(List.rev(Newlines(n+1)::block), rest)
+          | block, rest ->
+              Continue_with(Newline::block, rest)
       else if n+2 >= indent+4 then (* new paragraph inside item *)
-        let block, rest = unindent_rev (indent+4) (Newline::s) in
-        Continue_with(block@[Newlines 0], rest)
+        match unindent (indent+4) (Newline::s) with
+          | Newline::block, rest ->
+              Continue_with(List.rev(Newlines(1)::block), rest)
+          | Newlines n::block, rest ->
+              Continue_with(List.rev(Newlines(n+2)::block), rest)
+          | block, rest ->
+              Continue_with(Newlines 0::block, rest)
       else
         Split([], l)
     | (Newlines _) :: _ -> (* n > 0 *)
@@ -1141,7 +1327,10 @@ let parse_list main_loop r p l =
     | _::_ ->
        Continue
   in
-  let to_t = main_loop [] [Newline] in
+  let to_t l =
+    assert_well_formed l;
+    main_loop [] [Newline] l
+  in
   let add (sublist:element) items =
     if debug then eprintf "add\n%!";
     match items with
@@ -1247,6 +1436,7 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
+           assert_well_formed new_item;
            match indents with
            | [] ->
              assert(items = []);
@@ -1330,6 +1520,7 @@ let parse_list main_loop r p l =
 
 
 let spaces main_loop n r p l =
+  assert_well_formed l;
   let spaces n r previous l =
     assert (n > 0);
     match n, previous, l with (* NOT a recursive function *)
@@ -1358,6 +1549,7 @@ let spaces main_loop n r p l =
 
 
 let maybe_autoemail r p l =
+  assert_well_formed l;
   match l with
   | Lessthan::tl ->
     begin
@@ -1390,10 +1582,12 @@ let maybe_autoemail r p l =
 
 
 let main_parse extensions lexemes =
+  assert_well_formed lexemes;
   let rc = new Omd_representation.ref_container in
 
   let rec main_loop_rev (r:t) (previous:Omd_representation.tok list)
       (lexemes:Omd_representation.tok list) =
+    assert_well_formed lexemes;
     if debug then
       eprintf "main_loop_rev r=%s p=(%s) l=(%s)\n%!"
         (Omd_backend.sexpr_of_md (List.rev r))
@@ -1450,7 +1644,11 @@ let main_parse extensions lexemes =
          quoting anymore but code. *)
       begin
         let new_r, p, rest =
-          let foo, rest = unindent (fst(size s)) (Newline::lexemes) in
+          let foo, rest =
+            match unindent (fst(size s)) (Newline::lexemes) with
+              | (Newline|Newlines _)::foo, rest -> foo, rest
+              | res -> res
+          in
           match
             emailstyle_quoting main_loop [] previous (Newline::(foo))
           with
@@ -1929,7 +2127,7 @@ let main_parse extensions lexemes =
           if (try ignore(read_until_lt b); false
             with Premature_ending -> true) then
             (* there must not be any '<' in b *)
-            loop [tag(Printf.sprintf "<%s%s>" tagname 
+            loop [tag(Printf.sprintf "<%s%s>" tagname
                         (string_of_tl b))] 0 tl
           else
             raise Premature_ending
@@ -1952,7 +2150,7 @@ let main_parse extensions lexemes =
     | _, (Lessthan as t)::tl ->
       begin match maybe_autoemail r previous lexemes with
         | Some(r,p,l) -> main_loop_rev r p l
-        | None -> 
+        | None ->
         begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
@@ -2083,7 +2281,7 @@ let main_parse extensions lexemes =
               match read_until_cbracket ~no_nl:false ntl with
               | [], rest -> raise Premature_ending
               | id, rest ->
-                main_loop_rev 
+                main_loop_rev
                   (Img_ref(rc, string_of_tl id, string_of_tl alt)::r)
                   [Cbracket]
                   rest
@@ -2409,6 +2607,7 @@ let main_parse extensions lexemes =
 
 
   and main_loop (r:r) (previous:p) (lexemes:l) =
+    assert_well_formed lexemes;
     List.rev (main_loop_rev r previous lexemes)
 
   in

@@ -305,14 +305,19 @@ let string_of_tl tl =
     Buffer.contents (loop tl; b)
 
 
-let destring_of_tl tl =
+let destring_of_tl ?(limit=max_int) tl =
   let b = Buffer.create 42 in
-  let rec loop : tok list -> unit = function
+  let rec loop (i:int) (tlist:tok list) : unit = match tlist with
     | e::tl ->
-        Buffer.add_string b (String.escaped (string_of_t e));
-        Buffer.add_string b "::";
-        loop tl
+        if limit = i then 
+          loop i []
+        else
+          begin
+            Buffer.add_string b (String.escaped (string_of_t e));
+            Buffer.add_string b "::";
+            loop (succ i) tl
+          end
     | [] ->
         Buffer.add_string b "[]"
   in
-    Buffer.contents (loop tl; b)
+    Buffer.contents (loop 0 tl; b)

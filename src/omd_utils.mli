@@ -1,4 +1,5 @@
 val debug : bool
+val trackfix : bool
 val raise : exn -> 'a
 module StringSet :
   sig

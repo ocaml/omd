@@ -1,6 +1,21 @@
 open Printf
 
-let debug = try ignore(Sys.getenv "DEBUG"); true with _ -> false
+let debug =
+  try
+    ignore(Sys.getenv "DEBUG");
+    eprintf "omd: debug mode activated.\n%!";
+    true
+  with Not_found ->
+    false
+
+let trackfix =
+  try
+    ignore(Sys.getenv "OMD_FIX");
+    eprintf "omd: tracking mode activated: token list are very often checked, \
+             it might take a *very* long time if your input is large.\n%!";
+    true
+  with Not_found ->
+    false
 
 let raise =
   if debug then
@@ -29,7 +44,7 @@ and 'a split_action =
   | Split of 'a list * 'a list
 
 (** [fsplit_rev ?excl ~f l] returns [Some(x,y)] where [x] is the
-    **reversed** list of the consecutive elements of [l] that obey the 
+    **reversed** list of the consecutive elements of [l] that obey the
     split function [f].
     Note that [f] is applied to a list of elements and not just an
     element, so that [f] can look farther in the list when applied.
@@ -37,14 +52,15 @@ and 'a split_action =
     [Continue_with(left,right)] if there's more elements to consume
     but we want to choose what goes to the left part and what remains
     to process (right part), and returns [Split(left,right)] if
-    the splitting is decided. 
+    the splitting is decided.
     When [f] is applied to an empty list, if it returns [Continue]
     then the result will be [None].
 
     If [excl] is given, then [excl] is applied before [f] is, to check
     if the splitting should be stopped right away. When the split
     fails, it returns [None]. *)
-let fsplit_rev ?(excl=(fun _ -> false)) ~(f:'a split) l : ('a list * 'a list) option =
+let fsplit_rev ?(excl=(fun _ -> false)) ~(f:'a split) l
+    : ('a list * 'a list) option =
   let rec loop accu = function
     | [] ->
         begin
@@ -75,7 +91,7 @@ let id_of_string ids s =
   let gen_id s =
     let b = Buffer.create l in
     let rec loop i flag flag2 =
-      (* [flag] prevents trailing dashes; 
+      (* [flag] prevents trailing dashes;
          [flag2] prevents IDs from starting with dashes *)
       if i = l then
         ()
