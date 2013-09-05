@@ -19,7 +19,9 @@ type t = Omd_representation.t
 
 and ref_container =
     (< add_ref: string -> string -> string -> unit ; 
-     get_ref : string -> (string*string); >)
+       get_ref : string -> (string*string);
+       get_all : (string * (string * string)) list;
+     >)
 
 (** A element of a Markdown document. *)
 and element = Omd_representation.element =

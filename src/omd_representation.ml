@@ -8,6 +8,9 @@ class ref_container = object
   val broken_url = "", "Broken URL"
   val mutable c = R.empty
   val mutable c2 = R.empty
+
+  method get_all = R.bindings c
+
   method add_ref name title url =
     c <- R.add name (url, title) c;
     let ln = String.lowercase (String.copy name) in

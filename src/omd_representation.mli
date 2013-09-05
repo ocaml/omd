@@ -34,6 +34,7 @@ class ref_container :
     val mutable c : (string * string) R.t
     method add_ref : R.key -> string -> string -> unit
     method get_ref : R.key -> string * string
+    method get_all : (string * (string * string)) list
   end
 type element =
     Paragraph of t
