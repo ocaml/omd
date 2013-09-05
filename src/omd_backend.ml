@@ -580,6 +580,7 @@ let rec markdown_of_md md =
   in
   let b = Buffer.create 42 in
   let add_spaces n = for i = 1 to n do Buffer.add_char b ' ' done in
+  let references = ref None in
   let rec loop list_indent = function
     | X x :: tl ->
         (match x#to_t md with
@@ -593,9 +594,11 @@ let rec markdown_of_md md =
       Buffer.add_string b (quote(markdown_of_md q));
       loop list_indent tl
     | Ref(rc, name, text) :: tl ->
+      references := Some rc;
       Printf.bprintf b "[%s][%s]" text name;
       loop list_indent tl
     | Img_ref(rc, name, alt) :: tl ->
+      references := Some rc;
       Printf.bprintf b "![%s][%s]" name alt;
       loop list_indent tl
     | Paragraph md :: tl ->
@@ -656,12 +659,14 @@ let rec markdown_of_md md =
           loop [1;2;3;4;5;6;7;8;9;10] 0 0 0
       in
         begin
-          Printf.bprintf b "%s " (String.make n '`');
+          Printf.bprintf b "%s" (String.make n '`');
+          if c.[0] = '`' then Buffer.add_char b ' ';
           Printf.bprintf b "%s" c;
-          Printf.bprintf b " %s" (String.make n '`');
+          if c.[String.length c - 1] = '`' then Buffer.add_char b ' ';
+          Printf.bprintf b "%s" (String.make n '`');
         end;
         loop list_indent tl
-    | Code_block c :: tl ->  (* FIXME *)
+    | Code_block c :: tl ->
       let n = (* compute how many backquotes we need to use *)
         let filter n s =
           if n > 0 && n < 10 then
@@ -682,8 +687,8 @@ let rec markdown_of_md md =
         in
           loop [3;4;5;6;7;8;9;10] 0 0
       in
-        if n = 0 then
-          (* can't use backquotes *)
+        if true|| n = 0 then  (* FIXME *)
+          (* case where we can't use backquotes *)
           let output_indented_block n s =
             let rec loop p i =
               if i = String.length s then
@@ -697,9 +702,11 @@ let rec markdown_of_md md =
                 | _ ->
                     Buffer.add_char b s.[i];
                     loop s.[i] (succ i)
-            in loop 'x' 0
+            in loop '\n' 0
           in
-          output_indented_block (4+list_indent) c
+          Buffer.add_char b '\n';
+          output_indented_block (4+list_indent) c;
+          Buffer.add_string b "\n\n"
         else
           begin
             Printf.bprintf b "%s\n" (String.make n '`');
@@ -766,4 +773,17 @@ let rec markdown_of_md md =
     | [] -> ()
   in
     loop 0 md;
+    begin match !references with
+      | None -> ()
+      | Some r ->
+          Buffer.add_char b '\n';
+          List.iter
+            (fun (name, (url, title)) ->
+               if title = "" then
+                 bprintf b "[%s]: %s \n" name url
+               else
+                 bprintf b "[%s]: %s \"%s\"\n" name url title
+            )
+            r#get_all                    
+    end;
     Buffer.contents b
