@@ -1,6 +1,23 @@
 # Notes on the Implementation and Semantics of omd
 
-## Checklist
+## In short
+
+I believe that all features described in
+<http://daringfireball.net/projects/markdown/syntax> have now been
+implemented. Extensive testing should be done.
+
+
+Parsing: it mainly relies on the property that two consecutive tokens
+produced by the lexer cannot designate the same "thing". For instance,
+there can't be [Word "foo"; Word "bar"] because it should be
+[Word "foobar"] instead. There can't be [Newlines 4; Newline; Newlines 3] because it should be
+[Newlines(10)]  (yes it's 10, not 8).
+
+
+## More details
+
+
+### Checklist
  * HTML
    * As in "standard" Markdown, it's a "subset" of HTML with **restrictions** on the syntax that is supported. For instance, one cannot write `< a href...` instead of `<a href...` because a space following the `<` character will make it "not HTML". It's the same kind of restrictions for closing tags.
    * block-level
@@ -22,8 +39,8 @@
    * unordered: done
    * ordered: done
    * paragraphs in lists: partly done
-   * blockquote inside lists: done (*todo*: more tests)
-   * code inside lists: done (*todo*: tests) (to check: does it exist in Github flavoured markdown??)
+   * blockquote inside lists: done
+   * code inside lists: done
  * Horizontal rules:
    * with stars: done
    * with dashes: done
@@ -34,7 +51,6 @@
    * single, double, triple asterisk: done
    * single, double, triple underscore: done
  * Image insertions: done (but needs more testing)
- * Automatic links: ***todo?***
  * Semi-automatic links: done (but needs more testing)
  * Backslashes: done
    * as with `pandoc`, escaping a line break with a backslash means `<br/>`. For instance, `"plop\\nhello"` is translated to `"<p>plop<br/>hello</p>"` (this has been implemented on 2013.08.15)
@@ -43,16 +59,16 @@
    * syntax-highlighted code: *todo*
 
 
-## Flaws in Markdown
+### Flaws in Markdown
 
 Since there are no errors in  Markdown, it means taht everything has a
 meaning.  Sometimes, one has to imagine a meaning that is not too much
 nonsense.
 
 
-### Lists
+#### Lists
 
-#### Problem Description
+##### Problem Description
 There are several semantics for a "broken" list such as the following one:
 ```
  * Indentation 1, Element 1
@@ -67,7 +83,7 @@ There are several semantics for a "broken" list such as the following one:
 
 I have chosen the following semantics, because to me that it's the less nonsense I have ever thought about:
 
-#### Semantics
+##### Semantics
 Let N be the indentation level of the current element.
 - If N is equal to the previous indentation, then it's still the same list as the current one.
 - If N is greater than the previous indentation, then it's a new list.
