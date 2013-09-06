@@ -2,8 +2,6 @@ OCAMLC = ocamlc.opt
 OCAMLCG = $(OCAMLC) -g
 OCAMLOPT = ocamlopt.opt
 
-# all:omd_backend.cmo omd_parser.cmo omd_lexer.cmo omd_lexer_fs.cmo
-
 all:
 	make cmis
 	make omd
@@ -34,15 +32,15 @@ omd.cma:omd_utils.cmo omd_representation.cmo omd_backend.cmo omd_lexer.cmo omd_p
 clean:
 	rm -f *.cmx *.cmo *~ *.cmi *.o *.cma md{,.byte,.opt} omd{,.byte,.opt}
 
-test: omd.cma
-	ocaml omd.cma cow_tests/test.ml
-
-omd.cmx:omd_parser.cmx
-omd_main.cmx:omd_parser.cmx
-omd_parser.cmx:omd_representation.cmx omd_backend.cmx
-
+omd.cmi:omd_representation.cmi omd_parser.cmi omd_lexer.cmi omd_backend.cmi
+omd_backend.cmi:omd_utils.cmi omd_representation.cmi
+omd_lexer.cmi:omd_representation.cmi
+omd_lexer_fs.cmi:omd_lexer.cmi
+omd_main.cmi:omd_utils.cmi omd_parser.cmi omd_backend.cmi omd.cmi
+omd_parser.cmi:omd_utils.cmi omd_representation.cmi omd_lexer.cmi omd_backend.cmi
+omd_representation.cmi:omd_utils.cmi
 
 include .depend
 
-.depend:omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli
-	ocamldep $? > .depend
+.depend:omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli Makefile
+	ocamldep omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli > .depend
