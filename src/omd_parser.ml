@@ -1191,7 +1191,11 @@ let bcode r p l =
   let cb, l = code_block [] tl in
   if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
   then
-    (Code_block(string_of_tl cb)::r), [Backquote], l
+    match cb with
+    | Newline::tl ->
+      (Code_block(string_of_tl tl)::r), [Backquote], l
+    | _ ->
+      (Code_block(string_of_tl cb)::r), [Backquote], l
   else
     let clean_bcode s =
       let rec loop1 i =
