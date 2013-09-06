@@ -12,7 +12,7 @@ let lex : string -> tok list = Omd_lexer.lex
 
 let parse : ?extensions:(Omd_representation.t -> Omd_representation.tok list -> Omd_representation.tok list -> ((t * Omd_representation.tok list * Omd_representation.tok list) option)) list -> tok list -> t = Omd_parser.parse
 
-let to_html : ?pindent:bool -> ?nl2br:bool -> t -> string = html_of_md
+let to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string = html_of_md
 
 let to_text : t -> string = text_of_md
 

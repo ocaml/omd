@@ -1192,10 +1192,12 @@ let bcode r p l =
   if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
   then
     match cb with
+    | Word(lang)::Newline::tl ->
+      (Code_block(lang,string_of_tl tl)::r), [Backquote], l
     | Newline::tl ->
-      (Code_block(string_of_tl tl)::r), [Backquote], l
+      (Code_block("",string_of_tl tl)::r), [Backquote], l
     | _ ->
-      (Code_block(string_of_tl cb)::r), [Backquote], l
+      (Code_block("",string_of_tl cb)::r), [Backquote], l
   else
     let clean_bcode s =
       let rec loop1 i =
@@ -1216,7 +1218,7 @@ let bcode r p l =
       | 0, n when n = String.length s - 1 -> s
       | i, n -> String.sub s i (n-i)
     in
-    (Code(clean_bcode(string_of_tl cb))::r), [Backquote], l
+    (Code("",clean_bcode(string_of_tl cb))::r), [Backquote], l
 
 let icode r p l =
   assert_well_formed l;
@@ -1229,14 +1231,14 @@ let icode r p l =
     | (Newline|Newlines _ as p), ((Space|Spaces(0|1))::_ as tl) ->
       (* 1, 2 or 3 spaces. *)
       (* -> Return what's been found as code because what follows isn't. *)
-      Code_block (Buffer.contents accu)::r, [p], tl
+      Code_block("",Buffer.contents accu)::r, [p], tl
     | (Newline|Newlines _ as p), Spaces(n)::tl ->
       assert(n>0);
       (* At least 4 spaces, it's still code. *)
       Buffer.add_string accu (string_of_t p);
       loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
     | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
-      Code_block (Buffer.contents accu)::r, [p], tl
+      Code_block("",Buffer.contents accu)::r, [p], tl
         (* -> Return what's been found as code because it's no more code. *)
     | p, e::tl ->
       Buffer.add_string accu (string_of_t p);
@@ -1244,7 +1246,7 @@ let icode r p l =
       loop (e, tl)
     | p, [] ->
       Buffer.add_string accu (string_of_t p);
-      Code_block (Buffer.contents accu)::r, [p], []
+      Code_block("",Buffer.contents accu)::r, [p], []
   in
     match l with
       | Spaces n::tl ->

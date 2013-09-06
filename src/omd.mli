@@ -33,8 +33,8 @@ and element = Omd_representation.element =
   | Ol of t list
   | Ulp of t list
   | Olp of t list
-  | Code of string (* html entities are to be converted *later* *)
-  | Code_block of string (* html entities are to be converted *later* *)
+  | Code of name * string (* html entities are to be converted *later* *)
+  | Code_block of name * string (* html entities are to be converted *later* *)
   | Br
   | Hr
   | Url of href * t * title
@@ -74,6 +74,11 @@ and href = string
 
 and title = string
 (** HTML attribute. *)
+
+type code_stylist = < style : lang:string -> string -> string >
+(** has at least a method [style] that takes a language name and some
+    code and returns that code with style. *)
+
 
 type tok = Omd_representation.tok =
 | Ampersand
@@ -196,7 +201,7 @@ val make_paragraphs : t -> t
     to build them. On the other hand, if you don't want
     automatic Markdown-style paragraphs, don't call this function! *)
 
-val to_html : ?pindent:bool -> ?nl2br:bool -> t -> string
+val to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] and [Html_block of string]

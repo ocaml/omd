@@ -45,8 +45,8 @@ type element =
   | Ol of t list
   | Ulp of t list
   | Olp of t list
-  | Code of string
-  | Code_block of string
+  | Code of name * string
+  | Code_block of name * string
   | Br
   | Hr
   | Url of href * t * title

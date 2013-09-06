@@ -5,10 +5,13 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
+type code_stylist = < style : lang:string -> string -> string >
+
 open Printf
 open Omd_representation
 open Omd_utils
 
+let default_language = ref ""
 
 (** - recognizes paragraphs - glues following blockquotes  *)
 let make_paragraphs md =
@@ -121,10 +124,10 @@ let text_of_md md =
     | Olp l :: tl ->
         List.iter loop l;
         loop tl
-    | Code_block c :: tl ->
+    | Code_block(lang, c) :: tl ->
         Buffer.add_string b (htmlentities c);
         loop tl
-    | Code c :: tl ->
+    | Code(lang, c) :: tl ->
         Buffer.add_string b (htmlentities c);
         loop tl
     | Br :: tl ->
@@ -155,8 +158,9 @@ let text_of_md md =
     loop md;
     Buffer.contents b
 
+let default_code_stylist = object method style ~lang code = code end
 
-let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) md =
+let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_stylist) md =
   let ids = object(this)
     val mutable ids = StringSet.empty
     method mangle id =
@@ -294,13 +298,22 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) md =
          Buffer.add_string b "</ul>");
       if pindent then Buffer.add_char b '\n';
       loop indent tl
-    | Code_block c :: tl ->
+    | Code_block(lang, c) :: tl ->
       if nl then Buffer.add_string b "\n";
-      Buffer.add_string b "<pre><code>";
-      Buffer.add_string b (htmlentities c);
+      if lang = "" && !default_language = "" then
+        Buffer.add_string b "<pre><code>"
+      else if lang = "" then
+        bprintf b "<pre><code class='%s'>" !default_language
+      else
+        bprintf b "<pre><code class='%s'>" lang;
+      let new_c = cs#style ~lang:lang c in
+      if c = new_c then
+        Buffer.add_string b (htmlentities c)
+      else
+        Buffer.add_string b new_c;
       Buffer.add_string b "</code></pre>";
       loop indent ~nl:true tl
-    | Code c :: tl ->
+    | Code(lang, c) :: tl ->
       Buffer.add_string b "<code>";
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "</code>";
@@ -415,8 +428,8 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) md =
     loop 0 md;
     Buffer.contents b, List.rev !headers
 
-and html_of_md ?(pindent=true) ?(nl2br=false) md =
-  fst (html_and_headers_of_md ~pindent:pindent ~nl2br:nl2br md)
+and html_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_stylist) md =
+  fst (html_and_headers_of_md ~pindent:pindent ~nl2br:nl2br ~cs:cs md)
 and headers_of_md md =
   snd (html_and_headers_of_md md)
 
@@ -489,10 +502,10 @@ let rec sexpr_of_md md =
         List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
         bprintf b ")";
         loop tl
-    | Code c :: tl ->
+    | Code(lang, c) :: tl ->
         bprintf b "(Code %S)" c;
         loop tl
-    | Code_block c :: tl ->
+    | Code_block(lang, c) :: tl ->
         bprintf b "(Code_block %s)" c;
         loop tl
     | Br :: tl ->
@@ -637,7 +650,7 @@ let rec markdown_of_md md =
       List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "- "; loop (list_indent+4) li) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
-    | Code c :: tl -> (* FIXME *)
+    | Code(lang, c) :: tl -> (* FIXME *)
       let n = (* compute how many backquotes we need to use *)
         let filter (n:int) (s:int list) =
           if n > 0 && n < 10 then
@@ -666,7 +679,7 @@ let rec markdown_of_md md =
           Printf.bprintf b "%s" (String.make n '`');
         end;
         loop list_indent tl
-    | Code_block c :: tl ->
+    | Code_block(lang, c) :: tl ->
       let n = (* compute how many backquotes we need to use *)
         let filter n s =
           if n > 0 && n < 10 then
@@ -687,7 +700,7 @@ let rec markdown_of_md md =
         in
           loop [3;4;5;6;7;8;9;10] 0 0
       in
-        if true|| n = 0 then  (* FIXME *)
+        if n = 0 then  (* FIXME *)
           (* case where we can't use backquotes *)
           let output_indented_block n s =
             let rec loop p i =
@@ -709,7 +722,8 @@ let rec markdown_of_md md =
           Buffer.add_string b "\n\n"
         else
           begin
-            Printf.bprintf b "%s\n" (String.make n '`');
+            Printf.bprintf b "%s%s\n" (String.make n '`')
+              (if lang = "" then !default_language else lang);
             Printf.bprintf b "%s" c;
             Printf.bprintf b "\n%s\n" (String.make n '`');
           end;

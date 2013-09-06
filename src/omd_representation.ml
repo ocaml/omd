@@ -39,8 +39,8 @@ type element =
 | Ol of t list
 | Ulp of t list
 | Olp of t list
-| Code of string (* html entities are to be converted *later* *)
-| Code_block of string (* html entities are to be converted *later* *)
+| Code of name * string (* html entities are to be converted *later* *)
+| Code_block of name * string (* html entities are to be converted *later* *)
 | Br
 | Hr
 | Url of href * t * title

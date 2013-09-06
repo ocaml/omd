@@ -5,15 +5,24 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
+type code_stylist = < style : lang:string -> string -> string >
+(** has at least a method [style] that takes a language name and some
+    code and returns that code with style. *)
+
+val default_language : string ref
+(** default language for code blocks can be set to any name, 
+    by default it is the empty string *)
+
 val make_paragraphs : Omd_representation.t -> Omd_representation.t
-(** Since [Omd_parser.parse] doesn't build paragraphs, if you want 
-    Markdown-style paragraphs, you need to apply this function
-    to the result of [Omd_parser.parse]. *)
+(** Since [Omd_parser.parse] doesn't build paragraphs, if you want
+    Markdown-style paragraphs, you need to apply this function to
+    the result of [Omd_parser.parse]. *)
 
 val html_of_md :
   ?pindent:bool ->
   ?nl2br:bool -> 
-Omd_representation.t -> string
+  ?cs:code_stylist ->
+  Omd_representation.t -> string
 (** [html_of_md md] returns a string containing the HTML version of
     [md]. Note that [md] uses the internal representation of
     Markdown. *)
@@ -32,6 +41,7 @@ val headers_of_md :
 val html_and_headers_of_md :
   ?pindent:bool ->
   ?nl2br:bool ->
+  ?cs:code_stylist ->
   Omd_representation.t ->
   string *
     (Omd_representation.element * Omd_utils.StringSet.elt * string) list

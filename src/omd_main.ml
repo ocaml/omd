@@ -76,6 +76,56 @@ let protect_html_comments = ref false
 
 let no_paragraphs = ref false
 
+let code_stylist =
+  let module M = Map.Make(String) in
+object
+  val mutable stylists =
+    M.empty
+  method style ~lang code =
+    try (M.find lang stylists) code
+    with Not_found -> 
+      try (M.find "_" stylists) code
+      with Not_found -> code
+  method register ~lang stylist =
+    stylists <- M.add lang stylist stylists
+end
+
+let code_stylist_of_program p =
+  fun code ->
+    let tmp1 = Filename.temp_file "code" "bef" in
+    let tmp2 = Filename.temp_file "code" "aft" in
+    let otmp1 = open_out_bin tmp1 in
+    Printf.fprintf otmp1 "%s%!" code;
+    close_out otmp1;
+    match Sys.command (Printf.sprintf "( cat %s | %s ) > %s" tmp1 p tmp2) with
+    | 0 ->
+      let cat f =
+        let ic = open_in f in
+        let b = Buffer.create 42 in
+        try
+          while true do
+            Buffer.add_char b (input_char ic)
+          done;
+          assert false
+        with End_of_file -> Buffer.contents b 
+      in
+      cat tmp2
+  | _ -> code
+
+let register_code_stylist_of_program x =
+  try
+    let i = String.index x '=' in
+    code_stylist#register
+      ~lang:(String.sub x 0 i)
+      (code_stylist_of_program
+         (String.sub x (i+1) (String.length x - (i+1))))
+  with Not_found | Invalid_argument _ ->
+    Printf.eprintf "Error: Something wrong with [-r %s]\n" x;
+    exit 1
+
+let register_default_language l =
+  Omd_backend.default_language := l
+
 let make_toc ?(start_level=1) ?(depth=2) md =
   (* probably poor performance but particularly simple to implement *)
   let b = Buffer.create 42 in
@@ -220,6 +270,8 @@ let main () =
         "-ts", Set_int(toc_start), "f Table of contents minimum level (default is 1).";
         "-td", Set_int(toc_depth), "f Table of contents depth (default is 2).";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
+        "-r", String(register_code_stylist_of_program),"l=p Register program p as a code highlighter for language l.";
+        "-R", String(register_default_language),"l Registers unknown languages to be l instead of void.";
         "-nl2br", Set(nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
@@ -273,7 +325,7 @@ let main () =
       let o2 = (* output either Text or HTML, or markdown *)
         (if !notags then to_text
          else if !omarkdown then to_markdown
-         else to_html ~pindent:true ~nl2br:false)
+         else to_html ~pindent:true ~nl2br:false ~cs:(code_stylist:>code_stylist))
           o1
       in
         output_string output o2;
