@@ -1947,20 +1947,16 @@ let main_parse extensions lexemes =
       main_loop_rev (Text "\\" :: r) [Backslash] tl
 
     (* < *)
-    | _, (Lessthan|Lessthans _ as t)
-      :: (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)
-      :: Colon::Slashs(n)::tl ->
-      (* "semi-automatic" URLs *)
+    | _, (Lessthan as t)::tl 
+        when (match tl with
+                | []|(Space|Spaces _|Newline|Newlines _)::_ -> false
+                | _ -> true) ->
+      (* "semi-automatic" relative URLs *)
       let rec read_url accu = function
         | (Newline|Newlines _)::tl ->
           None
         | Greaterthan::tl ->
-          let url =
-            (match t with Lessthans 0 -> "<"
-            | Lessthans n -> String.make (n-2) '<' | _ -> "")
-            ^ (string_of_t w) ^ "://"
-            ^ (if n = 0 then "" else String.make (n-2) '/')
-            ^ string_of_tl (List.rev accu)
+          let url =  string_of_tl (List.rev accu)
           in Some(url, tl)
         | x::tl ->
           read_url (x::accu) tl
