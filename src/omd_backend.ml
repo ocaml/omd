@@ -92,19 +92,19 @@ let text_of_md md =
         loop q;
         loop tl
     | Ref(rc, name, text) :: tl ->
-        Buffer.add_string b (htmlentities name);
+        Buffer.add_string b (htmlentities ~md:true name);
         loop tl
     | Img_ref(rc, name, alt) :: tl ->
-        Buffer.add_string b (htmlentities name);
+        Buffer.add_string b (htmlentities ~md:true name);
         loop tl
     | Paragraph md :: tl ->
         loop md;
         loop tl
     | Img(alt, src, title) :: tl ->
-        Buffer.add_string b (htmlentities alt);
+        Buffer.add_string b (htmlentities ~md:true alt);
         loop tl
     | Text t :: tl ->
-        Buffer.add_string b (htmlentities t);
+        Buffer.add_string b (htmlentities ~md:true t);
         loop tl
     | Emph md :: tl ->
         loop md;
@@ -125,10 +125,10 @@ let text_of_md md =
         List.iter loop l;
         loop tl
     | Code_block(lang, c) :: tl ->
-        Buffer.add_string b (htmlentities c);
+        Buffer.add_string b (htmlentities ~md:false c);
         loop tl
     | Code(lang, c) :: tl ->
-        Buffer.add_string b (htmlentities c);
+        Buffer.add_string b (htmlentities ~md:false c);
         loop tl
     | Br :: tl ->
         loop tl
@@ -217,16 +217,18 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
           rc#get_ref name
         in
         loop indent
-          (Url(htmlentities href,
+          (Url(htmlentities ~md:true href,
               [Text(text)],
-              htmlentities title)
+              htmlentities ~md:true title)
             ::tl)
     | Img_ref(rc, name, alt) :: tl ->
         let src, title =
           rc#get_ref name
         in
         loop indent
-          (Img(htmlentities alt,htmlentities src,htmlentities title)::tl)
+          (Img(htmlentities ~md:true alt,
+               htmlentities ~md:true src,
+               htmlentities ~md:true title)::tl)
     | Paragraph md :: tl ->
         (let s = html_of_md md in
            if empty s then
@@ -241,19 +243,19 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
         loop indent ~nl:true tl
     | Img(alt, src, title) :: tl ->
         Buffer.add_string b "<img src='";
-        Buffer.add_string b (htmlentities src);
+        Buffer.add_string b (htmlentities ~md:true src);
         Buffer.add_string b "' alt='";
-        Buffer.add_string b (htmlentities alt);
+        Buffer.add_string b (htmlentities ~md:true alt);
         Buffer.add_string b "' ";
         if title <> "" then
           (Buffer.add_string b " title='";
-           Buffer.add_string b (htmlentities title);
+           Buffer.add_string b (htmlentities ~md:true title);
            Buffer.add_string b "' ");
         Buffer.add_string b "/>";
         loop indent tl
     | Text t :: tl ->
         (* Buffer.add_string b t; *)
-        Buffer.add_string b (htmlentities t);
+        Buffer.add_string b (htmlentities ~md:true t);
         loop indent tl
     | Emph md :: tl ->
         Buffer.add_string b "<em>";
@@ -308,14 +310,14 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
         bprintf b "<pre><code class='%s'>" lang;
       let new_c = cs#style ~lang:lang c in
       if c = new_c then
-        Buffer.add_string b (htmlentities c)
+        Buffer.add_string b (htmlentities ~md:false c)
       else
-        Buffer.add_string b new_c;
+        Buffer.add_string b (htmlentities ~md:true new_c);
       Buffer.add_string b "</code></pre>";
       loop indent ~nl:true tl
     | Code(lang, c) :: tl ->
       Buffer.add_string b "<code>";
-      Buffer.add_string b (htmlentities c);
+      Buffer.add_string b (htmlentities ~md:false c);
       Buffer.add_string b "</code>";
       loop indent tl
     | Br :: tl ->
@@ -340,12 +342,12 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
     | Url (href,s,title) :: tl ->
       let s = html_of_md s in
       Buffer.add_string b "<a href='";
-      Buffer.add_string b (htmlentities href);
+      Buffer.add_string b (htmlentities ~md:true href);
       Buffer.add_string b "'";
       if title <> "" then
         begin
           Buffer.add_string b " title='";
-          Buffer.add_string b (htmlentities title);
+          Buffer.add_string b (htmlentities ~md:true title);
           Buffer.add_string b "'";
         end;
       Buffer.add_string b ">";

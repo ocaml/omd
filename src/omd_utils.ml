@@ -114,20 +114,55 @@ let id_of_string ids s =
   let id = gen_id s in
   ids#mangle id
 
-let htmlentities s =
+(* only convert when "necessary" *)
+let htmlentities ?(md=false) s =
+  let module Break = struct exception Break end in
   let b = Buffer.create 42 in
-    for i = 0 to String.length s - 1 do
+  let rec loop i =
+    if i = String.length s then
+      ()
+    else
+      let () =
       match s.[i] with
         | ( '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' ) as c -> Buffer.add_char b c
         | '"' -> Buffer.add_string b "&quot;"
         | '\'' -> Buffer.add_string b "&apos;"
-        | '&' -> Buffer.add_string b "&amp;"
+        | '&' ->
+            if md then
+              begin
+                try
+                  let () = match s.[i+1] with
+                  | '#' ->
+                    let rec ff j =
+                      match s.[j] with
+                      | '0' .. '9' -> ff (succ j)
+                      | ';' -> ()
+                      | _ -> raise Break.Break
+                    in
+                    ff (i+2)
+                  | 'A' .. 'Z' | 'a' .. 'z' ->
+                    let rec ff j =
+                      match s.[j] with
+                      | 'A' .. 'Z' | 'a' .. 'z' -> ff (succ j)
+                      | ';' -> ()
+                      | _ -> raise Break.Break
+                    in
+                    ff (i+2)
+                  | _ -> raise Break.Break
+                  in                    
+                  Buffer.add_string b "&"
+                with _ -> Buffer.add_string b "&amp;"
+              end
+            else
+              Buffer.add_string b "&amp;"
         | '<' -> Buffer.add_string b "&lt;"
         | '>' -> Buffer.add_string b "&gt;"
-        | '\\' -> Buffer.add_string b "&#92;"
         | c -> Buffer.add_char b c
-    done;
-    Buffer.contents b
+      in loop (succ i)
+  in
+  loop 0;
+  Buffer.contents b
+
 
 let minimalize_blanks s =
   let l = String.length s in

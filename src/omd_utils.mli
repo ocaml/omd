@@ -32,15 +32,14 @@ val id_of_string : < mangle : string -> string; .. > -> string -> string
     [id_of_string] asks for an object rather than "just a
     function". *)
 
-val htmlentities : string -> string
+val htmlentities : ?md:bool -> string -> string
 (** [htmlentities s] returns a new string in which html-significant
     characters have been converted to html entities. For instance,
     "<Foo&Bar>" is converted to "&lt;Foo&amp;Bar&gt;". *)
 
 val minimalize_blanks : string -> string
-(** [minimalize_blanks s] returns [s] where the first and last
-   characters are never blank, and two consecutive blanks never
-   happen. *)
+(** [minimalize_blanks s] returns a copy of [s] in which the first and last
+   characters are never blank, and two consecutive blanks never happen. *)
 
 
 val eat : ('a -> bool) -> 'a list -> 'a list
