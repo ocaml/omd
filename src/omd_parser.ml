@@ -60,7 +60,7 @@ let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
    "middot";  "cedil";  "sup1";  "ordm"; "raquo";  "frac14";  "frac12";
    "frac34";  "iquest";  "nbsp";  "iexcl"; "cent";  "pound";  "curren";
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
-   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; "apos"; ]
+   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; "apos" ]
 
 (** set of known inline HTML tags *)
 let inline_htmltags_set = StringSet.of_list
@@ -1947,16 +1947,20 @@ let main_parse extensions lexemes =
       main_loop_rev (Text "\\" :: r) [Backslash] tl
 
     (* < *)
-    | _, (Lessthan as t)::tl 
-        when (match tl with
-                | []|(Space|Spaces _|Newline|Newlines _)::_ -> false
-                | _ -> true) ->
-      (* "semi-automatic" relative URLs *)
+    | _, (Lessthan|Lessthans _ as t)
+      :: (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)
+      :: Colon::Slashs(n)::tl ->
+      (* "semi-automatic" URLs *)
       let rec read_url accu = function
         | (Newline|Newlines _)::tl ->
           None
         | Greaterthan::tl ->
-          let url =  string_of_tl (List.rev accu)
+          let url =
+            (match t with Lessthans 0 -> "<"
+            | Lessthans n -> String.make (n-2) '<' | _ -> "")
+            ^ (string_of_t w) ^ "://"
+            ^ (if n = 0 then "" else String.make (n-2) '/')
+            ^ string_of_tl (List.rev accu)
           in Some(url, tl)
         | x::tl ->
           read_url (x::accu) tl
@@ -1972,6 +1976,7 @@ let main_parse extensions lexemes =
         | Some(r, p, l) -> main_loop_rev r p l
         end
       end
+
 
     (* Word(w) *)
     | _, Word w::tl ->
