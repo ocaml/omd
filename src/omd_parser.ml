@@ -120,12 +120,11 @@ let htmltags_set =
        ;"ul";"var";"video";"wbr"
      ])
 
-(** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
-    This function has an effect only if [trackfix] is [true].
- *)
-let assert_well_formed (l:tok list) : unit =
-  if trackfix then
-    let rec loop accu = function
+
+(** This functions fixes bad lexing trees, which may be built when
+    extraction a portion of another lexing tree. *)
+let fix l =
+  let rec loop accu = function
 (* code to generate what follows...
 List.iter (fun e ->
 Printf.printf "
@@ -278,13 +277,20 @@ print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
       | Underscores a::Underscores b::tl -> if trackfix then eprintf "Underscore 4\n"; loop accu (Underscores(a+b+2)::tl)| x::tl -> loop (x::accu) tl
       | [] -> List.rev accu
     in
+    loop [] l
+
+(** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
+    This function has an effect only if [trackfix] is [true].
+ *)
+let assert_well_formed (l:tok list) : unit =
+  if trackfix then
     let rec equiv l1 l2 = match l1, l2 with
       | [], [] -> true
       | Tag _::tl1, Tag _::tl2-> equiv tl1 tl2
       | e1::tl1, e2::tl2 -> e1 = e2 && equiv tl1 tl2
       | _ -> false
     in
-    assert(equiv (loop [] l) l);
+    assert(equiv (fix l) l);
     ()
 
 let unindent_rev n lexemes =
@@ -1037,12 +1043,11 @@ let emailstyle_quoting main_loop r _p lexemes =
     | Newlines 0::Greaterthan::Spaces n::tl ->
       assert(n>0);
       loop (Newlines 0::cl@block) [Spaces(n-1)] tl
-    | (Newlines _::_ as l) | ([] as l) -> List.rev (cl@block), l
+    | (Newlines _::_ as l) | ([] as l) -> fix(List.rev(cl@block)), l
     | e::tl -> loop block (e::cl) tl
   in
   match loop [] [] lexemes with
   | block, tl ->
-    assert_well_formed block;
     if debug then
       eprintf "##############################\n%s\n\
                   ##############################\n%!" (string_of_tl block);
