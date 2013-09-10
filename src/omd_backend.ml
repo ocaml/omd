@@ -312,7 +312,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
       if c = new_c then
         Buffer.add_string b (htmlentities ~md:false c)
       else
-        Buffer.add_string b (htmlentities ~md:true new_c);
+        Buffer.add_string b new_c;
       Buffer.add_string b "</code></pre>";
       loop indent ~nl:true tl
     | Code(lang, c) :: tl ->
