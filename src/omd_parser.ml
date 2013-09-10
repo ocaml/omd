@@ -60,7 +60,7 @@ let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
    "middot";  "cedil";  "sup1";  "ordm"; "raquo";  "frac14";  "frac12";
    "frac34";  "iquest";  "nbsp";  "iexcl"; "cent";  "pound";  "curren";
    "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
-   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; "apos" ]
+   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; "apos"; "lt"; "gt";  ]
 
 (** set of known inline HTML tags *)
 let inline_htmltags_set = StringSet.of_list
