@@ -46,21 +46,41 @@ open Omd_representation
 
 (** set of known HTML codes *)
 let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
-  (* list extracted from: http://www.ascii.cl/htmlcodes.htm *)
-  ["eth";  "ntilde";  "ograve";  "oacute";  "ocirc";  "otilde"; "ouml";
-   "divide"; "oslash";  "ugrave"; "uacute"; "ucirc";  "uuml"; "yacute";
-   "thorn";  "yuml";  "agrave";  "aacute"; "acirc";  "atilde";  "auml";
-   "aring";  "aelig"; "ccedil";  "egrave";  "eacute"; "ecirc";  "euml";
-   "igrave";  "iacute";  "icirc";  "iuml"; "ETH";  "Ntilde";  "Ograve";
-   "Oacute";  "Ocirc"; "Otilde";  "Ouml"; "times";  "Oslash"; "Ugrave";
-   "Uacute";  "Ucirc"; "Uuml";  "Yacute";  "THORN"; "szlig";  "Agrave";
-   "Aacute";  "Acirc"; "Atilde";  "Auml";  "Aring"; "AElig";  "Ccedil";
-   "Egrave";  "Eacute"; "Ecirc";  "Euml"; "Igrave";  "Iacute"; "Icirc";
-   "Iuml"; "deg";  "plusmn"; "sup2"; "sup3";  "acute"; "micro"; "para";
-   "middot";  "cedil";  "sup1";  "ordm"; "raquo";  "frac14";  "frac12";
-   "frac34";  "iquest";  "nbsp";  "iexcl"; "cent";  "pound";  "curren";
-   "yen";  "brvbar";  "sect"; "uml";  "copy";  "ordf"; "laquo";  "not";
-   "shy"; "reg"; "macr"; "quot"; "amp"; "euro"; "apos"; "lt"; "gt";  ]
+  (* list extracted from: http://www.w3.org/TR/html4/charset.html *)
+  [ "AElig";  "Aacute";  "Acirc";  "Agrave"; "Alpha";  "Aring";  "Atilde";
+    "Auml"; "Beta";  "Ccedil"; "Chi"; "Dagger";  "Delta"; "ETH"; "Eacute";
+    "Ecirc";  "Egrave";  "Epsilon";   "Eta";  "Euml";  "Gamma";  "Iacute";
+    "Icirc"; "Igrave"; "Iota";  "Iuml"; "Kappa"; "Lambda"; "Mu"; "Ntilde";
+    "Nu";  "OElig";  "Oacute";   "Ocirc";  "Ograve";  "Omega";  "Omicron";
+    "Oslash";  "Otilde";  "Ouml";  "Phi";  "Pi";  "Prime";  "Psi";  "Rho";
+    "Scaron";  "Sigma";   "THORN";  "Tau";  "Theta";   "Uacute";  "Ucirc";
+    "Ugrave"; "Upsilon"; "Uuml"; "Xi"; "Yacute"; "Yuml"; "Zeta"; "aacute";
+    "acirc"; "acute"; "aelig"; "agrave"; "alefsym"; "alpha"; "amp"; "and";
+    "ang"; "aring"; "asymp";  "atilde"; "auml"; "bdquo"; "beta"; "brvbar";
+    "bull";  "cap";  "ccedil"; "cedil";  "cent";  "chi"; "circ";  "clubs";
+    "cong";  "copy"; "crarr"; "cup";  "curren"; "dArr";  "dagger"; "darr";
+    "deg";  "delta";  "diams";   "divide";  "eacute";  "ecirc";  "egrave";
+    "empty";  "emsp"; "ensp";  "epsilon"; "equiv";  "eta";  "eth"; "euml";
+    "euro";  "exist";  "fnof";  "forall";  "frac12";  "frac14";  "frac34";
+    "frasl";  "gamma";  "ge"; "gt";  "hArr";  "harr"; "hearts";  "hellip";
+    "iacute"; "icirc"; "iexcl"; "igrave"; "image"; "infin"; "int"; "iota";
+    "iquest"; "isin"; "iuml";  "kappa"; "lArr"; "lambda"; "lang"; "laquo";
+    "larr";  "lceil";  "ldquo"; "le";  "lfloor";  "lowast"; "loz";  "lrm";
+    "lsaquo"; "lsquo"; "lt";  "macr"; "mdash"; "micro"; "middot"; "minus";
+    "mu"; "nabla";  "nbsp"; "ndash";  "ne"; "ni"; "not";  "notin"; "nsub";
+    "ntilde";  "nu";   "oacute";  "ocirc";  "oelig";   "ograve";  "oline";
+    "omega"; "omicron"; "oplus"; "or"; "ordf"; "ordm"; "oslash"; "otilde";
+    "otimes";  "ouml";  "para";  "part";  "permil"; "perp";  "phi";  "pi";
+    "piv";  "plusmn";  "pound"; "prime";  "prod";  "prop"; "psi";  "quot";
+    "rArr";  "radic"; "rang"; "raquo";  "rarr"; "rceil";  "rdquo"; "real";
+    "reg"; "rfloor";  "rho"; "rlm"; "rsaquo";  "rsquo"; "sbquo"; "scaron";
+    "sdot";  "sect";  "shy"; "sigma";  "sigmaf";  "sim"; "spades";  "sub";
+    "sube"; "sum"; "sup"; "sup1";  "sup2"; "sup3"; "supe"; "szlig"; "tau";
+    "there4";  "theta"; "thetasym";  "thinsp"; "thorn";  "tilde"; "times";
+    "trade"; "uArr"; "uacute";  "uarr"; "ucirc"; "ugrave"; "uml"; "upsih";
+    "upsilon";  "uuml"; "weierp"; "xi";  "yacute"; "yen";  "yuml"; "zeta";
+    "zwj"; "zwnj"; ]
+
 
 (** set of known inline HTML tags *)
 let inline_htmltags_set = StringSet.of_list
@@ -1585,7 +1605,17 @@ let maybe_autoemail r p l =
     end
   | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
 
-
+let is_hex s =
+  String.length s > 1 
+  && (s.[0] = 'X' || s.[0] = 'x')
+  && (let rec loop i =
+        i = String.length s
+        ||
+        (match s.[i] with
+         | '0' .. '9' | 'A' .. 'F' | 'a' .. 'f' ->
+           loop (succ i)
+         | _ -> false)
+      in loop 1)
 
 let main_parse extensions lexemes =
   assert_well_formed lexemes;
@@ -2016,6 +2046,23 @@ let main_parse extensions lexemes =
         end
       else
         main_loop_rev (Html("&amp;")::r) [] tl2
+
+    (* maybe hex digit-coded html entity *)
+    | _, Ampersand::((Hash::Word w::((Semicolon|Semicolons _) as s)::tl)
+                        as tl2) when is_hex w ->
+      if String.length w <= 4 then
+        begin match s with
+        | Semicolon ->
+          main_loop_rev (Html("&#"^w^";")::r) [s] tl
+        | Semicolons 0 ->
+          main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolon::tl)
+        | Semicolons n ->
+          main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+        | _ -> assert false
+        end
+      else
+        main_loop_rev (Html("&amp;")::r) [] tl2
+
 
     (* Ampersand *)
     | _, Ampersand::tl ->
