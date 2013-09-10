@@ -126,7 +126,7 @@ let htmlentities ?(md=false) s =
       match s.[i] with
         | ( '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' ) as c -> Buffer.add_char b c
         | '"' -> Buffer.add_string b "&quot;"
-        | '\'' -> Buffer.add_string b "&apos;"
+        | '\'' -> Buffer.add_string b "&#39;"
         | '&' ->
             if md then
               begin
