@@ -2089,8 +2089,16 @@ let main_parse extensions lexemes =
 
     (* HTML *)
     (* <br/> and <hr/> with no space *)
-    | _, Lessthan::Word("br"|"hr" as w)::Slash::Greaterthan::tl ->
-      main_loop_rev (Html("<"^w^"/>")::r) [Greaterthan] tl
+    | _, (Lessthan::Word("br"|"hr" as w)::Slash
+          ::(Greaterthan|Greaterthans _ as g)::tl) ->
+      begin match g with
+      | Greaterthans 0 ->
+        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
+      | Greaterthans n ->
+        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthans(n-1)::tl)
+      | _ ->
+        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] tl
+      end
 
     (* block html *)
     | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as t)::
@@ -2138,10 +2146,10 @@ let main_parse extensions lexemes =
         main_loop_rev (Html_block(string_of_tl html)::r) [Greaterthan] tl
 
     (* inline html *)
-    | _, (Lessthan|Lessthans _ as t)::
-      ((Word(tagname) as w)
-      ::((Space|Spaces _|Greaterthan|Greaterthans _)
-         ::_ as html_stuff) as tl) ->
+    | _, ((Lessthan as t)
+          ::((Word(tagname) as w)
+          ::((Space|Spaces _|Greaterthan|Greaterthans _)
+          ::_ as html_stuff) as tl)) ->
       if (!strict_html && not(StringSet.mem tagname inline_htmltags_set))
         || not(!blind_html || StringSet.mem tagname htmltags_set)
       then
@@ -2200,12 +2208,6 @@ let main_parse extensions lexemes =
         in
         (match try Some(read_html()) with Premature_ending -> None with
         | Some(html, tl) ->
-          let r = match t with
-            | Lessthan -> r
-            | Lessthans 0 -> Text("<")::r
-            | Lessthans n -> Text(String.make (n-3) '<')::r
-            | _ -> assert false
-          in
           main_loop_rev (main_loop_rev [] [] html @ r) [Greaterthan] tl
         | None ->
           main_loop_rev (Text(string_of_t t^tagname)::r) [w] html_stuff
