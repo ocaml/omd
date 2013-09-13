@@ -2153,18 +2153,6 @@ let main_parse extensions lexemes =
         let read_html() =
           let tag s = tag__md [Html s] in
           let rec loop accu n = function
-(*             | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> *)
-(*               (\* MAYBE self-closing tags *\) *)
-(*               if tn = tagname then (\* not selfclosing tag??? *\) *)
-
-(*               if n = 0 then *)
-(*                 let b, tl = read_until_gt tl in *)
-(*                 ((tag(sprintf "1<%s%s>" tn (string_of_tl b))) ::accu), tl *)
-(*               else *)
-(*                 let b, tl = read_until_gt tl in *)
-(*                 loop (tag(sprintf "2<%s%s>" tn (string_of_tl b))::accu) n tl *)
-
-
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
               (* MAYBE self-closing tags *)
               begin
