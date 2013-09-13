@@ -2153,14 +2153,35 @@ let main_parse extensions lexemes =
         let read_html() =
           let tag s = tag__md [Html s] in
           let rec loop accu n = function
+(*             | Lessthan::Word("img"|"br"|"hr" as tn)::tl -> *)
+(*               (\* MAYBE self-closing tags *\) *)
+(*               if tn = tagname then (\* not selfclosing tag??? *\) *)
+
+(*               if n = 0 then *)
+(*                 let b, tl = read_until_gt tl in *)
+(*                 ((tag(sprintf "1<%s%s>" tn (string_of_tl b))) ::accu), tl *)
+(*               else *)
+(*                 let b, tl = read_until_gt tl in *)
+(*                 loop (tag(sprintf "2<%s%s>" tn (string_of_tl b))::accu) n tl *)
+
+
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
-              (* self-closing tags *)
-              if n = 0 then
+              (* MAYBE self-closing tags *)
+              begin
                 let b, tl = read_until_gt tl in
-                ((tag(sprintf "<%s%s>" tn (string_of_tl b))) ::accu), tl
-              else
-                let b, tl = read_until_gt tl in
-                loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu) n tl
+                match List.rev b with
+                | Slash::_ -> 
+                  loop
+                    (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
+                    n
+                    tl
+                | _ -> 
+                  loop
+                    (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
+                    (if tn = tagname then n+1 else n)
+                    tl
+              end
+
             | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
               if tn = tagname then
                 if n = 0 then
@@ -2168,15 +2189,13 @@ let main_parse extensions lexemes =
                 else
                   loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
               else
-                loop (Word(sprintf "</%s>" tn)::accu) n tl
+                loop (tag(sprintf "</%s>" tn)::accu) n tl
             | Lessthan::Word(tn)::tl -> (* <word... *)
               let b, tl = read_until_gt tl in
-              if tn = tagname then
-                loop (tag(sprintf "<%s%s>" tn (string_of_tl b))::accu)
-                  (n+1) tl
-              else
-                loop (tag(Printf.sprintf "<%s%s>" tn (string_of_tl b))
-                      :: accu) n tl
+              loop
+                (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
+                (if tn = tagname then n+1 else n)
+                tl
             | x::tl ->
               loop (x::accu) n tl
             | [] ->
