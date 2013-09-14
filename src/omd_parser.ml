@@ -2177,8 +2177,11 @@ let main_parse extensions lexemes =
                     (if tn = tagname then n+1 else n)
                     tl
               end
-
-            | Lessthan::Slash::Word(tn)::Greaterthan::tl -> (* </word> ... *)
+            | Lessthan::Slash::Word(tn)::(Greaterthans 0)::tl ->
+              loop accu n (Lessthan::Slash::Word(tn)::Greaterthan::Greaterthan::tl)
+            | Lessthan::Slash::Word(tn)::(Greaterthans g)::tl ->
+              loop accu n (Lessthan::Slash::Word(tn)::Greaterthan::(Greaterthans(g-1))::tl)
+            | Lessthan::Slash::Word(tn)::(Greaterthan)::tl -> (* </word> ... *)
               if tn = tagname then
                 if n = 0 then
                   List.rev (tag(sprintf "</%s>" tn)::accu), tl
