@@ -2101,10 +2101,10 @@ let main_parse extensions lexemes =
       end
 
     (* block html *)
-    | ([]|[Newline|Newlines _]), (Lessthan|Lessthans _ as t)::
-      Word(tagname)
-      ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
-      ::tl ->
+    | ([]|[Newline|Newlines _]), 
+        ((Lessthan as t)::Word(tagname)
+         ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
+         ::tl) ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
       else if not (!blind_html || StringSet.mem tagname htmltags_set) then
@@ -2115,32 +2115,32 @@ let main_parse extensions lexemes =
       else
         let read_html() =
           let rec loop accu n = function
-            | Lessthan::Slash::Word(tn)::Greaterthan::tl ->
+            | Lessthan::Slash::Word tn::Greaterthans 0::tl ->
+              loop accu n
+                (Lessthan::Slash::Word tn::Greaterthan::Greaterthan::tl)
+            | Lessthan::Slash::Word tn::Greaterthans g::tl ->
+              loop accu n
+                (Lessthan::Slash::Word tn::Greaterthan::Greaterthans(g-1)::tl)
+            | Lessthan::Slash::Word tn::Greaterthan::tl ->
               if tn = tagname then
                 if n = 0 then
-                  List.rev (Greaterthan::Word(tn)::Slash::Lessthan::accu), tl
+                  List.rev (Greaterthan::Word tn::Slash::Lessthan::accu), tl
                 else
-                  loop (Greaterthan::Word(tn)::Slash::Lessthan::accu)
+                  loop (Greaterthan::Word tn::Slash::Lessthan::accu)
                     (n-1) tl
               else
-                loop (Greaterthan::Word(tn)::Slash::Lessthan::accu) n tl
+                loop (Greaterthan::Word tn::Slash::Lessthan::accu) n tl
             | Lessthan::Word(tn)::tl ->
               if tn = tagname then
-                loop (Word(tn)::Lessthan::accu) (n+1) tl
+                loop (Word tn::Lessthan::accu) (n+1) tl
               else
-                loop (Word(tn)::Lessthan::accu) n tl
+                loop (Word tn::Lessthan::accu) n tl
             | x::tl ->
               loop (x::accu) n tl
             | [] ->
               List.rev accu, []
           in
           loop [x;Word(tagname);Lessthan] 0 tl
-        in
-        let r = match t with
-          | Lessthan -> r
-          | Lessthans 0 -> Text("<")::r
-          | Lessthans n -> Text(String.make (n-3) '<')::r
-          | _ -> assert false
         in
         let html, tl = read_html() in
         main_loop_rev (Html_block(string_of_tl html)::r) [Greaterthan] tl
@@ -2177,11 +2177,13 @@ let main_parse extensions lexemes =
                     (if tn = tagname then n+1 else n)
                     tl
               end
-            | Lessthan::Slash::Word(tn)::(Greaterthans 0)::tl ->
-              loop accu n (Lessthan::Slash::Word(tn)::Greaterthan::Greaterthan::tl)
-            | Lessthan::Slash::Word(tn)::(Greaterthans g)::tl ->
-              loop accu n (Lessthan::Slash::Word(tn)::Greaterthan::(Greaterthans(g-1))::tl)
-            | Lessthan::Slash::Word(tn)::(Greaterthan)::tl -> (* </word> ... *)
+            | Lessthan::Slash::Word tn::Greaterthans 0::tl ->
+              loop accu n
+                (Lessthan::Slash::Word tn::Greaterthan::Greaterthan::tl)
+            | Lessthan::Slash::Word tn::Greaterthans g::tl ->
+              loop accu n
+                (Lessthan::Slash::Word tn::Greaterthan::Greaterthans(g-1)::tl)
+            | Lessthan::Slash::Word tn::Greaterthan::tl -> (* </word> ... *)
               if tn = tagname then
                 if n = 0 then
                   List.rev (tag(sprintf "</%s>" tn)::accu), tl
@@ -2189,7 +2191,7 @@ let main_parse extensions lexemes =
                   loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
               else
                 loop (tag(sprintf "</%s>" tn)::accu) n tl
-            | Lessthan::Word(tn)::tl -> (* <word... *)
+            | Lessthan::Word tn::tl -> (* <word... *)
               let b, tl = read_until_gt tl in
               loop
                 (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
