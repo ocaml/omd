@@ -87,7 +87,7 @@ let inline_htmltags_set = StringSet.of_list
   (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
   [ "b";"big";"i";"small";"tt";
     "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
-    "a";"bdo";"br";"img";"map";"object";"q";"script";"span";"sub";"sup";
+    "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
     "button";"input";"label";"select";"textarea";]
 
 (** N.B. it seems that there is no clear distinction between
