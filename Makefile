@@ -51,7 +51,7 @@ distclean dist-clean:: clean
 	$(RM) $(wildcard *.ba[0-9] *.bak *~ *.odocl)
 
 opam:
-	test "$(wc -l < _oasis)" == 42 ; echo $?
+	test "$(wc -l < _oasis)" == 42 || (echo $?; exit $?)
 	cp _oasis _oasis_orig
 	head -n 31 _oasis_orig > _oasis
 	oasis2opam http://pw374.github.io/distrib/omd/$(PKGNAME)-$(PKGVERSION).tar.gz
