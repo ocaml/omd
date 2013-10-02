@@ -213,22 +213,24 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
       Buffer.add_string b "</blockquote>";
       loop indent ~nl:true tl
     | Ref(rc, name, text, fallback) :: tl ->
-        let href, title =
-          rc#get_ref name
-        in
-        loop indent
-          (Url(htmlentities ~md:true href,
-              [Text(text)],
-              htmlentities ~md:true title)
-            ::tl)
+      begin match rc#get_ref name with
+        | Some(href, title) ->
+          loop indent
+            (Url(htmlentities ~md:true href,
+                 [Text(text)],
+                 htmlentities ~md:true title)
+             ::tl)
+        | None -> loop indent (Text(fallback)::tl)
+      end
     | Img_ref(rc, name, alt, fallback) :: tl ->
-        let src, title =
-          rc#get_ref name
-        in
-        loop indent
-          (Img(htmlentities ~md:true alt,
-               htmlentities ~md:true src,
-               htmlentities ~md:true title)::tl)
+        begin match rc#get_ref name with
+          | Some(src, title) ->
+            loop indent
+              (Img(htmlentities ~md:true alt,
+                   htmlentities ~md:true src,
+                   htmlentities ~md:true title)::tl)
+          | None -> loop indent (Text(fallback)::tl)
+        end
     | Paragraph md :: tl ->
         (let s = html_of_md md in
            if empty s then

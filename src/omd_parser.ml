@@ -293,6 +293,18 @@ let assert_well_formed (l:tok list) : unit =
     assert(equiv (fix l) l);
     ()
 
+(** Generate fallback for references. *)
+let extract_fallback remains l =
+  let rec loop accu = function
+    | [] -> string_of_tl (List.rev accu)
+    | e::tl as r ->
+      if r == remains then
+        string_of_tl (List.rev accu)
+      else
+        loop (e::accu) tl
+  in loop [] l
+
+
 let unindent_rev n lexemes =
   if debug then eprintf "CALL: Omd_parser.unindent_rev\n%!";
   assert_well_formed lexemes;
@@ -1069,10 +1081,12 @@ let maybe_reference rc r p l =
                      | _ -> false) blank <> [] then raise Premature_ending;
     match read_until_cbracket remains with
     | [], remains ->
+      let fallback = extract_fallback remains (Obracket::l) in
       let id = string_of_tl text in (* implicit anchor *)
-      Some(((Ref(rc, id, id, ""))::r), [Cbracket], remains)
+      Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
     | id, remains ->
-      Some(((Ref(rc, string_of_tl id, string_of_tl text, ""))::r),
+      let fallback = extract_fallback remains (Obracket::l) in
+      Some(((Ref(rc, string_of_tl id, string_of_tl text, fallback))::r),
            [Cbracket], remains)
   in
   let rec maybe_def l =
@@ -2289,17 +2303,14 @@ let main_parse extensions lexemes =
       )
 
     (* img ref *)
-    | _, (Exclamation|Exclamations _ as t)
+    | _, (Exclamation as t)
       ::Obracket::Cbracket::Obracket::tl ->
       (* ref image insertion with no "alt" *)
       (* ![][ref] *)
       (try
          let id, tl = read_until_cbracket ~no_nl:true tl in
-         let r = match t with
-           | Exclamations 0 -> Text "!" :: r
-           | Exclamations n -> Text(String.make (n+1) '!') :: r
-           | _ -> r in
-         let r = Img_ref(rc, string_of_tl id, "", "") :: r in
+         let fallback = extract_fallback tl lexemes in
+         let r = Img_ref(rc, string_of_tl id, "", fallback) :: r in
          main_loop_rev r [Cbracket] tl
        with NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
@@ -2351,15 +2362,17 @@ let main_parse extensions lexemes =
          | alt, Obracket::(Space|Spaces _)::Word(id)::(Space|Spaces _)
            ::Cbracket::ntl
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
-           main_loop_rev (Img_ref(rc, id, string_of_tl alt, "")::r) [Cbracket] ntl
+           let fallback = extract_fallback ntl lexemes in
+           main_loop_rev (Img_ref(rc, id, string_of_tl alt, fallback)::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                               as ntl) ->
            (try
               match read_until_cbracket ~no_nl:false ntl with
               | [], rest -> raise Premature_ending
               | id, rest ->
+                let fallback = extract_fallback rest lexemes in
                 main_loop_rev
-                  (Img_ref(rc, string_of_tl id, string_of_tl alt, "")::r)
+                  (Img_ref(rc, string_of_tl id, string_of_tl alt, fallback)::r)
                   [Cbracket]
                   rest
             with

@@ -4,8 +4,12 @@ open Printf
 (** references, instances created in [Omd_parser.main_parse] and
     accessed in the [Omd_backend] module. *)
 module R = Map.Make(String)
-class ref_container = object
-  val broken_url = "", "Broken URL"
+class ref_container : object
+    val mutable c : (string * string) R.t
+    method add_ref : R.key -> string -> string -> unit
+    method get_ref : R.key -> (string * string) option
+    method get_all : (string * (string * string)) list
+  end = object
   val mutable c = R.empty
   val mutable c2 = R.empty
 
@@ -17,17 +21,17 @@ class ref_container = object
     if ln <> name then c2 <- R.add ln (url, title) c2
 
   method get_ref name =
-    let (url, title) as r =
-      try R.find name c
-      with Not_found ->
-        let ln = String.lowercase (String.copy name) in
-        try R.find ln c
+    try
+      let (url, title) as r =
+        try R.find name c
         with Not_found ->
-          try R.find ln c2
+          let ln = String.lowercase (String.copy name) in
+          try R.find ln c
           with Not_found ->
-            if debug then eprintf "Could not find reference (%s)\n%!" (name);
-            broken_url
-    in r
+            R.find ln c2
+      in Some r
+    with Not_found ->
+      None
 end
 
 type element =

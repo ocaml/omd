@@ -30,10 +30,9 @@ module R :
   end
 class ref_container :
   object
-    val broken_url : string * string
     val mutable c : (string * string) R.t
     method add_ref : R.key -> string -> string -> unit
-    method get_ref : R.key -> string * string
+    method get_ref : R.key -> (string * string) option
     method get_all : (string * (string * string)) list
   end
 type element =
