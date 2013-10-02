@@ -537,7 +537,9 @@ let tag__maybe_h1 main_loop =
         let title = H1(main_loop [] [] title) in
         Some((title::r), [Newline], tl)
       end
-    | _ -> assert false (* -> the tag generator would be broken *)
+    | _ ->
+       eprintf "P=%S" (destring_of_tl p);
+       assert false (* -> the tag generator would be broken *)
   )
 
 let tag__maybe_h2 main_loop =
@@ -574,7 +576,7 @@ let tag_setext main_loop lexemes =
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-          loop [] (rleft@(e2::e1::tag__maybe_h1 main_loop::pl@res)) right
+          loop [] (rleft@(e2::e1::pl@tag__maybe_h1 main_loop::res)) right
         | Some(rleft, right) ->
           loop [] (rleft@(e2::e1::pl@res)) right
         | None ->
@@ -590,14 +592,15 @@ let tag_setext main_loop lexemes =
                   | _::_ as l -> Split([], l))
             tl
         with
-      | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-        loop [] (rleft@(e2::e1::tag__maybe_h2 main_loop::pl@res)) right
-      | Some(rleft, right) ->
-        loop [] (rleft@(e2::e1::pl@res)) right
-      | None ->
-        loop [] (e2::e1::pl@res) []
+        | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
+eprintf "LEFT=%S RIGHT=%S\n%!" (destring_of_tl rleft) (destring_of_tl right);
+          loop [] (rleft@(e2::e1::pl@tag__maybe_h2 main_loop::res)) right
+        | Some(rleft, right) ->
+          loop [] (rleft@(e2::e1::pl@res)) right
+        | None ->
+          loop [] (e2::e1::pl@res) []
       end
-    | (Newlines _ as e1)::tl ->
+    | (Newline | Newlines _ as e1)::tl ->
       loop [] (e1::pl@res) tl
     | e::tl ->
       loop (e::pl) res tl
