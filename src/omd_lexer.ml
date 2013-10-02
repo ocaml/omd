@@ -26,7 +26,7 @@
 open Omd_representation
 
 let string_of_t = function
-  | Tag _ -> ""
+  | Tag _ -> if Omd_utils.debug then "TAG" else ""
   | Ampersand -> "&"
   | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
   | At -> "@"

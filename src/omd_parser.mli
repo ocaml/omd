@@ -189,7 +189,7 @@ val maybe_reference :
 
 val maybe_link : main_loop -> r -> p -> l -> (r * p * l) option
 
-val bcode : r -> p -> l -> r * p * l
+val bcode : r -> p -> l -> (r * p * l) option
 
 val icode : r -> p -> l -> r * p * l
 

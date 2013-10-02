@@ -574,7 +574,7 @@ let tag_setext main_loop lexemes =
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-          loop [] (rleft@(e2::e1::pl@(tag__maybe_h1 main_loop::res))) right
+          loop [] (rleft@(e2::e1::tag__maybe_h1 main_loop::pl@res)) right
         | Some(rleft, right) ->
           loop [] (rleft@(e2::e1::pl@res)) right
         | None ->
@@ -591,7 +591,7 @@ let tag_setext main_loop lexemes =
             tl
         with
       | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-        loop [] (rleft@(e2::e1::pl@(tag__maybe_h2 main_loop::res))) right
+        loop [] (rleft@(e2::e1::tag__maybe_h2 main_loop::pl@res)) right
       | Some(rleft, right) ->
         loop [] (rleft@(e2::e1::pl@res)) right
       | None ->
@@ -1217,51 +1217,55 @@ let bcode r p l =
   in
   let rec code_block accu = function
     | [] ->
-      List.rev accu, []
+      None
     | Backquote::tl ->
       if e = Backquote then
-        List.rev accu, tl
+        Some(List.rev accu, tl)
       else
         code_block (Backquote::accu) tl
     | (Backquotes n as b)::tl ->
       if e = b then
-        List.rev accu, tl
+        Some(List.rev accu, tl)
       else
         code_block (b::accu) tl
+    | Tag _::tl ->
+      code_block accu tl
     | e::tl ->
       code_block (e::accu) tl
   in
-  let cb, l = code_block [] tl in
-  if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
-  then
-    match cb with
-    | Word(lang)::Newline::tl ->
-      (Code_block(lang,string_of_tl tl)::r), [Backquote], l
-    | Newline::tl ->
-      (Code_block("",string_of_tl tl)::r), [Backquote], l
-    | _ ->
-      (Code_block("",string_of_tl cb)::r), [Backquote], l
-  else
-    let clean_bcode s =
-      let rec loop1 i =
-        if i = String.length s then 0
-        else match s.[i] with
-        | '`' -> i
-        | ' ' -> loop1(i+1)
-        | _ -> 0
+  match code_block [] tl with
+  | None -> None
+  | Some(cb, l) ->
+    if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
+    then
+      match cb with
+      | Word(lang)::Newline::tl ->
+        Some((Code_block(lang,string_of_tl tl)::r), [Backquote], l)
+      | Newline::tl ->
+        Some((Code_block("",string_of_tl tl)::r), [Backquote], l)
+      | _ ->
+        Some((Code_block("",string_of_tl cb)::r), [Backquote], l)
+    else
+      let clean_bcode s =
+        let rec loop1 i =
+          if i = String.length s then 0
+          else match s.[i] with
+            | '`' -> i
+            | ' ' -> loop1(i+1)
+            | _ -> 0
+        in
+        let rec loop2 i =
+          if i = -1 then String.length s - 1
+          else match s.[i] with
+            | '`' -> i+1
+            | ' ' -> loop2(i-1)
+            | _ -> String.length s - 1
+        in
+        match loop1 0, loop2 (String.length s - 1) with
+        | 0, n when n = String.length s - 1 -> s
+        | i, n -> String.sub s i (n-i)
       in
-      let rec loop2 i =
-        if i = -1 then String.length s - 1
-        else match s.[i] with
-        | '`' -> i+1
-        | ' ' -> loop2(i-1)
-        | _ -> String.length s - 1
-      in
-      match loop1 0, loop2 (String.length s - 1) with
-      | 0, n when n = String.length s - 1 -> s
-      | i, n -> String.sub s i (n-i)
-    in
-    (Code("",clean_bcode(string_of_tl cb))::r), [Backquote], l
+      Some((Code("",clean_bcode(string_of_tl cb))::r), [Backquote], l)
 
 let icode r p l =
   assert_well_formed l;
@@ -2100,9 +2104,14 @@ let main_parse extensions lexemes =
       main_loop_rev (Html("&amp;")::r) [] (Ampersands(n-1)::tl)
 
     (* backquotes *)
-    | _, (Backquote|Backquotes _)::_ ->
+    | _, (Backquote|Backquotes _ as t)::tl ->
       begin match bcode r previous lexemes with
-      | r, p, l -> main_loop_rev r p l
+      | Some(r, p, l) -> main_loop_rev r p l
+      | None ->
+        begin match maybe_extension extensions r previous lexemes with
+        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | Some(r, p, l) -> main_loop_rev r p l
+        end
       end
 
     (* HTML *)
