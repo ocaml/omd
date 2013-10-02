@@ -1077,7 +1077,7 @@ let maybe_reference rc r p l =
         with Premature_ending -> false) then
       raise Premature_ending;
     let blank, remains = read_until_obracket remains in
-    if eat (function | (Space|Spaces _|Newline|Newlines _) -> true
+    if eat (function | (Space|Spaces _|Newline) -> true
                      | _ -> false) blank <> [] then raise Premature_ending;
     match read_until_cbracket remains with
     | [], remains ->
@@ -1103,7 +1103,7 @@ let maybe_reference rc r p l =
                     | [] -> Split([],[]))
               remains
           with
-            | None -> raise Premature_ending
+            | None | Some([], _) -> raise Premature_ending
             | Some(url, remains) ->
                 let title, remains =
                   match
