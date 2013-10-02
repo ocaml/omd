@@ -1078,9 +1078,12 @@ let maybe_reference rc r p l =
         with Premature_ending -> false) then
       raise Premature_ending; (* <-- ill-placed open bracket *)
     let blank, remains = read_until_obracket remains in
-    (* check that there is no unwanted characters between CB and OB. *)
-    if eat (function | (Space|Spaces _|Newline) -> true
-                     | _ -> false) blank <> [] then
+    (* check that there are no unwanted characters between CB and OB. *)
+    if eat (let flag = ref true in
+            function (* allow only a space, multiple spaces, or a newline *)
+            | Newline -> !flag && (flag := false; true)
+            | (Space|Spaces _) -> !flag && (flag := false; true)
+            | _ -> false) blank <> [] then
         raise Premature_ending (* <-- not a regular reference *)
     else
       match read_until_cbracket remains with
