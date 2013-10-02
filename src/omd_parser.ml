@@ -1073,25 +1073,39 @@ let maybe_reference rc r p l =
   (* So it could be a reference or a link definition. *)
   let rec maybe_ref l =
     let text, remains = read_until_cbracket l in
+    (* check that there is no ill-placed open bracket *)
     if (try ignore(read_until_obracket text); true
         with Premature_ending -> false) then
-      raise Premature_ending;
+      raise Premature_ending; (* <-- ill-placed open bracket *)
     let blank, remains = read_until_obracket remains in
+    (* check that there is no unwanted characters between CB and OB. *)
     if eat (function | (Space|Spaces _|Newline) -> true
-                     | _ -> false) blank <> [] then raise Premature_ending;
-    match read_until_cbracket remains with
-    | [], remains ->
-      let fallback = extract_fallback remains (Obracket::l) in
-      let id = string_of_tl text in (* implicit anchor *)
-      Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
-    | id, remains ->
-      let fallback = extract_fallback remains (Obracket::l) in
-      Some(((Ref(rc, string_of_tl id, string_of_tl text, fallback))::r),
-           [Cbracket], remains)
+                     | _ -> false) blank <> [] then
+        raise Premature_ending (* <-- not a regular reference *)
+    else
+      match read_until_cbracket remains with
+      | [], remains ->
+        let fallback = extract_fallback remains (Obracket::l) in
+        let id = string_of_tl text in (* implicit anchor *)
+        Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
+      | id, remains ->
+        let fallback = extract_fallback remains (Obracket::l) in
+        Some(((Ref(rc, string_of_tl id, string_of_tl text, fallback))::r),
+             [Cbracket], remains)
+  in
+  let rec maybe_nonregular_ref l =
+    let text, remains = read_until_cbracket l in
+    (* check that there is no ill-placed open bracket *)
+    if (try ignore(read_until_obracket text); true
+        with Premature_ending -> false) then
+      raise Premature_ending; (* <-- ill-placed open bracket *)
+    let fallback = extract_fallback remains (Obracket::l) in
+    let id = string_of_tl text in (* implicit anchor *)
+    Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
   in
   let rec maybe_def l =
     match read_until_cbracket l with
-    | _, [] -> None
+    | _, [] -> raise Premature_ending
     | id, (Colon::(Space|Spaces _)::remains)
     | id, (Colon::remains) ->
         begin
@@ -1130,7 +1144,7 @@ let maybe_reference rc r p l =
                   rc#add_ref (string_of_tl id) (string_of_tl title) url;
                   Some(r, [Newline], remains)
         end
-    | _ -> None
+    | _ -> raise Premature_ending
   in
     try
       maybe_ref l
@@ -1138,7 +1152,12 @@ let maybe_reference rc r p l =
       try
         maybe_def l
       with
-      | Premature_ending | NL_exception -> None
+      | Premature_ending | NL_exception ->
+        try
+          maybe_nonregular_ref l
+        with
+        | Premature_ending | NL_exception ->
+          None
 
 (* maybe a link *)
 let maybe_link main_loop r p l =
