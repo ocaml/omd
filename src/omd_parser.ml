@@ -1162,60 +1162,29 @@ let maybe_reference rc r p l =
         | Premature_ending | NL_exception ->
           None
 
-(* maybe a link *)
+
+(** maybe a link *)
 let maybe_link main_loop r p l =
   if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
-  let read_title name url l =
-  if debug then eprintf "# maybe_link>read_title\n";
-    match l with
-    | Doublequote::l ->
-      begin
-        match read_until_dq l with
-        | title, (Cparenthesis::tl)
-        | title, ((Space|Spaces _)::Cparenthesis::tl) ->
-          Some(Url(url,name,string_of_tl title)::r,[Cparenthesis],tl)
-        | title, (Cparenthesiss 0::tl)
-        | title, ((Space|Spaces _)::Cparenthesiss 0::tl) ->
-          Some(Url(url,name,string_of_tl title)::r,
-               [Cparenthesis],
-               Cparenthesis::tl)
-        | title, (Cparenthesiss n::tl)
-        | title, ((Space|Spaces _)::Cparenthesiss n::tl) ->
-          Some(Url(url,name,string_of_tl title)::r,
-               [Cparenthesis],
-               Cparenthesiss(n-1)::tl)
-        | x,y ->
-          None
-      end
-    | _ -> None
-  in
   let read_url name l =
   if debug then eprintf "# maybe_link>read_url\n";
-    try
-      try
-        let url, tl = read_until_space ~no_nl:true l in
-        try
-          ignore(read_until_cparenth url);
-          (* there actually is no title *)
-          let url, tl = read_until_cparenth ~no_nl:true l in
-            Some(Url(string_of_tl url,name,"")::r, [Cparenthesis],tl)
-        with Premature_ending ->
-          read_title name (string_of_tl url) (eat_blank tl)
-      with
-      | NL_exception ->
-        let url, tl = read_until_newline l in
-        try
-          ignore(read_until_cparenth url);
-          (* there actually is no title *)
-          let url, tl = read_until_cparenth ~no_nl:true l in
-            Some(Url(string_of_tl url,name,"")::r, [Cparenthesis],tl)
-        with Premature_ending ->
-        read_title name (string_of_tl url) (eat_blank tl)
-    with
-    | Premature_ending ->
-      let url, tl = read_until_cparenth l in
-      Some(Url(string_of_tl url, name, "")::r,[Cparenthesis],tl)
+  let url_and_maybetitle, tl = read_until_cparenth ~no_nl:false l in
+  try
+    let url, title = read_until_dq ~no_nl:false url_and_maybetitle in
+    let url = match List.rev url with
+              | Newline::tl -> List.rev tl
+              | _ -> url in
+    if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
+    then raise Premature_ending;
+    let title, blanks = read_until_dq ~no_nl:true title in
+    if eat_blank blanks <> [] then raise Premature_ending;
+    Some(Url(string_of_tl url,name,string_of_tl title)::r, [Cparenthesis],tl)
+  with Premature_ending ->
+    (* no title *)
+    let url = url_and_maybetitle in
+    let title = [] in
+    Some(Url(string_of_tl url,name,string_of_tl title)::r, [Cparenthesis],tl)
   in
   let read_name l =
   if debug then eprintf "# maybe_link>read_name\n";
@@ -1228,6 +1197,8 @@ let maybe_link main_loop r p l =
     with Premature_ending | NL_exception -> None
   in
   read_name l
+
+
 
 (** code that starts with one or several backquote(s) *)
 let bcode r p l =
