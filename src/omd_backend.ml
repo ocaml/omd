@@ -91,10 +91,10 @@ let text_of_md md =
     | Blockquote q :: tl ->
         loop q;
         loop tl
-    | Ref(rc, name, text) :: tl ->
+    | Ref(rc, name, text, fallback) :: tl ->
         Buffer.add_string b (htmlentities ~md:true name);
         loop tl
-    | Img_ref(rc, name, alt) :: tl ->
+    | Img_ref(rc, name, alt, fallback) :: tl ->
         Buffer.add_string b (htmlentities ~md:true name);
         loop tl
     | Paragraph md :: tl ->
@@ -212,7 +212,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
       loop indent q;
       Buffer.add_string b "</blockquote>";
       loop indent ~nl:true tl
-    | Ref(rc, name, text) :: tl ->
+    | Ref(rc, name, text, fallback) :: tl ->
         let href, title =
           rc#get_ref name
         in
@@ -221,7 +221,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
               [Text(text)],
               htmlentities ~md:true title)
             ::tl)
-    | Img_ref(rc, name, alt) :: tl ->
+    | Img_ref(rc, name, alt, fallback) :: tl ->
         let src, title =
           rc#get_ref name
         in
@@ -455,10 +455,10 @@ let rec sexpr_of_md md =
         loop q;
         Buffer.add_string b ")";
         loop tl
-    | Ref(rc, name, text) :: tl ->
+    | Ref(rc, name, text, fallback) :: tl ->
         bprintf b "(Ref %S %S)" name text;
         loop tl
-    | Img_ref(rc, name, alt) :: tl ->
+    | Img_ref(rc, name, alt, fallback) :: tl ->
         bprintf b "(Img_ref %S %S)" name alt;
         loop tl
     | Paragraph md :: tl ->
@@ -608,11 +608,11 @@ let rec markdown_of_md md =
     | Blockquote q :: tl ->
       Buffer.add_string b (quote(markdown_of_md q));
       loop list_indent tl
-    | Ref(rc, name, text) :: tl ->
+    | Ref(rc, name, text, fallback) :: tl ->
       references := Some rc;
       Printf.bprintf b "[%s][%s]" text name;
       loop list_indent tl
-    | Img_ref(rc, name, alt) :: tl ->
+    | Img_ref(rc, name, alt, fallback) :: tl ->
       references := Some rc;
       Printf.bprintf b "![%s][%s]" name alt;
       loop list_indent tl

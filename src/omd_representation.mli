@@ -50,8 +50,8 @@ type element =
   | Br
   | Hr
   | Url of href * t * title
-  | Ref of ref_container * name * string
-  | Img_ref of ref_container * name * alt
+  | Ref of ref_container * name * string * fallback
+  | Img_ref of ref_container * name * alt * fallback
   | Html of string
   | Html_block of string
   | Html_comments of string
@@ -69,6 +69,7 @@ type element =
         to_html : ?indent:int -> (t -> string) -> t -> string option;
         to_sexpr : (t -> string) -> t -> string option;
         to_t : t -> t option >
+and fallback = string
 and name = string
 and alt = string
 and src = string

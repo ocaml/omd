@@ -1070,9 +1070,9 @@ let maybe_reference rc r p l =
     match read_until_cbracket remains with
     | [], remains ->
       let id = string_of_tl text in (* implicit anchor *)
-      Some(((Ref(rc, id, id))::r), [Cbracket], remains)
+      Some(((Ref(rc, id, id, ""))::r), [Cbracket], remains)
     | id, remains ->
-      Some(((Ref(rc, string_of_tl id, string_of_tl text))::r),
+      Some(((Ref(rc, string_of_tl id, string_of_tl text, ""))::r),
            [Cbracket], remains)
   in
   let rec maybe_def l =
@@ -1128,8 +1128,10 @@ let maybe_reference rc r p l =
 
 (* maybe a link *)
 let maybe_link main_loop r p l =
+  if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
   let read_title name url l =
+  if debug then eprintf "# maybe_link>read_title\n";
     match l with
     | Doublequote::l ->
       begin
@@ -1153,6 +1155,7 @@ let maybe_link main_loop r p l =
     | _ -> None
   in
   let read_url name l =
+  if debug then eprintf "# maybe_link>read_url\n";
     try
       try
         let url, tl = read_until_space ~no_nl:true l in
@@ -1179,6 +1182,7 @@ let maybe_link main_loop r p l =
       Some(Url(string_of_tl url, name, "")::r,[Cparenthesis],tl)
   in
   let read_name l =
+  if debug then eprintf "# maybe_link>read_name\n";
     try
       match read_until_cbracket l with
       | name, (Oparenthesis::tl) ->
@@ -2295,7 +2299,7 @@ let main_parse extensions lexemes =
            | Exclamations 0 -> Text "!" :: r
            | Exclamations n -> Text(String.make (n+1) '!') :: r
            | _ -> r in
-         let r = Img_ref(rc, string_of_tl id, "") :: r in
+         let r = Img_ref(rc, string_of_tl id, "", "") :: r in
          main_loop_rev r [Cbracket] tl
        with NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
@@ -2347,7 +2351,7 @@ let main_parse extensions lexemes =
          | alt, Obracket::(Space|Spaces _)::Word(id)::(Space|Spaces _)
            ::Cbracket::ntl
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
-           main_loop_rev (Img_ref(rc, id, string_of_tl alt)::r) [Cbracket] ntl
+           main_loop_rev (Img_ref(rc, id, string_of_tl alt, "")::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                               as ntl) ->
            (try
@@ -2355,7 +2359,7 @@ let main_parse extensions lexemes =
               | [], rest -> raise Premature_ending
               | id, rest ->
                 main_loop_rev
-                  (Img_ref(rc, string_of_tl id, string_of_tl alt)::r)
+                  (Img_ref(rc, string_of_tl id, string_of_tl alt, "")::r)
                   [Cbracket]
                   rest
             with
