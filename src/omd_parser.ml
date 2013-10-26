@@ -593,7 +593,6 @@ let tag_setext main_loop lexemes =
             tl
         with
         | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-eprintf "LEFT=%S RIGHT=%S\n%!" (destring_of_tl rleft) (destring_of_tl right);
           loop [] (rleft@(e2::e1::pl@tag__maybe_h2 main_loop::res)) right
         | Some(rleft, right) ->
           loop [] (rleft@(e2::e1::pl@res)) right
@@ -1194,7 +1193,7 @@ let maybe_link main_loop r p l =
     try
       match read_until_cbracket l with
       | name, (Oparenthesis::tl) ->
-        read_url (main_loop [] [] name) (eat_blank tl)
+        read_url (main_loop [] [Obracket] name) (eat_blank tl)
       | _ ->
         None
     with Premature_ending | NL_exception -> None
