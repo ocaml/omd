@@ -94,6 +94,7 @@ let code_stylist_of_program p =
   fun code ->
     let tmp1 = Filename.temp_file "code" "bef" in
     let tmp2 = Filename.temp_file "code" "aft" in
+    let () = at_exit (fun () -> Sys.remove tmp1; Sys.remove tmp2) in
     let otmp1 = open_out_bin tmp1 in
     Printf.fprintf otmp1 "%s%!" code;
     close_out otmp1;
