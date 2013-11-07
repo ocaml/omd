@@ -1236,6 +1236,10 @@ let bcode r p l =
       match cb with
       | Word(lang)::Newline::tl ->
         Some((Code_block(lang,string_of_tl tl)::r), [Backquote], l)
+      | Word(lang)::Newlines 0::tl ->
+        Some((Code_block(lang,string_of_tl (Newline::tl))::r), [Backquote], l)
+      | Word(lang)::Newlines n::tl ->
+        Some((Code_block(lang,string_of_tl (Newlines(n-1)::tl))::r), [Backquote], l)
       | Newline::tl ->
         Some((Code_block("",string_of_tl tl)::r), [Backquote], l)
       | _ ->
