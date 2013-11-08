@@ -2114,19 +2114,9 @@ let main_parse extensions lexemes =
       end
 
     (* HTML *)
-    (* <br/> and <hr/> with no space *)
+    (* <br/> and <hr/> with or without space(s) *)
     | _, (Lessthan::Word("br"|"hr" as w)::Slash
-          ::(Greaterthan|Greaterthans _ as g)::tl) ->
-      begin match g with
-      | Greaterthans 0 ->
-        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
-      | Greaterthans n ->
-        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthans(n-1)::tl)
-      | _ ->
-        main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] tl
-      end
-
-    (* <br/> and <hr/> with some space(s) *)
+          ::(Greaterthan|Greaterthans _ as g)::tl) 
     | _, (Lessthan::Word("br"|"hr" as w)::(Space|Spaces _)::Slash
           ::(Greaterthan|Greaterthans _ as g)::tl) ->
       begin match g with
@@ -2137,7 +2127,6 @@ let main_parse extensions lexemes =
       | _ ->
         main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] tl
       end
-
 
     (* block html *)
     | ([]|[Newline|Newlines _]), 
