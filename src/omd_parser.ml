@@ -1170,26 +1170,27 @@ let maybe_link main_loop r p l =
   if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
   let read_url name l =
-  if debug then eprintf "# maybe_link>read_url\n";
-  let url_and_maybetitle, tl = read_until_cparenth ~no_nl:false l in
-  try
-    let url, title = read_until_dq ~no_nl:false url_and_maybetitle in
+    if debug then eprintf "# maybe_link>read_url\n";
+    let url_and_maybetitle, tl = read_until_cparenth ~no_nl:false l in
+    let url, title =
+      try
+        let url, title = read_until_dq ~no_nl:false url_and_maybetitle in
+        if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
+        then raise Premature_ending;
+        let title, blanks = read_until_dq ~no_nl:true title in
+        if eat_blank blanks <> [] then raise Premature_ending;
+        url, title
+    with Premature_ending ->
+      (* no title *)
+      url_and_maybetitle, []
+    in
     let url = match List.rev url with
-              | Newline::tl -> List.rev tl
-              | _ -> url in
-    if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
-    then raise Premature_ending;
-    let title, blanks = read_until_dq ~no_nl:true title in
-    if eat_blank blanks <> [] then raise Premature_ending;
-    Some(Url(string_of_tl url,name,string_of_tl title)::r, [Cparenthesis],tl)
-  with Premature_ending ->
-    (* no title *)
-    let url = url_and_maybetitle in
-    let title = [] in
+      | (Newline|Space|Spaces _)::tl -> List.rev tl
+      | _ -> url in
     Some(Url(string_of_tl url,name,string_of_tl title)::r, [Cparenthesis],tl)
   in
   let read_name l =
-  if debug then eprintf "# maybe_link>read_name\n";
+    if debug then eprintf "# maybe_link>read_name\n";
     try
       match read_until_cbracket l with
       | name, (Oparenthesis::tl) ->
