@@ -1175,7 +1175,7 @@ let maybe_link main_loop r p l =
   try
     let url, title = read_until_dq ~no_nl:false url_and_maybetitle in
     let url = match List.rev url with
-              | Newline::tl -> List.rev tl
+              | (Newline|Space|Spaces _)::tl -> List.rev tl
               | _ -> url in
     if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
     then raise Premature_ending;
