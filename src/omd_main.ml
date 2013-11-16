@@ -185,8 +185,8 @@ let patch_html_comments l =
       Buffer.contents b
   in
   let rec loop accu = function
-  | Html_comments s :: tl ->
-      loop (Html_comments(htmlcomments s)::accu) tl
+  | Html_comment s :: tl ->
+      loop (Html_comment(htmlcomments s)::accu) tl
   | e :: tl ->
       loop (e :: accu) tl
   | [] -> List.rev accu

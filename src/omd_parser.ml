@@ -1687,7 +1687,7 @@ let main_parse extensions lexemes =
           end
         | Some (comments, new_tl) ->
           main_loop_rev
-            (Html_comments(string_of_tl comments)::r)
+            (Html_comment(string_of_tl comments)::r)
             [Greaterthan]
             new_tl
       end

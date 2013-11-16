@@ -36,7 +36,13 @@ class ref_container :
     method get_all : (string * (string * string)) list
   end
 type element =
-    Paragraph of t
+  | H1 of t
+  | H2 of t
+  | H3 of t
+  | H4 of t
+  | H5 of t
+  | H6 of t
+  | Paragraph of t
   | Text of string
   | Emph of t
   | Bold of t
@@ -48,21 +54,15 @@ type element =
   | Code_block of name * string
   | Br
   | Hr
+  | NL
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of string
   | Html_block of string
-  | Html_comments of string
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
+  | Html_comment of string
   | Blockquote of t
   | Img of alt * src * title
-  | NL
   | X of
       < name : string;
         to_html : ?indent:int -> (t -> string) -> t -> string option;

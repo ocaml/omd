@@ -35,38 +35,38 @@ class ref_container : object
 end
 
 type element =
-| Paragraph of t
-| Text of string
-| Emph of t
-| Bold of t
-| Ul of t list
-| Ol of t list
-| Ulp of t list
-| Olp of t list
-| Code of name * string (* html entities are to be converted *later* *)
-| Code_block of name * string (* html entities are to be converted *later* *)
-| Br
-| Hr
-| Url of href * t * title
-| Ref of ref_container * name * string * fallback
-| Img_ref of ref_container * name * alt * fallback
-| Html of string
-| Html_block of string
-| Html_comments of string
-| H1 of t
-| H2 of t
-| H3 of t
-| H4 of t
-| H5 of t
-| H6 of t
-| Blockquote of t
-| Img of alt * src * title
-| NL
-| X of (<
-        name: string;
-        to_html: ?indent:int -> (t -> string) -> t -> string option;
-        to_sexpr: (t -> string) -> t -> string option;
-        to_t: t -> t option >)
+  | H1 of t
+  | H2 of t
+  | H3 of t
+  | H4 of t
+  | H5 of t
+  | H6 of t
+  | Paragraph of t
+  | Text of string
+  | Emph of t
+  | Bold of t
+  | Ul of t list
+  | Ol of t list
+  | Ulp of t list
+  | Olp of t list
+  | Code of name * string
+  | Code_block of name * string
+  | Br
+  | Hr
+  | NL
+  | Url of href * t * title
+  | Ref of ref_container * name * string * fallback
+  | Img_ref of ref_container * name * alt * fallback
+  | Html of string
+  | Html_block of string
+  | Html_comment of string
+  | Blockquote of t
+  | Img of alt * src * title
+  | X of
+      < name : string;
+        to_html : ?indent:int -> (t -> string) -> t -> string option;
+        to_sexpr : (t -> string) -> t -> string option;
+        to_t : t -> t option >
 and fallback = string
 and name = string
 and alt = string

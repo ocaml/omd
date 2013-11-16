@@ -28,34 +28,40 @@ and ref_container =
 
 (** A element of a Markdown document. *)
 and element = Omd_representation.element =
+  | H1 of t          (** Header of level 1 *)
+  | H2 of t          (** Header of level 2 *)
+  | H3 of t          (** Header of level 3 *)
+  | H4 of t          (** Header of level 4 *)
+  | H5 of t          (** Header of level 5 *)
+  | H6 of t          (** Header of level 6 *)
   | Paragraph of t
-  | Text of string
-  | Emph of t
-  | Bold of t
-  | Ul of t list
-  | Ol of t list
+  (** A Markdown paragraph (must be enabled in {!of_string}) *)
+  | Text of string   (** Text. *)
+  | Emph of t        (** Emphasis (italic) *)
+  | Bold of t        (** Bold *)
+  | Ul of t list     (** Unumbered list *)
+  | Ol of t list     (** Ordered (i.e. numbered) list *)
   | Ulp of t list
   | Olp of t list
   | Code of name * string (* html entities are to be converted *later* *)
-  | Code_block of name * string (* html entities are to be converted *later* *)
-  | Br
-  | Hr
+  (** Code within the text (Marrkdown: `code`) *)
+  | Code_block of name * string
+  (** [Code_block(lang, code)]: a code clock (e.g. indented by 4
+      spaces in the text).  The first parameter [lang] is the language
+      if specified.  Beware that the [code] may contain characters
+      that must be escaped for HTML. *)
+  | Br               (** (Forced) line break *)
+  | Hr               (** Horizontal rule *)
+  | NL               (** Newline character *)
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of string
   | Html_block of string
-  | Html_comments of string
+  | Html_comment of string
   (** An HTML comment, including "<!--" and "-->". *)
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
-  | Blockquote of t
+  | Blockquote of t  (** Quoted block *)
   | Img of alt * src * title
-  | NL
   | X of (< (* extension of [element]. *)
            name: string;
            (* N.B. [to_html] means that htmlentities will not
@@ -122,7 +128,12 @@ val to_text : t -> string
 (** Translate markdown representation into raw text. *)
 
 
+(** {2 Tansforming Markdown documents} *)
 
+val toc : ?start_level:int -> ?depth:int -> t -> t
+(** [toc md] returns a table of contents for the document [md].
 
+    @param start_level the initial level of the table.  Default: [1].
+    @param depth the  *)
 
 ;;
