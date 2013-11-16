@@ -137,7 +137,9 @@ val toc : ?start:int list -> ?depth:int -> t -> t
     @param start gives the section for which the TOC must be built.
     For example [~start:[2;3]] will build the TOC for subsections of
     the second [H1] header, and within that section, the third [h2]
-    header.  If no subsection exists, an empty TOC [[]] will be
+    header.  If a number is [0], it means to look for the first
+    section at that level but stop if one encounters any other
+    subsection.  If no subsection exists, an empty TOC [[]] will be
     returned.  Default: [[]] i.e. list all sections, starting with the
     first [H1].
 

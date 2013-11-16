@@ -32,27 +32,33 @@ let html_of_string (html:string) : string =
 let rec find_start headers level number subsections =
   match headers with
   | [] -> []
-  | (H1 _, _, _) :: tl -> deal_with_header 1 tl level number subsections
-  | (H2 _, _, _) :: tl -> deal_with_header 2 tl level number subsections
-  | (H3 _, _, _) :: tl -> deal_with_header 3 tl level number subsections
-  | (H4 _, _, _) :: tl -> deal_with_header 4 tl level number subsections
-  | (H5 _, _, _) :: tl -> deal_with_header 5 tl level number subsections
-  | (H6 _, _, _) :: tl -> deal_with_header 6 tl level number subsections
+  | (H1 _, _, _) :: tl -> deal_with_header 1 headers tl level number subsections
+  | (H2 _, _, _) :: tl -> deal_with_header 2 headers tl level number subsections
+  | (H3 _, _, _) :: tl -> deal_with_header 3 headers tl level number subsections
+  | (H4 _, _, _) :: tl -> deal_with_header 4 headers tl level number subsections
+  | (H5 _, _, _) :: tl -> deal_with_header 5 headers tl level number subsections
+  | (H6 _, _, _) :: tl -> deal_with_header 6 headers tl level number subsections
   | _ :: _ -> assert false
 
-and deal_with_header h_level headers level number subsections =
-  if h_level < level then (* skip, right [level]-header not yet reached. *)
-    find_start headers level number subsections
+and deal_with_header h_level headers tl level number subsections =
+  if h_level > level then (* Skip, right [level]-header not yet reached. *)
+    if number = 0 then
+      (* Assume empty section at [level], do not consume token. *)
+      (match subsections with
+       | [] -> headers (* no subsection to find *)
+       | n :: subsections -> find_start headers (level + 1) n subsections)
+    else find_start tl level number subsections
   else if h_level = level then (
     (* At proper [level].  Have we reached the [number] one? *)
     if number <= 1 then (
       match subsections with
-      | [] -> headers (* no subsection to find *)
-      | n :: subsections -> find_start headers (level + 1) n subsections
+      | [] -> tl (* no subsection to find *)
+      | n :: subsections -> find_start tl (level + 1) n subsections
     )
-    else find_start headers level (number - 1) subsections
+    else find_start tl level (number - 1) subsections
   )
-  else [] (* Sought [level] has not been found in the current section *)
+  else (* h_level < level *)
+    [] (* Sought [level] has not been found in the current section *)
 
 (* Assume we are at the start of the headers we are interested in.
    Return the list of TOC entries for [min_level] and the [headers]
@@ -94,7 +100,9 @@ let toc ?(start=[]) ?(depth=2) md =
   let headers = Omd_backend.headers_of_md md in
   let headers = match start with
     | [] -> headers
-    | number :: subsections -> find_start headers 1 number subsections in
+    | number :: subsections ->
+       if number < 0 then invalid_arg("Omd.toc: level 1 start must be >= 0");
+       find_start headers 1 number subsections in
   let len = List.length start in
   let toc, _ = make_toc headers
                         ~min_level:(len + 1) ~max_level:(len + depth) in
