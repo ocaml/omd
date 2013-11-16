@@ -128,12 +128,19 @@ val to_text : t -> string
 (** Translate markdown representation into raw text. *)
 
 
+(************************************************************************)
 (** {2 Tansforming Markdown documents} *)
 
-val toc : ?start_level:int -> ?depth:int -> t -> t
-(** [toc md] returns a table of contents for the document [md].
+val toc : ?start:int list -> ?depth:int -> t -> t
+(** [toc md] returns [toc] a table of contents for [md].
 
-    @param start_level the initial level of the table.  Default: [1].
-    @param depth the  *)
+    @param start gives the section for which the TOC must be built.
+    For example [~start:[2;3]] will build the TOC for subsections of
+    the second [H1] header, and within that section, the third [h2]
+    header.  If no subsection exists, an empty TOC [[]] will be
+    returned.  Default: [[]] i.e. list all sections, starting with the
+    first [H1].
+
+    @param depth the table of contents.  Default: [2].  *)
 
 ;;
