@@ -21,7 +21,7 @@
 open Omd
 
 let remove_comments l =
-  let open Omd in
+  let open Omd_representation in
   let rec loop = function
     | true, Exclamations n :: tl when n > 0 ->
       loop (true,
@@ -34,7 +34,7 @@ let remove_comments l =
   in loop (true, l)
 
 let remove_endline_comments l =
-  let open Omd in
+  let open Omd_representation in
   let rec loop = function
     | Backslash :: (Exclamations n as e) :: tl when n > 0 ->
       e :: loop tl
@@ -83,7 +83,7 @@ object
     M.empty
   method style ~lang code =
     try (M.find lang stylists) code
-    with Not_found -> 
+    with Not_found ->
       try (M.find "_" stylists) code
       with Not_found -> code
   method register ~lang stylist =
@@ -108,7 +108,7 @@ let code_stylist_of_program p =
             Buffer.add_char b (input_char ic)
           done;
           assert false
-        with End_of_file -> Buffer.contents b 
+        with End_of_file -> Buffer.contents b
       in
       cat tmp2
   | _ -> code
@@ -160,7 +160,7 @@ let make_toc ?(start_level=1) ?(depth=2) md =
                      please read the documentation and/or file a bug report."
   in
   loop(Omd_backend.headers_of_md md);
-  parse(lex(Buffer.contents b))
+  Omd.of_string(Buffer.contents b)
 
 let patch_html_comments l =
   let htmlcomments s =
@@ -194,6 +194,7 @@ let patch_html_comments l =
 
 
 let tag_toc l =
+  let open Omd_representation in
   if !toc then
     let rec loop = function
       | Star::
@@ -204,7 +205,7 @@ let tag_toc l =
           Some(X(
                 object
                   (* [shield] is used to prevent endless loops.
-                     If one wants to use system threads at some point, 
+                     If one wants to use system threads at some point,
                      and calls methods of this object  concurrently,
                      then there is a real problem. *)
                   val mutable shield = false
@@ -308,11 +309,11 @@ let main () =
         Buffer.add_char b (input_char ic)
       done; assert false
     with End_of_file ->
-      let lexed = lex (Buffer.contents b) in
+      let lexed = Omd_lexer.lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
-      let parsed1 = parse preprocessed in
+      let parsed1 = Omd_parser.parse preprocessed in
       let parsed2 =
-        if !protect_html_comments then 
+        if !protect_html_comments then
           patch_html_comments parsed1
         else
           parsed1
@@ -334,7 +335,7 @@ let main () =
         if Omd_utils.debug then
           print_endline
             (Omd_backend.sexpr_of_md
-               (parse (preprocess(lex (Buffer.contents b)))));
+               (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))));
   )
     input_files
 

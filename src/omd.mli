@@ -1,24 +1,27 @@
 (** A markdown parser in OCaml, with no extra dependencies.
-    
+
     This module represents this entire Markdown library written in
-    OCaml only. 
+    OCaml only.
 
     Its main purpose is to allow you to use the Markdown library while
-    keeping you away from the other modules. 
+    keeping you away from the other modules.
 
     If you want to extend the Markdown parser, you can do it without
     accessing any module of this library but this one, and by doing
     so, you are free from having to maintain a fork of this library.
 
-    N.B. This module is supposed to be reentrant, 
+    N.B. This module is supposed to be reentrant,
     if it's not then please report the bug. *)
 
-(********************** TYPES **************************************)
-type t = Omd_representation.t
+
+(************************************************************************)
+(** {2 Representation of Markdown documents} *)
+
+type t = element list
 (** Representation of a Markdown document.  *)
 
 and ref_container =
-    (< add_ref: string -> string -> string -> unit ; 
+    (< add_ref: string -> string -> string -> unit ;
        get_ref : string -> (string*string) option;
        get_all : (string * (string * string)) list;
      >)
@@ -43,6 +46,7 @@ and element = Omd_representation.element =
   | Html of string
   | Html_block of string
   | Html_comments of string
+  (** An HTML comment, including "<!--" and "-->". *)
   | H1 of t
   | H2 of t
   | H3 of t
@@ -52,7 +56,7 @@ and element = Omd_representation.element =
   | Blockquote of t
   | Img of alt * src * title
   | NL
-  | X of (< (* extension of [element]. *) 
+  | X of (< (* extension of [element]. *)
            name: string;
            (* N.B. [to_html] means that htmlentities will not
               be applied to its output. *)
@@ -79,124 +83,25 @@ and title = string
 (** HTML attribute. *)
 
 type code_stylist = < style : lang:string -> string -> string >
-(** has at least a method [style] that takes a language name and some
+(** Has at least a method [style] that takes a language name and some
     code and returns that code with style. *)
 
 
-type tok = Omd_representation.tok =
-| Ampersand
-| Ampersands of int
-| At
-| Ats of int
-| Backquote
-| Backquotes of int
-| Backslash
-| Backslashs of int
-| Bar
-| Bars of int
-| Caret
-| Carets of int
-| Cbrace
-| Cbraces of int
-| Colon
-| Colons of int
-| Comma
-| Commas of int
-| Cparenthesis
-| Cparenthesiss of int
-| Cbracket
-| Cbrackets of int
-| Dollar
-| Dollars of int
-| Dot
-| Dots of int
-| Doublequote
-| Doublequotes of int
-| Exclamation
-| Exclamations of int
-| Equal
-| Equals of int
-| Greaterthan
-| Greaterthans of int
-| Hash
-| Hashs of int
-| Lessthan
-| Lessthans of int
-| Minus
-| Minuss of int
-| Newline
-| Newlines of int
-| Number of string
-| Obrace
-| Obraces of int
-| Oparenthesis
-| Oparenthesiss of int
-| Obracket
-| Obrackets of int
-| Percent
-| Percents of int
-| Plus
-| Pluss of int
-| Question
-| Questions of int
-| Quote
-| Quotes of int
-| Semicolon
-| Semicolons of int
-| Slash
-| Slashs of int
-| Space
-| Spaces of int
-| Star
-| Stars of int
-| Tab
-| Tabs of int
-| Tilde
-| Tildes of int
-| Underscore
-| Underscores of int
-| Word of string
-| Tag of extension
-(** Lexer's tokens. If you want to use the parser with an extended
-    lexer, you may use the constructor [Tag] to implement
-    the parser's extension. In the parser, [Tag] is used (at least) 
-    3 times in order to represent metadata or to store data. *)
+(************************************************************************)
+(** {2 Input and Output} *)
 
-  (** A function that takes the current state of the parser's data and
-      returns None if nothing has been changed, otherwise it returns
-      the new state.  The current state of the parser's data is [(r,
-      p, l)] where [r] is the result so far, [p] is the list of the
-      previous tokens (it's typically empty or contains information on
-      how many newlines we've just seen), and [l] is the remaining
-      tokens to parse. *)
+val of_string : ?extensions:Omd_representation.extensions ->
+                ?paragraph: bool -> string -> t
+(** [of_string s] returns the Markdown representation of the string
+    [s].
 
+    @param paragraph whether to identify paragraphs.  Default:
+    [false].  Alternatively, you can use {!make_paragraphs} on the
+    returned Markdown to identify paragraphs.
 
-(** One must use this type to extend the parser. It's a list of
-    functions of type [extension]. They are processed in order (the
-    head is applied first), so be careful about it. If you use it
-    wrong, it will behave wrong. *)
+    If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
+    and {!Omd_parser.parse}.  *)
 
-and extensions = extension list
-and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option)) 
-
-
-
-(********************** VALUES **************************************)
-
-val lex : string -> tok list
-(** Translate a raw string into tokens for the parser.  To implement
-    an extension to the lexer, one may process its result before
-    giving it to the parser. To implement an extension to the 
-    parser, one may extend it using the constructor [Tag]
-    from type [tok] and/or using the extensions mechanism
-    of the parser (cf. the optional argument [extensions]).
-    The main difference is that [Tag] is processed by the parser
-    in highest priority whereas functions in [extensions] are applied
-    with lowest priority. *)
-
-
-val parse : ?extensions:extensions -> tok list -> t
-(** Translate tokens to Markdown representation *)
 
 val make_paragraphs : t -> t
 (** Build Markdown paragraphs. This Markdown parser doesn't
@@ -215,6 +120,9 @@ val to_markdown : t -> string
 
 val to_text : t -> string
 (** Translate markdown representation into raw text. *)
+
+
+
 
 
 ;;

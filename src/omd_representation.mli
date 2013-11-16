@@ -75,6 +75,7 @@ and src = string
 and href = string
 and title = string
 and t = element list
+
 type tok =
     Ampersand
   | Ampersands of int
@@ -149,5 +150,22 @@ type tok =
   | Underscores of int
   | Word of string
   | Tag of extension
+(** Lexer's tokens. If you want to use the parser with an extended
+    lexer, you may use the constructor [Tag] to implement
+    the parser's extension. In the parser, [Tag] is used (at least)
+    3 times in order to represent metadata or to store data. *)
+
 and extension = t -> tok list -> tok list -> (t * tok list * tok list) option
+(** A function that takes the current state of the parser's data and
+    returns None if nothing has been changed, otherwise it returns
+    the new state.  The current state of the parser's data is [(r,
+    p, l)] where [r] is the result so far, [p] is the list of the
+    previous tokens (it's typically empty or contains information on
+    how many newlines we've just seen), and [l] is the remaining
+    tokens to parse. *)
+
 type extensions = extension list
+(** One must use this type to extend the parser. It's a list of
+    functions of type [extension]. They are processed in order (the
+    head is applied first), so be careful about it. If you use it
+    wrong, it will behave wrong. *)
