@@ -72,7 +72,7 @@ let rec make_toc headers ~min_level ~max_level =
   )
 and toc_entry headers h_level t id tl ~min_level ~max_level =
   if h_level > max_level then (* too deep, skip *)
-    make_toc headers ~min_level ~max_level
+    make_toc tl ~min_level ~max_level
   else if h_level < min_level then
     (* section we wanted the TOC for is finished, do not comsume the token *)
     [], headers
