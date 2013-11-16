@@ -68,7 +68,7 @@ let notags = ref false
 
 let toc_depth = ref 2
 
-let toc_start = ref 1
+let toc_start = ref([]: int list)
 
 let nl2br = ref false
 
@@ -127,41 +127,6 @@ let register_code_stylist_of_program x =
 let register_default_language l =
   Omd_backend.default_language := l
 
-let make_toc ?(start_level=1) ?(depth=2) md =
-  (* probably poor performance but particularly simple to implement *)
-  let b = Buffer.create 42 in
-  let rec loop = function
-    | (H1 e, id, ih) :: tl ->
-      if start_level <= 1 && start_level + depth > 1 then
-      Printf.bprintf b "* [%s](#%s)\n" ih id;
-      loop tl
-    | (H2 e, id, ih) :: tl ->
-      if start_level <= 2 && start_level + depth > 2 then
-      Printf.bprintf b " * [%s](#%s)\n" ih id;
-      loop tl
-    | (H3 e, id, ih) :: tl ->
-      if start_level <= 3 && start_level + depth > 3 then
-      Printf.bprintf b "  * [%s](#%s)\n" ih id;
-      loop tl
-    | (H4 e, id, ih) :: tl ->
-      if start_level <= 4 && start_level + depth > 4 then
-      Printf.bprintf b "   * [%s](#%s)\n" ih id;
-      loop tl
-    | (H5 e, id, ih) :: tl ->
-      if start_level <= 5 && start_level + depth > 5 then
-      Printf.bprintf b "    * [%s](#%s)\n" ih id;
-      loop tl
-    | (H6 e, id, ih) :: tl ->
-      if start_level <= 6 && start_level + depth > 6 then
-      Printf.bprintf b "     * [%s](#%s)\n" ih id;
-      loop tl
-    | [] -> ()
-    | _ -> failwith "Omd_main.make_toc: wrong argument, \
-                     please read the documentation and/or file a bug report."
-  in
-  loop(Omd_backend.headers_of_md md);
-  Omd.of_string(Buffer.contents b)
-
 let patch_html_comments l =
   let htmlcomments s =
     let b = Buffer.create (String.length s) in
@@ -216,7 +181,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = f (make_toc md) in
+                        let r = f (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -226,7 +191,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = f (make_toc md) in
+                        let r = f (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -236,7 +201,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = (make_toc md) in
+                        let r = (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -247,6 +212,23 @@ let tag_toc l =
   else
     l
 
+
+let split_comma_int_list s =
+  if s = "" then []
+  else (
+    let l = ref [] in
+    let i = ref 0 in
+    try
+      while true do
+        let j = String.index_from s !i ',' in
+        l := int_of_string(String.sub s !i (j - !i)) :: !l;
+        i := j + 1
+      done;
+      assert false
+    with Not_found ->
+      l := (int_of_string(String.sub s !i (String.length s - !i))) :: !l;
+      List.rev !l
+  )
 
 let main () =
   let input = ref []
@@ -264,16 +246,21 @@ let main () =
         "-c", Unit(fun () -> preprocess_functions ++ remove_endline_comments),
         " Ignore lines that start with `!!!' (3 or more exclamation points).";
         "-C", Unit(fun () -> preprocess_functions ++ remove_comments),
-        " Ignore everything on a line after `!!!' (3 or more exclamation points).";
+        " Ignore everything on a line after `!!!' \
+         (3 or more exclamation points).";
         "-m", Set(omarkdown), " Output Markdown instead of HTML.";
         "-notags", Set(notags), " Output without the HTML tags.";
-        "-toc", Set(toc), " Replace `*Table of contents*' by the table of contents.";
+        "-toc", Set(toc),
+        " Replace `*Table of contents*' by the table of contents.";
         "-otoc", Set(otoc), " Output only the table of contents.";
-        "-ts", Set_int(toc_start), "f Table of contents minimum level (default is 1).";
+        "-ts", String(fun l -> toc_start := split_comma_int_list l),
+        "f Section for the Table of contents (default: all).";
         "-td", Set_int(toc_depth), "f Table of contents depth (default is 2).";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
-        "-r", String(register_code_stylist_of_program),"l=p Register program p as a code highlighter for language l.";
-        "-R", String(register_default_language),"l Registers unknown languages to be l instead of void.";
+        "-r", String(register_code_stylist_of_program),
+        "l=p Register program p as a code highlighter for language l.";
+        "-R", String(register_default_language),
+        "l Registers unknown languages to be l instead of void.";
         "-nl2br", Set(nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
@@ -286,7 +273,8 @@ let main () =
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
-        "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0), "Print version.";
+        "-version", Unit(fun () -> print_endline "This is version VERSION.";
+                                exit 0), "Print version.";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
@@ -320,7 +308,7 @@ let main () =
       in
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs, or leave as it is *)
-        (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth
+        (if !otoc then Omd.toc ~start:!toc_start ~depth:!toc_depth
          else if !no_paragraphs then fun x -> x
          else make_paragraphs)
           parsed in

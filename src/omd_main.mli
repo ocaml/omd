@@ -35,7 +35,7 @@ val notags : bool ref
 val toc_depth : int ref
 (** flag: depth of table of contents *) 
 
-val toc_start : int ref
+val toc_start : int list ref
 (** flag: first header level for table of contents *) 
 
 val nl2br : bool ref
@@ -43,13 +43,6 @@ val nl2br : bool ref
 
 val protect_html_comments : bool ref
 (** flag: for multiple dashes in HTML comments, replace dashes by &#45;  *)
-
-val make_toc :
-  ?start_level:int -> ?depth:int -> Omd_representation.t -> Omd.t
-(** [make_toc ?(start_level=1) ?(depth=2) md] returns a table of
-    contents when [md] is a list of section headers. If [md] contains
-    tags other than section header tags, an exception is raised.
- *)
 
 val patch_html_comments : Omd.element list -> Omd.element list
 (** [patch_html_comments l] returns the list [l] where
