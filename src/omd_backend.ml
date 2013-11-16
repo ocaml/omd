@@ -729,7 +729,7 @@ let rec markdown_of_md md =
             Printf.bprintf b "%s%s\n" (String.make n '`')
               (if lang = "" then !default_language else lang);
             Printf.bprintf b "%s" c;
-            Printf.bprintf b "\n%s\n" (String.make n '`');
+            Printf.bprintf b "%s\n" (String.make n '`');
           end;
         loop list_indent tl
     | Br :: tl ->

@@ -50,8 +50,8 @@ let remove_endline_comments l =
 
 let preprocess_functions = ref []
 
-(** [a ++ b] is a shortcut for [a := b :: !a] // NON-EXPORTED *)
-let (++) a b = a := b :: !a
+(** [a += b] is a shortcut for [a := b :: !a] // NON-EXPORTED *)
+let (+=) a b = a := b :: !a
 
 let preprocess l =
   List.fold_left (fun r e -> e r)
@@ -243,9 +243,9 @@ let main () =
         " Consider all remaining arguments as input file names.";
         "-u", Clear(Omd_parser.gh_uemph_or_bold_style),
         " Use standard Markdown style for emph/bold when using `_'.";
-        "-c", Unit(fun () -> preprocess_functions ++ remove_endline_comments),
+        "-c", Unit(fun () -> preprocess_functions += remove_endline_comments),
         " Ignore lines that start with `!!!' (3 or more exclamation points).";
-        "-C", Unit(fun () -> preprocess_functions ++ remove_comments),
+        "-C", Unit(fun () -> preprocess_functions += remove_comments),
         " Ignore everything on a line after `!!!' \
          (3 or more exclamation points).";
         "-m", Set(omarkdown), " Output Markdown instead of HTML.";
