@@ -647,11 +647,19 @@ let rec markdown_of_md md =
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "1. "; loop (list_indent+4) li) l;
+      List.iter(fun li -> add_spaces list_indent;
+                       bprintf b "1. ";
+                       loop (list_indent+4) li;
+                       bprintf b "\n\n"
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ulp l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "- "; loop (list_indent+4) li) l;
+      List.iter(fun li -> add_spaces list_indent;
+                       bprintf b "- ";
+                       loop (list_indent+4) li;
+                       bprintf b "\n\n"
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Code(lang, c) :: tl -> (* FIXME *)
