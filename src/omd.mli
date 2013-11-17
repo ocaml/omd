@@ -44,7 +44,7 @@ and element = Omd_representation.element =
   | Ulp of t list
   | Olp of t list
   | Code of name * string (* html entities are to be converted *later* *)
-  (** Code within the text (Marrkdown: `code`) *)
+  (** Code within the text (Markdown: `code`) *)
   | Code_block of name * string
   (** [Code_block(lang, code)]: a code clock (e.g. indented by 4
       spaces in the text).  The first parameter [lang] is the language
