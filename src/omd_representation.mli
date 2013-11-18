@@ -36,7 +36,13 @@ class ref_container :
     method get_all : (string * (string * string)) list
   end
 type element =
-    Paragraph of t
+  | H1 of t
+  | H2 of t
+  | H3 of t
+  | H4 of t
+  | H5 of t
+  | H6 of t
+  | Paragraph of t
   | Text of string
   | Emph of t
   | Bold of t
@@ -48,21 +54,15 @@ type element =
   | Code_block of name * string
   | Br
   | Hr
+  | NL
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of string
   | Html_block of string
-  | Html_comments of string
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
+  | Html_comment of string
   | Blockquote of t
   | Img of alt * src * title
-  | NL
   | X of
       < name : string;
         to_html : ?indent:int -> (t -> string) -> t -> string option;
@@ -75,6 +75,7 @@ and src = string
 and href = string
 and title = string
 and t = element list
+
 type tok =
     Ampersand
   | Ampersands of int
@@ -149,5 +150,22 @@ type tok =
   | Underscores of int
   | Word of string
   | Tag of extension
+(** Lexer's tokens. If you want to use the parser with an extended
+    lexer, you may use the constructor [Tag] to implement
+    the parser's extension. In the parser, [Tag] is used (at least)
+    3 times in order to represent metadata or to store data. *)
+
 and extension = t -> tok list -> tok list -> (t * tok list * tok list) option
+(** A function that takes the current state of the parser's data and
+    returns None if nothing has been changed, otherwise it returns
+    the new state.  The current state of the parser's data is [(r,
+    p, l)] where [r] is the result so far, [p] is the list of the
+    previous tokens (it's typically empty or contains information on
+    how many newlines we've just seen), and [l] is the remaining
+    tokens to parse. *)
+
 type extensions = extension list
+(** One must use this type to extend the parser. It's a list of
+    functions of type [extension]. They are processed in order (the
+    head is applied first), so be careful about it. If you use it
+    wrong, it will behave wrong. *)

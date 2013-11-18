@@ -21,7 +21,7 @@
 open Omd
 
 let remove_comments l =
-  let open Omd in
+  let open Omd_representation in
   let rec loop = function
     | true, Exclamations n :: tl when n > 0 ->
       loop (true,
@@ -34,7 +34,7 @@ let remove_comments l =
   in loop (true, l)
 
 let remove_endline_comments l =
-  let open Omd in
+  let open Omd_representation in
   let rec loop = function
     | Backslash :: (Exclamations n as e) :: tl when n > 0 ->
       e :: loop tl
@@ -50,8 +50,8 @@ let remove_endline_comments l =
 
 let preprocess_functions = ref []
 
-(** [a ++ b] is a shortcut for [a := b :: !a] // NON-EXPORTED *)
-let (++) a b = a := b :: !a
+(** [a += b] is a shortcut for [a := b :: !a] // NON-EXPORTED *)
+let (+=) a b = a := b :: !a
 
 let preprocess l =
   List.fold_left (fun r e -> e r)
@@ -68,7 +68,7 @@ let notags = ref false
 
 let toc_depth = ref 2
 
-let toc_start = ref 1
+let toc_start = ref([]: int list)
 
 let nl2br = ref false
 
@@ -83,7 +83,7 @@ object
     M.empty
   method style ~lang code =
     try (M.find lang stylists) code
-    with Not_found -> 
+    with Not_found ->
       try (M.find "_" stylists) code
       with Not_found -> code
   method register ~lang stylist =
@@ -108,7 +108,7 @@ let code_stylist_of_program p =
             Buffer.add_char b (input_char ic)
           done;
           assert false
-        with End_of_file -> Buffer.contents b 
+        with End_of_file -> Buffer.contents b
       in
       cat tmp2
   | _ -> code
@@ -126,41 +126,6 @@ let register_code_stylist_of_program x =
 
 let register_default_language l =
   Omd_backend.default_language := l
-
-let make_toc ?(start_level=1) ?(depth=2) md =
-  (* probably poor performance but particularly simple to implement *)
-  let b = Buffer.create 42 in
-  let rec loop = function
-    | (H1 e, id, ih) :: tl ->
-      if start_level <= 1 && start_level + depth > 1 then
-      Printf.bprintf b "* [%s](#%s)\n" ih id;
-      loop tl
-    | (H2 e, id, ih) :: tl ->
-      if start_level <= 2 && start_level + depth > 2 then
-      Printf.bprintf b " * [%s](#%s)\n" ih id;
-      loop tl
-    | (H3 e, id, ih) :: tl ->
-      if start_level <= 3 && start_level + depth > 3 then
-      Printf.bprintf b "  * [%s](#%s)\n" ih id;
-      loop tl
-    | (H4 e, id, ih) :: tl ->
-      if start_level <= 4 && start_level + depth > 4 then
-      Printf.bprintf b "   * [%s](#%s)\n" ih id;
-      loop tl
-    | (H5 e, id, ih) :: tl ->
-      if start_level <= 5 && start_level + depth > 5 then
-      Printf.bprintf b "    * [%s](#%s)\n" ih id;
-      loop tl
-    | (H6 e, id, ih) :: tl ->
-      if start_level <= 6 && start_level + depth > 6 then
-      Printf.bprintf b "     * [%s](#%s)\n" ih id;
-      loop tl
-    | [] -> ()
-    | _ -> failwith "Omd_main.make_toc: wrong argument, \
-                     please read the documentation and/or file a bug report."
-  in
-  loop(Omd_backend.headers_of_md md);
-  parse(lex(Buffer.contents b))
 
 let patch_html_comments l =
   let htmlcomments s =
@@ -185,8 +150,8 @@ let patch_html_comments l =
       Buffer.contents b
   in
   let rec loop accu = function
-  | Html_comments s :: tl ->
-      loop (Html_comments(htmlcomments s)::accu) tl
+  | Html_comment s :: tl ->
+      loop (Html_comment(htmlcomments s)::accu) tl
   | e :: tl ->
       loop (e :: accu) tl
   | [] -> List.rev accu
@@ -194,6 +159,7 @@ let patch_html_comments l =
 
 
 let tag_toc l =
+  let open Omd_representation in
   if !toc then
     let rec loop = function
       | Star::
@@ -204,7 +170,7 @@ let tag_toc l =
           Some(X(
                 object
                   (* [shield] is used to prevent endless loops.
-                     If one wants to use system threads at some point, 
+                     If one wants to use system threads at some point,
                      and calls methods of this object  concurrently,
                      then there is a real problem. *)
                   val mutable shield = false
@@ -215,7 +181,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = f (make_toc md) in
+                        let r = f (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -225,7 +191,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = f (make_toc md) in
+                        let r = f (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -235,7 +201,7 @@ let tag_toc l =
                     else
                       begin
                         shield <- true;
-                        let r = (make_toc md) in
+                        let r = (Omd.toc md) in
                         shield <- false;
                         Some r
                       end
@@ -246,6 +212,23 @@ let tag_toc l =
   else
     l
 
+
+let split_comma_int_list s =
+  if s = "" then []
+  else (
+    let l = ref [] in
+    let i = ref 0 in
+    try
+      while true do
+        let j = String.index_from s !i ',' in
+        l := int_of_string(String.sub s !i (j - !i)) :: !l;
+        i := j + 1
+      done;
+      assert false
+    with Not_found ->
+      l := (int_of_string(String.sub s !i (String.length s - !i))) :: !l;
+      List.rev !l
+  )
 
 let main () =
   let input = ref []
@@ -260,19 +243,24 @@ let main () =
         " Consider all remaining arguments as input file names.";
         "-u", Clear(Omd_parser.gh_uemph_or_bold_style),
         " Use standard Markdown style for emph/bold when using `_'.";
-        "-c", Unit(fun () -> preprocess_functions ++ remove_endline_comments),
+        "-c", Unit(fun () -> preprocess_functions += remove_endline_comments),
         " Ignore lines that start with `!!!' (3 or more exclamation points).";
-        "-C", Unit(fun () -> preprocess_functions ++ remove_comments),
-        " Ignore everything on a line after `!!!' (3 or more exclamation points).";
+        "-C", Unit(fun () -> preprocess_functions += remove_comments),
+        " Ignore everything on a line after `!!!' \
+         (3 or more exclamation points).";
         "-m", Set(omarkdown), " Output Markdown instead of HTML.";
         "-notags", Set(notags), " Output without the HTML tags.";
-        "-toc", Set(toc), " Replace `*Table of contents*' by the table of contents.";
+        "-toc", Set(toc),
+        " Replace `*Table of contents*' by the table of contents.";
         "-otoc", Set(otoc), " Output only the table of contents.";
-        "-ts", Set_int(toc_start), "f Table of contents minimum level (default is 1).";
+        "-ts", String(fun l -> toc_start := split_comma_int_list l),
+        "f Section for the Table of contents (default: all).";
         "-td", Set_int(toc_depth), "f Table of contents depth (default is 2).";
         "-H", Set(protect_html_comments), " Protect HTML comments.";
-        "-r", String(register_code_stylist_of_program),"l=p Register program p as a code highlighter for language l.";
-        "-R", String(register_default_language),"l Registers unknown languages to be l instead of void.";
+        "-r", String(register_code_stylist_of_program),
+        "l=p Register program p as a code highlighter for language l.";
+        "-R", String(register_default_language),
+        "l Registers unknown languages to be l instead of void.";
         "-nl2br", Set(nl2br), " Convert new lines to <br/>.";
         "-x", String(ignore),
         "ext Activate extension ext (not yet implemented).";
@@ -285,7 +273,8 @@ let main () =
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
-        "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0), "Print version.";
+        "-version", Unit(fun () -> print_endline "This is version VERSION.";
+                                exit 0), "Print version.";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
@@ -308,18 +297,18 @@ let main () =
         Buffer.add_char b (input_char ic)
       done; assert false
     with End_of_file ->
-      let lexed = lex (Buffer.contents b) in
+      let lexed = Omd_lexer.lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
-      let parsed1 = parse preprocessed in
+      let parsed1 = Omd_parser.parse preprocessed in
       let parsed2 =
-        if !protect_html_comments then 
+        if !protect_html_comments then
           patch_html_comments parsed1
         else
           parsed1
       in
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs, or leave as it is *)
-        (if !otoc then make_toc ~start_level:!toc_start ~depth:!toc_depth
+        (if !otoc then Omd.toc ~start:!toc_start ~depth:!toc_depth
          else if !no_paragraphs then fun x -> x
          else make_paragraphs)
           parsed in
@@ -334,7 +323,7 @@ let main () =
         if Omd_utils.debug then
           print_endline
             (Omd_backend.sexpr_of_md
-               (parse (preprocess(lex (Buffer.contents b)))));
+               (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))));
   )
     input_files
 

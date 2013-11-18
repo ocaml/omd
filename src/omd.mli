@@ -1,58 +1,68 @@
 (** A markdown parser in OCaml, with no extra dependencies.
-    
+
     This module represents this entire Markdown library written in
-    OCaml only. 
+    OCaml only.
 
     Its main purpose is to allow you to use the Markdown library while
-    keeping you away from the other modules. 
+    keeping you away from the other modules.
 
     If you want to extend the Markdown parser, you can do it without
     accessing any module of this library but this one, and by doing
     so, you are free from having to maintain a fork of this library.
 
-    N.B. This module is supposed to be reentrant, 
+    N.B. This module is supposed to be reentrant,
     if it's not then please report the bug. *)
 
-(********************** TYPES **************************************)
-type t = Omd_representation.t
+
+(************************************************************************)
+(** {2 Representation of Markdown documents} *)
+
+type t = element list
 (** Representation of a Markdown document.  *)
 
 and ref_container =
-    (< add_ref: string -> string -> string -> unit ; 
+    (< add_ref: string -> string -> string -> unit ;
        get_ref : string -> (string*string) option;
        get_all : (string * (string * string)) list;
      >)
 
 (** A element of a Markdown document. *)
 and element = Omd_representation.element =
+  | H1 of t          (** Header of level 1 *)
+  | H2 of t          (** Header of level 2 *)
+  | H3 of t          (** Header of level 3 *)
+  | H4 of t          (** Header of level 4 *)
+  | H5 of t          (** Header of level 5 *)
+  | H6 of t          (** Header of level 6 *)
   | Paragraph of t
-  | Text of string
-  | Emph of t
-  | Bold of t
-  | Ul of t list
-  | Ol of t list
+  (** A Markdown paragraph (must be enabled in {!of_string}) *)
+  | Text of string   (** Text. *)
+  | Emph of t        (** Emphasis (italic) *)
+  | Bold of t        (** Bold *)
+  | Ul of t list     (** Unumbered list *)
+  | Ol of t list     (** Ordered (i.e. numbered) list *)
   | Ulp of t list
   | Olp of t list
   | Code of name * string (* html entities are to be converted *later* *)
-  | Code_block of name * string (* html entities are to be converted *later* *)
-  | Br
-  | Hr
+  (** Code within the text (Marrkdown: `code`) *)
+  | Code_block of name * string
+  (** [Code_block(lang, code)]: a code clock (e.g. indented by 4
+      spaces in the text).  The first parameter [lang] is the language
+      if specified.  Beware that the [code] may contain characters
+      that must be escaped for HTML. *)
+  | Br               (** (Forced) line break *)
+  | Hr               (** Horizontal rule *)
+  | NL               (** Newline character *)
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of string
   | Html_block of string
-  | Html_comments of string
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
-  | Blockquote of t
+  | Html_comment of string
+  (** An HTML comment, including "<!--" and "-->". *)
+  | Blockquote of t  (** Quoted block *)
   | Img of alt * src * title
-  | NL
-  | X of (< (* extension of [element]. *) 
+  | X of (< (* extension of [element]. *)
            name: string;
            (* N.B. [to_html] means that htmlentities will not
               be applied to its output. *)
@@ -79,124 +89,25 @@ and title = string
 (** HTML attribute. *)
 
 type code_stylist = < style : lang:string -> string -> string >
-(** has at least a method [style] that takes a language name and some
+(** Has at least a method [style] that takes a language name and some
     code and returns that code with style. *)
 
 
-type tok = Omd_representation.tok =
-| Ampersand
-| Ampersands of int
-| At
-| Ats of int
-| Backquote
-| Backquotes of int
-| Backslash
-| Backslashs of int
-| Bar
-| Bars of int
-| Caret
-| Carets of int
-| Cbrace
-| Cbraces of int
-| Colon
-| Colons of int
-| Comma
-| Commas of int
-| Cparenthesis
-| Cparenthesiss of int
-| Cbracket
-| Cbrackets of int
-| Dollar
-| Dollars of int
-| Dot
-| Dots of int
-| Doublequote
-| Doublequotes of int
-| Exclamation
-| Exclamations of int
-| Equal
-| Equals of int
-| Greaterthan
-| Greaterthans of int
-| Hash
-| Hashs of int
-| Lessthan
-| Lessthans of int
-| Minus
-| Minuss of int
-| Newline
-| Newlines of int
-| Number of string
-| Obrace
-| Obraces of int
-| Oparenthesis
-| Oparenthesiss of int
-| Obracket
-| Obrackets of int
-| Percent
-| Percents of int
-| Plus
-| Pluss of int
-| Question
-| Questions of int
-| Quote
-| Quotes of int
-| Semicolon
-| Semicolons of int
-| Slash
-| Slashs of int
-| Space
-| Spaces of int
-| Star
-| Stars of int
-| Tab
-| Tabs of int
-| Tilde
-| Tildes of int
-| Underscore
-| Underscores of int
-| Word of string
-| Tag of extension
-(** Lexer's tokens. If you want to use the parser with an extended
-    lexer, you may use the constructor [Tag] to implement
-    the parser's extension. In the parser, [Tag] is used (at least) 
-    3 times in order to represent metadata or to store data. *)
+(************************************************************************)
+(** {2 Input and Output} *)
 
-  (** A function that takes the current state of the parser's data and
-      returns None if nothing has been changed, otherwise it returns
-      the new state.  The current state of the parser's data is [(r,
-      p, l)] where [r] is the result so far, [p] is the list of the
-      previous tokens (it's typically empty or contains information on
-      how many newlines we've just seen), and [l] is the remaining
-      tokens to parse. *)
+val of_string : ?extensions:Omd_representation.extensions ->
+                ?paragraph: bool -> string -> t
+(** [of_string s] returns the Markdown representation of the string
+    [s].
 
+    @param paragraph whether to identify paragraphs.  Default:
+    [false].  Alternatively, you can use {!make_paragraphs} on the
+    returned Markdown to identify paragraphs.
 
-(** One must use this type to extend the parser. It's a list of
-    functions of type [extension]. They are processed in order (the
-    head is applied first), so be careful about it. If you use it
-    wrong, it will behave wrong. *)
+    If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
+    and {!Omd_parser.parse}.  *)
 
-and extensions = extension list
-and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option)) 
-
-
-
-(********************** VALUES **************************************)
-
-val lex : string -> tok list
-(** Translate a raw string into tokens for the parser.  To implement
-    an extension to the lexer, one may process its result before
-    giving it to the parser. To implement an extension to the 
-    parser, one may extend it using the constructor [Tag]
-    from type [tok] and/or using the extensions mechanism
-    of the parser (cf. the optional argument [extensions]).
-    The main difference is that [Tag] is processed by the parser
-    in highest priority whereas functions in [extensions] are applied
-    with lowest priority. *)
-
-
-val parse : ?extensions:extensions -> tok list -> t
-(** Translate tokens to Markdown representation *)
 
 val make_paragraphs : t -> t
 (** Build Markdown paragraphs. This Markdown parser doesn't
@@ -216,5 +127,22 @@ val to_markdown : t -> string
 val to_text : t -> string
 (** Translate markdown representation into raw text. *)
 
+
+(************************************************************************)
+(** {2 Tansforming Markdown documents} *)
+
+val toc : ?start:int list -> ?depth:int -> t -> t
+(** [toc md] returns [toc] a table of contents for [md].
+
+    @param start gives the section for which the TOC must be built.
+    For example [~start:[2;3]] will build the TOC for subsections of
+    the second [H1] header, and within that section, the third [h2]
+    header.  If a number is [0], it means to look for the first
+    section at that level but stop if one encounters any other
+    subsection.  If no subsection exists, an empty TOC [[]] will be
+    returned.  Default: [[]] i.e. list all sections, starting with the
+    first [H1].
+
+    @param depth the table of contents.  Default: [2].  *)
 
 ;;

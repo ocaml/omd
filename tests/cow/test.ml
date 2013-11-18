@@ -32,7 +32,7 @@ let process successes failures file =
   );
   let expected = slurp html in
   let observed =
-    Omd.(to_html (make_paragraphs (parse (lex (slurp file))))) in
+    Omd.(to_html (make_paragraphs (Omd.of_string (slurp file)))) in
   if expected = observed || remove_blank expected = remove_blank observed then (
     eprintf "SUCCESS: %s\n" file;
     incr successes

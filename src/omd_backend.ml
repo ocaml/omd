@@ -55,7 +55,7 @@ let make_paragraphs md =
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
-    | Html_comments _ as e :: tl ->
+    | Html_comment _ as e :: tl ->
       if cp = [] then
         loop [] (e::accu) tl
       else if cp = [NL] then
@@ -138,7 +138,7 @@ let text_of_md md =
         loop tl
     | Html_block s :: tl ->
         loop tl
-    | Html_comments s :: tl ->
+    | Html_comment s :: tl ->
         loop tl
     | Url (href,s,title) :: tl ->
         loop s;
@@ -337,7 +337,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
       if nl then Buffer.add_string b "\n";
       Buffer.add_string b s;
       loop indent ~nl:true tl
-    | Html_comments s :: tl ->
+    | Html_comment s :: tl ->
       if nl then Buffer.add_string b "\n";
       Buffer.add_string b s;
       loop indent ~nl:nl tl
@@ -528,7 +528,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b s;
         Buffer.add_string b ")";
         loop tl
-    | Html_comments s :: tl ->
+    | Html_comment s :: tl ->
         Buffer.add_string b "(Html_comments ";
         Buffer.add_string b s;
         Buffer.add_string b ")";
@@ -647,11 +647,19 @@ let rec markdown_of_md md =
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "1. "; loop (list_indent+4) li) l;
+      List.iter(fun li -> add_spaces list_indent;
+                       bprintf b "1. ";
+                       loop (list_indent+4) li;
+                       bprintf b "\n\n"
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ulp l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "- "; loop (list_indent+4) li) l;
+      List.iter(fun li -> add_spaces list_indent;
+                       bprintf b "- ";
+                       loop (list_indent+4) li;
+                       bprintf b "\n\n"
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Code(lang, c) :: tl -> (* FIXME *)
@@ -729,7 +737,7 @@ let rec markdown_of_md md =
             Printf.bprintf b "%s%s\n" (String.make n '`')
               (if lang = "" then !default_language else lang);
             Printf.bprintf b "%s" c;
-            Printf.bprintf b "\n%s\n" (String.make n '`');
+            Printf.bprintf b "%s\n" (String.make n '`');
           end;
         loop list_indent tl
     | Br :: tl ->
@@ -746,7 +754,7 @@ let rec markdown_of_md md =
       Buffer.add_string b s;
       Buffer.add_string b "\n\n";
       loop list_indent tl
-    | Html_comments s :: tl ->
+    | Html_comment s :: tl ->
       Buffer.add_string b s;
       loop list_indent tl
     | Url (href,s,title) :: tl ->

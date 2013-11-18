@@ -32,7 +32,7 @@ val headers_of_md :
   (Omd_representation.element * string * string) list
 (** [headers_of_md md] returns a list of 3-tuples; in each of them the
     first element is the header (e.g., [H1(foo)]), the second is the
-    HTML id (as produced by [html_of_md]), and the thrid element is
+    HTML id (as produced by [html_of_md]), and the third element is
     the HTML version of [foo].  The third elements of those 3-tuples
     exist because if you use [html_and_headers_of_md], then you have
     the guarantee that the HTML version of [foo] is the same for

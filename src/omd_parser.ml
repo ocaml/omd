@@ -992,23 +992,22 @@ let read_until_newline l = (* this has been patched post-generation *)
 
 
 (* H1, H2, H3, ... *)
-let read_title main_loop n r p l =
+let read_title main_loop n r _previous lexemes =
   let title, rest =
     let rec loop accu = function
-      | ((Hash|Hashs _)::((Newline|Newlines _)::_ as l))
-      | ((Hash|Hashs _)::(Space|Spaces _)::
-           ((Newline|Newlines _)::_ as l))
-      | ((Newline|Newlines _)::_ as l)
+      | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
+      | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
+      | ((Newline|Newlines _) :: _ as l)
       | ([] as l) ->
-        main_loop [] [] (List.rev accu), l
-      | (Hash|Hashs _)::[] ->
-        main_loop [] [] (List.rev accu), []
-      | (Hash|Hashs _ as x)::tl ->
+         main_loop [] [] (List.rev accu), l
+      | [Hash|Hashs _] ->
+         main_loop [] [] (List.rev accu), []
+      | (Hash|Hashs _ as x) :: tl ->
         loop (Word(string_of_t x)::accu) tl
       | x::tl ->
         loop (x::accu) tl
     in
-    loop [] l
+    loop [] lexemes
   in
   match n with
   | 1 -> H1 title :: r, [Newline], rest
@@ -1687,7 +1686,7 @@ let main_parse extensions lexemes =
           end
         | Some (comments, new_tl) ->
           main_loop_rev
-            (Html_comments(string_of_tl comments)::r)
+            (Html_comment(string_of_tl comments)::r)
             [Greaterthan]
             new_tl
       end
@@ -1753,9 +1752,11 @@ let main_parse extensions lexemes =
       end
 
     (* hashes *)
+    | ([]|[(Newline|Newlines _)]), Hashs n :: (Space|Spaces _) :: tl
     | ([]|[(Newline|Newlines _)]), Hashs n :: tl -> (* hash titles *)
       let r, p, l = read_title main_loop (n+2) r previous tl in
       main_loop_rev r p l
+    | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
     | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
       let r, p, l = read_title main_loop 1 r previous tl in
       main_loop_rev r p l

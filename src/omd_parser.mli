@@ -199,5 +199,6 @@ val spaces : main_loop -> int -> r -> p -> l -> r * p * l
 (** spaces: returns (r,p,l) where r is the result, p is the last thing
       read, l is the remains *)
 
-val parse : ?extensions:(r -> p -> l -> (r * p * l) option) list -> l
+val parse : ?extensions:Omd_representation.extensions -> l
   -> Omd_representation.t
+(** Translate tokens to Markdown representation *)
