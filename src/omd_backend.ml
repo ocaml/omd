@@ -44,13 +44,13 @@ let make_paragraphs md =
           else
             loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Ulp b) :: tl ->
-        let e = Ul(List.map (fun li -> loop [] [] li) b) in
+        let e = Ulp(List.map (fun li -> loop [] [] li) b) in
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
         else
           loop [] (e::Paragraph(List.rev cp)::accu) tl
     | (Olp b) :: tl ->
-        let e = Ol(List.map (fun li -> loop [] [] li) b) in
+        let e = Olp(List.map (fun li -> loop [] [] li) b) in
         if cp = [] || cp = [NL] then
           loop cp (e::accu) tl
         else
@@ -639,30 +639,38 @@ let rec markdown_of_md md =
       Buffer.add_string b "**";
       loop list_indent tl
     | Ol l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "1. "; loop (list_indent+4) li) l;
+      let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
+      List.iter(fun li ->
+                    incr c;
+                    add_spaces list_indent;
+                    Printf.bprintf b "%d. " !c;
+                    loop (list_indent+4) li
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ul l :: tl ->
-      List.iter(fun li -> add_spaces list_indent; Printf.bprintf b "* "; loop (list_indent+4) li) l;
+      List.iter(fun li ->
+                    add_spaces list_indent;
+                    Printf.bprintf b "* ";
+                    loop (list_indent+4) li
+               ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
+      let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
       List.iter(fun li -> add_spaces list_indent;
-                       bprintf b "1. ";
+                       incr c;
+                       bprintf b "%d. " !c;
                        loop (list_indent+4) li;
-                       bprintf b "\n\n"
                ) l;
-      if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ulp l :: tl ->
       List.iter(fun li -> add_spaces list_indent;
                        bprintf b "- ";
                        loop (list_indent+4) li;
-                       bprintf b "\n\n"
                ) l;
-      if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
-    | Code(lang, c) :: tl -> (* FIXME *)
+    | Code(_lang, c) :: tl -> (* FIXME *)
       let n = (* compute how many backquotes we need to use *)
         let filter (n:int) (s:int list) =
           if n > 0 && n < 10 then
