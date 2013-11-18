@@ -315,7 +315,7 @@ let main () =
       let o2 = (* output either Text or HTML, or markdown *)
         (if !notags then to_text
          else if !omarkdown then to_markdown
-         else to_html ~pindent:true ~nl2br:false ~cs:(code_stylist:>code_stylist))
+         else to_html ~pindent:true ~nl2br:false ~cs:code_stylist#style)
           o1
       in
         output_string output o2;

@@ -1203,7 +1203,7 @@ let maybe_link main_loop r p l =
 
 
 (** code that starts with one or several backquote(s) *)
-let bcode r p l =
+let bcode default_lang r p l =
   assert_well_formed l;
   let e, tl =
     match l with
@@ -1234,16 +1234,20 @@ let bcode r p l =
     if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
     then
       match cb with
-      | Word(lang)::Newline::tl ->
-        Some((Code_block(lang,string_of_tl tl)::r), [Backquote], l)
-      | Word(lang)::Newlines 0::tl ->
-        Some((Code_block(lang,string_of_tl (Newline::tl))::r), [Backquote], l)
-      | Word(lang)::Newlines n::tl ->
-        Some((Code_block(lang,string_of_tl (Newlines(n-1)::tl))::r), [Backquote], l)
-      | Newline::tl ->
-        Some((Code_block("",string_of_tl tl)::r), [Backquote], l)
+      | Word lang :: (Space|Spaces _) :: Newline :: tl
+      | Word lang :: Newline :: tl ->
+         Some(Code_block(lang, string_of_tl tl) :: r, [Backquote], l)
+      | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
+      | Word lang :: Newlines 0 :: tl ->
+         Some(Code_block(lang, string_of_tl(Newline::tl)) :: r, [Backquote], l)
+      | Word lang :: (Space|Spaces _) :: Newlines n :: tl
+      | Word lang :: Newlines n :: tl ->
+        Some(Code_block(lang, string_of_tl(Newlines(n-1)::tl)) :: r,
+             [Backquote], l)
+      | Newline :: tl ->
+        Some(Code_block(default_lang, string_of_tl tl) :: r, [Backquote], l)
       | _ ->
-        Some((Code_block("",string_of_tl cb)::r), [Backquote], l)
+        Some(Code_block(default_lang, string_of_tl cb) :: r, [Backquote], l)
     else
       let clean_bcode s =
         let rec loop1 i =
@@ -1264,9 +1268,10 @@ let bcode r p l =
         | 0, n when n = String.length s - 1 -> s
         | i, n -> String.sub s i (n-i)
       in
-      Some((Code("",clean_bcode(string_of_tl cb))::r), [Backquote], l)
+      Some(Code(default_lang, clean_bcode(string_of_tl cb)) :: r,
+           [Backquote], l)
 
-let icode r p l =
+let icode default_lang r p l =
   assert_well_formed l;
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
@@ -1275,16 +1280,16 @@ let icode r p l =
   let accu = Buffer.create 42 in
   let rec loop = function
     | (Newline|Newlines _ as p), ((Space|Spaces(0|1))::_ as tl) ->
-      (* 1, 2 or 3 spaces. *)
-      (* -> Return what's been found as code because what follows isn't. *)
-      Code_block("",Buffer.contents accu)::r, [p], tl
+       (* 1, 2 or 3 spaces. *)
+       (* -> Return what's been found as code because what follows isn't. *)
+       Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
     | (Newline|Newlines _ as p), Spaces(n)::tl ->
       assert(n>0);
       (* At least 4 spaces, it's still code. *)
       Buffer.add_string accu (string_of_t p);
       loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
     | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
-      Code_block("",Buffer.contents accu)::r, [p], tl
+      Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
         (* -> Return what's been found as code because it's no more code. *)
     | p, e::tl ->
       Buffer.add_string accu (string_of_t p);
@@ -1292,7 +1297,7 @@ let icode r p l =
       loop (e, tl)
     | p, [] ->
       Buffer.add_string accu (string_of_t p);
-      Code_block("",Buffer.contents accu)::r, [p], []
+      Code_block(default_lang, Buffer.contents accu)::r, [p], []
   in
     match l with
       | Spaces n::tl ->
@@ -1571,7 +1576,7 @@ let parse_list main_loop r p l =
     rp::r, [Newline], l
 
 
-let spaces main_loop n r p l =
+let spaces main_loop default_lang n r p l =
   assert_well_formed l;
   let spaces n r previous l =
     assert (n > 0);
@@ -1589,7 +1594,7 @@ let spaces main_loop n r p l =
     | (1|2|3), ([]|[(Newlines _)]), [] ->
       r, p, []
     | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-      (icode r previous (make_space n :: l))
+      (icode default_lang r previous (make_space n :: l))
     | 1, _, _ ->
       (Text " "::r), [Space], l
     | n, _, (Newline|Newlines _)::_ -> (* 2 or more spaces before a newline *)
@@ -1643,7 +1648,7 @@ let is_hex s =
          | _ -> false)
       in loop 1)
 
-let main_parse extensions lexemes =
+let main_parse extensions default_lang lexemes =
   assert_well_formed lexemes;
   let rc = new Omd_representation.ref_container in
 
@@ -1768,7 +1773,7 @@ let main_parse extensions lexemes =
 
     (* At least 4 spaces, so it can only be code. *)
     | ([]|[Newline|Newlines _]), (Spaces n)::tl when n>=2 ->
-      let r, p, l = icode r [Newline] lexemes in
+      let r, p, l = icode default_lang r [Newline] lexemes in
       main_loop_rev r p l
 
     (* spaces after a newline: could lead to hr *)
@@ -1778,7 +1783,7 @@ let main_parse extensions lexemes =
         begin match hr_m tl with
         | None ->
           let r, p, l =
-            spaces main_loop (fst(size xxxt)) r previous tl
+            spaces main_loop default_lang (fst(size xxxt)) r previous tl
           in
           main_loop_rev r p l
         | Some l ->
@@ -1792,7 +1797,7 @@ let main_parse extensions lexemes =
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let r, p, l =
-        spaces main_loop (fst(size t)) r previous tl
+        spaces main_loop default_lang (fst(size t)) r previous tl
       in
       main_loop_rev r p l
 
@@ -2106,7 +2111,7 @@ let main_parse extensions lexemes =
 
     (* backquotes *)
     | _, (Backquote|Backquotes _ as t)::tl ->
-      begin match bcode r previous lexemes with
+      begin match bcode default_lang r previous lexemes with
       | Some(r, p, l) -> main_loop_rev r p l
       | None ->
         begin match maybe_extension extensions r previous lexemes with
@@ -2716,7 +2721,7 @@ let main_parse extensions lexemes =
   main_loop [] [] (tag_setext main_loop lexemes)
 
 
-let parse ?(extensions=[]) lexemes =
-  main_parse extensions lexemes
+let parse ?(extensions=[]) ?(lang="") lexemes =
+  main_parse extensions lang lexemes
 
 (******************************************************************************)

@@ -43,13 +43,19 @@ and element = Omd_representation.element =
   | Ol of t list     (** Ordered (i.e. numbered) list *)
   | Ulp of t list
   | Olp of t list
-  | Code of name * string (* html entities are to be converted *later* *)
-  (** Code within the text (Marrkdown: `code`) *)
+  | Code of name * string
+  (** [Code(lang, code)] represent [code] within the text (Markdown:
+      `code`).  The language [lang] cannot be specified from Markdown,
+      it can be from {!of_string} though or when programatically
+      generating Markdown documents.  Beware that the [code] is taken
+      verbatim from Markdown and may contain characters that must be
+      escaped for HTML. *)
   | Code_block of name * string
   (** [Code_block(lang, code)]: a code clock (e.g. indented by 4
       spaces in the text).  The first parameter [lang] is the language
-      if specified.  Beware that the [code] may contain characters
-      that must be escaped for HTML. *)
+      if specified.  Beware that the [code] is taken verbatim from
+      Markdown and may contain characters that must be escaped for
+      HTML. *)
   | Br               (** (Forced) line break *)
   | Hr               (** Horizontal rule *)
   | NL               (** Newline character *)
@@ -88,22 +94,26 @@ and href = string
 and title = string
 (** HTML attribute. *)
 
-type code_stylist = < style : lang:string -> string -> string >
-(** Has at least a method [style] that takes a language name and some
-    code and returns that code with style. *)
+type code_stylist = lang:string -> string -> string
+(** Function that takes a language name and some code and returns
+    that code with style. *)
 
 
 (************************************************************************)
 (** {2 Input and Output} *)
 
 val of_string : ?extensions:Omd_representation.extensions ->
-                ?paragraph: bool -> string -> t
+                ?paragraph: bool -> ?lang: name ->
+                string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
 
     @param paragraph whether to identify paragraphs.  Default:
     [false].  Alternatively, you can use {!make_paragraphs} on the
     returned Markdown to identify paragraphs.
+
+    @param lang language for blocks of code where it was not
+    specified.  Default: [""].
 
     If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
     and {!Omd_parser.parse}.  *)
@@ -114,6 +124,11 @@ val make_paragraphs : t -> t
     build paragraph directly, one has to call this function
     to build them. On the other hand, if you don't want
     automatic Markdown-style paragraphs, don't call this function! *)
+
+val set_default_lang : name -> t -> t
+(** [set_default_lang lang md] return a copy of [md] where the
+    language of all [Code] or [Code_block] with an empty language is
+    set to [lang]. *)
 
 val to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
