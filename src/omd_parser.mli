@@ -189,16 +189,22 @@ val maybe_reference :
 
 val maybe_link : main_loop -> r -> p -> l -> (r * p * l) option
 
-val bcode : r -> p -> l -> (r * p * l) option
+val bcode : Omd_representation.name -> r -> p -> l -> (r * p * l) option
+(** [bcode default_lang acc context token_to_parse] *)
 
-val icode : r -> p -> l -> r * p * l
+val icode : Omd_representation.name -> r -> p -> l -> r * p * l
+(** [icode default_lang acc context token_to_parse] *)
 
 val parse_list : main_loop -> r -> p -> l -> r * p * l
 
-val spaces : main_loop -> int -> r -> p -> l -> r * p * l
-(** spaces: returns (r,p,l) where r is the result, p is the last thing
-      read, l is the remains *)
+val spaces : main_loop -> Omd_representation.name -> int -> r -> p -> l -> r * p * l
+(** [spaces main_loop default_lang n acc context token_to_parse]
+    returns [(r,p,l)] where [r] is the result, [p] is the last thing
+    read, and [l] is the remains. *)
 
-val parse : ?extensions:Omd_representation.extensions -> l
+val parse : ?extensions:Omd_representation.extensions -> ?lang: string -> l
   -> Omd_representation.t
-(** Translate tokens to Markdown representation *)
+(** Translate tokens to Markdown representation.
+
+    @param lang language for blocks of code where it was not specified.
+    Default: [""].  *)
