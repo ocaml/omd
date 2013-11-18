@@ -1234,10 +1234,13 @@ let bcode default_lang r p l =
     if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
     then
       match cb with
+      | Word lang :: (Space|Spaces _) :: Newline :: tl
       | Word lang :: Newline :: tl ->
          Some(Code_block(lang, string_of_tl tl) :: r, [Backquote], l)
+      | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
       | Word lang :: Newlines 0 :: tl ->
          Some(Code_block(lang, string_of_tl(Newline::tl)) :: r, [Backquote], l)
+      | Word lang :: (Space|Spaces _) :: Newlines n :: tl
       | Word lang :: Newlines n :: tl ->
         Some(Code_block(lang, string_of_tl(Newlines(n-1)::tl)) :: r,
              [Backquote], l)
