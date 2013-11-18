@@ -1414,7 +1414,7 @@ let parse_list main_loop r p l =
       failwith "make_up called with []" (* assert false *)
   in
   let rec list_items ~p indents items l =
-    if debug then eprintf "list_items: l=(%s)\n%!" (destring_of_tl l);
+    if debug then eprintf "list_items: p=%b l=(%s)\n%!" p (destring_of_tl l);
     match l with
     (* no more list items *)
     | [] ->
@@ -1431,6 +1431,7 @@ let parse_list main_loop r p l =
              p ||
              List.exists (function Newlines _ -> true | _ -> false) new_item
            in
+           if debug then eprintf "new_item=%S\n%!" (destring_of_tl new_item);
            match indents with
            | [] ->
              assert(items = []);
@@ -1550,7 +1551,7 @@ let parse_list main_loop r p l =
                make_up p items, l
        end
     (* *)
-    | Newlines 0::(Star::(Space|Spaces _)::_ as l)
+    | Newlines 0::((Star|Minus|Plus)::(Space|Spaces _)::_ as l)
     | Newlines 0::(Number _::Dot::(Space|Spaces _)::_ as l)
     | Newlines 0::((Space|Spaces _)::Star::(Space|Spaces _)::_ as l)
     | Newlines 0::((Space|Spaces _)::Number _::Dot::(Space|Spaces _)::_ as l)
@@ -1747,7 +1748,8 @@ let main_parse extensions default_lang lexemes =
       end
     | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
       begin match hr_m lexemes with
-      | None -> (* no hr, but it's not a list *)
+      | None -> (* no hr, and it's not a list either
+                   because it's not followed by spaces *)
         begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
