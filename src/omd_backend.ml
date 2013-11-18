@@ -5,7 +5,7 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-type code_stylist = < style : lang:string -> string -> string >
+type code_stylist = lang:string -> string -> string
 
 open Printf
 open Omd_representation
@@ -158,9 +158,10 @@ let text_of_md md =
     loop md;
     Buffer.contents b
 
-let default_code_stylist = object method style ~lang code = code end
+let default_code_stylist ~lang code = code
 
-let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_stylist) md =
+let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
+                               ?cs:(code_style=default_code_stylist) md =
   let ids = object(this)
     val mutable ids = StringSet.empty
     method mangle id =
@@ -310,7 +311,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
         bprintf b "<pre><code class='%s'>" !default_language
       else
         bprintf b "<pre><code class='%s'>" lang;
-      let new_c = cs#style ~lang:lang c in
+      let new_c = code_style ~lang:lang c in
       if c = new_c then
         Buffer.add_string b (htmlentities ~md:false c)
       else
@@ -432,8 +433,8 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_
     loop 0 md;
     Buffer.contents b, List.rev !headers
 
-and html_of_md ?(pindent=true) ?(nl2br=false) ?(cs=default_code_stylist) md =
-  fst (html_and_headers_of_md ~pindent:pindent ~nl2br:nl2br ~cs:cs md)
+and html_of_md ?(pindent=true) ?(nl2br=false) ?cs md =
+  fst (html_and_headers_of_md ~pindent:pindent ~nl2br:nl2br ?cs md)
 and headers_of_md md =
   snd (html_and_headers_of_md md)
 

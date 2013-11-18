@@ -94,9 +94,9 @@ and href = string
 and title = string
 (** HTML attribute. *)
 
-type code_stylist = < style : lang:string -> string -> string >
-(** Has at least a method [style] that takes a language name and some
-    code and returns that code with style. *)
+type code_stylist = lang:string -> string -> string
+(** Function that takes a language name and some code and returns
+    that code with style. *)
 
 
 (************************************************************************)

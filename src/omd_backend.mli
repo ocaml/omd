@@ -5,9 +5,9 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-type code_stylist = < style : lang:string -> string -> string >
-(** has at least a method [style] that takes a language name and some
-    code and returns that code with style. *)
+type code_stylist = lang:string -> string -> string
+(** Function that takes a language name and some code and returns
+    that code with style. *)
 
 val default_language : string ref
 (** default language for code blocks can be set to any name, 
