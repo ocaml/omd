@@ -1393,7 +1393,7 @@ let parse_list main_loop r p l =
       (U,indents,(item@[sublist]))::tl
   in
   let make_up ~p items : Omd_representation.element =
-    if debug then eprintf "make_up\n%!";
+    if debug then eprintf "make_up p=%b\n%!" p;
     match items with
     | (U,_,item)::_ ->
       if p then
