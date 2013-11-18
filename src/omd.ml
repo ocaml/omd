@@ -8,7 +8,7 @@
 include Omd_representation
 include Omd_backend
 
-let of_string ?extensions ?(paragraph=false) ?lang s =
+let of_string ?extensions ?(paragraph=true) ?lang s =
   let md = Omd_parser.parse ?extensions ?lang (Omd_lexer.lex s) in
   if paragraph then make_paragraphs md else md
 
