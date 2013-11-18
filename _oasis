@@ -1,7 +1,7 @@
 #								-*-conf-*-
 OASISFormat: 0.3
 Name:        omd
-Version:     0.6.5
+Version:     0.7.0
 Synopsis:    A Markdown frontend in pure OCaml.
 Description: This Markdown library is implemented using only pure OCaml 
   (including I/O operations provided by the standard OCaml compiler distribution).
