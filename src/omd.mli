@@ -103,7 +103,7 @@ type code_stylist = lang:string -> string -> string
 (** {2 Input and Output} *)
 
 val of_string : ?extensions:Omd_representation.extensions ->
-                ?paragraph: bool -> ?lang: string ->
+                ?paragraph: bool -> ?lang: name ->
                 string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
@@ -124,6 +124,11 @@ val make_paragraphs : t -> t
     build paragraph directly, one has to call this function
     to build them. On the other hand, if you don't want
     automatic Markdown-style paragraphs, don't call this function! *)
+
+val set_default_lang : name -> t -> t
+(** [set_default_lang lang md] return a copy of [md] where the
+    language of all [Code] or [Code_block] with an empty language is
+    set to [lang]. *)
 
 val to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a

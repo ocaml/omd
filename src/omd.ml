@@ -23,6 +23,42 @@ let to_markdown : t -> string = markdown_of_md
 let html_of_string (html:string) : string =
   html_of_md (Omd_parser.parse (Omd_lexer.lex html))
 
+
+let rec set_default_lang lang = function
+  | Code("", code) :: tl -> Code(lang, code) :: set_default_lang lang tl
+  | Code_block("", code) :: tl -> Code_block(lang, code)
+                                 :: set_default_lang lang tl
+  (* Recurse on all elements even though code (blocks) are not allowed
+     everywhere. *)
+  | H1 t :: tl -> H1(set_default_lang lang t) :: set_default_lang lang tl
+  | H2 t :: tl -> H2(set_default_lang lang t) :: set_default_lang lang tl
+  | H3 t :: tl -> H3(set_default_lang lang t) :: set_default_lang lang tl
+  | H4 t :: tl -> H4(set_default_lang lang t) :: set_default_lang lang tl
+  | H5 t :: tl -> H5(set_default_lang lang t) :: set_default_lang lang tl
+  | H6 t :: tl -> H6(set_default_lang lang t) :: set_default_lang lang tl
+  | Paragraph t :: tl -> Paragraph(set_default_lang lang t)
+                        :: set_default_lang lang tl
+  | Emph t :: tl -> Emph(set_default_lang lang t) :: set_default_lang lang tl
+  | Bold t :: tl -> Bold(set_default_lang lang t) :: set_default_lang lang tl
+  | Ul t :: tl -> Ul(List.map (set_default_lang lang) t)
+                 :: set_default_lang lang tl
+  | Ol t :: tl -> Ol(List.map (set_default_lang lang) t)
+                 :: set_default_lang lang tl
+  | Ulp t :: tl -> Ulp(List.map (set_default_lang lang) t)
+                  :: set_default_lang lang tl
+  | Olp t :: tl -> Olp(List.map (set_default_lang lang) t)
+                  :: set_default_lang lang tl
+  | Url(href, t, title) :: tl -> Url(href, set_default_lang lang t, title)
+                                :: set_default_lang lang tl
+  | Blockquote t :: tl -> Blockquote(set_default_lang lang t)
+                         :: set_default_lang lang tl
+  (* Elements that do not contain Markdown. *)
+  | (Text _|Code _|Code_block _|Br|Hr|NL|Ref _|Img_ref _|Html _
+     |Html_block _|Html_comment _|Img _|X _) as e :: tl ->
+     e :: set_default_lang lang tl
+  | [] -> []
+
+
 (* Table of contents
  ***********************************************************************)
 
