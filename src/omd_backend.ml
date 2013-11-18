@@ -27,10 +27,10 @@ let make_paragraphs md =
   let rec loop cp accu = function (* cp means current paragraph *)
     | [] ->
         let accu =
-          if cp = [] || cp = [NL] then
-            accu
-          else
-            Paragraph(List.rev cp)::accu
+         match cp with
+         | [] | [NL] -> accu
+         | NL::cp -> Paragraph(List.rev cp)::accu
+         | cp -> Paragraph(List.rev cp)::accu
         in
           List.rev accu
     | Blockquote b1 :: Blockquote b2 :: tl
@@ -577,6 +577,7 @@ let rec sexpr_of_md md =
 
 
 let rec markdown_of_md md =
+  if debug then eprintf "markdown_of_md(%S)" (sexpr_of_md md);
   let quote s =
     let b = Buffer.create (String.length s) in
     let l = String.length s in
@@ -599,7 +600,14 @@ let rec markdown_of_md md =
   let b = Buffer.create 42 in
   let add_spaces n = for i = 1 to n do Buffer.add_char b ' ' done in
   let references = ref None in
-  let rec loop list_indent = function
+  let rec loop ?(fst_p_in_li=true) ?(is_in_list=false) list_indent l =
+    (* [list_indent: int] is the indentation level in number of spaces. *)
+    (* [is_in_list: bool] is necessary to know if we are inside a paragraph
+       which is inside a list item because those need to be indented! *)
+    let loop ?(fst_p_in_li=fst_p_in_li) ?(is_in_list=is_in_list) list_indent l =
+        loop ~fst_p_in_li:fst_p_in_li ~is_in_list:is_in_list list_indent l
+    in
+    match l with
     | X x :: tl ->
         (match x#to_t md with
            | Some t -> loop list_indent t
@@ -620,9 +628,14 @@ let rec markdown_of_md md =
       Printf.bprintf b "![%s][%s]" name alt;
       loop list_indent tl
     | Paragraph md :: tl ->
-      loop list_indent md;
+      if is_in_list then 
+        if fst_p_in_li then
+          add_spaces (list_indent-2)
+        else
+          add_spaces list_indent;
+      loop ~fst_p_in_li:false list_indent md;
       Printf.bprintf b "\n\n";
-      loop list_indent tl
+      loop ~fst_p_in_li:false list_indent tl
     | Img(alt, src, title) :: tl ->
       Printf.bprintf b "![%s](%s \"%s\")" alt src title;
       loop list_indent tl
@@ -645,15 +658,15 @@ let rec markdown_of_md md =
                     incr c;
                     add_spaces list_indent;
                     Printf.bprintf b "%d. " !c;
-                    loop (list_indent+4) li
+                    loop ~is_in_list:true (list_indent+4) li
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ul l :: tl ->
       List.iter(fun li ->
                     add_spaces list_indent;
-                    Printf.bprintf b "* ";
-                    loop (list_indent+4) li
+                    Printf.bprintf b "- ";
+                    loop ~is_in_list:true (list_indent+4) li
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
@@ -662,13 +675,13 @@ let rec markdown_of_md md =
       List.iter(fun li -> add_spaces list_indent;
                        incr c;
                        bprintf b "%d. " !c;
-                       loop (list_indent+4) li;
+                       loop ~is_in_list:true (list_indent+4) li;
                ) l;
       loop list_indent tl
     | Ulp l :: tl ->
       List.iter(fun li -> add_spaces list_indent;
-                       bprintf b "- ";
-                       loop (list_indent+4) li;
+                       bprintf b "+ ";
+                       loop ~is_in_list:true (list_indent+4) li;
                ) l;
       loop list_indent tl
     | Code(_lang, c) :: tl -> (* FIXME *)
