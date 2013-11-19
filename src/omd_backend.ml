@@ -788,32 +788,32 @@ let rec markdown_of_md md =
     | H1 md :: tl ->
       Buffer.add_string b "# ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | H2 md :: tl ->
       Buffer.add_string b "## ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | H3 md :: tl ->
       Buffer.add_string b "### ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | H4 md :: tl ->
       Buffer.add_string b "#### ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | H5 md :: tl ->
       Buffer.add_string b "##### ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | H6 md :: tl ->
       Buffer.add_string b "###### ";
       loop list_indent md;
-      Buffer.add_string b "";
+      Buffer.add_string b "\n";
       loop list_indent tl
     | NL :: tl ->
         Buffer.add_string b "\n";
