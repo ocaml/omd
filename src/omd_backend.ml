@@ -620,13 +620,21 @@ let rec markdown_of_md md =
       Buffer.add_string b (quote(markdown_of_md q));
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
-      references := Some rc;
-      Printf.bprintf b "[%s][%s]" text name;
-      loop list_indent tl
+      begin match rc#get_ref name with
+        | Some(href, title) ->
+           references := Some rc;
+           Printf.bprintf b "[%s][%s]" text name;
+           loop list_indent tl
+        | None -> loop list_indent (Text(fallback)::tl)
+      end
     | Img_ref(rc, name, alt, fallback) :: tl ->
-      references := Some rc;
-      Printf.bprintf b "![%s][%s]" name alt;
-      loop list_indent tl
+      begin match rc#get_ref name with
+        | Some(href, title) ->
+           references := Some rc;
+           Printf.bprintf b "![%s][%s]" name alt;
+           loop list_indent tl
+        | None -> loop list_indent (Text(fallback)::tl)
+      end 
     | Paragraph md :: tl ->
       if is_in_list then 
         if fst_p_in_li then
