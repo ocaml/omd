@@ -742,31 +742,35 @@ let rec markdown_of_md md =
         in
           loop [3;4;5;6;7;8;9;10] 0 0
       in
+      let output_indented_block n s =
+        let rec loop p i =
+          if i = String.length s then
+            ()
+          else
+            match p with
+            | '\n' ->
+                Printf.bprintf b "%s" (String.make n ' ');
+                Buffer.add_char b s.[i];
+                loop s.[i] (succ i)
+            | _ ->
+                Buffer.add_char b s.[i];
+                loop s.[i] (succ i)
+        in loop '\n' 0
+      in
         if n = 0 then  (* FIXME *)
-          (* case where we can't use backquotes *)
-          let output_indented_block n s =
-            let rec loop p i =
-              if i = String.length s then
-                ()
-              else
-                match p with
-                | '\n' ->
-                    Printf.bprintf b "%s" (String.make n ' ');
-                    Buffer.add_char b s.[i];
-                    loop s.[i] (succ i)
-                | _ ->
-                    Buffer.add_char b s.[i];
-                    loop s.[i] (succ i)
-            in loop '\n' 0
-          in
-          Buffer.add_char b '\n';
-          output_indented_block (4+list_indent) c;
-          Buffer.add_string b "\n\n"
+          begin
+            (* case where we can't use backquotes *)
+            Buffer.add_char b '\n';
+            output_indented_block (4+list_indent) c;
+            Buffer.add_string b "\n\n"
+          end
         else
           begin
+            Buffer.add_string b (String.make (list_indent) ' ');
             Printf.bprintf b "%s%s\n" (String.make n '`')
               (if lang = "" then !default_language else lang);
-            Printf.bprintf b "%s" c;
+            output_indented_block (list_indent) c;
+            Buffer.add_string b (String.make (list_indent) ' ');
             Printf.bprintf b "%s\n" (String.make n '`');
           end;
         loop list_indent tl
