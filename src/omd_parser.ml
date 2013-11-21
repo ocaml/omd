@@ -538,8 +538,14 @@ let tag__maybe_h1 main_loop =
         Some((title::r), [Newline], tl)
       end
     | _ ->
-       eprintf "P=%S" (destring_of_tl p);
-       assert false (* -> the tag generator would be broken *)
+      if debug then
+        begin
+         Printf.eprintf "In tag__maybe_h1, p=%S \
+                         and that shouldn't be possible!\n" (string_of_tl p);
+         assert false (* -> the tag generator would be broken *)
+        end
+      else
+        None
   )
 
 let tag__maybe_h2 main_loop =
@@ -553,7 +559,15 @@ let tag__maybe_h2 main_loop =
         let title = H2(main_loop [] [] title) in
         Some((title::r), [Newline], tl)
       end
-    | _ -> assert false (* -> the tag generator would be broken *)
+    | _ ->
+      if debug then
+        begin
+         Printf.eprintf "In tag__maybe_h2, p=%S \
+                         and that shouldn't be possible!\n" (string_of_tl p);
+         assert false (* -> the tag generator would be broken *)
+        end
+      else
+        None
   )
 
 let tag__md md = (* [md] should be in reverse *)
