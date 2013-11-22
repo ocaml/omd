@@ -56,9 +56,10 @@ and element = Omd_representation.element =
       if specified.  Beware that the [code] is taken verbatim from
       Markdown and may contain characters that must be escaped for
       HTML. *)
-  | Br               (** (Forced) line break *)
-  | Hr               (** Horizontal rule *)
-  | NL               (** Newline character *)
+  | Br (** (Forced) line break *)
+  | Hr (** Horizontal rule *)
+  | NL (** Newline character.  Newline characters that act
+           like delimiters (e.g. for paragraphs) are removed from the AST. *)
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
