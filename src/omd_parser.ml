@@ -1468,17 +1468,18 @@ let parse_list main_loop r p l =
   in
   let make_up ~p items : Omd_representation.element =
     if debug then eprintf "make_up p=%b\n%!" p;
+    let items = List.rev items in
     match items with
     | (U,_,item)::_ ->
       if p then
-        Ulp((List.rev_map(fun (_,_,i) -> i) items))
+        Ulp((List.map(fun (_,_,i) -> i) items))
       else
-        Ul((List.rev_map(fun (_,_,i) -> i) items))
+        Ul((List.map(fun (_,_,i) -> i) items))
     | (O,_,item)::_ ->
       if p then
-        Olp((List.rev_map(fun (_,_,i) -> i) items))
+        Olp((List.map(fun (_,_,i) -> i) items))
       else
-        Ol((List.rev_map(fun (_,_,i) -> i) items))
+        Ol((List.map(fun (_,_,i) -> i) items))
     | [] ->
       failwith "make_up called with []" (* assert false *)
   in
@@ -1515,6 +1516,10 @@ let parse_list main_loop r p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            match indents with
            | [] ->
              assert(items = []);
@@ -1536,6 +1541,10 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            match indents with
            | [] ->
              if debug then eprintf "spaces[] l=(%S)\n%!" (string_of_tl l);
@@ -1563,6 +1572,10 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            assert_well_formed new_item;
            match indents with
            | [] ->
@@ -1578,6 +1591,10 @@ let parse_list main_loop r p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            match indents with
            | [] ->
              assert(items = []);
@@ -1599,6 +1616,10 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
+           let p =
+             p ||
+             List.exists (function Newlines _ -> true | _ -> false) new_item
+           in
            match indents with
            | [] ->
              if debug then eprintf "spaces[] l=(%S)\n%!" (string_of_tl l);
