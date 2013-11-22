@@ -1275,7 +1275,7 @@ let bcode default_lang r p l =
   let e, tl =
     match l with
     | (Backquote|Backquotes _ as e)::tl -> e, tl
-    | _ -> (* bcode is wrongly called *) assert false
+    | _ -> failwith "Omd_parser.bcode is wrongly called" 
   in
   let rec code_block accu = function
     | [] ->
@@ -1299,11 +1299,13 @@ let bcode default_lang r p l =
   | None -> None
   | Some(cb, l) ->
     if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
-    then
+      && (match p with []|[Newline|Newlines _] -> true | _ -> false)
+      && (match e with Backquotes n when n > 0 -> true | _ -> false)
+    then 
       match cb with
       | Word lang :: (Space|Spaces _) :: Newline :: tl
       | Word lang :: Newline :: tl ->
-         Some(Code_block(lang, string_of_tl tl) :: r, [Backquote], l)
+          Some(Code_block(lang, string_of_tl tl) :: r, [Backquote], l)
       | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
       | Word lang :: Newlines 0 :: tl ->
          Some(Code_block(lang, string_of_tl(Newline::tl)) :: r, [Backquote], l)
