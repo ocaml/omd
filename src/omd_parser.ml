@@ -506,69 +506,122 @@ let eat_blank =
 (* used by tag__maybe_h1 and tag__maybe_h2 *)
 let setext_title l =
   assert_well_formed l;
-(* val setext_title :
-  Omd_representation.tok list ->
-  (Omd_representation.tok list * Omd_representation.tok list) option *)
+  (* val setext_title :
+     Omd_representation.tok list ->
+     (Omd_representation.tok list * Omd_representation.tok list) option *)
+  let rec detect_balanced_bqs n r l =
+    (* If there's a balanced (complete) backquote-started code block
+       then it should be "ignored", else it means the line that
+       follows is part of a code block, so it's not defining a
+       setext-style title. *)
+    if debug then
+      eprintf "detect_balanced_bqs n=%d r=%S l=%S\n%!"
+        n (string_of_tl r) (string_of_tl l);
+    match l with
+      | [] ->
+          None
+      | (Newline|Newlines _)::_ ->
+          None
+      | Backslash::Backquote::tl ->
+          detect_balanced_bqs n (Backquote::Backslash::r) tl
+      | Backslash::Backquotes 0::tl ->
+          detect_balanced_bqs n (Backquote::Backslash::r) (Backquote::tl)
+      | Backslash::Backquotes x::tl ->
+          detect_balanced_bqs n (Backquote::Backslash::r) (Backquotes(x-1)::tl)
+      | Backslashs(m) as b::Backquote::tl when m mod 2 = 1 ->
+          detect_balanced_bqs n (Backquote::b::r) tl
+      | Backslashs(m) as b::Backquotes 0::tl when m mod 2 = 1 ->
+          detect_balanced_bqs n (Backquote::b::r) (Backquote::tl)
+      | Backslashs(m) as b::Backquotes x::tl when m mod 2 = 1 ->
+          detect_balanced_bqs n (Backquote::b::r) (Backquotes(x-1)::tl)
+      | (Backquote as b)::tl when n = 1 ->
+          Some(List.rev (b::r), tl)
+      | (Backquotes x as b)::tl when n = x+2 ->
+          Some(List.rev (b::r), tl)
+      | e::tl ->
+          detect_balanced_bqs n (e::r) tl
+  in
   let rec loop r = function
     | [] ->
-      if r = [] then
-        None
-      else
-        Some(List.rev r, [])
+        if r = [] then
+          None
+        else
+          Some(List.rev r, [])
+    | Backslash::Backquote::tl ->
+        loop (Backquote::Backslash::r) tl
+    | Backslashs(m) as b::Backquote::tl when m mod 2 = 1 ->
+        loop (Backquote::b::r) tl
+    | Backslash::Backquotes 0::tl ->
+        loop (Backquote::Backslash::r) (Backquote::tl)
+    | Backslash::Backquotes x::tl ->
+        loop (Backquote::Backslash::r) (Backquotes(x-1)::tl)
+    | Backslashs(m) as b::Backquotes 0::tl when m mod 2 = 1 ->
+        loop (Backquote::b::r) (Backquote::tl)
+    | Backslashs(m) as b::Backquotes x::tl when m mod 2 = 1 ->
+        loop (Backquote::b::r) (Backquotes(x-1)::tl)
+    | Backquote::tl ->
+        begin match detect_balanced_bqs 1 [] tl with
+          | Some(bl,tl) -> loop (bl@r) tl
+          | _ -> None
+        end
+    | Backquotes(x)::tl ->
+        begin match detect_balanced_bqs (x+2) [] tl with
+          | Some(bl,tl) -> loop (bl@r) tl
+          | _ -> None
+        end
     | Newline::(Equal|Equals _|Minus|Minuss _)::tl ->
-      if r = [] then
+        if r = [] then
+          None
+        else
+          Some(List.rev r, tl)
+    | (Newline|Newlines _)::_ ->
+        if debug then eprintf "Omd_parser.setext_title is wrongly used!\n%!";
         None
-      else
-        Some(List.rev r, tl)
     | e::tl ->
-      loop (e::r) tl
+        loop (e::r) tl
   in
-  loop [] l
+  let result = loop [] l in
+    if debug then
+      eprintf "setext_title l=%S result=%S,%S\n%!"
+        (string_of_tl l)
+        (match result with None -> "" | Some (x,tl) -> string_of_tl x)
+        (match result with None -> "" | Some (x,tl) -> string_of_tl tl);
+    result
 
 
 let tag__maybe_h1 main_loop =
   Tag(fun r p l ->
-    match p with
-    | ([]|[Newline|Newlines _]) ->
-      begin match setext_title l with
-      | None ->
-        None
-      | Some(title, tl) ->
-        let title = H1(main_loop [] [] title) in
-        Some((title::r), [Newline], tl)
-      end
-    | _ ->
-      if debug then
-        begin
-         Printf.eprintf "In tag__maybe_h1, p=%S \
-                         and that shouldn't be possible!\n" (string_of_tl p);
-         assert false (* -> the tag generator would be broken *)
-        end
-      else
-        None
-  )
+        match p with
+          | ([]|[Newline|Newlines _]) ->
+              begin match setext_title l with
+                | None ->
+                    None
+                | Some(title, tl) ->
+                    let title = H1(main_loop [] [] title) in
+                      Some((title::r), [Newline], tl)
+              end
+          | _ ->
+              if debug then
+                Printf.eprintf "Omd_parser.tag__maybe_h1 is wrongly used (p=%S)!\n" (string_of_tl p);
+              None
+     )
 
 let tag__maybe_h2 main_loop =
   Tag(fun r p l ->
-    match p with
-    | ([]|[Newline|Newlines _]) ->
-      begin match setext_title l with
-      | None ->
-        None
-      | Some(title, tl) ->
-        let title = H2(main_loop [] [] title) in
-        Some((title::r), [Newline], tl)
-      end
-    | _ ->
-      if debug then
-        begin
-         Printf.eprintf "In tag__maybe_h2, p=%S \
-                         and that shouldn't be possible!\n" (string_of_tl p);
-         assert false (* -> the tag generator would be broken *)
-        end
-      else
-        None
-  )
+        match p with
+          | ([]|[Newline|Newlines _]) ->
+              begin match setext_title l with
+                | None ->
+                    None
+                | Some(title, tl) ->
+                    let title = H2(main_loop [] [] title) in
+                      Some((title::r), [Newline], tl)
+              end
+          | _ ->
+              if debug then
+                Printf.eprintf "Omd_parser.tag__maybe_h2 is wrongly used (p=%S)!\n" (string_of_tl p);
+              None
+     )
 
 let tag__md md = (* [md] should be in reverse *)
   Tag(fun r p l -> Some(md@r, [], l))
