@@ -31,20 +31,28 @@ let process successes failures file =
     exit 2;
   );
   let expected = slurp html in
-  let observed =
+  let md, observed =
    try
-    Omd.(to_html (Omd.of_string (slurp file)))
-   with e -> Printexc.to_string e
+     let md = Omd.of_string (slurp file) in
+     md, Omd.(to_html md)
+   with e -> [], Printexc.to_string e
   in
-  if expected = observed || remove_blank expected = remove_blank observed then (
-    eprintf "SUCCESS: %s\n" file;
-    incr successes
+  (* Make sure a round trip produce identical results *)
+  let round_trip = Omd.of_string(Omd.to_markdown md) in
+  if expected <> observed && remove_blank expected <> remove_blank observed then (
+    eprintf "FAILURE: %s\n" file;
+    eprintf "  expected = %S\n" (expected);
+    eprintf "  observed = %S\n" (observed);
+    incr failures
+  )
+  else if md <> round_trip then (
+    eprintf "FAILURE: %s\n" file;
+    eprintf "  Omd.of_string(Omd.to_markdown md) <> md\n";
+    incr failures
   )
   else (
-    eprintf "FAILURE: %s\n" file;
-    eprintf "expected = %S\n" (expected);
-    eprintf "observed = %S\n" (observed);
-    incr failures
+    eprintf "SUCCESS: %s\n" file;
+    incr successes
   )
 
 let () =
