@@ -1652,7 +1652,7 @@ let maybe_autoemail r p l =
   | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
 
 let is_hex s =
-  String.length s > 1 
+  String.length s > 1
   && (s.[0] = 'X' || s.[0] = 'x')
   && (let rec loop i =
         i = String.length s
@@ -2139,7 +2139,7 @@ let main_parse extensions default_lang lexemes =
     (* HTML *)
     (* <br/> and <hr/> with or without space(s) *)
     | _, (Lessthan::Word("br"|"hr" as w)::Slash
-          ::(Greaterthan|Greaterthans _ as g)::tl) 
+          ::(Greaterthan|Greaterthans _ as g)::tl)
     | _, (Lessthan::Word("br"|"hr" as w)::(Space|Spaces _)::Slash
           ::(Greaterthan|Greaterthans _ as g)::tl) ->
       begin match g with
@@ -2152,7 +2152,7 @@ let main_parse extensions default_lang lexemes =
       end
 
     (* block html *)
-    | ([]|[Newline|Newlines _]), 
+    | ([]|[Newline|Newlines _]),
         ((Lessthan as t)::Word(tagname)
          ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
          ::tl) ->
@@ -2217,12 +2217,12 @@ let main_parse extensions default_lang lexemes =
               begin
                 let b, tl = read_until_gt tl in
                 match List.rev b with
-                | Slash::_ -> 
+                | Slash::_ ->
                   loop
                     (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
                     n
                     tl
-                | _ -> 
+                | _ ->
                   loop
                     (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
                     (if tn = tagname then n+1 else n)
