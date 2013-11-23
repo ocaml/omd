@@ -1715,8 +1715,12 @@ let spaces main_loop default_lang n r p l =
       (icode default_lang r previous (Omd_lexer.make_space n :: l))
     | 1, _, _ ->
       (Text " "::r), [Space], l
-    | n, _, (Newline|Newlines _)::_ -> (* 2 or more spaces before a newline *)
-      Br::r, [Spaces(n-2)], l
+    | n, _, Newline :: tl ->
+       (* 2 or more spaces before a newline, eat the newline *)
+       Br::r, [Spaces(n-2)], tl
+    | n, _, Newlines k :: tl ->
+       (* 2 or more spaces before a newline, eat 1 newline *)
+       Br::r, [Spaces(n-2)], (if k = 0 then Newline else Newlines(k-1)) :: tl
     | n, _, _ -> assert (n>1);
       (Text (String.make n ' ')::r), [Spaces(n-2)], l
   in

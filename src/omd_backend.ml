@@ -13,71 +13,61 @@ open Omd_utils
 
 let default_language = ref ""
 
-(** - recognizes paragraphs - glues following blockquotes  *)
+(* Remove all [NL] and [Br] at the beginning. *)
+let rec remove_initial_newlines = function
+  | [] -> []
+  | (NL | Br) :: tl -> remove_initial_newlines tl
+  | l -> l
+
+(** - recognizes paragraphs
+    - glues following blockquotes  *)
 let make_paragraphs md =
-  let rec remove_prefix prefix = function
-    | [] ->
-        []
-    | e::tl as l ->
-        if e = prefix then
-          remove_prefix prefix tl
-        else
-          l
-  in
   let rec loop cp accu = function (* cp means current paragraph *)
     | [] ->
         let accu =
          match cp with
-         | [] | [NL] -> accu
-         | NL::cp -> Paragraph(List.rev cp)::accu
+         | [] | [NL] | [Br] -> accu
+         | (NL|Br)::cp -> Paragraph(List.rev cp)::accu
          | cp -> Paragraph(List.rev cp)::accu
         in
           List.rev accu
     | Blockquote b1 :: Blockquote b2 :: tl
-    | Blockquote b1 :: NL :: Blockquote b2 :: tl
-    | Blockquote b1 :: NL :: NL :: Blockquote b2 :: tl ->
+    | Blockquote b1 :: (NL|Br) :: Blockquote b2 :: tl
+    | Blockquote b1 :: (NL|Br) :: (NL|Br) :: Blockquote b2 :: tl ->
         loop cp accu (Blockquote(b1@b2):: tl)
     | Blockquote b :: tl ->
         let e = Blockquote(loop [] [] b) in
-          if cp = [] || cp = [NL] then
-            loop cp (e::accu) tl
-          else
-            loop [] (e::Paragraph(List.rev cp)::accu) tl
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
     | (Ulp b) :: tl ->
         let e = Ulp(List.map (fun li -> loop [] [] li) b) in
-        if cp = [] || cp = [NL] then
-          loop cp (e::accu) tl
-        else
-          loop [] (e::Paragraph(List.rev cp)::accu) tl
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
     | (Olp b) :: tl ->
         let e = Olp(List.map (fun li -> loop [] [] li) b) in
-        if cp = [] || cp = [NL] then
-          loop cp (e::accu) tl
-        else
-          loop [] (e::Paragraph(List.rev cp)::accu) tl
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
     | Html_comment _ as e :: tl ->
-      if cp = [] then
-        loop [] (e::accu) tl
-      else if cp = [NL] then
-        loop [] (e::NL::accu) tl
-      else
-        loop (e::cp) accu tl
+       (match cp with
+        | [] -> loop [] (e::accu) tl
+        | [NL] | [Br] -> loop [] (e::NL::accu) tl
+        | _ -> loop (e::cp) accu tl)
     | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
-       | Html_block _) as e :: tl->
-        if cp = [] || cp = [NL] then
-          loop cp (e::accu) tl
-        else
-          loop [] (e::Paragraph(List.rev cp)::accu) tl
+       | Html_block _) as e :: tl ->
+       (match cp with
+        | [] | [NL] | [Br] -> loop cp (e::accu) tl
+        | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
     | Text "\n" :: _ | Paragraph _ :: _ ->
         assert false
-    | NL::NL::tl ->
-        let tl = remove_prefix NL tl in
-          begin match cp with
-            | [] | [NL] ->
-                loop [] (NL::accu) tl
-            | _ ->
-                loop [] (Paragraph(List.rev cp)::accu) tl
-          end
+    | (NL|Br) :: (NL|Br) :: tl ->
+        let tl = remove_initial_newlines tl in
+        begin match cp with
+              | [] | [NL] | [Br] -> loop [] (NL::accu) tl
+              | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
+        end
     | x::tl ->
         loop (x::cp) accu tl
   in
