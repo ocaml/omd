@@ -1694,26 +1694,26 @@ let parse_list main_loop r p l =
     rp::r, [Newline], l
 
 
-let spaces main_loop default_lang n r previous l =
-  assert_well_formed l;
+let spaces main_loop default_lang n r previous lexemes =
+  assert_well_formed lexemes;
   assert (n > 0);
-  match n, previous, l with
+  match n, previous, lexemes with
   | (1|2|3), ([] | [Newline|Newlines _]),
     (Star|Minus|Plus)::(Space|Spaces _)::tl ->
      (* unordered list *)
-     parse_list main_loop r [] (Omd_lexer.make_space n::l)
+     parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
   | (1|2|3), ([] | [Newline|Newlines _]),
     (Number _)::Dot::(Space|Spaces _)::tl ->
      (* ordered list *)
-     parse_list main_loop r [] (Omd_lexer.make_space n::l)
+     parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
   | (1|2|3), ([] | [Newlines _]), _::_ ->
-     Text (" ")::r, previous, l
+     Text (" ")::r, previous, lexemes
   | (1|2|3), ([] | [Newlines _]), [] ->
      r, previous, []
   | _, ([] | [Newlines _]), _ -> (* n>=4, indented code *)
-     icode default_lang r previous (Omd_lexer.make_space n :: l)
+     icode default_lang r previous (Omd_lexer.make_space n :: lexemes)
   | 1, _, _ ->
-     (Text " "::r), [Space], l
+     (Text " "::r), [Space], lexemes
   | n, _, Newline :: tl ->
      (* 2 or more spaces before a newline, eat the newline *)
      Br::r, [Spaces(n-2)], tl
@@ -1722,7 +1722,7 @@ let spaces main_loop default_lang n r previous l =
      Br::r, [Spaces(n-2)], (if k = 0 then Newline else Newlines(k-1)) :: tl
   | n, _, _ ->
      assert (n>1);
-     (Text (String.make n ' ')::r), [Spaces(n-2)], l
+     (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
 
 
 let maybe_autoemail r p l =
