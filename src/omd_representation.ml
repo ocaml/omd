@@ -154,4 +154,3 @@ type tok = (* Cs(n) means (n+2) times C *)
 and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option))
 
 type extensions = extension list
-

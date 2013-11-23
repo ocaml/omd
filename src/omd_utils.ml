@@ -149,7 +149,7 @@ let htmlentities ?(md=false) s =
                     in
                     ff (i+2)
                   | _ -> raise Break.Break
-                  in                    
+                  in
                   Buffer.add_string b "&"
                 with _ -> Buffer.add_string b "&amp;"
               end

@@ -178,8 +178,8 @@ let lex s =
                   (incr i; Newline)
                 else
                   Newline
-            else 
-              Newlines (n-2) 
+            else
+              Newlines (n-2)
       | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
       | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
       | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
@@ -309,7 +309,7 @@ let destring_of_tl ?(limit=max_int) tl =
   let b = Buffer.create 42 in
   let rec loop (i:int) (tlist:tok list) : unit = match tlist with
     | e::tl ->
-        if limit = i then 
+        if limit = i then
           loop i []
         else
           begin

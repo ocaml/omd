@@ -150,4 +150,3 @@ let add_toc ?start ?depth ?title md =
   let toc = toc ?start ?depth md in
   (* Replace "*Table of contents*" with the actual TOC. *)
   toc
-
