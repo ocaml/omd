@@ -39,9 +39,9 @@ let test name md_string desired_md =
      separated by one or more blank lines."  Note that the final
      newlines are not considered to be part of the paragraphs, just a
      delimiter. *)
-  test "Paragraph, simple" "Paragraph1\nline2\n\nParagraph2"
+  test "Paragraph, simple" "Paragraph1\nline2\n\nP2\n\n\nP3"
        [Paragraph [Text "Paragraph1"; NL; Text "line2"];
-        Paragraph [Text "Paragraph2"]];
+        Paragraph [Text "P2"]; Paragraph [Text "P3"]];
   (* A blank line is any line that looks like a blank line — a line
      containing nothing but spaces or tabs is considered blank. *)
   test "Paragraph, blank line" "P1\n   \nP2\n\t\nP3\n"
@@ -51,7 +51,7 @@ let test name md_string desired_md =
   (* "When you do want to insert a <br />, you end a line with two or
      more spaces." *)
   test "Paragraph, <br>" "Paragraph1  \nline2\n\nParagraph2"
-       [Paragraph [Text "Paragraph1"; Br; NL; Text "line2"];
+       [Paragraph [Text "Paragraph1"; Br; Text "line2"];
         Paragraph [Text "Paragraph2"]];
 
   (* Normal paragraphs should not be indented with spaces or tabs. *)
