@@ -709,6 +709,10 @@ let hr_s l =
       None
   in loop 0 l
 
+let hr l =
+  match hr_m l with
+  | None -> hr_s l
+  | Some _ as tl -> tl
 
 exception NL_exception
 exception Premature_ending
@@ -1919,19 +1923,13 @@ let main_parse extensions default_lang lexemes =
 
     (* spaces after a newline: could lead to hr *)
     | ([]|[Newline|Newlines _]), ((Space|Spaces(0|1)) as xxxt) :: tl ->
-      begin match hr_s tl with
+      begin match hr tl with
       | None ->
-        begin match hr_m tl with
-        | None ->
-          let r, p, l =
-            spaces main_loop default_lang (Omd_lexer.length xxxt) r previous tl
-          in
-          main_loop_rev r p l
-        | Some l ->
-          main_loop_rev (Hr::r) [Newline] l
-        end
-      | Some l ->
-        main_loop_rev (Hr::r) [Newline] l
+         let n = Omd_lexer.length xxxt in
+         let r, p, l = spaces main_loop default_lang n r previous tl in
+         main_loop_rev r p l
+      | Some tl ->
+         main_loop_rev (Hr::r) [Newline] tl
       end
 
     (* spaces anywhere *)
