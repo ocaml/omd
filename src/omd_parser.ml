@@ -1718,7 +1718,7 @@ let spaces main_loop default_lang n r previous lexemes =
      else ( (* n>=4, blank line or indented code *)
        match lexemes with
        | [] | (Newline|Newlines _) :: _  -> r, [Space], lexemes
-       | _ -> icode default_lang r previous (Omd_lexer.make_space n :: lexemes)
+       | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
      )
   | _ ->
      if n = 1 then
