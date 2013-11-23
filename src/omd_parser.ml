@@ -1701,7 +1701,7 @@ let spaces main_loop default_lang n r previous lexemes =
   | [] | [Newline|Newlines _] ->
      if n <= 3 then (
        match lexemes with
-       | (Star|Minus|Plus) :: (Space|Spaces _) :: tl ->
+       | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
           (* unordered list *)
           parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
        | (Number _)::Dot::(Space|Spaces _)::tl ->
@@ -1711,8 +1711,11 @@ let spaces main_loop default_lang n r previous lexemes =
            Text (" ")::r, previous, lexemes
        | [] -> r, previous, []
      )
-     else (* n>=4, indented code *)
-       icode default_lang r previous (Omd_lexer.make_space n :: lexemes)
+     else ( (* n>=4, blank line or indented code *)
+       match lexemes with
+       | [] | (Newline|Newlines _) :: _  -> r, [Space], lexemes
+       | _ -> icode default_lang r previous (Omd_lexer.make_space n :: lexemes)
+     )
   | _ ->
      if n = 1 then
        (Text " "::r), [Space], lexemes
@@ -1723,7 +1726,8 @@ let spaces main_loop default_lang n r previous lexemes =
           Br::r, [Spaces(n-2)], tl
        | Newlines k :: tl ->
           (* 2 or more spaces before a newline, eat 1 newline *)
-          Br::r, [Spaces(n-2)], (if k = 0 then Newline else Newlines(k-1)) :: tl
+          let newlines = if k = 0 then Newline else Newlines(k-1) in
+          Br::r, [Spaces(n-2)], newlines :: tl
        | _ ->
           assert (n>1);
           (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
