@@ -355,7 +355,7 @@ let rec is_blank = function
   | [] -> true
   | _ -> false
 
-let semph_or_bold (n:int) (l:Omd_representation.tok list) =
+let semph_or_bold (n:int) (l:l) =
   (* FIXME: use rpl call/return convention *)
   assert_well_formed l;
   assert (n>0 && n<4);
@@ -399,7 +399,7 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
     | Some(left,right) ->
         if is_blank left then None else Some(left,right)
 
-let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+let sm_uemph_or_bold (n:int) (l:l) =
   assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -444,7 +444,7 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
         if is_blank left then None else Some(left,right)
 
 
-let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+let gh_uemph_or_bold (n:int) (l:l) =
   assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -504,11 +504,8 @@ let eat_blank =
 
 
 (* used by tag__maybe_h1 and tag__maybe_h2 *)
-let setext_title l =
+let setext_title (l:l) : (Omd_representation.tok list * l) option =
   assert_well_formed l;
-(* val setext_title :
-  Omd_representation.tok list ->
-  (Omd_representation.tok list * Omd_representation.tok list) option *)
   let rec loop r = function
     | [] ->
       if r = [] then
@@ -1682,8 +1679,7 @@ let main_parse extensions default_lang lexemes =
   assert_well_formed lexemes;
   let rc = new Omd_representation.ref_container in
 
-  let rec main_loop_rev (r:t) (previous:Omd_representation.tok list)
-      (lexemes:Omd_representation.tok list) =
+  let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     if debug then
       eprintf "main_loop_rev r=%s p=(%s) l=(%s)\n%!"
