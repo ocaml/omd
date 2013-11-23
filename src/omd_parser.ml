@@ -1695,44 +1695,47 @@ let parse_list main_loop r p l =
     rp::r, [Newline], l
 
 
-let spaces main_loop default_lang n r previous lexemes =
+(* Returns [(r,p,l)] where [r] is the result, [p] is the last thing
+   read, and [l] is what remains. *)
+let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
   assert_well_formed lexemes;
   assert (n > 0);
-  match previous with
-  | [] | [Newline|Newlines _] ->
-     if n <= 3 then (
-       match lexemes with
-       | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
-          (* unordered list *)
-          parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
-       | (Number _)::Dot::(Space|Spaces _)::tl ->
-          (* ordered list *)
-          parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
-       |  _::_ ->
-           Text (" ")::r, previous, lexemes
-       | [] -> r, previous, []
-     )
-     else ( (* n>=4, blank line or indented code *)
-       match lexemes with
-       | [] | (Newline|Newlines _) :: _  -> r, [Space], lexemes
-       | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
-     )
-  | _ ->
-     if n = 1 then
-       (Text " "::r), [Space], lexemes
-     else (
-       match lexemes with
-       | Newline :: tl ->
-          (* 2 or more spaces before a newline, eat the newline *)
-          Br::r, [Spaces(n-2)], tl
-       | Newlines k :: tl ->
-          (* 2 or more spaces before a newline, eat 1 newline *)
-          let newlines = if k = 0 then Newline else Newlines(k-1) in
-          Br::r, [Spaces(n-2)], newlines :: tl
-       | _ ->
-          assert (n>1);
-          (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
-     )
+  if n <= 3 then (
+    match lexemes with
+    | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
+       (* unordered list *)
+       parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+    | (Number _)::Dot::(Space|Spaces _)::tl ->
+       (* ordered list *)
+       parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+    |  _::_ ->
+        Text (" ")::r, previous, lexemes
+    | [] -> r, previous, []
+  )
+  else ( (* n>=4, blank line or indented code *)
+    match lexemes with
+    | [] | (Newline|Newlines _) :: _  -> r, [Space], lexemes
+    | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
+  )
+
+let spaces_not_at_beginning_of_line n r lexemes =
+  assert_well_formed lexemes;
+  assert (n > 0);
+  if n = 1 then
+    (Text " "::r), [Space], lexemes
+  else (
+    match lexemes with
+    | Newline :: tl ->
+       (* 2 or more spaces before a newline, eat the newline *)
+       Br::r, [Spaces(n-2)], tl
+    | Newlines k :: tl ->
+       (* 2 or more spaces before a newline, eat 1 newline *)
+       let newlines = if k = 0 then Newline else Newlines(k-1) in
+       Br::r, [Spaces(n-2)], newlines :: tl
+    | _ ->
+       assert (n>1);
+       (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
+  )
 
 
 let maybe_autoemail r p l =
@@ -1919,7 +1922,8 @@ let main_parse extensions default_lang lexemes =
        | None ->
           (* No [Hr], but maybe [Ul], [Ol], code,... *)
           let n = Omd_lexer.length sp in
-          let r, p, l = spaces main_loop default_lang n r previous tl in
+          let r, p, l = spaces_at_beginning_of_line
+                          main_loop default_lang n r previous tl in
           main_loop_rev r p l
        | Some tl ->
           main_loop_rev (Hr::r) [Newline] tl
@@ -1927,11 +1931,10 @@ let main_parse extensions default_lang lexemes =
 
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
-      (* too many cases to be handled here *)
-      let r, p, l =
-        spaces main_loop default_lang (Omd_lexer.length t) r previous tl
-      in
-      main_loop_rev r p l
+       (* too many cases to be handled here *)
+       let n = Omd_lexer.length t in
+       let r, p, l = spaces_not_at_beginning_of_line n r tl in
+       main_loop_rev r p l
 
     (* underscores *)
     | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
