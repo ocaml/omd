@@ -68,7 +68,9 @@ let test name md_string desired_md =
   test "header, #####" "##### Title" [Omd.H5 [Omd.Text "Title"]];
   test "header, ######" "###### Title" [Omd.H6 [Omd.Text "Title"]];
   test "header, too deep" "######## Title\n" [Omd.H6 [Omd.Text "Title"]];
-  test "header, #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
+  test "header, + space" "# Title  " [Omd.H1 [Omd.Text "Title"]];
+  test "header, # #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
+  test "header, # #" "# Title # " [Omd.H1 [Omd.Text "Title"]];
 
   (* Blockquotes
    ***********************************************************************)
