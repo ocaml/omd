@@ -6,7 +6,7 @@ all:
 	make cmis
 	make omd
 
-cmis:omd_utils.cmi omd_representation.cmi omd_backend.cmi omd_lexer.cmi omd_lexer_fs.cmi omd_parser.cmi omd.cmi omd_main.cmi 
+cmis:omd_utils.cmi omd_representation.cmi omd_backend.cmi omd_lexer.cmi omd_lexer_fs.cmi omd_parser.cmi omd.cmi omd_main.cmi
 
 omd:omd_utils.cmx omd_representation.cmx omd_backend.cmx omd_lexer.cmx omd_parser.cmx omd.cmx omd_main.cmx
 	$(OCAMLOPT) -o $@ $+

@@ -143,7 +143,7 @@ let text_of_md md =
     | Url (href,s,title) :: tl ->
         loop s;
         loop tl
-    | H1 md :: tl 
+    | H1 md :: tl
     | H2 md :: tl
     | H3 md :: tl
     | H4 md :: tl
@@ -634,9 +634,9 @@ let rec markdown_of_md md =
            Printf.bprintf b "![%s][%s]" name alt;
            loop list_indent tl
         | None -> loop list_indent (Text(fallback)::tl)
-      end 
+      end
     | Paragraph md :: tl ->
-      if is_in_list then 
+      if is_in_list then
         if fst_p_in_li then
           add_spaces (list_indent-2)
         else
@@ -844,6 +844,6 @@ let rec markdown_of_md md =
                else
                  bprintf b "[%s]: %s \"%s\"\n" name url title
             )
-            r#get_all                    
+            r#get_all
     end;
     Buffer.contents b

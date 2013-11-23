@@ -33,10 +33,10 @@ val notags : bool ref
 (** flag: output HTML but without HTML tags, so it's not really HTML anymore. *)
 
 val toc_depth : int ref
-(** flag: depth of table of contents *) 
+(** flag: depth of table of contents *)
 
 val toc_start : int list ref
-(** flag: first header level for table of contents *) 
+(** flag: first header level for table of contents *)
 
 val nl2br : bool ref
 (** flag: convert newlines to "<br/>" when output is HTML *)
