@@ -1,6 +1,7 @@
-val string_of_t : Omd_representation.tok -> string
+type token = Omd_representation.tok
+type t = token list
 
-val lex : string -> Omd_representation.tok list
+val lex : string -> t
 (** Translate a raw string into tokens for the parser.  To implement
     an extension to the lexer, one may process its result before
     giving it to the parser. To implement an extension to the
@@ -11,10 +12,27 @@ val lex : string -> Omd_representation.tok list
     in highest priority whereas functions in [extensions] are applied
     with lowest priority. *)
 
-val size : Omd_representation.tok -> int * int
-val make_space : int -> Omd_representation.tok
-val position :
-  'a ->
-  Omd_representation.tok list -> Omd_representation.tok list -> int * int
-val string_of_tl : Omd_representation.tok list -> string
-val destring_of_tl : ?limit:int -> Omd_representation.tok list -> string
+val string_of_tokens : t -> string
+(** [string_of_tokens t] return the string corresponding to the token
+    list [t]. *)
+
+val length : token -> int
+(** [length t] number of characters of the string represented as [t]
+    (i.e. [String.length(string_of_token t)]). *)
+
+val string_of_token : token -> string
+(** [string_of_token tk] return the string corresponding to the token
+    [tk]. *)
+
+val make_space : int -> token
+
+val split_first : token -> token * token
+(** [split_first(Xs n)] returns [(X, X(n-1))] where [X] is a token
+    carrying an int count.
+
+    @raise Invalid_argument is passed a single token. *)
+
+
+val destring_of_tokens : ?limit:int -> t -> string
+(** Converts the tokens to a simple string representation useful for
+    debugging.  *)

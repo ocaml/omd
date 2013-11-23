@@ -25,7 +25,10 @@
 
 open Omd_representation
 
-let string_of_t = function
+type token = Omd_representation.tok
+type t = Omd_representation.tok list
+
+let string_of_token = function
   | Tag _ -> if Omd_utils.debug then "TAG" else ""
   | Ampersand -> "&"
   | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
@@ -100,6 +103,81 @@ let string_of_t = function
   | Underscores n -> assert (n >= 0); String.make (2+n) '_'
   | Word s -> s
 
+
+let size_and_newlines = function
+  | Tag _ -> (0, 0)
+  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
+  | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
+  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan
+  | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
+  | Question | Quote | Semicolon | Slash | Space | Star | Tab
+  | Tilde | Underscore -> (1, 0)
+  | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
+  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x
+  | Dollars x | Dots x
+  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x
+  | Lessthans x
+  | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
+  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x
+  | Tabs x
+  | Tildes x | Underscores x -> (2+x, 0)
+  | Newline -> (0, 1)
+  | Newlines x -> (0, 2+x)
+  | Number s | Word s -> (String.length s, 0)
+
+let length t =
+  let c, nl = size_and_newlines t in
+  c + nl
+
+let split_first = function
+  | Ampersands n -> Ampersand, (if n > 0 then Ampersands(n-1) else Ampersand)
+  | Ats n -> At, (if n > 0 then Ats(n-1) else At)
+  | Backquotes n -> Backquote, (if n > 0 then Backquotes(n-1) else Backquote)
+  | Backslashs n -> Backslash, (if n > 0 then Backslashs(n-1) else Backslash)
+  | Bars n -> Bar, (if n > 0 then Bars(n-1) else Bar)
+  | Carets n -> Caret, (if n > 0 then Carets(n-1) else Caret)
+  | Cbraces n -> Cbrace, (if n > 0 then Cbraces(n-1) else Cbrace)
+  | Colons n -> Colon, (if n > 0 then Colons(n-1) else Colon)
+  | Commas n -> Comma, (if n > 0 then Commas(n-1) else Comma)
+  | Cparenthesiss n -> Cparenthesis, (if n > 0 then Cparenthesiss(n-1)
+                                     else Cparenthesis)
+  | Cbrackets n -> Cbracket, (if n > 0 then Cbrackets(n-1) else Cbracket)
+  | Dollars n -> Dollar, (if n > 0 then Dollars(n-1) else Dollar)
+  | Dots n -> Dot, (if n > 0 then Dots(n-1) else Dot)
+  | Doublequotes n -> Doublequote, (if n > 0 then Doublequotes(n-1)
+                                   else Doublequote)
+  | Exclamations n -> Exclamation, (if n > 0 then Exclamations(n-1)
+                                   else Exclamation)
+  | Equals n -> Equal, (if n > 0 then Equals(n-1) else Equal)
+  | Greaterthans n -> Greaterthan, (if n > 0 then Greaterthans(n-1)
+                                   else Greaterthan)
+  | Hashs n -> Hash, (if n > 0 then Hashs(n-1) else Hash)
+  | Lessthans n -> Lessthan, (if n > 0 then Lessthans(n-1) else Lessthan)
+  | Minuss n -> Minus, (if n > 0 then Minuss(n-1) else Minus)
+  | Newlines n -> Newline, (if n > 0 then Newlines(n-1) else Newline)
+  | Obraces n -> Obrace, (if n > 0 then Obraces(n-1) else Obrace)
+  | Oparenthesiss n -> Oparenthesis, (if n > 0 then Oparenthesiss(n-1)
+                                     else Oparenthesis)
+  | Obrackets n -> Obracket, (if n > 0 then Obrackets(n-1) else Obracket)
+  | Percents n -> Percent, (if n > 0 then Percents(n-1) else Percent)
+  | Pluss n -> Plus, (if n > 0 then Pluss(n-1) else Plus)
+  | Questions n -> Question, (if n > 0 then Questions(n-1) else Question)
+  | Quotes n -> Quote, (if n > 0 then Quotes(n-1) else Quote)
+  | Semicolons n -> Semicolon, (if n > 0 then Semicolons(n-1) else Semicolon)
+  | Slashs n -> Slash, (if n > 0 then Slashs(n-1) else Slash)
+  | Spaces n -> Space, (if n > 0 then Spaces(n-1) else Space)
+  | Stars n -> Star, (if n > 0 then Stars(n-1) else Star)
+  | Tabs n -> Tab, (if n > 0 then Tabs(n-1) else Tab)
+  | Tildes n -> Tilde, (if n > 0 then Tildes(n-1) else Tilde)
+  | Underscores n -> Underscore, (if n > 0 then Underscores(n-1)
+                                 else Underscore)
+  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace | Colon
+  | Comma | Cparenthesis | Cbracket | Dollar | Dot | Doublequote
+  | Exclamation | Equal | Greaterthan | Hash | Lessthan | Minus
+  | Newline | Number _ | Obrace | Oparenthesis | Obracket | Percent
+  | Plus | Question | Quote | Semicolon | Slash | Space | Star | Tab
+  | Tilde | Underscore | Tag _ | Word _ ->
+     invalid_arg "Omd_lexer.split_first"
 
 let lex s =
   let result = ref [] in
@@ -226,53 +304,11 @@ let lex s =
   done;
   List.rev !result
 
-let size = function
-  | Tag _ -> (0, 0)
-  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
-  | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
-  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan
-  | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
-  | Question | Quote | Semicolon | Slash | Space | Star | Tab
-  | Tilde | Underscore -> (1, 0)
-  | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x
-  | Dollars x | Dots x
-  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x
-  | Lessthans x
-  | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
-  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x
-  | Tabs x
-  | Tildes x | Underscores x -> (2+x, 0)
-  | Newline -> (0, 1)
-  | Newlines x -> (0, 2+x)
-  | Number s | Word s -> (String.length s, 0)
-
 let make_space = function
-  | 0 -> raise (Invalid_argument "Md_lexer.make_space")
+  | 0 -> invalid_arg "Md_lexer.make_space"
   | 1 -> Space
-  | n -> if n < 0 then raise (Invalid_argument "Md_lexer.make_space") else
-        Spaces (n-2)
+  | n -> if n < 0 then invalid_arg "Md_lexer.make_space" else Spaces (n-2)
 
-let position orig spot =
-  let ( ++ ) (x,y) (a,b) =
-    if b = 0 then
-      (x+a, y)
-    else
-      (a, y+b)
-  in
-  let rec loop r = function
-    | (hd :: tl) as l ->
-        if l == spot then
-          r
-        else
-          loop (r ++ size hd) tl
-    | [] -> r
-  in
-    loop (0,0)
-
-let _ =
-  lex "42 Bonjour !!\n"
-;;
 
 (*
 (** [string_of_tl l] returns the string representation of l.
@@ -293,27 +329,21 @@ let string_of_tl, estring_of_tl =
   in g false, g true
 *)
 
-let string_of_tl tl =
-  let b = Buffer.create 42 in
-  let rec loop : tok list -> unit = function
-    | e::tl ->
-        Buffer.add_string b (string_of_t e);
-        loop tl
-    | [] ->
-        ()
-  in
-    Buffer.contents (loop tl; b)
+let string_of_tokens tl =
+  let b = Buffer.create 128 in
+  List.iter (fun e -> Buffer.add_string b (string_of_token e)) tl;
+  Buffer.contents b
 
 
-let destring_of_tl ?(limit=max_int) tl =
-  let b = Buffer.create 42 in
+let destring_of_tokens ?(limit=max_int) tl =
+  let b = Buffer.create 1024 in
   let rec loop (i:int) (tlist:tok list) : unit = match tlist with
     | e::tl ->
-        if limit = i then 
+        if limit = i then
           loop i []
         else
           begin
-            Buffer.add_string b (String.escaped (string_of_t e));
+            Buffer.add_string b (String.escaped (string_of_token e));
             Buffer.add_string b "::";
             loop (succ i) tl
           end

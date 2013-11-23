@@ -4,6 +4,11 @@
 (* Licence : ISC                                                       *)
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
+
+open Printf
+open Omd_representation
+open Omd_utils
+
 type r = Omd_representation.t
 (** accumulator (beware, reversed tokens) *)
 
@@ -37,12 +42,6 @@ let blind_html = ref false
 
 (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
 let strict_html = ref false
-
-open Printf
-open Omd_backend
-open Omd_lexer
-open Omd_utils
-open Omd_representation
 
 (** set of known HTML codes *)
 let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
@@ -296,10 +295,10 @@ let assert_well_formed (l:tok list) : unit =
 (** Generate fallback for references. *)
 let extract_fallback remains l =
   let rec loop accu = function
-    | [] -> string_of_tl (List.rev accu)
+    | [] -> Omd_lexer.string_of_tokens (List.rev accu)
     | e::tl as r ->
       if r == remains then
-        string_of_tl (List.rev accu)
+        Omd_lexer.string_of_tokens (List.rev accu)
       else
         loop (e::accu) tl
   in loop [] l
@@ -387,7 +386,7 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
             | (Space|Spaces _ as x)::(Star|Stars _ as s)::tl ->
                 Continue_with([s;x],tl)
             | (Star|Stars _ as s)::tl ->
-                if String.length(string_of_t s) = n then
+                if Omd_lexer.length s = n then
                   Split([],tl)
                 else
                   Continue
@@ -431,7 +430,7 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
             | (Space|Spaces _ as x)::(Underscore|Underscores _ as s)::tl ->
                 Continue_with([s;x],tl)
             | (Underscore|Underscores _ as s)::tl ->
-                if String.length(string_of_t s) = n then
+                if Omd_lexer.length s = n then
                   Split([],tl)
                 else
                   Continue
@@ -478,7 +477,7 @@ let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
             | (Underscore|Underscores _ as s)::(Word _|Number _ as w):: tl ->
                 Continue_with([w;s],tl)
             | (Underscore|Underscores _ as s)::tl ->
-                if String.length(string_of_t s) = n then
+                if Omd_lexer.length s = n then
                   Split([],tl)
                 else
                   Continue
@@ -516,7 +515,7 @@ let setext_title l =
        setext-style title. *)
     if debug then
       eprintf "detect_balanced_bqs n=%d r=%S l=%S\n%!"
-        n (string_of_tl r) (string_of_tl l);
+        n (Omd_lexer.string_of_tokens r) (Omd_lexer.string_of_tokens l);
     match l with
       | [] ->
           None
@@ -583,9 +582,11 @@ let setext_title l =
   let result = loop [] l in
     if debug then
       eprintf "setext_title l=%S result=%S,%S\n%!"
-        (string_of_tl l)
-        (match result with None -> "" | Some (x,tl) -> string_of_tl x)
-        (match result with None -> "" | Some (x,tl) -> string_of_tl tl);
+        (Omd_lexer.string_of_tokens l)
+        (match result with None -> ""
+                         | Some (x,tl) -> Omd_lexer.string_of_tokens x)
+        (match result with None -> ""
+                         | Some (x,tl) -> Omd_lexer.string_of_tokens tl);
     result
 
 
@@ -601,9 +602,10 @@ let tag__maybe_h1 main_loop =
                       Some((title::r), [Newline], tl)
               end
           | _ ->
-              if debug then
-                Printf.eprintf "Omd_parser.tag__maybe_h1 is wrongly used (p=%S)!\n" (string_of_tl p);
-              None
+             if debug then
+               eprintf "Omd_parser.tag__maybe_h1 is wrongly used (p=%S)!\n"
+                       (Omd_lexer.string_of_tokens p);
+             None
      )
 
 let tag__maybe_h2 main_loop =
@@ -618,9 +620,10 @@ let tag__maybe_h2 main_loop =
                       Some((title::r), [Newline], tl)
               end
           | _ ->
-              if debug then
-                Printf.eprintf "Omd_parser.tag__maybe_h2 is wrongly used (p=%S)!\n" (string_of_tl p);
-              None
+             if debug then
+               eprintf "Omd_parser.tag__maybe_h2 is wrongly used (p=%S)!\n"
+                       (Omd_lexer.string_of_tokens p);
+             None
      )
 
 let tag__md md = (* [md] should be in reverse *)
@@ -1065,12 +1068,19 @@ let read_title main_loop n r _previous lexemes =
       | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
       | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
       | ((Newline|Newlines _) :: _ as l)
-      | ([] as l) ->
+      | ([] as l)
+      | (Space|Spaces _) :: (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
+      | (Space|Spaces _) :: (Hash|Hashs _) :: (Space|Spaces _)
+        :: ((Newline|Newlines _)::_ as l)
+      | (Space|Spaces _) :: ((Newline|Newlines _) :: _ as l)
+      | (Space|Spaces _) :: ([] as l) ->
          main_loop [] [] (List.rev accu), l
-      | [Hash|Hashs _] ->
+      | [Hash|Hashs _]
+      | [(Space|Spaces _); Hash|Hashs _]
+      | [(Space|Spaces _); (Hash|Hashs _); (Space|Spaces _)] ->
          main_loop [] [] (List.rev accu), []
       | (Hash|Hashs _ as x) :: tl ->
-        loop (Word(string_of_t x)::accu) tl
+        loop (Word(Omd_lexer.string_of_token x)::accu) tl
       | x::tl ->
         loop (x::accu) tl
     in
@@ -1130,7 +1140,8 @@ let emailstyle_quoting main_loop r _p lexemes =
   | block, tl ->
     if debug then
       eprintf "##############################\n%s\n\
-                  ##############################\n%!" (string_of_tl block);
+               ##############################\n%!"
+              (Omd_lexer.string_of_tokens block);
     (Blockquote(main_loop [] [] block)::r), [Newline], tl
 
 (* maybe a reference *)
@@ -1157,11 +1168,12 @@ let maybe_reference rc r p l =
       match read_until_cbracket remains with
       | [], remains ->
         let fallback = extract_fallback remains (Obracket::l) in
-        let id = string_of_tl text in (* implicit anchor *)
+        let id = Omd_lexer.string_of_tokens text in (* implicit anchor *)
         Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
       | id, remains ->
         let fallback = extract_fallback remains (Obracket::l) in
-        Some(((Ref(rc, string_of_tl id, string_of_tl text, fallback))::r),
+        Some(((Ref(rc, Omd_lexer.string_of_tokens id,
+                   Omd_lexer.string_of_tokens text, fallback))::r),
              [Cbracket], remains)
   in
   let rec maybe_nonregular_ref l =
@@ -1171,7 +1183,7 @@ let maybe_reference rc r p l =
         with Premature_ending -> false) then
       raise Premature_ending; (* <-- ill-placed open bracket *)
     let fallback = extract_fallback remains (Obracket::l) in
-    let id = string_of_tl text in (* implicit anchor *)
+    let id = Omd_lexer.string_of_tokens text in (* implicit anchor *)
     Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
   in
   let rec maybe_def l =
@@ -1205,14 +1217,15 @@ let maybe_reference rc r p l =
                     | l -> [], l
                 in
                 let url =
-                  let url = string_of_tl url in
+                  let url = Omd_lexer.string_of_tokens url in
                     if String.length url > 2 && url.[0] = '<'
                       && url.[String.length url - 1] = '>' then
                       String.sub url 1 (String.length url - 2)
                     else
                       url
                 in
-                  rc#add_ref (string_of_tl id) (string_of_tl title) url;
+                  rc#add_ref (Omd_lexer.string_of_tokens id)
+                             (Omd_lexer.string_of_tokens title) url;
                   Some(r, [Newline], remains)
         end
     | _ -> raise Premature_ending
@@ -1253,7 +1266,9 @@ let maybe_link main_loop r p l =
     let url = match List.rev url with
       | (Newline|Space|Spaces _)::tl -> List.rev tl
       | _ -> url in
-    Some(Url(string_of_tl url,name,string_of_tl title)::r, [Cparenthesis],tl)
+    let url = Omd_lexer.string_of_tokens url in
+    let title = Omd_lexer.string_of_tokens title in
+    Some(Url(url, name, title) :: r, [Cparenthesis],tl)
   in
   let read_name l =
     if debug then eprintf "# maybe_link>read_name\n";
@@ -1305,18 +1320,22 @@ let bcode default_lang r p l =
       match cb with
       | Word lang :: (Space|Spaces _) :: Newline :: tl
       | Word lang :: Newline :: tl ->
-          Some(Code_block(lang, string_of_tl tl) :: r, [Backquote], l)
+         let code = Omd_lexer.string_of_tokens tl in
+         Some(Code_block(lang, code) :: r, [Backquote], l)
       | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
       | Word lang :: Newlines 0 :: tl ->
-         Some(Code_block(lang, string_of_tl(Newline::tl)) :: r, [Backquote], l)
+         let code = Omd_lexer.string_of_tokens(Newline::tl) in
+         Some(Code_block(lang, code) :: r, [Backquote], l)
       | Word lang :: (Space|Spaces _) :: Newlines n :: tl
       | Word lang :: Newlines n :: tl ->
-        Some(Code_block(lang, string_of_tl(Newlines(n-1)::tl)) :: r,
-             [Backquote], l)
+         let code = Omd_lexer.string_of_tokens (Newlines(n-1)::tl) in
+         Some(Code_block(lang, code) :: r, [Backquote], l)
       | Newline :: tl ->
-        Some(Code_block(default_lang, string_of_tl tl) :: r, [Backquote], l)
+         let code = Omd_lexer.string_of_tokens  tl in
+        Some(Code_block(default_lang, code) :: r, [Backquote], l)
       | _ ->
-        Some(Code_block(default_lang, string_of_tl cb) :: r, [Backquote], l)
+         let code = Omd_lexer.string_of_tokens cb in
+         Some(Code_block(default_lang, code) :: r, [Backquote], l)
     else
       let clean_bcode s =
         let rec loop1 i =
@@ -1337,8 +1356,8 @@ let bcode default_lang r p l =
         | 0, n when n = String.length s - 1 -> s
         | i, n -> String.sub s i (n-i)
       in
-      Some(Code(default_lang, clean_bcode(string_of_tl cb)) :: r,
-           [Backquote], l)
+      let code = Omd_lexer.string_of_tokens cb in
+      Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
 let icode default_lang r p l =
   assert_well_formed l;
@@ -1355,17 +1374,17 @@ let icode default_lang r p l =
     | (Newline|Newlines _ as p), Spaces(n)::tl ->
       assert(n>0);
       (* At least 4 spaces, it's still code. *)
-      Buffer.add_string accu (string_of_t p);
+      Buffer.add_string accu (Omd_lexer.string_of_token p);
       loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
     | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
       Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
         (* -> Return what's been found as code because it's no more code. *)
     | p, e::tl ->
-      Buffer.add_string accu (string_of_t p);
+      Buffer.add_string accu (Omd_lexer.string_of_token p);
       (* html entities are to be converted later! *)
       loop (e, tl)
     | p, [] ->
-      Buffer.add_string accu (string_of_t p);
+      Buffer.add_string accu (Omd_lexer.string_of_token p);
       Code_block(default_lang, Buffer.contents accu)::r, [p], []
   in
     match l with
@@ -1383,11 +1402,12 @@ let parse_list main_loop r p l =
     eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
       "" (* (Omd_backend.sexpr_of_md (List.rev r)) *)
       "" (* (destring_of_tl p) *)
-      (destring_of_tl ~limit:40 l);
+      (Omd_lexer.destring_of_tokens ~limit:40 l);
   end;
   let module UO = struct type ordered = O | U end in
   let open UO in
-  if debug then eprintf "parse_list: l=(%s)\n%!" (destring_of_tl l);
+  if debug then
+    eprintf "parse_list: l=(%s)\n%!" (Omd_lexer.destring_of_tokens l);
   let end_of_item (indent:int) l : tok split_action  = match l with
     | [] ->
        Split([],[])
@@ -1484,7 +1504,8 @@ let parse_list main_loop r p l =
       failwith "make_up called with []" (* assert false *)
   in
   let rec list_items ~p indents items l =
-    if debug then eprintf "list_items: p=%b l=(%s)\n%!" p (destring_of_tl l);
+    if debug then
+      eprintf "list_items: p=%b l=(%s)\n%!" p (Omd_lexer.destring_of_tokens l);
     match l with
     (* no more list items *)
     | [] ->
@@ -1501,7 +1522,8 @@ let parse_list main_loop r p l =
              p ||
              List.exists (function Newlines _ -> true | _ -> false) new_item
            in
-           if debug then eprintf "new_item=%S\n%!" (destring_of_tl new_item);
+           if debug then
+             eprintf "new_item=%S\n%!" (Omd_lexer.destring_of_tokens new_item);
            match indents with
            | [] ->
              assert(items = []);
@@ -1547,11 +1569,13 @@ let parse_list main_loop r p l =
            in
            match indents with
            | [] ->
-             if debug then eprintf "spaces[] l=(%S)\n%!" (string_of_tl l);
+             if debug then
+               eprintf "spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
              list_items ~p:p [n+2] ((U,[n+2],to_t new_item)::items) rest
            | i::_ ->
-             if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!" i n (string_of_tl l);
+             if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
+                                   i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
                list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
              else if i < n + 2 then
@@ -1622,11 +1646,13 @@ let parse_list main_loop r p l =
            in
            match indents with
            | [] ->
-             if debug then eprintf "spaces[] l=(%S)\n%!" (string_of_tl l);
+             if debug then eprintf "spaces[] l=(%S)\n%!"
+                                   (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
              list_items ~p:p [n+2] ((O,[n+2],to_t new_item)::items) rest
            | i::_ ->
-             if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!" i n (string_of_tl l);
+             if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
+                                   i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
                list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
              else if i < n + 2 then
@@ -1657,7 +1683,8 @@ let parse_list main_loop r p l =
             | (U,indent::_,item)::tl -> sprintf "(U,%d,%s)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
             | _ -> "(weird)"
           in
-          eprintf "NALI parse_list: l=(%S) items=%s\n%!" (string_of_tl l) (string_of_items items)
+          eprintf "NALI parse_list: l=(%S) items=%s\n%!"
+                  (Omd_lexer.string_of_tokens l) (string_of_items items)
         end;
     (* not a list item *)
       make_up p items, l
@@ -1675,17 +1702,17 @@ let spaces main_loop default_lang n r p l =
     | (1|2|3), ([]|[(Newline|Newlines _)]),
       (Star|Minus|Plus)::(Space|Spaces _)::tl ->
           (* unordered list *)
-      parse_list main_loop r [] (make_space n::l)
+      parse_list main_loop r [] (Omd_lexer.make_space n::l)
     | (1|2|3), ([]|[(Newline|Newlines _)]),
       (Number _)::Dot::(Space|Spaces _)::tl ->
           (* ordered list *)
-      parse_list main_loop r [] (make_space n::l)
+      parse_list main_loop r [] (Omd_lexer.make_space n::l)
     | (1|2|3), ([]|[(Newlines _)]), t::tl ->
       Text (" ")::r, p, l
     | (1|2|3), ([]|[(Newlines _)]), [] ->
       r, p, []
     | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-      (icode default_lang r previous (make_space n :: l))
+      (icode default_lang r previous (Omd_lexer.make_space n :: l))
     | 1, _, _ ->
       (Text " "::r), [Space], l
     | n, _, (Newline|Newlines _)::_ -> (* 2 or more spaces before a newline *)
@@ -1722,7 +1749,8 @@ let maybe_autoemail r p l =
         with
         | None -> None
         | Some(domain, tl) ->
-          let email = string_of_tl left ^ "@" ^ string_of_tl domain in
+          let email = Omd_lexer.string_of_tokens left
+                      ^ "@" ^ Omd_lexer.string_of_tokens domain in
           Some(Url("mailto:"^email,[Text email],"")::r,[Greaterthan],tl)
     end
   | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
@@ -1743,13 +1771,13 @@ let main_parse extensions default_lang lexemes =
   assert_well_formed lexemes;
   let rc = new Omd_representation.ref_container in
 
-  let rec main_loop_rev (r:t) (previous:Omd_representation.tok list)
-      (lexemes:Omd_representation.tok list) =
+  let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     if debug then
       eprintf "main_loop_rev r=%s p=(%s) l=(%s)\n%!"
         (Omd_backend.sexpr_of_md (List.rev r))
-        (destring_of_tl previous) (destring_of_tl lexemes);
+        (Omd_lexer.destring_of_tokens previous)
+        (Omd_lexer.destring_of_tokens lexemes);
     match previous, lexemes with
     (* no more to process *)
     | _, [] ->
@@ -1777,14 +1805,14 @@ let main_parse extensions default_lang lexemes =
         match fsplit ~f:f lexemes with
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
-          | Some(r, p, l) -> main_loop_rev r p l
+          | None ->
+             main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+          | Some(r, p, l) ->
+             main_loop_rev r p l
           end
         | Some (comments, new_tl) ->
-          main_loop_rev
-            (Html_comment(string_of_tl comments)::r)
-            [Greaterthan]
-            new_tl
+           let r = Html_comment(Omd_lexer.string_of_tokens comments) :: r in
+           main_loop_rev r [Greaterthan] new_tl
       end
 
     (* email-style quoting / blockquote *)
@@ -1803,7 +1831,7 @@ let main_parse extensions default_lang lexemes =
       begin
         let new_r, p, rest =
           let foo, rest =
-            match unindent (fst(size s)) (Newline::lexemes) with
+            match unindent (Omd_lexer.length s) (Newline::lexemes) with
               | (Newline|Newlines _)::foo, rest -> foo, rest
               | res -> res
           in
@@ -1829,8 +1857,10 @@ let main_parse extensions default_lang lexemes =
             main_loop_rev md new_p new_l
           | _ -> (* not a list *)
             begin match maybe_extension extensions r previous lexemes with
-            | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
-            | Some(r, p, l) -> main_loop_rev r p l
+            | None ->
+               main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+            | Some(r, p, l) ->
+               main_loop_rev r p l
             end
           end
       | Some l -> (* hr *)
@@ -1841,7 +1871,7 @@ let main_parse extensions default_lang lexemes =
       | None -> (* no hr, and it's not a list either
                    because it's not followed by spaces *)
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       | Some l -> (* hr *)
@@ -1858,7 +1888,7 @@ let main_parse extensions default_lang lexemes =
         main_loop_rev r p l
       else
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
     | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
@@ -1867,7 +1897,7 @@ let main_parse extensions default_lang lexemes =
       main_loop_rev r p l
     | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
       begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+      | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
       | Some(r, p, l) -> main_loop_rev r p l
       end
 
@@ -1883,7 +1913,7 @@ let main_parse extensions default_lang lexemes =
         begin match hr_m tl with
         | None ->
           let r, p, l =
-            spaces main_loop default_lang (fst(size xxxt)) r previous tl
+            spaces main_loop default_lang (Omd_lexer.length xxxt) r previous tl
           in
           main_loop_rev r p l
         | Some l ->
@@ -1897,7 +1927,7 @@ let main_parse extensions default_lang lexemes =
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let r, p, l =
-        spaces main_loop default_lang (fst(size t)) r previous tl
+        spaces main_loop default_lang (Omd_lexer.length t) r previous tl
       in
       main_loop_rev r p l
 
@@ -1906,7 +1936,7 @@ let main_parse extensions default_lang lexemes =
       (match uemph_or_bold 1 tl with
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       | Some(x, new_tl) ->
@@ -1917,7 +1947,7 @@ let main_parse extensions default_lang lexemes =
       (match uemph_or_bold (n+2) tl with
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       | Some(x, new_tl) ->
@@ -1969,7 +1999,7 @@ let main_parse extensions default_lang lexemes =
           main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
           | Some(r, p, l) -> main_loop_rev r p l
           end
         )
@@ -1980,7 +2010,7 @@ let main_parse extensions default_lang lexemes =
         main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       )
@@ -1994,7 +2024,7 @@ let main_parse extensions default_lang lexemes =
           main_loop_rev (Emph([Bold(main_loop [] [t] x)]) :: r) [t] new_tl
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       )
@@ -2121,9 +2151,9 @@ let main_parse extensions default_lang lexemes =
           let url =
             (match t with Lessthans 0 -> "<"
             | Lessthans n -> String.make (n-2) '<' | _ -> "")
-            ^ (string_of_t w) ^ "://"
+            ^ (Omd_lexer.string_of_token w) ^ "://"
             ^ (if n = 0 then "" else String.make (n-2) '/')
-            ^ string_of_tl (List.rev accu)
+            ^ Omd_lexer.string_of_tokens (List.rev accu)
           in Some(url, tl)
         | x::tl ->
           read_url (x::accu) tl
@@ -2135,7 +2165,7 @@ let main_parse extensions default_lang lexemes =
         main_loop_rev (Url(url,[Text url],"")::r) [] new_tl
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       end
@@ -2215,7 +2245,7 @@ let main_parse extensions default_lang lexemes =
       | Some(r, p, l) -> main_loop_rev r p l
       | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       end
@@ -2244,7 +2274,7 @@ let main_parse extensions default_lang lexemes =
         main_loop_rev r [Word ""] lexemes
       else if not (!blind_html || StringSet.mem tagname htmltags_set) then
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -2278,7 +2308,8 @@ let main_parse extensions default_lang lexemes =
           loop [x;Word(tagname);Lessthan] 0 tl
         in
         let html, tl = read_html() in
-        main_loop_rev (Html_block(string_of_tl html)::r) [Greaterthan] tl
+        let html = Omd_lexer.string_of_tokens html in
+        main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
     (* inline html *)
     | _, ((Lessthan as t)
@@ -2289,7 +2320,7 @@ let main_parse extensions default_lang lexemes =
         || not(!blind_html || StringSet.mem tagname htmltags_set)
       then
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -2301,16 +2332,14 @@ let main_parse extensions default_lang lexemes =
               begin
                 let b, tl = read_until_gt tl in
                 match List.rev b with
-                | Slash::_ -> 
-                  loop
-                    (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
-                    n
-                    tl
-                | _ -> 
-                  loop
-                    (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
-                    (if tn = tagname then n+1 else n)
-                    tl
+                | Slash::_ ->
+                   let tv = Omd_lexer.string_of_tokens b in
+                   loop (tag(sprintf "<%s%s>" tn tv) :: accu) n tl
+                | _ ->
+                   let tv = Omd_lexer.string_of_tokens b in
+                   loop (tag(sprintf "<%s%s>" tn tv) :: accu)
+                        (if tn = tagname then n+1 else n)
+                        tl
               end
             | Lessthan::Slash::Word tn::Greaterthans 0::tl ->
               loop accu n
@@ -2327,11 +2356,11 @@ let main_parse extensions default_lang lexemes =
               else
                 loop (tag(sprintf "</%s>" tn)::accu) n tl
             | Lessthan::Word tn::tl -> (* <word... *)
-              let b, tl = read_until_gt tl in
-              loop
-                (tag(sprintf "<%s%s>" tn (string_of_tl b)) :: accu)
-                (if tn = tagname then n+1 else n)
-                tl
+               let b, tl = read_until_gt tl in
+               let tv = Omd_lexer.string_of_tokens b in
+               loop (tag(sprintf "<%s%s>" tn tv) :: accu)
+                    (if tn = tagname then n+1 else n)
+                    tl
             | x::tl ->
               loop (x::accu) n tl
             | [] ->
@@ -2341,8 +2370,8 @@ let main_parse extensions default_lang lexemes =
           if (try ignore(read_until_lt b); false
             with Premature_ending -> true) then
             (* there must not be any '<' in b *)
-            loop [tag(Printf.sprintf "<%s%s>" tagname
-                        (string_of_tl b))] 0 tl
+            let tv = Omd_lexer.string_of_tokens b in
+            loop [tag(Printf.sprintf "<%s%s>" tagname tv)] 0 tl
           else
             raise Premature_ending
         in
@@ -2350,7 +2379,8 @@ let main_parse extensions default_lang lexemes =
         | Some(html, tl) ->
           main_loop_rev (main_loop_rev [] [] html @ r) [Greaterthan] tl
         | None ->
-          main_loop_rev (Text(string_of_t t^tagname)::r) [w] html_stuff
+           let text = Omd_lexer.string_of_token t in
+           main_loop_rev (Text(text ^ tagname)::r) [w] html_stuff
         )
     (* / end of inline HTML. *)
 
@@ -2360,7 +2390,7 @@ let main_parse extensions default_lang lexemes =
         | Some(r,p,l) -> main_loop_rev r p l
         | None ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
         end
       end
@@ -2380,7 +2410,7 @@ let main_parse extensions default_lang lexemes =
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
           | Some(r, p, l) -> main_loop_rev r p l
           end
       end
@@ -2405,16 +2435,17 @@ let main_parse extensions default_lang lexemes =
            | Some(url, tls) ->
              let title, should_be_empty_list =
                read_until_dq (snd (read_until_dq tls)) in
-             main_loop_rev (Img("", string_of_tl url, string_of_tl title) :: r)
-               [Cparenthesis] tl
+             let url = Omd_lexer.string_of_tokens url in
+             let title = Omd_lexer.string_of_tokens title in
+             main_loop_rev (Img("", url, title) :: r) [Cparenthesis] tl
            | None ->
-             main_loop_rev (Img("", string_of_tl b, "") :: r)
-               [Cparenthesis] tl
+              let url = Omd_lexer.string_of_tokens b in
+              main_loop_rev (Img("", url, "") :: r) [Cparenthesis] tl
          end
        with
        | NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-         | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+         | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
          | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -2427,11 +2458,11 @@ let main_parse extensions default_lang lexemes =
       (try
          let id, tl = read_until_cbracket ~no_nl:true tl in
          let fallback = extract_fallback tl lexemes in
-         let r = Img_ref(rc, string_of_tl id, "", fallback) :: r in
-         main_loop_rev r [Cbracket] tl
+         let id = Omd_lexer.string_of_tokens id in
+         main_loop_rev (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
        with NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-         | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+         | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
          | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -2445,7 +2476,7 @@ let main_parse extensions default_lang lexemes =
          match read_until_cbracket tl with
          | alt, Oparenthesis::ntl ->
            (try
-              let alt = string_of_tl alt in
+              let alt = Omd_lexer.string_of_tokens alt in
               let path_title, rest = read_until_cparenth
                 ~no_nl:false ntl in
               let path, title = try read_until_space
@@ -2462,16 +2493,18 @@ let main_parse extensions default_lang lexemes =
                 | Exclamations 0 -> Text "!" :: r
                 | Exclamations n -> Text(String.make (n+1) '!') :: r
                 | _ -> r in
-              let r = Img(alt, string_of_tl path, string_of_tl title)
-                :: r in
-              main_loop_rev r [Cparenthesis] rest
+              let path = Omd_lexer.string_of_tokens path in
+              let title = Omd_lexer.string_of_tokens title in
+              main_loop_rev (Img(alt, path, title) :: r) [Cparenthesis] rest
             with
             | NL_exception
             (* if NL_exception was raised, then fall back to "text" *)
             | Premature_ending ->
               begin match maybe_extension extensions r previous lexemes with
-              | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
-              | Some(r, p, l) -> main_loop_rev r p l
+              | None ->
+                 main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+              | Some(r, p, l) ->
+                 main_loop_rev r p l
               end
            )
          | alt, Obracket::Word(id)::Cbracket::ntl
@@ -2480,7 +2513,8 @@ let main_parse extensions default_lang lexemes =
            ::Cbracket::ntl
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
            let fallback = extract_fallback ntl lexemes in
-           main_loop_rev (Img_ref(rc, id, string_of_tl alt, fallback)::r) [Cbracket] ntl
+           let alt = Omd_lexer.string_of_tokens alt in
+           main_loop_rev (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                               as ntl) ->
            (try
@@ -2488,27 +2522,29 @@ let main_parse extensions default_lang lexemes =
               | [], rest -> raise Premature_ending
               | id, rest ->
                 let fallback = extract_fallback rest lexemes in
-                main_loop_rev
-                  (Img_ref(rc, string_of_tl id, string_of_tl alt, fallback)::r)
-                  [Cbracket]
-                  rest
+                let id = Omd_lexer.string_of_tokens id in
+                let alt = Omd_lexer.string_of_tokens alt in
+                main_loop_rev (Img_ref(rc, id, alt, fallback)::r)
+                              [Cbracket]
+                              rest
             with
             | Premature_ending
             | NL_exception ->
               begin match maybe_extension extensions r previous lexemes with
-              | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+              | None ->
+                 main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
               | Some(r, p, l) -> main_loop_rev r p l
               end
            )
          | _ ->
            begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
            end
        with
        | Premature_ending ->
          begin match maybe_extension extensions r previous lexemes with
-         | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+         | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
          | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -2520,303 +2556,35 @@ let main_parse extensions default_lang lexemes =
           |Greaterthan as t)::tl
       ->
       begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+      | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
       | Some(r, p, l) -> main_loop_rev r p l
       end
     | _, (Number _  as t):: tl ->
       begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+      | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
       | Some(r, p, l) -> main_loop_rev r p l
       end
 
-    (* generated code: *)
-    | _, Ats(0) :: tl ->
+    | _, (Ats _ | Bars _ | Carets _ | Cbraces _ | Cbrackets _ | Colons _
+          | Commas _ | Cparenthesiss _ | Dollars _ | Dots _ | Doublequotes _
+          | Equals _ | Exclamations _ | Greaterthans _ | Lessthans _
+          | Minuss _ | Obraces _ | Obrackets _ | Oparenthesiss _
+          | Percents _ | Pluss _ | Questions _ | Quotes _ | Semicolons _
+          | Slashs _ | Stars _ | Tabs _ | Tildes _ | Underscores _ as tk)
+         :: tl ->
       begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t At)::r) [At] (At::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
+      | None ->
+         let tk0, tks = Omd_lexer.split_first tk in
+         let text = Omd_lexer.string_of_token tk0 in
+         main_loop_rev (Text text :: r) [tk0] (tks :: tl)
+      | Some(r, p, l) ->
+         main_loop_rev r p l
       end
-    | _, Ats(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t At)::r) [At] (Ats(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Bars(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Bar)::r) [Bar] (Bar::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Bars(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Bar)::r) [Bar] (Bars(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Carets(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Caret)::r) [Caret] (Caret::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Carets(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Caret)::r) [Caret] (Carets(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cbraces(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cbrace)::r) [Cbrace] (Cbrace::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cbraces(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cbrace)::r) [Cbrace] (Cbraces(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cbrackets(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cbracket)::r) [Cbracket] (Cbracket::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cbrackets(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cbracket)::r) [Cbracket] (Cbrackets(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Colons(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Colon)::r) [Colon] (Colon::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Colons(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Colon)::r) [Colon] (Colons(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Commas(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Comma)::r) [Comma] (Comma::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Commas(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Comma)::r) [Comma] (Commas(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cparenthesiss(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cparenthesis)::r) [Cparenthesis] (Cparenthesis::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Cparenthesiss(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Cparenthesis)::r) [Cparenthesis] (Cparenthesiss(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Dollars(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Dollar)::r) [Dollar] (Dollar::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Dollars(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Dollar)::r) [Dollar] (Dollars(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Dots(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Dot)::r) [Dot] (Dot::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Dots(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Dot)::r) [Dot] (Dots(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Doublequotes(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Doublequote)::r) [Doublequote] (Doublequote::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Doublequotes(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Doublequote)::r) [Doublequote] (Doublequotes(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Equals(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Equal)::r) [Equal] (Equal::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Equals(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Equal)::r) [Equal] (Equals(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Exclamations(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Exclamation)::r) [Exclamation] (Exclamation::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Exclamations(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Exclamation)::r) [Exclamation] (Exclamations(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Greaterthans(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Greaterthan)::r) [Greaterthan] (Greaterthan::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Greaterthans(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Greaterthan)::r) [Greaterthan] (Greaterthans(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Lessthans(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Lessthan)::r) [Lessthan] (Lessthan::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Lessthans(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Lessthan)::r) [Lessthan] (Lessthans(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Minuss(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Minus)::r) [Minus] (Minus::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Minuss(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Minus)::r) [Minus] (Minuss(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Obraces(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Obrace)::r) [Obrace] (Obrace::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Obraces(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Obrace)::r) [Obrace] (Obraces(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Obrackets(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Obracket)::r) [Obracket] (Obracket::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Obrackets(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Obracket)::r) [Obracket] (Obrackets(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Oparenthesiss(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Oparenthesis)::r) [Oparenthesis] (Oparenthesis::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Oparenthesiss(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Oparenthesis)::r) [Oparenthesis] (Oparenthesiss(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Percents(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Percent)::r) [Percent] (Percent::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Percents(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Percent)::r) [Percent] (Percents(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Pluss(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Plus)::r) [Plus] (Plus::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Pluss(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Plus)::r) [Plus] (Pluss(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Questions(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Question)::r) [Question] (Question::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Questions(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Question)::r) [Question] (Questions(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Quotes(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Quote)::r) [Quote] (Quote::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Quotes(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Quote)::r) [Quote] (Quotes(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Semicolons(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Semicolon)::r) [Semicolon] (Semicolon::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Semicolons(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Semicolon)::r) [Semicolon] (Semicolons(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Slashs(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Slash)::r) [Slash] (Slash::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Slashs(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Slash)::r) [Slash] (Slashs(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Stars(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Star)::r) [Star] (Stars(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Tabs(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Tab)::r) [Tab] (Tab::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Tabs(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Tab)::r) [Tab] (Tabs(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Tildes(0) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Tilde)::r) [Tilde] (Tilde::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Tildes(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Tilde)::r) [Tilde] (Tildes(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-    | _, Underscores(n) :: tl ->
-      begin match maybe_extension extensions r previous lexemes with
-      | None -> main_loop_rev (Text(string_of_t Underscore)::r) [Underscore] (Underscores(n-1)::tl)
-      | Some(r, p, l) -> main_loop_rev r p l
-      end
-  (* /generated code *)
 
 
   and main_loop (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     List.rev (main_loop_rev r previous lexemes)
-
   in
   main_loop [] [] (tag_setext main_loop lexemes)
 
@@ -2824,4 +2592,3 @@ let main_parse extensions default_lang lexemes =
 let parse ?(extensions=[]) ?(lang="") lexemes =
   main_parse extensions lang lexemes
 
-(******************************************************************************)
