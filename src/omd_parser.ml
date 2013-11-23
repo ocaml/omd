@@ -1068,9 +1068,16 @@ let read_title main_loop n r _previous lexemes =
       | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
       | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
       | ((Newline|Newlines _) :: _ as l)
-      | ([] as l) ->
+      | ([] as l)
+      | (Space|Spaces _) :: (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
+      | (Space|Spaces _) :: (Hash|Hashs _) :: (Space|Spaces _)
+        :: ((Newline|Newlines _)::_ as l)
+      | (Space|Spaces _) :: ((Newline|Newlines _) :: _ as l)
+      | (Space|Spaces _) :: ([] as l) ->
          main_loop [] [] (List.rev accu), l
-      | [Hash|Hashs _] ->
+      | [Hash|Hashs _]
+      | [(Space|Spaces _); Hash|Hashs _]
+      | [(Space|Spaces _); (Hash|Hashs _); (Space|Spaces _)] ->
          main_loop [] [] (List.rev accu), []
       | (Hash|Hashs _ as x) :: tl ->
         loop (Word(Omd_lexer.string_of_token x)::accu) tl
