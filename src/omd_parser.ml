@@ -1798,21 +1798,17 @@ let main_parse extensions default_lang lexemes =
       | Some(r, p, l) -> main_loop_rev r p l
       end
 
-    (* At least 4 spaces, so it can only be code. *)
-    | ([]|[Newline|Newlines _]), (Spaces n)::tl when n>=2 ->
-      let r, p, l = icode default_lang r [Newline] lexemes in
-      main_loop_rev r p l
-
     (* spaces after a newline: could lead to hr *)
-    | ([]|[Newline|Newlines _]), ((Space|Spaces(0|1)) as xxxt) :: tl ->
-      begin match hr tl with
-      | None ->
-         let n, _ = size xxxt in
-         let r, p, l = spaces main_loop default_lang n r previous tl in
-         main_loop_rev r p l
-      | Some tl ->
-         main_loop_rev (Hr::r) [Newline] tl
-      end
+    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as sp) :: tl ->
+       begin match hr tl with
+       | None ->
+          (* No [Hr], but maybe [Ul], [Ol], code,... *)
+          let n, _ = size sp in
+          let r, p, l = spaces main_loop default_lang n r previous tl in
+          main_loop_rev r p l
+       | Some tl ->
+          main_loop_rev (Hr::r) [Newline] tl
+       end
 
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
