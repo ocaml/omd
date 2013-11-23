@@ -1083,7 +1083,7 @@ let read_title main_loop n r _previous lexemes =
   | 4 -> H4 title :: r, [Newline], rest
   | 5 -> H5 title :: r, [Newline], rest
   | 6 -> H6 title :: r, [Newline], rest
-  | _ -> assert false
+  | _ -> failwith "Omd_parser.read_title uncorrectly used"
 
 
 
@@ -1849,10 +1849,18 @@ let main_parse extensions default_lang lexemes =
       end
 
     (* hashes *)
-    | ([]|[(Newline|Newlines _)]), Hashs n :: (Space|Spaces _) :: tl
-    | ([]|[(Newline|Newlines _)]), Hashs n :: tl -> (* hash titles *)
-      let r, p, l = read_title main_loop (n+2) r previous tl in
-      main_loop_rev r p l
+    | ([]|[(Newline|Newlines _)]),
+                (Hashs n as t) :: ((Space|Spaces _) :: ttl as tl)
+    | ([]|[(Newline|Newlines _)]),
+                (Hashs n as t) :: (ttl as tl) -> (* hash titles *)
+      if n <= 4 then
+        let r, p, l = read_title main_loop (n+2) r previous ttl in
+        main_loop_rev r p l
+      else
+        begin match maybe_extension extensions r previous lexemes with
+        | None -> main_loop_rev (Text(string_of_t t)::r) [t] tl
+        | Some(r, p, l) -> main_loop_rev r p l
+        end
     | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
     | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
       let r, p, l = read_title main_loop 1 r previous tl in
