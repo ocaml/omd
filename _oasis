@@ -39,3 +39,14 @@ Executable "test_cow"
 Test "cow"
   Type: Custom (0.0.1)
   Command: $test_cow
+
+Executable "test_spec"
+  Path:         tests
+  BuildTools:   ocamlbuild
+  MainIs:  	test_spec.ml
+  BuildDepends: omd
+  CompiledObject: best
+
+Test "spec"
+  Type: Custom (0.0.1)
+  Command: $test_spec
