@@ -14,7 +14,7 @@ open Omd_utils
 let default_language = ref ""
 
 let text_of_md md =
-  let b = Buffer.create 42 in
+  let b = Buffer.create 128 in
   let rec loop = function
     | X _ :: tl ->
         loop tl
@@ -29,6 +29,8 @@ let text_of_md md =
         loop tl
     | Paragraph md :: tl ->
         loop md;
+        Buffer.add_char b '\n';
+        Buffer.add_char b '\n';
         loop tl
     | Img(alt, src, title) :: tl ->
         Buffer.add_string b (htmlentities ~md:true alt);
@@ -42,16 +44,10 @@ let text_of_md md =
     | Bold md :: tl ->
         loop md;
         loop tl
-    | Ul l :: tl ->
-        List.iter loop l;
+    | (Ul l | Ol l) :: tl ->
+        List.iter (fun item -> loop item; Buffer.add_char b '\n') l;
         loop tl
-    | Ol l :: tl ->
-        List.iter loop l;
-        loop tl
-    | Ulp l :: tl ->
-        List.iter loop l;
-        loop tl
-    | Olp l :: tl ->
+    | (Ulp l | Olp l) :: tl ->
         List.iter loop l;
         loop tl
     | Code_block(lang, c) :: tl ->
@@ -204,11 +200,9 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       if nl then Buffer.add_string b "\n";
       (* if pindent then Buffer.add_char b '\n'; *)
       if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      (match e with
-       | Ol _|Olp _ ->
-         Buffer.add_string b "<ol>";
-       | _ ->
-         Buffer.add_string b "<ul>");
+      Buffer.add_string b (match e with
+                           | Ol _|Olp _ -> "<ol>"
+                           | _ -> "<ul>");
       if pindent then Buffer.add_char b '\n';
       List.iter
         (fun li ->
@@ -226,11 +220,9 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
            if pindent then Buffer.add_char b '\n')
         l;
       if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      (match e with
-       | Ol _|Olp _ ->
-         Buffer.add_string b "</ol>";
-       | _ ->
-         Buffer.add_string b "</ul>");
+      Buffer.add_string b (match e with
+                           | Ol _|Olp _ -> "</ol>"
+                           | _ -> "</ul>");
       if pindent then Buffer.add_char b '\n';
       loop indent tl
     | Code_block(lang, c) :: tl ->
@@ -596,7 +588,8 @@ let rec markdown_of_md md =
                     incr c;
                     add_spaces list_indent;
                     Printf.bprintf b "%d. " !c;
-                    loop ~is_in_list:true (list_indent+4) li
+                    loop ~is_in_list:true (list_indent+4) li;
+                    Buffer.add_char b '\n';
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
@@ -604,7 +597,8 @@ let rec markdown_of_md md =
       List.iter(fun li ->
                     add_spaces list_indent;
                     Printf.bprintf b "- ";
-                    loop ~is_in_list:true (list_indent+4) li
+                    loop ~is_in_list:true (list_indent+4) li;
+                    Buffer.add_char b '\n';
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
@@ -614,12 +608,14 @@ let rec markdown_of_md md =
                        incr c;
                        bprintf b "%d. " !c;
                        loop ~is_in_list:true (list_indent+4) li;
+                       (* Paragraphs => No need of '\n' *)
                ) l;
       loop list_indent tl
     | Ulp l :: tl ->
       List.iter(fun li -> add_spaces list_indent;
                        bprintf b "+ ";
                        loop ~is_in_list:true (list_indent+4) li;
+                       (* Paragraphs => No need of '\n' *)
                ) l;
       loop list_indent tl
     | Code(_lang, c) :: tl -> (* FIXME *)

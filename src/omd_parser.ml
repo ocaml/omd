@@ -1479,6 +1479,9 @@ let parse_list main_loop r _p l =
   in
   let rev_to_t l =
     assert_well_formed l;
+    (* Newlines at the end of items have no meaning (except to end the
+       item which is expressed by the constructor already). *)
+    let l = match l with (Newline | Newlines _) :: tl -> tl | _ -> l in
     main_loop [] [Newline] (List.rev l)
   in
   let add (sublist:element) items =
