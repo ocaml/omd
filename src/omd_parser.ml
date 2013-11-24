@@ -1183,7 +1183,7 @@ let emailstyle_quoting main_loop r _p lexemes =
   | _ -> invalid_arg "Omd_parser.emailstyle_quoting"
 
 (* maybe a reference *)
-let maybe_reference rc r p l =
+let maybe_reference rc r _p l =
   assert_well_formed l;
   (* this function is called when we know it's not a link although
      it started with a '[' *)
@@ -1283,7 +1283,7 @@ let maybe_reference rc r p l =
 
 
 (** maybe a link *)
-let maybe_link main_loop r p l =
+let maybe_link main_loop r _p l =
   if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
   let read_url name l =
@@ -1404,7 +1404,7 @@ let bcode default_lang r p l =
       if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
       Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
-let icode default_lang r p l =
+let icode default_lang r _p l =
   assert_well_formed l;
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
@@ -1441,7 +1441,7 @@ let icode default_lang r p l =
       | _ -> assert false
 
 
-let parse_list main_loop r p l =
+let parse_list main_loop r _p l =
   assert_well_formed l;
   if debug then begin
     eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
