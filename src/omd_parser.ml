@@ -278,9 +278,9 @@ print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
     in
     loop [] l
 
-(** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
-    This function has an effect only if [trackfix] is [true].
- *)
+(** [assert_well_formed] is a developer's function that helps to track
+    badly constructed token lists.  This function has an effect only
+    if [trackfix] is [true].  *)
 let assert_well_formed (l:tok list) : unit =
   if trackfix then
     let rec equiv l1 l2 = match l1, l2 with
@@ -289,8 +289,7 @@ let assert_well_formed (l:tok list) : unit =
       | e1::tl1, e2::tl2 -> e1 = e2 && equiv tl1 tl2
       | _ -> false
     in
-    assert(equiv (fix l) l);
-    ()
+    assert(equiv (fix l) l)
 
 (** Generate fallback for references. *)
 let extract_fallback remains l =
@@ -1146,7 +1145,7 @@ let emailstyle_quoting main_loop r _p lexemes =
     (Blockquote(main_loop [] [] block)::r), [Newline], tl
 
 (* maybe a reference *)
-let maybe_reference rc r p l =
+let maybe_reference rc r _p l =
   assert_well_formed l;
   (* this function is called when we know it's not a link although
      it started with a '[' *)
@@ -1246,7 +1245,7 @@ let maybe_reference rc r p l =
 
 
 (** maybe a link *)
-let maybe_link main_loop r p l =
+let maybe_link main_loop r _p l =
   if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
   let read_url name l =
@@ -1360,7 +1359,7 @@ let bcode default_lang r p l =
       let code = Omd_lexer.string_of_tokens cb in
       Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
-let icode default_lang r p l =
+let icode default_lang r _p l =
   assert_well_formed l;
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
@@ -1397,7 +1396,11 @@ let icode default_lang r p l =
       | _ -> assert false
 
 
-let parse_list main_loop r p l =
+let has_paragraphs l =
+  (* Has at least 2 consecutive newlines. *)
+  List.exists (function Newlines _ -> true | _ -> false) l
+
+let parse_list main_loop r _p l =
   assert_well_formed l;
   if debug then begin
     eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
@@ -1474,9 +1477,12 @@ let parse_list main_loop r p l =
     | _::_ ->
        Continue
   in
-  let to_t l =
+  let rev_to_t l =
     assert_well_formed l;
-    main_loop [] [Newline] l
+    (* Newlines at the end of items have no meaning (except to end the
+       item which is expressed by the constructor already). *)
+    let l = match l with (Newline | Newlines _) :: tl -> tl | _ -> l in
+    main_loop [] [Newline] (List.rev l)
   in
   let add (sublist:element) items =
     if debug then eprintf "add\n%!";
@@ -1515,153 +1521,136 @@ let parse_list main_loop r p l =
     (* new unordered items *)
     | (Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 0) tl with
+         match fsplit_rev ~f:(end_of_item 0) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            if debug then
              eprintf "new_item=%S\n%!" (Omd_lexer.destring_of_tokens new_item);
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [0] ((U,[0],to_t new_item)::items) rest
+             list_items ~p [0] ((U,[0], rev_to_t new_item)::items) rest
            | 0::_ ->
-             list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+             list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
            | _::_ ->
              make_up p items, l
        end
     | Space::(Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 1) tl with
+         match fsplit_rev ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [1] ((U,[1],to_t new_item)::items) rest
+             list_items ~p [1] ((U,[1],rev_to_t new_item)::items) rest
            | 1::_ ->
-             list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+             list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
            | i::_ ->
              if i > 1 then
                make_up p items, l
              else (* i < 1 : new sub list*)
                let sublist, remains =
-                 list_items ~p:p (1::indents) [(U,1::indents,to_t new_item)] rest
+                 list_items ~p (1::indents)
+                            [(U,1::indents,rev_to_t new_item)] rest
                in
-               list_items ~p:p indents (add sublist items) remains
+               list_items ~p indents (add sublist items) remains
        end
     | Spaces n::(Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item (n+2)) tl with
+         match fsplit_rev ~f:(end_of_item (n+2)) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then
                eprintf "spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
-             list_items ~p:p [n+2] ((U,[n+2],to_t new_item)::items) rest
+             list_items ~p [n+2] ((U,[n+2],rev_to_t new_item)::items) rest
            | i::_ ->
              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
                                    i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
-               list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+               list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
              else if i < n + 2 then
                let sublist, remains =
-                 list_items ~p:p
-                   ((n+2)::indents)
-                   [(U,(n+2)::indents,to_t new_item)]
-                   rest
+                 list_items ~p ((n+2)::indents)
+                            [(U,(n+2)::indents,rev_to_t new_item)]
+                            rest
                in
-               list_items ~p:p indents (add sublist items) remains
+               list_items ~p indents (add sublist items) remains
              else (* i > n + 2 *)
                make_up p items, l
        end
     (* new ordered items *)
     | Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 0) tl with
+         match fsplit_rev ~f:(end_of_item 0) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            assert_well_formed new_item;
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [0] ((O,[0],to_t new_item)::items) rest
+             list_items ~p [0] ((O,[0],rev_to_t new_item)::items) rest
            | 0::_ ->
-             list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+             list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
            | _::_ ->
              make_up p items, l
        end
     | Space::Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 1) tl with
+         match fsplit_rev ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [1] ((O,[1],to_t new_item)::items) rest
+             list_items ~p [1] ((O,[1],rev_to_t new_item)::items) rest
            | 1::_ ->
-             list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+             list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
            | i::_ ->
              if i > 1 then
                make_up p items, l
              else (* i < 1 : new sub list*)
                let sublist, remains =
-                 list_items ~p:p (1::indents) [(O,1::indents,to_t new_item)] rest
+                 list_items ~p (1::indents)
+                            [(O,1::indents,rev_to_t new_item)] rest
                in
                list_items ~p:p indents (add sublist items) remains
        end
     | Spaces n::Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item (n+2)) tl with
+         match fsplit_rev ~f:(end_of_item (n+2)) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then eprintf "spaces[] l=(%S)\n%!"
                                    (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
-             list_items ~p:p [n+2] ((O,[n+2],to_t new_item)::items) rest
+             list_items ~p [n+2] ((O,[n+2],rev_to_t new_item)::items) rest
            | i::_ ->
              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
                                    i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
-               list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+               list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
              else if i < n + 2 then
                let sublist, remains =
-                 list_items ~p:p
-                   ((n+2)::indents)
-                   [(O,(n+2)::indents,to_t new_item)]
-                   rest
+                 list_items ~p
+                            ((n+2)::indents)
+                            [(O,(n+2)::indents,rev_to_t new_item)]
+                            rest
                in
                list_items ~p:p indents (add sublist items) remains
              else (* i > n + 2 *)
@@ -1783,6 +1772,66 @@ let is_hex s =
            loop (succ i)
          | _ -> false)
       in loop 1)
+
+(* Remove all [NL] and [Br] at the beginning. *)
+let rec remove_initial_newlines = function
+  | [] -> []
+  | (NL | Br) :: tl -> remove_initial_newlines tl
+  | l -> l
+
+(** - recognizes paragraphs
+    - glues following blockquotes  *)
+let make_paragraphs md =
+  let rec loop cp accu = function (* cp means current paragraph *)
+    | [] ->
+        let accu =
+         match cp with
+         | [] | [NL] | [Br] -> accu
+         | (NL|Br)::cp -> Paragraph(List.rev cp)::accu
+         | cp -> Paragraph(List.rev cp)::accu
+        in
+          List.rev accu
+    | Blockquote b1 :: Blockquote b2 :: tl
+    | Blockquote b1 :: (NL|Br) :: Blockquote b2 :: tl
+    | Blockquote b1 :: (NL|Br) :: (NL|Br) :: Blockquote b2 :: tl ->
+        loop cp accu (Blockquote(b1@b2):: tl)
+    | Blockquote b :: tl ->
+        let e = Blockquote(loop [] [] b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | (Ulp b) :: tl ->
+        let e = Ulp(List.map (fun li -> loop [] [] li) b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | (Olp b) :: tl ->
+        let e = Olp(List.map (fun li -> loop [] [] li) b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | Html_comment _ as e :: tl ->
+       (match cp with
+        | [] -> loop [] (e::accu) tl
+        | [NL] | [Br] -> loop [] (e::NL::accu) tl
+        | _ -> loop (e::cp) accu tl)
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
+       | Html_block _) as e :: tl ->
+       (match cp with
+        | [] | [NL] | [Br] -> loop cp (e::accu) tl
+        | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | Text "\n" :: _ | Paragraph _ :: _ ->
+        assert false
+    | (NL|Br) :: (NL|Br) :: tl ->
+        let tl = remove_initial_newlines tl in
+        begin match cp with
+              | [] | [NL] | [Br] -> loop [] (NL::accu) tl
+              | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
+        end
+    | x::tl ->
+        loop (x::cp) accu tl
+  in
+    loop [] [] md
 
 let main_parse extensions default_lang lexemes =
   assert_well_formed lexemes;
@@ -2590,11 +2639,13 @@ let main_parse extensions default_lang lexemes =
 
 
   and main_loop (r:r) (previous:p) (lexemes:l) =
-    assert_well_formed lexemes;
     List.rev (main_loop_rev r previous lexemes)
   in
-  main_loop [] [] (tag_setext main_loop lexemes)
-
+  assert_well_formed lexemes;
+  let r = main_loop_rev [] [] (tag_setext main_loop lexemes) in
+  (* Blank lines at the end mean nothing: *)
+  let r = remove_initial_newlines r in
+  List.rev r
 
 let parse ?(extensions=[]) ?(lang="") lexemes =
   main_parse extensions lang lexemes

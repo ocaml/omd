@@ -20,7 +20,7 @@ let test name md_string desired_md =
     let md = Omd.of_string md_string in
     if md = desired_md then (
       incr success;
-      printf "%s: SUCCESS\n" name
+      (* printf "%s: SUCCESS\n" name *)
     )
     else (
       incr failures;
@@ -109,6 +109,17 @@ let test name md_string desired_md =
   test "blockquote + code ```" "> ```\n> code\n> ```"
        [Blockquote [Code_block ("", "code\n")]];
 
+  (* Lists
+   ***********************************************************************)
+
+  test "list, simple" "8.  Red\n1.  Green\n3.  Blue"
+       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+  test "list, simple2" "\n8.  Red\n1.  Green\n3.  Blue"
+       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+
+  test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
+       [Ol [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
+            [Paragraph[Text "Blue"]]]];
 
   (* Code
    ***********************************************************************)

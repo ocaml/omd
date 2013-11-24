@@ -10,7 +10,7 @@ include Omd_backend
 
 let of_string ?extensions ?(paragraph=true) ?lang s =
   let md = Omd_parser.parse ?extensions ?lang (Omd_lexer.lex s) in
-  if paragraph then make_paragraphs md else md
+  if paragraph then Omd_parser.make_paragraphs md else md
 
 
 let to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string =

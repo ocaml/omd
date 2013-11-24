@@ -13,68 +13,8 @@ open Omd_utils
 
 let default_language = ref ""
 
-(* Remove all [NL] and [Br] at the beginning. *)
-let rec remove_initial_newlines = function
-  | [] -> []
-  | (NL | Br) :: tl -> remove_initial_newlines tl
-  | l -> l
-
-(** - recognizes paragraphs
-    - glues following blockquotes  *)
-let make_paragraphs md =
-  let rec loop cp accu = function (* cp means current paragraph *)
-    | [] ->
-        let accu =
-         match cp with
-         | [] | [NL] | [Br] -> accu
-         | (NL|Br)::cp -> Paragraph(List.rev cp)::accu
-         | cp -> Paragraph(List.rev cp)::accu
-        in
-          List.rev accu
-    | Blockquote b1 :: Blockquote b2 :: tl
-    | Blockquote b1 :: (NL|Br) :: Blockquote b2 :: tl
-    | Blockquote b1 :: (NL|Br) :: (NL|Br) :: Blockquote b2 :: tl ->
-        loop cp accu (Blockquote(b1@b2):: tl)
-    | Blockquote b :: tl ->
-        let e = Blockquote(loop [] [] b) in
-        (match cp with
-         | [] | [NL] | [Br] -> loop cp (e::accu) tl
-         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
-    | (Ulp b) :: tl ->
-        let e = Ulp(List.map (fun li -> loop [] [] li) b) in
-        (match cp with
-         | [] | [NL] | [Br] -> loop cp (e::accu) tl
-         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
-    | (Olp b) :: tl ->
-        let e = Olp(List.map (fun li -> loop [] [] li) b) in
-        (match cp with
-         | [] | [NL] | [Br] -> loop cp (e::accu) tl
-         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
-    | Html_comment _ as e :: tl ->
-       (match cp with
-        | [] -> loop [] (e::accu) tl
-        | [NL] | [Br] -> loop [] (e::NL::accu) tl
-        | _ -> loop (e::cp) accu tl)
-    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
-       | Html_block _) as e :: tl ->
-       (match cp with
-        | [] | [NL] | [Br] -> loop cp (e::accu) tl
-        | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
-    | Text "\n" :: _ | Paragraph _ :: _ ->
-        assert false
-    | (NL|Br) :: (NL|Br) :: tl ->
-        let tl = remove_initial_newlines tl in
-        begin match cp with
-              | [] | [NL] | [Br] -> loop [] (NL::accu) tl
-              | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
-        end
-    | x::tl ->
-        loop (x::cp) accu tl
-  in
-    loop [] [] md
-
 let text_of_md md =
-  let b = Buffer.create 42 in
+  let b = Buffer.create 128 in
   let rec loop = function
     | X _ :: tl ->
         loop tl
@@ -89,6 +29,8 @@ let text_of_md md =
         loop tl
     | Paragraph md :: tl ->
         loop md;
+        Buffer.add_char b '\n';
+        Buffer.add_char b '\n';
         loop tl
     | Img(alt, src, title) :: tl ->
         Buffer.add_string b (htmlentities ~md:true alt);
@@ -102,16 +44,10 @@ let text_of_md md =
     | Bold md :: tl ->
         loop md;
         loop tl
-    | Ul l :: tl ->
-        List.iter loop l;
+    | (Ul l | Ol l) :: tl ->
+        List.iter (fun item -> loop item; Buffer.add_char b '\n') l;
         loop tl
-    | Ol l :: tl ->
-        List.iter loop l;
-        loop tl
-    | Ulp l :: tl ->
-        List.iter loop l;
-        loop tl
-    | Olp l :: tl ->
+    | (Ulp l | Olp l) :: tl ->
         List.iter loop l;
         loop tl
     | Code_block(lang, c) :: tl ->
@@ -264,11 +200,9 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       if nl then Buffer.add_string b "\n";
       (* if pindent then Buffer.add_char b '\n'; *)
       if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      (match e with
-       | Ol _|Olp _ ->
-         Buffer.add_string b "<ol>";
-       | _ ->
-         Buffer.add_string b "<ul>");
+      Buffer.add_string b (match e with
+                           | Ol _|Olp _ -> "<ol>"
+                           | _ -> "<ul>");
       if pindent then Buffer.add_char b '\n';
       List.iter
         (fun li ->
@@ -286,11 +220,9 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
            if pindent then Buffer.add_char b '\n')
         l;
       if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      (match e with
-       | Ol _|Olp _ ->
-         Buffer.add_string b "</ol>";
-       | _ ->
-         Buffer.add_string b "</ul>");
+      Buffer.add_string b (match e with
+                           | Ol _|Olp _ -> "</ol>"
+                           | _ -> "</ul>");
       if pindent then Buffer.add_char b '\n';
       loop indent tl
     | Code_block(lang, c) :: tl ->
@@ -656,7 +588,8 @@ let rec markdown_of_md md =
                     incr c;
                     add_spaces list_indent;
                     Printf.bprintf b "%d. " !c;
-                    loop ~is_in_list:true (list_indent+4) li
+                    loop ~is_in_list:true (list_indent+4) li;
+                    Buffer.add_char b '\n';
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
@@ -664,7 +597,8 @@ let rec markdown_of_md md =
       List.iter(fun li ->
                     add_spaces list_indent;
                     Printf.bprintf b "- ";
-                    loop ~is_in_list:true (list_indent+4) li
+                    loop ~is_in_list:true (list_indent+4) li;
+                    Buffer.add_char b '\n';
                ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
@@ -674,12 +608,14 @@ let rec markdown_of_md md =
                        incr c;
                        bprintf b "%d. " !c;
                        loop ~is_in_list:true (list_indent+4) li;
+                       (* Paragraphs => No need of '\n' *)
                ) l;
       loop list_indent tl
     | Ulp l :: tl ->
       List.iter(fun li -> add_spaces list_indent;
                        bprintf b "+ ";
                        loop ~is_in_list:true (list_indent+4) li;
+                       (* Paragraphs => No need of '\n' *)
                ) l;
       loop list_indent tl
     | Code(_lang, c) :: tl -> (* FIXME *)
@@ -768,7 +704,7 @@ let rec markdown_of_md md =
       Buffer.add_string b "<br />";
       loop list_indent tl
     | Hr :: tl ->
-      Buffer.add_string b "* * *";
+      Buffer.add_string b "* * *\n";
       loop list_indent tl
     | Html s :: tl ->
       Buffer.add_string b s;

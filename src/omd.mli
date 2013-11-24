@@ -119,13 +119,6 @@ val of_string : ?extensions:Omd_representation.extensions ->
     If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
     and {!Omd_parser.parse}.  *)
 
-
-val make_paragraphs : t -> t
-(** Build Markdown paragraphs. This Markdown parser doesn't
-    build paragraph directly, one has to call this function
-    to build them. On the other hand, if you don't want
-    automatic Markdown-style paragraphs, don't call this function! *)
-
 val set_default_lang : name -> t -> t
 (** [set_default_lang lang md] return a copy of [md] where the
     language of all [Code] or [Code_block] with an empty language is
