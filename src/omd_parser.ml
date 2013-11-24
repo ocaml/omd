@@ -1441,6 +1441,10 @@ let icode default_lang r _p l =
       | _ -> assert false
 
 
+let has_paragraphs l =
+  (* Has at least 2 consecutive newlines. *)
+  List.exists (function Newlines _ -> true | _ -> false) l
+
 let parse_list main_loop r _p l =
   assert_well_formed l;
   if debug then begin
@@ -1571,10 +1575,7 @@ let parse_list main_loop r _p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            if debug then
              eprintf "new_item=%S\n%!" (Omd_lexer.destring_of_tokens new_item);
            match indents with
@@ -1591,10 +1592,7 @@ let parse_list main_loop r _p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
@@ -1616,10 +1614,7 @@ let parse_list main_loop r _p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then
@@ -1649,10 +1644,7 @@ let parse_list main_loop r _p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            assert_well_formed new_item;
            match indents with
            | [] ->
@@ -1668,10 +1660,7 @@ let parse_list main_loop r _p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
@@ -1693,10 +1682,7 @@ let parse_list main_loop r _p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then eprintf "spaces[] l=(%S)\n%!"
