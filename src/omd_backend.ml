@@ -704,7 +704,7 @@ let rec markdown_of_md md =
       Buffer.add_string b "<br />";
       loop list_indent tl
     | Hr :: tl ->
-      Buffer.add_string b "* * *";
+      Buffer.add_string b "* * *\n";
       loop list_indent tl
     | Html s :: tl ->
       Buffer.add_string b s;
