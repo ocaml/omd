@@ -1708,13 +1708,15 @@ let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
     | (Number _)::Dot::(Space|Spaces _)::tl ->
        (* ordered list *)
        parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+    | []
+    | (Newline|Newlines _) :: _  -> (* blank line, skip spaces *)
+       r, previous, lexemes
     |  _::_ ->
         Text (" ")::r, previous, lexemes
-    | [] -> r, previous, []
   )
   else ( (* n>=4, blank line or indented code *)
     match lexemes with
-    | [] | (Newline|Newlines _) :: _  -> r, [Space], lexemes
+    | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
     | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
   )
 
