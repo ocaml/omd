@@ -278,9 +278,9 @@ print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
     in
     loop [] l
 
-(** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
-    This function has an effect only if [trackfix] is [true].
- *)
+(** [assert_well_formed] is a developer's function that helps to track
+    badly constructed token lists.  This function has an effect only
+    if [trackfix] is [true].  *)
 let assert_well_formed (l:tok list) : unit =
   if trackfix then
     let rec equiv l1 l2 = match l1, l2 with
@@ -289,8 +289,7 @@ let assert_well_formed (l:tok list) : unit =
       | e1::tl1, e2::tl2 -> e1 = e2 && equiv tl1 tl2
       | _ -> false
     in
-    assert(equiv (fix l) l);
-    ()
+    assert(equiv (fix l) l)
 
 (** Generate fallback for references. *)
 let extract_fallback remains l =
@@ -2650,11 +2649,13 @@ let main_parse extensions default_lang lexemes =
 
 
   and main_loop (r:r) (previous:p) (lexemes:l) =
-    assert_well_formed lexemes;
     List.rev (main_loop_rev r previous lexemes)
   in
-  main_loop [] [] (tag_setext main_loop lexemes)
-
+  assert_well_formed lexemes;
+  let r = main_loop_rev [] [] (tag_setext main_loop lexemes) in
+  (* Blank lines at the end mean nothing: *)
+  let r = remove_initial_newlines r in
+  List.rev r
 
 let parse ?(extensions=[]) ?(lang="") lexemes =
   main_parse extensions lang lexemes
