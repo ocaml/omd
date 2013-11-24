@@ -354,7 +354,7 @@ let rec is_blank = function
   | [] -> true
   | _ -> false
 
-let semph_or_bold (n:int) (l:Omd_representation.tok list) =
+let semph_or_bold (n:int) (l:l) =
   (* FIXME: use rpl call/return convention *)
   assert_well_formed l;
   assert (n>0 && n<4);
@@ -398,7 +398,7 @@ let semph_or_bold (n:int) (l:Omd_representation.tok list) =
     | Some(left,right) ->
         if is_blank left then None else Some(left,right)
 
-let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+let sm_uemph_or_bold (n:int) (l:l) =
   assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -443,7 +443,7 @@ let sm_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
         if is_blank left then None else Some(left,right)
 
 
-let gh_uemph_or_bold (n:int) (l:Omd_representation.tok list) =
+let gh_uemph_or_bold (n:int) (l:l) =
   assert_well_formed l;
   (* FIXME: use rpl call/return convention *)
   assert (n>0 && n<4);
@@ -503,11 +503,8 @@ let eat_blank =
 
 
 (* used by tag__maybe_h1 and tag__maybe_h2 *)
-let setext_title l =
+let setext_title (l:l) : (Omd_representation.tok list * l) option =
   assert_well_formed l;
-  (* val setext_title :
-     Omd_representation.tok list ->
-     (Omd_representation.tok list * Omd_representation.tok list) option *)
   let rec detect_balanced_bqs n r l =
     (* If there's a balanced (complete) backquote-started code block
        then it should be "ignored", else it means the line that
@@ -709,6 +706,10 @@ let hr_s l =
       None
   in loop 0 l
 
+let hr l =
+  match hr_m l with
+  | None -> hr_s l
+  | Some _ as tl -> tl
 
 exception NL_exception
 exception Premature_ending
@@ -1694,33 +1695,49 @@ let parse_list main_loop r p l =
     rp::r, [Newline], l
 
 
-let spaces main_loop default_lang n r p l =
-  assert_well_formed l;
-  let spaces n r previous l =
-    assert (n > 0);
-    match n, previous, l with (* NOT a recursive function *)
-    | (1|2|3), ([]|[(Newline|Newlines _)]),
-      (Star|Minus|Plus)::(Space|Spaces _)::tl ->
-          (* unordered list *)
-      parse_list main_loop r [] (Omd_lexer.make_space n::l)
-    | (1|2|3), ([]|[(Newline|Newlines _)]),
-      (Number _)::Dot::(Space|Spaces _)::tl ->
-          (* ordered list *)
-      parse_list main_loop r [] (Omd_lexer.make_space n::l)
-    | (1|2|3), ([]|[(Newlines _)]), t::tl ->
-      Text (" ")::r, p, l
-    | (1|2|3), ([]|[(Newlines _)]), [] ->
-      r, p, []
-    | _, ([]|[(Newlines _)]), _ -> (* n>=4, indented code *)
-      (icode default_lang r previous (Omd_lexer.make_space n :: l))
-    | 1, _, _ ->
-      (Text " "::r), [Space], l
-    | n, _, (Newline|Newlines _)::_ -> (* 2 or more spaces before a newline *)
-      Br::r, [Spaces(n-2)], l
-    | n, _, _ -> assert (n>1);
-      (Text (String.make n ' ')::r), [Spaces(n-2)], l
-  in
-  spaces n r p l (* NOT a recursive call *)
+(* Returns [(r,p,l)] where [r] is the result, [p] is the last thing
+   read, and [l] is what remains. *)
+let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
+  assert_well_formed lexemes;
+  assert (n > 0);
+  if n <= 3 then (
+    match lexemes with
+    | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
+       (* unordered list *)
+       parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+    | (Number _)::Dot::(Space|Spaces _)::tl ->
+       (* ordered list *)
+       parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+    | []
+    | (Newline|Newlines _) :: _  -> (* blank line, skip spaces *)
+       r, previous, lexemes
+    |  _::_ ->
+        Text (" ")::r, previous, lexemes
+  )
+  else ( (* n>=4, blank line or indented code *)
+    match lexemes with
+    | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
+    | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
+  )
+
+let spaces_not_at_beginning_of_line n r lexemes =
+  assert_well_formed lexemes;
+  assert (n > 0);
+  if n = 1 then
+    (Text " "::r), [Space], lexemes
+  else (
+    match lexemes with
+    | Newline :: tl ->
+       (* 2 or more spaces before a newline, eat the newline *)
+       Br::r, [Spaces(n-2)], tl
+    | Newlines k :: tl ->
+       (* 2 or more spaces before a newline, eat 1 newline *)
+       let newlines = if k = 0 then Newline else Newlines(k-1) in
+       Br::r, [Spaces(n-2)], newlines :: tl
+    | _ ->
+       assert (n>1);
+       (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
+  )
 
 
 let maybe_autoemail r p l =
@@ -1756,7 +1773,7 @@ let maybe_autoemail r p l =
   | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
 
 let is_hex s =
-  String.length s > 1 
+  String.length s > 1
   && (s.[0] = 'X' || s.[0] = 'x')
   && (let rec loop i =
         i = String.length s
@@ -1901,35 +1918,25 @@ let main_parse extensions default_lang lexemes =
       | Some(r, p, l) -> main_loop_rev r p l
       end
 
-    (* At least 4 spaces, so it can only be code. *)
-    | ([]|[Newline|Newlines _]), (Spaces n)::tl when n>=2 ->
-      let r, p, l = icode default_lang r [Newline] lexemes in
-      main_loop_rev r p l
-
     (* spaces after a newline: could lead to hr *)
-    | ([]|[Newline|Newlines _]), ((Space|Spaces(0|1)) as xxxt) :: tl ->
-      begin match hr_s tl with
-      | None ->
-        begin match hr_m tl with
-        | None ->
-          let r, p, l =
-            spaces main_loop default_lang (Omd_lexer.length xxxt) r previous tl
-          in
+    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as sp) :: tl ->
+       begin match hr tl with
+       | None ->
+          (* No [Hr], but maybe [Ul], [Ol], code,... *)
+          let n = Omd_lexer.length sp in
+          let r, p, l = spaces_at_beginning_of_line
+                          main_loop default_lang n r previous tl in
           main_loop_rev r p l
-        | Some l ->
-          main_loop_rev (Hr::r) [Newline] l
-        end
-      | Some l ->
-        main_loop_rev (Hr::r) [Newline] l
-      end
+       | Some tl ->
+          main_loop_rev (Hr::r) [Newline] tl
+       end
 
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
-      (* too many cases to be handled here *)
-      let r, p, l =
-        spaces main_loop default_lang (Omd_lexer.length t) r previous tl
-      in
-      main_loop_rev r p l
+       (* too many cases to be handled here *)
+       let n = Omd_lexer.length t in
+       let r, p, l = spaces_not_at_beginning_of_line n r tl in
+       main_loop_rev r p l
 
     (* underscores *)
     | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
@@ -2253,7 +2260,7 @@ let main_parse extensions default_lang lexemes =
     (* HTML *)
     (* <br/> and <hr/> with or without space(s) *)
     | _, (Lessthan::Word("br"|"hr" as w)::Slash
-          ::(Greaterthan|Greaterthans _ as g)::tl) 
+          ::(Greaterthan|Greaterthans _ as g)::tl)
     | _, (Lessthan::Word("br"|"hr" as w)::(Space|Spaces _)::Slash
           ::(Greaterthan|Greaterthans _ as g)::tl) ->
       begin match g with
@@ -2266,7 +2273,7 @@ let main_parse extensions default_lang lexemes =
       end
 
     (* block html *)
-    | ([]|[Newline|Newlines _]), 
+    | ([]|[Newline|Newlines _]),
         ((Lessthan as t)::Word(tagname)
          ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
          ::tl) ->

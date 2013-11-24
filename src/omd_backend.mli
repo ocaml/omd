@@ -10,7 +10,7 @@ type code_stylist = lang:string -> string -> string
     that code with style. *)
 
 val default_language : string ref
-(** default language for code blocks can be set to any name, 
+(** default language for code blocks can be set to any name,
     by default it is the empty string *)
 
 val make_paragraphs : Omd_representation.t -> Omd_representation.t
@@ -20,7 +20,7 @@ val make_paragraphs : Omd_representation.t -> Omd_representation.t
 
 val html_of_md :
   ?pindent:bool ->
-  ?nl2br:bool -> 
+  ?nl2br:bool ->
   ?cs:code_stylist ->
   Omd_representation.t -> string
 (** [html_of_md md] returns a string containing the HTML version of

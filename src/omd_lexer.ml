@@ -256,8 +256,8 @@ let lex s =
                   (incr i; Newline)
                 else
                   Newline
-            else 
-              Newlines (n-2) 
+            else
+              Newlines (n-2)
       | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
       | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
       | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
