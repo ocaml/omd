@@ -13,11 +13,6 @@ val default_language : string ref
 (** default language for code blocks can be set to any name,
     by default it is the empty string *)
 
-val make_paragraphs : Omd_representation.t -> Omd_representation.t
-(** Since [Omd_parser.parse] doesn't build paragraphs, if you want
-    Markdown-style paragraphs, you need to apply this function to
-    the result of [Omd_parser.parse]. *)
-
 val html_of_md :
   ?pindent:bool ->
   ?nl2br:bool ->

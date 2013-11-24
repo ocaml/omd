@@ -310,7 +310,7 @@ let main () =
       let o1 = (* make either TOC or paragraphs, or leave as it is *)
         (if !otoc then Omd.toc ~start:!toc_start ~depth:!toc_depth
          else if !no_paragraphs then fun x -> x
-         else make_paragraphs)
+         else Omd_parser.make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML, or markdown *)
         (if !notags then to_text

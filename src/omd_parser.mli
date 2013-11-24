@@ -198,6 +198,12 @@ val icode : Omd_representation.name -> r -> p -> l -> r * p * l
 val parse_list : main_loop -> r -> p -> l -> r * p * l
 
 
+val make_paragraphs : Omd_representation.t -> Omd_representation.t
+(** Build Markdown paragraphs. This Markdown parser doesn't
+    build paragraph directly, one has to call this function
+    to build them. On the other hand, if you don't want
+    automatic Markdown-style paragraphs, don't call this function! *)
+
 val parse : ?extensions:Omd_representation.extensions -> ?lang: string -> l
   -> Omd_representation.t
 (** Translate tokens to Markdown representation.
