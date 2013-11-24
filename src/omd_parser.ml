@@ -1477,9 +1477,9 @@ let parse_list main_loop r _p l =
     | _::_ ->
        Continue
   in
-  let to_t l =
+  let rev_to_t l =
     assert_well_formed l;
-    main_loop [] [Newline] l
+    main_loop [] [Newline] (List.rev l)
   in
   let add (sublist:element) items =
     if debug then eprintf "add\n%!";
@@ -1518,7 +1518,7 @@ let parse_list main_loop r _p l =
     (* new unordered items *)
     | (Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 0) tl with
+         match fsplit_rev ~f:(end_of_item 0) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
@@ -1528,36 +1528,37 @@ let parse_list main_loop r _p l =
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [0] ((U,[0],to_t new_item)::items) rest
+             list_items ~p [0] ((U,[0], rev_to_t new_item)::items) rest
            | 0::_ ->
-             list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+             list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
            | _::_ ->
              make_up p items, l
        end
     | Space::(Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 1) tl with
+         match fsplit_rev ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
            let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [1] ((U,[1],to_t new_item)::items) rest
+             list_items ~p [1] ((U,[1],rev_to_t new_item)::items) rest
            | 1::_ ->
-             list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+             list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
            | i::_ ->
              if i > 1 then
                make_up p items, l
              else (* i < 1 : new sub list*)
                let sublist, remains =
-                 list_items ~p:p (1::indents) [(U,1::indents,to_t new_item)] rest
+                 list_items ~p (1::indents)
+                            [(U,1::indents,rev_to_t new_item)] rest
                in
-               list_items ~p:p indents (add sublist items) remains
+               list_items ~p indents (add sublist items) remains
        end
     | Spaces n::(Star|Minus|Plus)::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item (n+2)) tl with
+         match fsplit_rev ~f:(end_of_item (n+2)) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
@@ -1567,27 +1568,26 @@ let parse_list main_loop r _p l =
              if debug then
                eprintf "spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
-             list_items ~p:p [n+2] ((U,[n+2],to_t new_item)::items) rest
+             list_items ~p [n+2] ((U,[n+2],rev_to_t new_item)::items) rest
            | i::_ ->
              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
                                    i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
-               list_items ~p:p indents ((U,indents,to_t new_item)::items) rest
+               list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
              else if i < n + 2 then
                let sublist, remains =
-                 list_items ~p:p
-                   ((n+2)::indents)
-                   [(U,(n+2)::indents,to_t new_item)]
-                   rest
+                 list_items ~p ((n+2)::indents)
+                            [(U,(n+2)::indents,rev_to_t new_item)]
+                            rest
                in
-               list_items ~p:p indents (add sublist items) remains
+               list_items ~p indents (add sublist items) remains
              else (* i > n + 2 *)
                make_up p items, l
        end
     (* new ordered items *)
     | Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 0) tl with
+         match fsplit_rev ~f:(end_of_item 0) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
@@ -1596,36 +1596,37 @@ let parse_list main_loop r _p l =
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [0] ((O,[0],to_t new_item)::items) rest
+             list_items ~p [0] ((O,[0],rev_to_t new_item)::items) rest
            | 0::_ ->
-             list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+             list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
            | _::_ ->
              make_up p items, l
        end
     | Space::Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item 1) tl with
+         match fsplit_rev ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
            let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
-             list_items ~p:p [1] ((O,[1],to_t new_item)::items) rest
+             list_items ~p [1] ((O,[1],rev_to_t new_item)::items) rest
            | 1::_ ->
-             list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+             list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
            | i::_ ->
              if i > 1 then
                make_up p items, l
              else (* i < 1 : new sub list*)
                let sublist, remains =
-                 list_items ~p:p (1::indents) [(O,1::indents,to_t new_item)] rest
+                 list_items ~p (1::indents)
+                            [(O,1::indents,rev_to_t new_item)] rest
                in
                list_items ~p:p indents (add sublist items) remains
        end
     | Spaces n::Number _::Dot::(Space|Spaces _)::tl ->
        begin
-         match fsplit ~f:(end_of_item (n+2)) tl with
+         match fsplit_rev ~f:(end_of_item (n+2)) tl with
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
@@ -1635,18 +1636,18 @@ let parse_list main_loop r _p l =
              if debug then eprintf "spaces[] l=(%S)\n%!"
                                    (Omd_lexer.string_of_tokens l);
              assert(items = []); (* aïe... listes mal formées ?! *)
-             list_items ~p:p [n+2] ((O,[n+2],to_t new_item)::items) rest
+             list_items ~p [n+2] ((O,[n+2],rev_to_t new_item)::items) rest
            | i::_ ->
              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
                                    i n (Omd_lexer.string_of_tokens l);
              if i = n + 2 then
-               list_items ~p:p indents ((O,indents,to_t new_item)::items) rest
+               list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
              else if i < n + 2 then
                let sublist, remains =
-                 list_items ~p:p
-                   ((n+2)::indents)
-                   [(O,(n+2)::indents,to_t new_item)]
-                   rest
+                 list_items ~p
+                            ((n+2)::indents)
+                            [(O,(n+2)::indents,rev_to_t new_item)]
+                            rest
                in
                list_items ~p:p indents (add sublist items) remains
              else (* i > n + 2 *)
