@@ -11,14 +11,15 @@ module StringSet :
     val union : t -> t -> t
     val of_list : elt list -> t
   end
-type 'a split = 'a list -> 'a split_action
-and 'a split_action =
+
+type 'a split_action =
     Continue
   | Continue_with of 'a list * 'a list
   | Split of 'a list * 'a list
+
 val fsplit_rev :
   ?excl:('a list -> bool) ->
-  f:'a split -> 'a list -> ('a list * 'a list) option
+  f:('a list -> 'a split_action) -> 'a list -> ('a list * 'a list) option
 (** [fsplit_rev ?excl ~f l] returns [Some(x,y)] where [x] is the
     **reversed** list of the consecutive elements of [l] that obey the
     split function [f].
@@ -38,7 +39,7 @@ val fsplit_rev :
 
 val fsplit :
   ?excl:('a list -> bool) ->
-  f:'a split -> 'a list -> ('a list * 'a list) option
+  f:('a list -> 'a split_action) -> 'a list -> ('a list * 'a list) option
 (** [fsplit ?excl ~f l] returns [Some(List.rev x, y)] if [fsplit ?excl
     ~f l] returns [Some(x,y)], else it returns [None]. *)
 
