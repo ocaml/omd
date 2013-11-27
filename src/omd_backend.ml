@@ -637,6 +637,18 @@ let rec sexpr_of_md md =
     Buffer.contents b
 
 
+let escape_markdown_characters s =
+  let b = Buffer.create (String.length s * 2) in
+    for i = 0 to String.length s - 1 do
+      match s.[i] with
+        | '\\' | '*' | '+' | '.' | '-' as c ->
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+        | c ->
+            Buffer.add_char b c
+    done;
+    Buffer.contents b
+
 let rec markdown_of_md md =
   if debug then eprintf "markdown_of_md(%S)" (sexpr_of_md md);
   let quote ?(indent=0) s =
@@ -699,7 +711,7 @@ let rec markdown_of_md md =
       begin match rc#get_ref name with
         | Some(href, title) ->
            references := Some rc;
-           Printf.bprintf b "![%s][%s]" name alt;
+           Printf.bprintf b "![%s][%s]" alt name;
            loop list_indent tl
         | None -> loop list_indent (Text(fallback)::tl)
       end
@@ -716,7 +728,7 @@ let rec markdown_of_md md =
       Printf.bprintf b "![%s](%s \"%s\")" alt src title;
       loop list_indent tl
     | Text t :: tl ->
-      Printf.bprintf b "%s" t;
+      Printf.bprintf b "%s" (escape_markdown_characters t);
       loop list_indent tl
     | Emph md :: tl ->
       Buffer.add_string b "*";
