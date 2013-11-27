@@ -1343,22 +1343,21 @@ let bcode default_lang r p l =
         let rec loop1 i =
           if i = String.length s then 0
           else match s.[i] with
-            | '`' -> i
             | ' ' -> loop1(i+1)
-            | _ -> 0
+            | _ -> i
         in
         let rec loop2 i =
-          if i = -1 then String.length s - 1
+          if i = -1 then String.length s
           else match s.[i] with
-            | '`' -> i+1
             | ' ' -> loop2(i-1)
-            | _ -> String.length s - 1
+            | _ -> i+1
         in
         match loop1 0, loop2 (String.length s - 1) with
         | 0, n when n = String.length s - 1 -> s
         | i, n -> String.sub s i (n-i)
       in
       let code = Omd_lexer.string_of_tokens cb in
+      if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
       Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
 let icode default_lang r p l =
