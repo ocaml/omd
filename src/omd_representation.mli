@@ -169,3 +169,7 @@ type extensions = extension list
     functions of type [extension]. They are processed in order (the
     head is applied first), so be careful about it. If you use it
     wrong, it will behave wrong. *)
+
+val loose_compare : t -> t -> int
+(** [loose_compare t1 t2] returns [0] if [t1] and [t2]
+    are equivalent, otherwise it returns another number. *)
