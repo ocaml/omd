@@ -24,14 +24,18 @@ let test name md_string desired_md =
     )
     else (
       incr failures;
-      printf "%s: FAILURE\n" name
+      printf "%s: FAILURE\n" name;
+      printf "input=%S\nexpected =%S\n  result =%S\n"
+        md_string
+        (Omd_backend.sexpr_of_md desired_md)
+        (Omd_backend.sexpr_of_md md)
     )
   with e ->
     incr failures;
     printf "%s: EXCEPTION\n  %s\n" name (Printexc.to_string e)
 
 
-       let () =
+let () =
   let open Omd in
   (* Paragraphs and Line Breaks
    ***********************************************************************)
@@ -59,7 +63,7 @@ let test name md_string desired_md =
   (* Headers
    ***********************************************************************)
   test "header, ===" "Title\n=="  [Omd.H1 [Omd.Text "Title"]];
-  test "header, ===" "Title\n---" [Omd.H2 [Omd.Text "Title"]];
+  test "header, ---" "Title\n---" [Omd.H2 [Omd.Text "Title"]];
 
   test "header, #" "# Title" [Omd.H1 [Omd.Text "Title"]];
   test "header, ##" "## Title" [Omd.H2 [Omd.Text "Title"]];
@@ -67,8 +71,8 @@ let test name md_string desired_md =
   test "header, ####" "#### Title" [Omd.H4 [Omd.Text "Title"]];
   test "header, #####" "##### Title" [Omd.H5 [Omd.Text "Title"]];
   test "header, ######" "###### Title" [Omd.H6 [Omd.Text "Title"]];
-  test "header, too deep" "######## Title\n" [Omd.H6 [Omd.Text "Title"]];
-
+  test "header, too deep" "######## Title\n"
+    [Omd.Paragraph[Omd.Text "########"; Omd.Text " "; Omd.Text "Title"]];
   test "header, # + space" "# Title  " [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title # " [Omd.H1 [Omd.Text "Title"]];
@@ -96,7 +100,7 @@ let test name md_string desired_md =
   test "blockquote + header" "> ## header\n"
        [Blockquote [H2 [Text "header"]]];
   test "blockquote + header + par" "> ## header\nHello"
-       [Blockquote [H2 [Text "header"]];  Paragraph [Text "Hello"]];
+       [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
   test "blockquote + header + par" "> ## header\n> Hello"
        [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
   test "blockquote + list" "> 1. item1\n> 2. item2\n"
@@ -114,4 +118,4 @@ let test name md_string desired_md =
    ***********************************************************************)
 
   test "code dashes" "```\n--\n--\n--\n```"
-       [Omd.Code_block ("", "\n--\n--\n--\n")]
+       [Omd.Code_block ("", "--\n--\n--\n")]

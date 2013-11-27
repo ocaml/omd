@@ -34,7 +34,7 @@ let process successes failures file =
   let md, observed =
    try
      let md = Omd.of_string (slurp file) in
-     md, Omd.(to_html md)
+     md, Omd.to_html md
    with e -> [], Printexc.to_string e
   in
   (* Make sure a round trip produce identical results *)
@@ -45,9 +45,17 @@ let process successes failures file =
     eprintf "  observed = %S\n" (observed);
     incr failures
   )
-  else if md <> round_trip then (
+  else if Omd_representation.loose_compare md round_trip <> 0 
+    && 
+    Omd_representation.loose_compare
+    (Omd_backend.normalise_md md)
+    (Omd_backend.normalise_md round_trip) <> 0
+  then (
     eprintf "FAILURE: %s\n" file;
     eprintf "  Omd.of_string(Omd.to_markdown md) <> md\n";
+    eprintf "Expected =%S\n  Result =%S\n"
+      (Omd_backend.sexpr_of_md (Omd_backend.normalise_md md))
+      (Omd_backend.sexpr_of_md (Omd_backend.normalise_md round_trip));
     incr failures
   )
   else (
