@@ -224,13 +224,21 @@ let default_code_stylist ~lang code = code
 let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
                                ?cs:(code_style=default_code_stylist) md =
   let ids = object(this)
-    val mutable ids = StringSet.empty
+    val mutable ids = StringSet.add "" StringSet.empty
     method mangle id =
-      if StringSet.mem id ids then
-        this#mangle (id^"x")
-      else
-        (ids <- StringSet.add id ids;
-         id)
+      let rec m i =
+        if StringSet.mem id ids then
+          let idx = if i > 0 then id^"_"^string_of_int i else id in
+          if StringSet.mem idx ids then
+            m (i+1)
+          else
+            (ids <- StringSet.add idx ids;
+             idx)
+        else
+          (ids <- StringSet.add id ids;
+           id)
+      in m 0
+
   end in
   let empty s =
     let rec loop i =
