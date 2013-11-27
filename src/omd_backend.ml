@@ -61,7 +61,7 @@ let make_paragraphs md =
         | [] | [NL] | [Br] -> loop cp (e::accu) tl
         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
     | Text "\n" :: _ | Paragraph _ :: _ ->
-        assert false
+        invalid_arg "Omd_backend.make_paragraphs"
     | (NL|Br) :: (NL|Br) :: tl ->
         let tl = remove_initial_newlines tl in
         begin match cp with
@@ -71,7 +71,78 @@ let make_paragraphs md =
     | x::tl ->
         loop (x::cp) accu tl
   in
-    loop [] [] md
+  let rec clean_paragraphs l = List.map (function
+    | Paragraph(p) -> 
+        Paragraph(clean_paragraphs (remove_initial_newlines p))
+    | H1 v -> H1(clean_paragraphs v)
+    | H2 v -> H2(clean_paragraphs v)
+    | H3 v -> H3(clean_paragraphs v)
+    | H4 v -> H4(clean_paragraphs v)
+    | H5 v -> H5(clean_paragraphs v)
+    | H6 v -> H6(clean_paragraphs v)
+    | Emph v -> Emph(clean_paragraphs v)
+    | Bold v -> Bold(clean_paragraphs v)
+    | Ul v -> Ul(List.map clean_paragraphs v)
+    | Ol v -> Ol(List.map clean_paragraphs v)
+    | Ulp v -> Ulp(List.map clean_paragraphs v)
+    | Olp v -> Olp(List.map clean_paragraphs v)
+    | Blockquote v -> Blockquote(clean_paragraphs v)
+    | Url(href,v,title) -> Url(href,(clean_paragraphs v),title)
+    | Text _
+    | Code _
+    | Code_block _
+    | Br
+    | Hr
+    | NL
+    | Ref _
+    | Img_ref _
+    | Html _
+    | Html_block _
+    | Html_comment _
+    | Img _
+    | X _ as v -> v)
+    l
+  in
+  clean_paragraphs(loop [] [] md)
+
+let rec normalise_md = function
+  | [NL;NL;NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;]
+  | [NL;NL;NL;]
+  | [NL;NL]
+  | [NL] -> []
+  | [] -> []
+  | Text t1::Text t2::tl -> normalise_md (Text(t1^t2)::tl)
+  | Paragraph(p)::tl -> Paragraph(normalise_md p)::normalise_md tl
+  | H1 v::tl -> H1(normalise_md v)::normalise_md tl
+  | H2 v::tl -> H2(normalise_md v)::normalise_md tl
+  | H3 v::tl -> H3(normalise_md v)::normalise_md tl
+  | H4 v::tl -> H4(normalise_md v)::normalise_md tl
+  | H5 v::tl -> H5(normalise_md v)::normalise_md tl
+  | H6 v::tl -> H6(normalise_md v)::normalise_md tl
+  | Emph v::tl -> Emph(normalise_md v)::normalise_md tl
+  | Bold v::tl -> Bold(normalise_md v)::normalise_md tl
+  | Ul v::tl -> Ul(List.map normalise_md v)::normalise_md tl
+  | Ol v::tl -> Ol(List.map normalise_md v)::normalise_md tl
+  | Ulp v::tl -> Ulp(List.map normalise_md v)::normalise_md tl
+  | Olp v::tl -> Olp(List.map normalise_md v)::normalise_md tl
+  | Blockquote v::tl -> Blockquote(normalise_md v)::normalise_md tl
+  | Url(href,v,title)::tl -> Url(href,(normalise_md v),title)::normalise_md tl
+  | Text _
+  | Code _
+  | Code_block _
+  | Br
+  | Hr
+  | NL
+  | Ref _
+  | Img_ref _
+  | Html _
+  | Html_block _
+  | Html_comment _
+  | Img _
+  | X _ as v::tl -> v::normalise_md tl
 
 let text_of_md md =
   let b = Buffer.create 42 in
@@ -568,13 +639,17 @@ let rec sexpr_of_md md =
 
 let rec markdown_of_md md =
   if debug then eprintf "markdown_of_md(%S)" (sexpr_of_md md);
-  let quote s =
+  let quote ?(indent=0) s =
     let b = Buffer.create (String.length s) in
     let l = String.length s in
     let rec loop nl i =
       if i < l then
         begin
-          if nl then Buffer.add_string b "> ";
+          if nl && i < l - 1 then 
+            (for i = 1 to indent do
+               Buffer.add_char b ' '
+             done;
+             Buffer.add_string b "> ");
           match s.[i] with
           | '\n' ->
             Buffer.add_char b '\n';
@@ -607,13 +682,16 @@ let rec markdown_of_md md =
              | None -> ());
         loop list_indent tl
     | Blockquote q :: tl ->
-      Buffer.add_string b (quote(markdown_of_md q));
+      Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
       begin match rc#get_ref name with
         | Some(href, title) ->
            references := Some rc;
-           Printf.bprintf b "[%s][%s]" text name;
+           if text = name then
+             Printf.bprintf b "[%s][]" text
+           else
+             Printf.bprintf b "[%s][%s]" text name;
            loop list_indent tl
         | None -> loop list_indent (Text(fallback)::tl)
       end
@@ -768,7 +846,7 @@ let rec markdown_of_md md =
       Buffer.add_string b "<br />";
       loop list_indent tl
     | Hr :: tl ->
-      Buffer.add_string b "* * *";
+      Buffer.add_string b "* * *\n";
       loop list_indent tl
     | Html s :: tl ->
       Buffer.add_string b s;
