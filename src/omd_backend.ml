@@ -19,6 +19,46 @@ let rec remove_initial_newlines = function
   | (NL | Br) :: tl -> remove_initial_newlines tl
   | l -> l
 
+let rec normalise_md = function
+  | [NL;NL;NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;NL;]
+  | [NL;NL;NL;NL;]
+  | [NL;NL;NL;]
+  | [NL;NL]
+  | [NL] -> []
+  | [] -> []
+  | Text t1::Text t2::tl -> normalise_md (Text(t1^t2)::tl)
+  | Paragraph(p)::tl -> Paragraph(normalise_md p)::normalise_md tl
+  | H1 v::tl -> H1(normalise_md v)::normalise_md tl
+  | H2 v::tl -> H2(normalise_md v)::normalise_md tl
+  | H3 v::tl -> H3(normalise_md v)::normalise_md tl
+  | H4 v::tl -> H4(normalise_md v)::normalise_md tl
+  | H5 v::tl -> H5(normalise_md v)::normalise_md tl
+  | H6 v::tl -> H6(normalise_md v)::normalise_md tl
+  | Emph v::tl -> Emph(normalise_md v)::normalise_md tl
+  | Bold v::tl -> Bold(normalise_md v)::normalise_md tl
+  | Ul v::tl -> Ul(List.map normalise_md v)::normalise_md tl
+  | Ol v::tl -> Ol(List.map normalise_md v)::normalise_md tl
+  | Ulp v::tl -> Ulp(List.map normalise_md v)::normalise_md tl
+  | Olp v::tl -> Olp(List.map normalise_md v)::normalise_md tl
+  | Blockquote v::tl -> Blockquote(normalise_md v)::normalise_md tl
+  | Url(href,v,title)::tl -> Url(href,(normalise_md v),title)::normalise_md tl
+  | Text _
+  | Code _
+  | Code_block _
+  | Br
+  | Hr
+  | NL
+  | Ref _
+  | Img_ref _
+  | Html _
+  | Html_block _
+  | Html_comment _
+  | Img _
+  | X _ as v::tl -> v::normalise_md tl
+
+
 (** - recognizes paragraphs
     - glues following blockquotes  *)
 let make_paragraphs md =
@@ -73,7 +113,8 @@ let make_paragraphs md =
   in
   let rec clean_paragraphs l = List.map (function
     | Paragraph(p) -> 
-        Paragraph(clean_paragraphs (remove_initial_newlines p))
+        Paragraph(clean_paragraphs
+                    (remove_initial_newlines (normalise_md p)))
     | H1 v -> H1(clean_paragraphs v)
     | H2 v -> H2(clean_paragraphs v)
     | H3 v -> H3(clean_paragraphs v)
@@ -105,44 +146,6 @@ let make_paragraphs md =
   in
   clean_paragraphs(loop [] [] md)
 
-let rec normalise_md = function
-  | [NL;NL;NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;]
-  | [NL;NL;NL;]
-  | [NL;NL]
-  | [NL] -> []
-  | [] -> []
-  | Text t1::Text t2::tl -> normalise_md (Text(t1^t2)::tl)
-  | Paragraph(p)::tl -> Paragraph(normalise_md p)::normalise_md tl
-  | H1 v::tl -> H1(normalise_md v)::normalise_md tl
-  | H2 v::tl -> H2(normalise_md v)::normalise_md tl
-  | H3 v::tl -> H3(normalise_md v)::normalise_md tl
-  | H4 v::tl -> H4(normalise_md v)::normalise_md tl
-  | H5 v::tl -> H5(normalise_md v)::normalise_md tl
-  | H6 v::tl -> H6(normalise_md v)::normalise_md tl
-  | Emph v::tl -> Emph(normalise_md v)::normalise_md tl
-  | Bold v::tl -> Bold(normalise_md v)::normalise_md tl
-  | Ul v::tl -> Ul(List.map normalise_md v)::normalise_md tl
-  | Ol v::tl -> Ol(List.map normalise_md v)::normalise_md tl
-  | Ulp v::tl -> Ulp(List.map normalise_md v)::normalise_md tl
-  | Olp v::tl -> Olp(List.map normalise_md v)::normalise_md tl
-  | Blockquote v::tl -> Blockquote(normalise_md v)::normalise_md tl
-  | Url(href,v,title)::tl -> Url(href,(normalise_md v),title)::normalise_md tl
-  | Text _
-  | Code _
-  | Code_block _
-  | Br
-  | Hr
-  | NL
-  | Ref _
-  | Img_ref _
-  | Html _
-  | Html_block _
-  | Html_comment _
-  | Img _
-  | X _ as v::tl -> v::normalise_md tl
 
 let text_of_md md =
   let b = Buffer.create 42 in
