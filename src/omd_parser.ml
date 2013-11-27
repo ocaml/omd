@@ -1115,7 +1115,7 @@ let maybe_extension extensions r p l =
 (* blockquotes *)
 let emailstyle_quoting main_loop r _p lexemes =
   assert_well_formed lexemes;
-  if debug then eprintf "CALL: Omd_parser.emailstyle_quoting\n%!";
+  if debug then eprintf "Omd_parser.emailstyle_quoting\n%!";
   let rec loop block cl =
     function
     | Newline::Greaterthan::(Newline::_ as tl) ->
@@ -1138,12 +1138,13 @@ let emailstyle_quoting main_loop r _p lexemes =
     | e::tl -> loop block (e::cl) tl
   in
   match loop [] [] lexemes with
-  | block, tl ->
+  | Newline::block, tl ->
     if debug then
       eprintf "##############################\n%s\n\
                ##############################\n%!"
               (Omd_lexer.string_of_tokens block);
     (Blockquote(main_loop [] [] block)::r), [Newline], tl
+  | _ -> invalid_arg "Omd_parser.emailstyle_quoting"
 
 (* maybe a reference *)
 let maybe_reference rc r p l =
