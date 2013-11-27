@@ -64,3 +64,7 @@ val sexpr_of_md : Omd_representation.t -> string
 (** [sexpr_of_md md] is basically the same as [html_of_md md] but with
     the output in s-expressions rather than HTML. This is mainly used
     for debugging. *)
+
+val normalise_md : Omd_representation.t -> Omd_representation.t
+(** [normalise_md md] returns a copy of [md] where some elements
+    have been factorized. *)
