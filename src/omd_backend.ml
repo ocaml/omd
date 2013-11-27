@@ -641,7 +641,10 @@ let escape_markdown_characters s =
   let b = Buffer.create (String.length s * 2) in
     for i = 0 to String.length s - 1 do
       match s.[i] with
-        | '\\' | '*' | '+' | '.' | '-' as c ->
+        | '\\' 
+        | '*' | '+' | '.' | '-' | '[' | ']'
+        | '!' | '(' | ')' | '<' | '>'
+              as c ->
             Buffer.add_char b '\\';
             Buffer.add_char b c
         | c ->
