@@ -111,7 +111,7 @@ let () =
   test "blockquote + code (tab)" "> \tcode"
        [Blockquote [Code_block ("", "code")]];
   test "blockquote + code ```" "> ```\n> code\n> ```"
-       [Blockquote [Code_block ("", "code\n")]];
+       [Blockquote [Code_block ("", "code")]];
 
 
   (* Lists
@@ -129,4 +129,4 @@ let () =
    ***********************************************************************)
 
   test "code dashes" "```\n--\n--\n--\n```"
-       [Omd.Code_block ("", "--\n--\n--\n")]
+       [Omd.Code_block ("", "--\n--\n--")]
