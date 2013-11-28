@@ -39,23 +39,23 @@ let process successes failures file =
   in
   (* Make sure a round trip produce identical results *)
   let round_trip = Omd.of_string(Omd.to_markdown md) in
-  if expected <> observed && remove_blank expected <> remove_blank observed then (
+  if expected <> observed && remove_blank expected <> remove_blank observed
+  then (
     eprintf "FAILURE: %s\n" file;
     eprintf "  expected = %S\n" (expected);
     eprintf "  observed = %S\n" (observed);
     incr failures
   )
-  else if Omd_representation.loose_compare md round_trip <> 0 
-    && 
-    Omd_representation.loose_compare
-    (Omd_backend.normalise_md md)
-    (Omd_backend.normalise_md round_trip) <> 0
+  else if Omd_representation.(
+    loose_compare md round_trip <> 0 
+    && loose_compare (normalise_md md) (normalise_md round_trip) <> 0
+  )
   then (
     eprintf "FAILURE: %s\n" file;
     eprintf "  Omd.of_string(Omd.to_markdown md) <> md\n";
     eprintf "Expected =%S\n  Result =%S\n"
-      (Omd_backend.sexpr_of_md (Omd_backend.normalise_md md))
-      (Omd_backend.sexpr_of_md (Omd_backend.normalise_md round_trip));
+      (Omd_backend.sexpr_of_md (Omd_representation.normalise_md md))
+      (Omd_backend.sexpr_of_md (Omd_representation.normalise_md round_trip));
     incr failures
   )
   else (
