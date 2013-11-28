@@ -39,7 +39,8 @@ val unindent_rev :
   Omd_representation.tok list ->
   Omd_representation.tok list * Omd_representation.tok list
 (** [unindent_rev n l] returns the same couple as [unindent n l]
-    except that the first element (which is a list) is reversed. *)
+    except that the first element (which is a list) is reversed. 
+    This function is used for lists. *)
 
 val unindent :
   int ->
@@ -49,7 +50,29 @@ val unindent :
     the consecutive lines of [l] that are indented with at least [n]
     spaces, and de-indented by [n] spaces. If [l] starts with a line
     that is indented by less than [n] spaces, then it returns [([], l)].
+    This function is used for lists, so it does not require [n]
+    spaces on every single line, but only on some specific ones of them.
 *)
+
+val unindent_strict_rev :
+  int ->
+  Omd_representation.tok list ->
+  Omd_representation.tok list * Omd_representation.tok list
+(** [unindent_strict_rev n l] returns the same couple as [unindent n l]
+    except that the first element (which is a list) is reversed.
+    This function is used for blockquotes. *)
+
+val unindent_strict :
+  int ->
+  Omd_representation.tok list ->
+  Omd_representation.tok list * Omd_representation.tok list
+(** [unindent_strict n l] returns [(unindented, rest)] where [unindented] is
+    the consecutive lines of [l] that are indented with at least [n]
+    spaces, and de-indented by [n] spaces. If [l] starts with a line
+    that is indented by less than [n] spaces, then it returns [([], l)].
+    This function is used for blockquotes.
+*)
+
 
 
 val is_blank : Omd_representation.tok list -> bool

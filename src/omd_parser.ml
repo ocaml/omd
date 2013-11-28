@@ -308,6 +308,42 @@ let unindent_rev n lexemes =
   if debug then eprintf "CALL: Omd_parser.unindent_rev\n%!";
   assert_well_formed lexemes;
   let rec loop accu cl = function
+    | Newline::(Space|Spaces _ as s)::(
+        (Number _::Dot::(Space|Spaces _)::_)
+      | ((Star|Plus|Minus)::(Space|Spaces _)::_)
+        as tl) as l ->
+      if n = Omd_lexer.length s then
+        loop (Newline::cl@accu) [] tl
+      else
+        (cl@accu), l
+    | Newline::(Space|Spaces _ as s)::tl ->
+      loop (Newline::cl@accu)
+        [Omd_lexer.make_space (max 0 (Omd_lexer.length s - n))]
+        tl
+    | Newlines(_)::_ as l ->
+      (cl@accu), l
+    | Newline::_ as l ->
+      (cl@accu), l
+    | e::tl ->
+      loop accu (e::cl) tl
+    | [] as l ->
+      (cl@accu), l
+  in
+  match loop [] [] lexemes with
+  | [], right -> [], right
+  | l, right ->
+      assert_well_formed l;
+      l, right
+
+let unindent n lexemes =
+  let fst, snd = unindent_rev n lexemes in
+    List.rev fst, snd
+
+
+let unindent_strict_rev n lexemes =
+  if debug then eprintf "Omd_parser.unindent_strict_rev\n%!";
+  assert_well_formed lexemes;
+  let rec loop accu cl = function
     | Newline::Space::tl as l ->
       if n = 1 then
         loop (Newline::cl@accu) [] tl
@@ -343,9 +379,8 @@ let unindent_rev n lexemes =
       assert_well_formed l;
       l, right
 
-let unindent n lexemes =
-  if debug then eprintf "CALL: Omd_parser.unindent\n%!";
-  let fst, snd = unindent_rev n lexemes in
+let unindent_strict n lexemes =
+  let fst, snd = unindent_strict_rev n lexemes in
     List.rev fst, snd
 
 let rec is_blank = function
@@ -1471,6 +1506,14 @@ let parse_list main_loop r p l =
                      | _ -> None);
            Newline],
          tl)
+    | Newline :: (Space as s) :: tl ->
+      Continue_with
+        ([s;
+          Tag(fun r p ->
+              function (Space|Spaces _)::tl -> Some(r,p,Space::tl)
+                     | _ -> None);
+           Newline],
+         tl)
     | _::_ ->
        Continue
   in
@@ -1848,7 +1891,7 @@ let main_parse extensions default_lang lexemes =
       begin
         let new_r, p, rest =
           let foo, rest =
-            match unindent (Omd_lexer.length s) (Newline::lexemes) with
+            match unindent_strict (Omd_lexer.length s) (Newline::lexemes) with
               | (Newline|Newlines _)::foo, rest -> foo, rest
               | res -> res
           in
