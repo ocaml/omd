@@ -29,6 +29,7 @@ let rec normalise_md l =
     | [NL;NL]
     | [NL] -> []
     | [] -> []
+    | NL::NL::NL::tl -> loop (NL::NL::tl)
     | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
     | Paragraph[Text " "]::tl -> loop tl
     | Paragraph[]::tl -> loop tl
@@ -121,24 +122,54 @@ let make_paragraphs md =
     | x::tl ->
         loop (x::cp) accu tl
   in
-  let rec clean_paragraphs l = List.map (function
-    | Paragraph(p) -> 
+  let remove_white_crumbs l =
+    let rec loop = function
+    | [] -> []
+    | Text " " :: tl
+    | NL::tl
+    | Br::tl
+      ->
+      loop tl
+    | e::tl -> e::loop tl
+    in 
+    List.rev (loop (List.rev l))
+  in
+  let rec clean_paragraphs = function
+    | [] -> []
+    | Paragraph[]::tl -> tl
+    | Paragraph(p) :: tl ->
         Paragraph(clean_paragraphs
-                    (remove_initial_newlines (normalise_md p)))
-    | H1 v -> H1(clean_paragraphs v)
-    | H2 v -> H2(clean_paragraphs v)
-    | H3 v -> H3(clean_paragraphs v)
-    | H4 v -> H4(clean_paragraphs v)
-    | H5 v -> H5(clean_paragraphs v)
-    | H6 v -> H6(clean_paragraphs v)
-    | Emph v -> Emph(clean_paragraphs v)
-    | Bold v -> Bold(clean_paragraphs v)
-    | Ul v -> Ul(List.map clean_paragraphs v)
-    | Ol v -> Ol(List.map clean_paragraphs v)
-    | Ulp v -> Ulp(List.map clean_paragraphs v)
-    | Olp v -> Olp(List.map clean_paragraphs v)
-    | Blockquote v -> Blockquote(clean_paragraphs v)
-    | Url(href,v,title) -> Url(href,(clean_paragraphs v),title)
+                    (remove_initial_newlines
+                       (remove_white_crumbs(normalise_md p))))
+        :: clean_paragraphs tl
+    | H1 v :: tl -> H1(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H2 v :: tl -> H2(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H3 v :: tl -> H3(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H4 v :: tl -> H4(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H5 v :: tl -> H5(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H6 v :: tl -> H6(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Emph v :: tl -> Emph(clean_paragraphs v)
+                      :: clean_paragraphs tl
+    | Bold v :: tl -> Bold(clean_paragraphs v)
+                      :: clean_paragraphs tl
+    | Ul v :: tl -> Ul(List.map clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Ol v :: tl -> Ol(List.map clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Ulp v :: tl -> Ulp(List.map clean_paragraphs v)
+                     :: clean_paragraphs tl
+    | Olp v :: tl -> Olp(List.map clean_paragraphs v)
+                     :: clean_paragraphs tl
+    | Blockquote v :: tl -> Blockquote(clean_paragraphs v)
+                            :: clean_paragraphs tl
+    | Url(href,v,title) :: tl -> Url(href,(clean_paragraphs v),title)
+                                 :: clean_paragraphs tl
     | Text _
     | Code _
     | Code_block _
@@ -151,8 +182,7 @@ let make_paragraphs md =
     | Html_block _
     | Html_comment _
     | Img _
-    | X _ as v -> v)
-    l
+    | X _ as v :: tl -> v :: clean_paragraphs tl
   in
   clean_paragraphs(loop [] [] md)
 
@@ -602,19 +632,13 @@ let rec sexpr_of_md md =
         Buffer.add_string b "(Hr)";
         loop tl
     | Html s :: tl ->
-        Buffer.add_string b "(Html ";
-        Buffer.add_string b s;
-        Buffer.add_string b ")";
+        bprintf b "(Html %S)" s;
         loop tl
     | Html_block s :: tl ->
-        Buffer.add_string b "(Html_block ";
-        Buffer.add_string b s;
-        Buffer.add_string b ")";
+        bprintf b "(Html_block %S)" s;
         loop tl
     | Html_comment s :: tl ->
-        Buffer.add_string b "(Html_comments ";
-        Buffer.add_string b s;
-        Buffer.add_string b ")";
+        bprintf b "(Html_comment %S)" s;
         loop tl
     | Url (href,s,title) :: tl ->
         bprintf b "(Url %S %s %S)" href (html_of_md s) title;
@@ -888,8 +912,25 @@ let rec markdown_of_md md =
     | Html s :: tl ->
       Buffer.add_string b s;
       loop list_indent tl
+    | Html_block s::NL::((Html_block _:: _) as tl)
+    | Html_block s::NL::NL::((Html_block _:: _) as tl)
+    | Html_block s::((Html_block _:: _) as tl) ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+        Buffer.add_string b "\n\n"
+      else if Buffer.length b = 0 then
+        ()
+      else
+        Buffer.add_string b "\n";
+      Buffer.add_string b s;
+      Buffer.add_string b "\n";
+      loop list_indent tl
     | Html_block s :: tl ->
-      Buffer.add_string b "\n\n";
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+        Buffer.add_string b "\n\n"
+      else if Buffer.length b = 0 then
+        ()
+      else
+        Buffer.add_string b "\n";
       Buffer.add_string b s;
       Buffer.add_string b "\n\n";
       loop list_indent tl
@@ -933,6 +974,7 @@ let rec markdown_of_md md =
       Buffer.add_string b "\n";
       loop list_indent tl
     | NL :: tl ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
         Buffer.add_string b "\n";
         loop list_indent tl
     | [] -> ()

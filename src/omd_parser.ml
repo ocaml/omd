@@ -317,8 +317,9 @@ let unindent_rev n lexemes =
       else
         (cl@accu), l
     | Newline::(Space|Spaces _ as s)::tl ->
+      let x = Omd_lexer.length s - n in
       loop (Newline::cl@accu)
-        [Omd_lexer.make_space (max 0 (Omd_lexer.length s - n))]
+        (if x > 0 then [Omd_lexer.make_space x] else [])
         tl
     | Newlines(_)::_ as l ->
       (cl@accu), l
@@ -2177,6 +2178,20 @@ let main_parse extensions default_lang lexemes =
       main_loop_rev (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
     | _, Backslash :: Hashs n :: tl -> assert (n >= 0); (* \###... *)
       main_loop_rev (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
+    | _, Backslash :: (Greaterthan as t) :: tl -> (* \> *)
+      main_loop_rev (Text (">") :: r) [t] tl
+    | _, Backslash :: Greaterthans 0 :: tl -> (* \>>>... *)
+      main_loop_rev (Text (">") :: r) [Backslash; Greaterthan] (Greaterthan :: tl)
+    | _, Backslash :: Greaterthans n :: tl -> assert (n >= 0); (* \>>>... *)
+      main_loop_rev (Text (">") :: r) [Backslash; Greaterthan]
+        (Greaterthans (n-1) :: tl)
+    | _, Backslash :: (Lessthan as t) :: tl -> (* \< *)
+      main_loop_rev (Text ("<") :: r) [t] tl
+    | _, Backslash :: Lessthans 0 :: tl -> (* \<<<... *)
+      main_loop_rev (Text ("<") :: r) [Backslash; Lessthan] (Lessthan :: tl)
+    | _, Backslash :: Lessthans n :: tl -> assert (n >= 0); (* \<<<... *)
+      main_loop_rev (Text ("<") :: r) [Backslash; Lessthan]
+        (Lessthans (n-1) :: tl)
     | _, (Backslashs 0 as t) :: tl -> (* \\\\... *)
       main_loop_rev (Text ("\\") :: r) [t] tl
     | _, (Backslashs n as t) :: tl -> (* \\\\... *)
