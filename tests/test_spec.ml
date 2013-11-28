@@ -8,7 +8,7 @@ let failures = ref 0
 let () =
   let report () =
     if !failures = 0 then
-      printf "Congratulation, all tests passed!"
+      printf "Congratulation, all specification tests passed!\n"
     else
       printf "%d test%s passed, %d test%s failed.\n"
              !success (if !success > 1 then "s" else "")
@@ -20,12 +20,12 @@ let test name md_string desired_md =
     let md = Omd.of_string md_string in
     if md = desired_md then (
       incr success;
-      printf "%s: SUCCESS\n" name
+      (* printf "%s: SUCCESS\n" name *)
     )
     else (
       incr failures;
       printf "%s: FAILURE\n" name;
-      printf "input=%S\nexpected =%S\n  result =%S\n"
+      printf "   input = %S\nexpected = %S\n  result = %S\n"
         md_string
         (Omd_backend.sexpr_of_md desired_md)
         (Omd_backend.sexpr_of_md md)
@@ -72,7 +72,7 @@ let () =
   test "header, #####" "##### Title" [Omd.H5 [Omd.Text "Title"]];
   test "header, ######" "###### Title" [Omd.H6 [Omd.Text "Title"]];
   test "header, too deep" "######## Title\n"
-    [Omd.Paragraph[Omd.Text "########"; Omd.Text " "; Omd.Text "Title"]];
+    [Omd.Paragraph[Omd.Text "######## Title"]];
   test "header, # + space" "# Title  " [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title # " [Omd.H1 [Omd.Text "Title"]];
@@ -104,8 +104,8 @@ let () =
   test "blockquote + header + par" "> ## header\n> Hello"
        [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
   test "blockquote + list" "> 1. item1\n> 2. item2\n"
-       [Blockquote [Ol [[Text "item1"; NL]; (* FIXME: shoule NL go? *)
-                        [Text "item2"; NL]]]];
+       [Blockquote [Ol [[Text "item1"];
+                        [Text "item2"]]]];
   test "blockquote + code (4 spaces)" ">     code"
        [Blockquote [Code_block ("", "code")]];
   test "blockquote + code (tab)" "> \tcode"
@@ -122,8 +122,8 @@ let () =
   test "list, simple2" "\n8.  Red\n1.  Green\n3.  Blue"
        [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
   test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
-       [Ol [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
-            [Paragraph[Text "Blue"]]]];
+       [Olp [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
+             [Paragraph[Text "Blue"]]]];
 
   (* Code
    ***********************************************************************)
