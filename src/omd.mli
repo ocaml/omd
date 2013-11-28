@@ -104,27 +104,16 @@ type code_stylist = lang:string -> string -> string
 (** {2 Input and Output} *)
 
 val of_string : ?extensions:Omd_representation.extensions ->
-                ?paragraph: bool -> ?lang: name ->
+                ?lang: name ->
                 string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
-
-    @param paragraph whether to identify paragraphs.  Default:
-    [false].  Alternatively, you can use {!make_paragraphs} on the
-    returned Markdown to identify paragraphs.
 
     @param lang language for blocks of code where it was not
     specified.  Default: [""].
 
     If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
     and {!Omd_parser.parse}.  *)
-
-
-val make_paragraphs : t -> t
-(** Build Markdown paragraphs. This Markdown parser doesn't
-    build paragraph directly, one has to call this function
-    to build them. On the other hand, if you don't want
-    automatic Markdown-style paragraphs, don't call this function! *)
 
 val set_default_lang : name -> t -> t
 (** [set_default_lang lang md] return a copy of [md] where the

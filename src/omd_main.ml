@@ -266,7 +266,6 @@ let main () =
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,
         " List available extensions ext (not yet implemented).";
-        "-P", Set(no_paragraphs)," Don't make paragraphs.";
         "-b", Set(Omd_parser.blind_html),
         " Don't check validity of HTML tag names.";
         "-s", Set(Omd_parser.strict_html),
@@ -309,8 +308,7 @@ let main () =
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs, or leave as it is *)
         (if !otoc then Omd.toc ~start:!toc_start ~depth:!toc_depth
-         else if !no_paragraphs then fun x -> x
-         else make_paragraphs)
+         else Omd_parser.make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML, or markdown *)
         (if !notags then to_text

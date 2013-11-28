@@ -278,6 +278,131 @@ print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
     in
     loop [] l
 
+
+(* Remove all [NL] and [Br] at the beginning. *)
+let rec remove_initial_newlines = function
+  | [] -> []
+  | (NL | Br) :: tl -> remove_initial_newlines tl
+  | l -> l
+
+
+(** - recognizes paragraphs
+    - glues following blockquotes  *)
+let make_paragraphs md =
+  let rec loop cp accu = function (* cp means current paragraph *)
+    | [] ->
+        let accu =
+         match cp with
+         | [] | [NL] | [Br] -> accu
+         | (NL|Br)::cp -> Paragraph(List.rev cp)::accu
+         | cp -> Paragraph(List.rev cp)::accu
+        in
+          List.rev accu
+    | Blockquote b1 :: Blockquote b2 :: tl
+    | Blockquote b1 :: (NL|Br) :: Blockquote b2 :: tl
+    | Blockquote b1 :: (NL|Br) :: (NL|Br) :: Blockquote b2 :: tl ->
+        loop cp accu (Blockquote(b1@b2):: tl)
+    | Blockquote b :: tl ->
+        let e = Blockquote(loop [] [] b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | (Ulp b) :: tl ->
+        let e = Ulp(List.map (fun li -> loop [] [] li) b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | (Olp b) :: tl ->
+        let e = Olp(List.map (fun li -> loop [] [] li) b) in
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | Html_comment _ as e :: tl ->
+       (match cp with
+        | [] -> loop [] (e::accu) tl
+        | [NL] | [Br] -> loop [] (e::NL::accu) tl
+        | _ -> loop (e::cp) accu tl)
+    | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
+       | Html_block _) as e :: tl ->
+       (match cp with
+        | [] | [NL] | [Br] -> loop cp (e::accu) tl
+        | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+    | Text "\n" :: _ | Paragraph _ :: _ ->
+        invalid_arg "Omd_backend.make_paragraphs"
+    | (NL|Br) :: (NL|Br) :: tl ->
+        let tl = remove_initial_newlines tl in
+        begin match cp with
+              | [] | [NL] | [Br] -> loop [] (NL::accu) tl
+              | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
+        end
+    | x::tl ->
+        loop (x::cp) accu tl
+  in
+  let remove_white_crumbs l =
+    let rec loop = function
+    | [] -> []
+    | Text " " :: tl
+    | NL::tl
+    | Br::tl
+      ->
+      loop tl
+    | l -> l
+    in 
+    List.rev (loop (List.rev l))
+  in
+  let rec clean_paragraphs = function
+    | [] -> []
+    | Paragraph[]::tl -> tl
+    | Paragraph(p) :: tl ->
+        Paragraph(clean_paragraphs
+                    (remove_initial_newlines
+                       (remove_white_crumbs(normalise_md p))))
+        :: clean_paragraphs tl
+    | H1 v :: tl -> H1(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H2 v :: tl -> H2(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H3 v :: tl -> H3(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H4 v :: tl -> H4(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H5 v :: tl -> H5(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | H6 v :: tl -> H6(clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Emph v :: tl -> Emph(clean_paragraphs v)
+                      :: clean_paragraphs tl
+    | Bold v :: tl -> Bold(clean_paragraphs v)
+                      :: clean_paragraphs tl
+    | Ul v :: tl -> Ul(List.map clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Ol v :: tl -> Ol(List.map clean_paragraphs v)
+                    :: clean_paragraphs tl
+    | Ulp v :: tl -> Ulp(List.map clean_paragraphs v)
+                     :: clean_paragraphs tl
+    | Olp v :: tl -> Olp(List.map clean_paragraphs v)
+                     :: clean_paragraphs tl
+    | Blockquote v :: tl -> Blockquote(clean_paragraphs v)
+                            :: clean_paragraphs tl
+    | Url(href,v,title) :: tl -> Url(href,(clean_paragraphs v),title)
+                                 :: clean_paragraphs tl
+    | Text _
+    | Code _
+    | Code_block _
+    | Br
+    | Hr
+    | NL
+    | Ref _
+    | Img_ref _
+    | Html _
+    | Html_block _
+    | Html_comment _
+    | Img _
+    | X _ as v :: tl -> v :: clean_paragraphs tl
+  in
+  clean_paragraphs(loop [] [] md)
+
+
 (** [assert_well_formed] is a developer's function that helps to track badly constructed token lists.
     This function has an effect only if [trackfix] is [true].
  *)

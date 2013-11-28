@@ -184,3 +184,7 @@ type extensions = extension list
 val loose_compare : t -> t -> int
 (** [loose_compare t1 t2] returns [0] if [t1] and [t2]
     are equivalent, otherwise it returns another number. *)
+
+val normalise_md : t -> t
+(** [normalise_md md] returns a copy of [md] where some elements
+    have been factorized. *)

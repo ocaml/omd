@@ -266,3 +266,54 @@ type tok = (* Cs(n) means (n+2) times C *)
 and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option))
 
 type extensions = extension list
+
+let rec normalise_md l =
+  let rec loop = function
+    | [NL;NL;NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;]
+    | [NL;NL;NL;]
+    | [NL;NL]
+    | [NL] -> []
+    | [] -> []
+    | NL::NL::NL::tl -> loop (NL::NL::tl)
+    | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
+    | NL::(((Paragraph _|Html_block _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _|Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
+    | Paragraph[Text " "]::tl -> loop tl
+    | Paragraph[]::tl -> loop tl
+    | Paragraph(p)::tl -> Paragraph(loop p)::loop tl
+    | H1 v::tl -> H1(loop v)::loop tl
+    | H2 v::tl -> H2(loop v)::loop tl
+    | H3 v::tl -> H3(loop v)::loop tl
+    | H4 v::tl -> H4(loop v)::loop tl
+    | H5 v::tl -> H5(loop v)::loop tl
+    | H6 v::tl -> H6(loop v)::loop tl
+    | Emph v::tl -> Emph(loop v)::loop tl
+    | Bold v::tl -> Bold(loop v)::loop tl
+    | Ul v::tl -> Ul(List.map loop v)::loop tl
+    | Ol v::tl -> Ol(List.map loop v)::loop tl
+    | Ulp v::tl -> Ulp(List.map loop v)::loop tl
+    | Olp v::tl -> Olp(List.map loop v)::loop tl
+    | Blockquote v::tl -> Blockquote(loop v)::loop tl
+    | Url(href,v,title)::tl -> Url(href,(loop v),title)::loop tl
+    | Text _
+    | Code _
+    | Code_block _
+    | Br
+    | Hr
+    | NL
+    | Ref _
+    | Img_ref _
+    | Html _
+    | Html_block _
+    | Html_comment _
+    | Img _
+    | X _ as v::tl -> v::loop tl
+  in
+  let a = loop l in
+  let b = loop a in
+  if a = b then
+    a
+  else
+    normalise_md b

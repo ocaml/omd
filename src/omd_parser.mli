@@ -227,3 +227,8 @@ val parse : ?extensions:Omd_representation.extensions -> ?lang: string -> l
 
     @param lang language for blocks of code where it was not specified.
     Default: [""].  *)
+
+val make_paragraphs : Omd_representation.t -> Omd_representation.t
+(** Since [Omd_parser.parse] doesn't build paragraphs, if you want
+    Markdown-style paragraphs, you need to apply this function to
+    the result of [Omd_parser.parse]. *)
