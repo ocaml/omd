@@ -130,7 +130,7 @@ let make_paragraphs md =
     | Br::tl
       ->
       loop tl
-    | e::tl -> e::loop tl
+    | l -> l
     in 
     List.rev (loop (List.rev l))
   in
@@ -899,6 +899,8 @@ let rec markdown_of_md md =
             Printf.bprintf b "%s%s\n" (String.make n '`')
               (if lang = "" then !default_language else lang);
             output_indented_block (list_indent) c;
+            if Buffer.nth b (Buffer.length b - 1) <> '\n' then
+              Buffer.add_char b '\n';
             Buffer.add_string b (String.make (list_indent) ' ');
             Printf.bprintf b "%s\n" (String.make n '`');
           end;
