@@ -77,83 +77,94 @@ and title = string
 and t = element list
 
 type tok =
-    Ampersand
-  | Ampersands of int
-  | At
-  | Ats of int
-  | Backquote
-  | Backquotes of int
-  | Backslash
-  | Backslashs of int
-  | Bar
-  | Bars of int
-  | Caret
-  | Carets of int
-  | Cbrace
-  | Cbraces of int
-  | Colon
-  | Colons of int
-  | Comma
-  | Commas of int
-  | Cparenthesis
-  | Cparenthesiss of int
-  | Cbracket
-  | Cbrackets of int
-  | Dollar
-  | Dollars of int
-  | Dot
-  | Dots of int
-  | Doublequote
-  | Doublequotes of int
-  | Exclamation
-  | Exclamations of int
-  | Equal
-  | Equals of int
-  | Greaterthan
-  | Greaterthans of int
-  | Hash
-  | Hashs of int
-  | Lessthan
-  | Lessthans of int
-  | Minus
-  | Minuss of int
-  | Newline
-  | Newlines of int
+    Ampersand (* one & *)
+  | Ampersands of int (* [Ampersands(n)] is (n+2) consecutive occurrences of & *)
+  | At (* @ *)
+  | Ats of int (* @@.. *)
+  | Backquote (* ` *)
+  | Backquotes of int (* ``.. *)
+  | Backslash (* \\ *)
+  | Backslashs of int (* \\\\.. *)
+  | Bar (* | *)
+  | Bars of int (* ||.. *)
+  | Caret (* ^ *)
+  | Carets of int (* ^^.. *)
+  | Cbrace (* } *)
+  | Cbraces of int (* }}.. *)
+  | Colon (* : *)
+  | Colons of int (* ::.. *)
+  | Comma (* , *)
+  | Commas of int (* ,,.. *)
+  | Cparenthesis (* ) *)
+  | Cparenthesiss of int (* )).. *)
+  | Cbracket (* ] *)
+  | Cbrackets of int (* ]].. *)
+  | Dollar (* $ *)
+  | Dollars of int (* $$.. *)
+  | Dot (* . *)
+  | Dots of int (* .... *)
+  | Doublequote (* \034 *)
+  | Doublequotes of int (* \034\034.. *)
+  | Exclamation (* ! *)
+  | Exclamations of int (* !!.. *)
+  | Equal (* = *)
+  | Equals of int (* ==.. *)
+  | Greaterthan (* > *)
+  | Greaterthans of int (* >>.. *)
+  | Hash (* # *)
+  | Hashs of int (* ##.. *)
+  | Lessthan (* < *)
+  | Lessthans of int (* <<.. *)
+  | Minus (* - *)
+  | Minuss of int (* --.. *)
+  | Newline (* \n *)
+  | Newlines of int (* \n\n.. *)
   | Number of string
-  | Obrace
-  | Obraces of int
-  | Oparenthesis
-  | Oparenthesiss of int
-  | Obracket
-  | Obrackets of int
-  | Percent
-  | Percents of int
-  | Plus
-  | Pluss of int
-  | Question
-  | Questions of int
-  | Quote
-  | Quotes of int
-  | Semicolon
-  | Semicolons of int
-  | Slash
-  | Slashs of int
-  | Space
-  | Spaces of int
-  | Star
-  | Stars of int
-  | Tab
-  | Tabs of int
-  | Tilde
-  | Tildes of int
-  | Underscore
-  | Underscores of int
+  | Obrace (* { *)
+  | Obraces of int (* {{.. *)
+  | Oparenthesis (* ( *)
+  | Oparenthesiss of int (* ((.. *)
+  | Obracket (* [ *)
+  | Obrackets of int (* [[.. *)
+  | Percent (* % *)
+  | Percents of int (* %%.. *)
+  | Plus (* + *)
+  | Pluss of int (* ++.. *)
+  | Question (* ? *)
+  | Questions of int (* ??.. *)
+  | Quote (* ' *)
+  | Quotes of int (* ''.. *)
+  | Semicolon (* ; *)
+  | Semicolons of int (* ;;.. *)
+  | Slash (* / *)
+  | Slashs of int (* //.. *)
+  | Space (*  *)
+  | Spaces of int (* .. *)
+  | Star (* * *)
+  | Stars of int (* **.. *)
+  | Tab (* \t *)
+  | Tabs of int (* \t\t.. *)
+  | Tilde (* ~ *)
+  | Tildes of int (* ~~.. *)
+  | Underscore (* _ *)
+  | Underscores of int (* __.. *)
   | Word of string
   | Tag of extension
 (** Lexer's tokens. If you want to use the parser with an extended
     lexer, you may use the constructor [Tag] to implement
     the parser's extension. In the parser, [Tag] is used (at least)
-    3 times in order to represent metadata or to store data. *)
+    3 times in order to represent metadata or to store data.
+
+    The integers carried by constructors means that the represented
+    character appears (n+2) times. So, [Ampersand(0)] is "&&".
+    Notably, this allows to use the property that in the match
+    case [Ampersand _ ->], we know there are at least 2 ampersands.
+    This is particularly useful for some characters, such as newlines
+    and spaces. It's not useful for all of them indeed but it has
+    been designed this way for the sake of uniformity (one doesn't
+    want to know by heart which constructor have that "at least 2"
+    property and which haven't).
+*)
 
 and extension = t -> tok list -> tok list -> (t * tok list * tok list) option
 (** A function that takes the current state of the parser's data and
