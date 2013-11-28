@@ -2330,14 +2330,15 @@ let main_parse extensions default_lang lexemes =
 
     (* block html *)
     | ([]|[Newline|Newlines _]),
-        ((Lessthan as t)::Word(tagname)
-         ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
-         ::tl) ->
+        (Lessthan as t)
+        ::((Word(tagname)
+            ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
+            ::tl) as tlx) ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
       else if not (!blind_html || StringSet.mem tagname htmltags_set) then
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
         | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -2376,14 +2377,14 @@ let main_parse extensions default_lang lexemes =
 
     (* inline html *)
     | _, ((Lessthan as t)
-          ::((Word(tagname) as w)
+          ::(((Word(tagname) as w)
           ::((Space|Spaces _|Greaterthan|Greaterthans _)
-          ::_ as html_stuff) as tl)) ->
+          ::_) as html_stuff) as tlx)) ->
       if (!strict_html && not(StringSet.mem tagname inline_htmltags_set))
         || not(!blind_html || StringSet.mem tagname htmltags_set)
       then
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
         | Some(r, p, l) -> main_loop_rev r p l
         end
       else
