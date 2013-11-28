@@ -739,24 +739,11 @@ let rec markdown_of_md md =
       Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
-      begin match rc#get_ref name with
-        | Some(href, title) ->
-           references := Some rc;
-           if text = name then
-             Printf.bprintf b "[%s][]" text
-           else
-             Printf.bprintf b "[%s][%s]" text name;
-           loop list_indent tl
-        | None -> loop list_indent (Html(fallback)::tl)
-      end
+        if !references = None then references := Some rc;
+        loop list_indent (Html(fallback)::tl)
     | Img_ref(rc, name, alt, fallback) :: tl ->
-      begin match rc#get_ref name with
-        | Some(href, title) ->
-           references := Some rc;
-           Printf.bprintf b "![%s][%s]" alt name;
-           loop list_indent tl
-        | None -> loop list_indent (Html(fallback)::tl)
-      end
+        if !references = None then references := Some rc;
+        loop list_indent (Html(fallback)::tl)
     | Paragraph md :: tl ->
       if is_in_list then
         if fst_p_in_li then
