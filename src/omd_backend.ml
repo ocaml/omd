@@ -19,44 +19,54 @@ let rec remove_initial_newlines = function
   | (NL | Br) :: tl -> remove_initial_newlines tl
   | l -> l
 
-let rec normalise_md = function
-  | [NL;NL;NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;NL;]
-  | [NL;NL;NL;NL;]
-  | [NL;NL;NL;]
-  | [NL;NL]
-  | [NL] -> []
-  | [] -> []
-  | Text t1::Text t2::tl -> normalise_md (Text(t1^t2)::tl)
-  | Paragraph(p)::tl -> Paragraph(normalise_md p)::normalise_md tl
-  | H1 v::tl -> H1(normalise_md v)::normalise_md tl
-  | H2 v::tl -> H2(normalise_md v)::normalise_md tl
-  | H3 v::tl -> H3(normalise_md v)::normalise_md tl
-  | H4 v::tl -> H4(normalise_md v)::normalise_md tl
-  | H5 v::tl -> H5(normalise_md v)::normalise_md tl
-  | H6 v::tl -> H6(normalise_md v)::normalise_md tl
-  | Emph v::tl -> Emph(normalise_md v)::normalise_md tl
-  | Bold v::tl -> Bold(normalise_md v)::normalise_md tl
-  | Ul v::tl -> Ul(List.map normalise_md v)::normalise_md tl
-  | Ol v::tl -> Ol(List.map normalise_md v)::normalise_md tl
-  | Ulp v::tl -> Ulp(List.map normalise_md v)::normalise_md tl
-  | Olp v::tl -> Olp(List.map normalise_md v)::normalise_md tl
-  | Blockquote v::tl -> Blockquote(normalise_md v)::normalise_md tl
-  | Url(href,v,title)::tl -> Url(href,(normalise_md v),title)::normalise_md tl
-  | Text _
-  | Code _
-  | Code_block _
-  | Br
-  | Hr
-  | NL
-  | Ref _
-  | Img_ref _
-  | Html _
-  | Html_block _
-  | Html_comment _
-  | Img _
-  | X _ as v::tl -> v::normalise_md tl
+let rec normalise_md l =
+  let rec loop = function
+    | [NL;NL;NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;NL;]
+    | [NL;NL;NL;NL;]
+    | [NL;NL;NL;]
+    | [NL;NL]
+    | [NL] -> []
+    | [] -> []
+    | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
+    | Paragraph[Text " "]::tl -> loop tl
+    | Paragraph[]::tl -> loop tl
+    | Paragraph(p)::tl -> Paragraph(loop p)::loop tl
+    | H1 v::tl -> H1(loop v)::loop tl
+    | H2 v::tl -> H2(loop v)::loop tl
+    | H3 v::tl -> H3(loop v)::loop tl
+    | H4 v::tl -> H4(loop v)::loop tl
+    | H5 v::tl -> H5(loop v)::loop tl
+    | H6 v::tl -> H6(loop v)::loop tl
+    | Emph v::tl -> Emph(loop v)::loop tl
+    | Bold v::tl -> Bold(loop v)::loop tl
+    | Ul v::tl -> Ul(List.map loop v)::loop tl
+    | Ol v::tl -> Ol(List.map loop v)::loop tl
+    | Ulp v::tl -> Ulp(List.map loop v)::loop tl
+    | Olp v::tl -> Olp(List.map loop v)::loop tl
+    | Blockquote v::tl -> Blockquote(loop v)::loop tl
+    | Url(href,v,title)::tl -> Url(href,(loop v),title)::loop tl
+    | Text _
+    | Code _
+    | Code_block _
+    | Br
+    | Hr
+    | NL
+    | Ref _
+    | Img_ref _
+    | Html _
+    | Html_block _
+    | Html_comment _
+    | Img _
+    | X _ as v::tl -> v::loop tl
+  in
+  let a = loop l in
+  let b = loop a in
+  if a = b then
+    a
+  else
+    normalise_md b
 
 
 (** - recognizes paragraphs
@@ -655,6 +665,7 @@ let escape_markdown_characters s =
         | '\\' 
         | '*' | '+' | '.' | '-' | '[' | ']'
         | '!' | '(' | ')' | '<' | '>'
+        | '`' | '#'
               as c ->
             Buffer.add_char b '\\';
             Buffer.add_char b c
