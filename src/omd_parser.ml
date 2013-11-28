@@ -1183,7 +1183,7 @@ let emailstyle_quoting main_loop r _p lexemes =
   | _ -> invalid_arg "Omd_parser.emailstyle_quoting"
 
 (* maybe a reference *)
-let maybe_reference rc r p l =
+let maybe_reference rc r _p l =
   assert_well_formed l;
   (* this function is called when we know it's not a link although
      it started with a '[' *)
@@ -1283,7 +1283,7 @@ let maybe_reference rc r p l =
 
 
 (** maybe a link *)
-let maybe_link main_loop r p l =
+let maybe_link main_loop r _p l =
   if debug then eprintf "# maybe_link\n";
   assert_well_formed l;
   let read_url name l =
@@ -1404,7 +1404,7 @@ let bcode default_lang r p l =
       if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
       Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
-let icode default_lang r p l =
+let icode default_lang r _p l =
   assert_well_formed l;
   (* indented code:
      returns (r,p,l) where r is the result, p is the last thing read,
@@ -1441,7 +1441,11 @@ let icode default_lang r p l =
       | _ -> assert false
 
 
-let parse_list main_loop r p l =
+let has_paragraphs l =
+  (* Has at least 2 consecutive newlines. *)
+  List.exists (function Newlines _ -> true | _ -> false) l
+
+let parse_list main_loop r _p l =
   assert_well_formed l;
   if debug then begin
     eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
@@ -1571,10 +1575,7 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            if debug then
              eprintf "new_item=%S\n%!" (Omd_lexer.destring_of_tokens new_item);
            match indents with
@@ -1591,10 +1592,7 @@ let parse_list main_loop r p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
@@ -1616,10 +1614,7 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then
@@ -1649,10 +1644,7 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            assert_well_formed new_item;
            match indents with
            | [] ->
@@ -1668,10 +1660,7 @@ let parse_list main_loop r p l =
          match fsplit ~f:(end_of_item 1) tl with
          | None -> make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              assert(items = []);
@@ -1693,10 +1682,7 @@ let parse_list main_loop r p l =
          | None ->
            make_up p items, l
          | Some(new_item, rest) ->
-           let p =
-             p ||
-             List.exists (function Newlines _ -> true | _ -> false) new_item
-           in
+           let p = p || has_paragraphs new_item in
            match indents with
            | [] ->
              if debug then eprintf "spaces[] l=(%S)\n%!"
