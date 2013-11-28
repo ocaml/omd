@@ -1322,7 +1322,7 @@ let maybe_link main_loop r p l =
 
 
 
-(** code that starts with one or several backquote(s) *)
+(** [bcode] parses code that's delimited by backquote(s) *)
 let bcode default_lang r p l =
   assert_well_formed l;
   let e, tl =
@@ -1335,12 +1335,20 @@ let bcode default_lang r p l =
       None
     | Backquote::tl ->
       if e = Backquote then
-        Some(List.rev accu, tl)
+        match accu with
+        | Newline::accu ->
+          Some(List.rev accu, tl)
+        | _ ->
+          Some(List.rev accu, tl)
       else
         code_block (Backquote::accu) tl
     | (Backquotes n as b)::tl ->
       if e = b then
-        Some(List.rev accu, tl)
+        match accu with
+        | Newline::accu ->
+          Some(List.rev accu, tl)
+        | _ ->
+          Some(List.rev accu, tl)
       else
         code_block (b::accu) tl
     | Tag _::tl ->
