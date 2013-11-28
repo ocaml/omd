@@ -746,7 +746,7 @@ let rec markdown_of_md md =
            else
              Printf.bprintf b "[%s][%s]" text name;
            loop list_indent tl
-        | None -> loop list_indent (Text(fallback)::tl)
+        | None -> loop list_indent (Html(fallback)::tl)
       end
     | Img_ref(rc, name, alt, fallback) :: tl ->
       begin match rc#get_ref name with
@@ -754,7 +754,7 @@ let rec markdown_of_md md =
            references := Some rc;
            Printf.bprintf b "![%s][%s]" alt name;
            loop list_indent tl
-        | None -> loop list_indent (Text(fallback)::tl)
+        | None -> loop list_indent (Html(fallback)::tl)
       end
     | Paragraph md :: tl ->
       if is_in_list then
