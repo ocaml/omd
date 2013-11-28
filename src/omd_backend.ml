@@ -240,9 +240,10 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       if lang = "" && !default_language = "" then
         Buffer.add_string b "<pre><code>"
       else if lang = "" then
-        bprintf b "<pre><code class='%s'>" !default_language
+        bprintf b "<pre class='%s'><code class='%s'>" 
+          !default_language !default_language
       else
-        bprintf b "<pre><code class='%s'>" lang;
+        bprintf b "<pre class='%s'><code class='%s'>" lang lang;
       let new_c = code_style ~lang:lang c in
       if c = new_c then
         Buffer.add_string b (htmlentities ~md:false c)
@@ -251,8 +252,17 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       Buffer.add_string b "</code></pre>";
       loop indent ~nl:true tl
     | Code(lang, c) :: tl ->
-      Buffer.add_string b "<code>";
-      Buffer.add_string b (htmlentities ~md:false c);
+      if lang = "" && !default_language = "" then
+        Buffer.add_string b "<code>"
+      else if lang = "" then
+        bprintf b "<code class='%s'>" !default_language
+      else
+        bprintf b "<code class='%s'>" lang;
+      let new_c = code_style ~lang:lang c in
+      if c = new_c then
+        Buffer.add_string b (htmlentities ~md:false c)
+      else
+        Buffer.add_string b new_c;
       Buffer.add_string b "</code>";
       loop indent tl
     | Br :: tl ->
