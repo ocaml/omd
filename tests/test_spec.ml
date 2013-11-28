@@ -114,6 +114,17 @@ let () =
        [Blockquote [Code_block ("", "code\n")]];
 
 
+  (* Lists
+   ***********************************************************************)
+
+  test "list, simple" "8.  Red\n1.  Green\n3.  Blue"
+       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+  test "list, simple2" "\n8.  Red\n1.  Green\n3.  Blue"
+       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+  test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
+       [Ol [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
+            [Paragraph[Text "Blue"]]]];
+
   (* Code
    ***********************************************************************)
 
