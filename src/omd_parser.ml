@@ -2456,9 +2456,9 @@ let main_parse extensions default_lang lexemes =
     (* block html *)
     | ([]|[Newline|Newlines _]),
         (Lessthan as t)
-        ::((Word(tagname)
-            ::((Space|Spaces _|Greaterthan|Greaterthans _) as x)
-            ::tl) as tlx) ->
+        ::(Word(tagname)
+           ::(Space|Spaces _|Greaterthan|Greaterthans _ as x)
+           ::tl as tlx) ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
       else if not (!blind_html || StringSet.mem tagname htmltags_set) then
@@ -2501,10 +2501,11 @@ let main_parse extensions default_lang lexemes =
         main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
     (* inline html *)
-    | _, ((Lessthan as t)
-          ::(((Word(tagname) as w)
-          ::((Space|Spaces _|Greaterthan|Greaterthans _)
-          ::_) as html_stuff) as tlx)) ->
+    | _, 
+          (Lessthan as t)
+          ::(Word(tagname) as w
+             ::((Space|Spaces _|Greaterthan|Greaterthans _)
+                ::_ as html_stuff) as tlx) ->
       if (!strict_html && not(StringSet.mem tagname inline_htmltags_set))
         || not(!blind_html || StringSet.mem tagname htmltags_set)
       then
