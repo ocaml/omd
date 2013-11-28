@@ -101,7 +101,6 @@ let rec loose_compare t1 t2 = match t1,t2 with
          | i -> i)
 
   | (Code _ as e1)::tl1, (Code _ as e2)::tl2
-  | (Code_block _ as e1)::tl1, (Code_block _ as e2)::tl2
   | (Br as e1)::tl1, (Br as e2)::tl2
   | (Hr as e1)::tl1, (Hr as e2)::tl2
   | (NL as e1)::tl1, (NL as e2)::tl2
@@ -114,6 +113,24 @@ let rec loose_compare t1 t2 = match t1,t2 with
       (match compare e1 e2 with
          | 0 -> loose_compare tl1 tl2
          | i -> i)
+
+  | Code_block(l1,c1)::tl1, Code_block(l2,c2)::tl2
+      ->
+      (match compare l1 l2, String.length c1 - String.length c2 with
+         | 0, 0 ->
+             (match compare c1 c2 with
+               | 0 -> loose_compare tl1 tl2
+               | i -> i)
+         | 0, 1 ->
+             (match compare c1 (c2^"\n") with
+                | 0 -> loose_compare tl1 tl2
+                | i -> i)
+         | 0, -1 ->
+             (match compare (c1^"\n") c2 with
+                | 0 -> loose_compare tl1 tl2
+                | i -> i)
+         | i, _ -> i
+      )
 
   | Url (href1, t1, title1)::tl1, Url (href2, t2, title2)::tl2
       ->
