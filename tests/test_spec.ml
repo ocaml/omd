@@ -104,8 +104,8 @@ let () =
   test "blockquote + header + par" "> ## header\n> Hello"
        [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
   test "blockquote + list" "> 1. item1\n> 2. item2\n"
-       [Blockquote [Ol [[Text "item1"; NL]; (* FIXME: shoule NL go? *)
-                        [Text "item2"; NL]]]];
+       [Blockquote [Ol [[Text "item1"];
+                        [Text "item2"]]]];
   test "blockquote + code (4 spaces)" ">     code"
        [Blockquote [Code_block ("", "code")]];
   test "blockquote + code (tab)" "> \tcode"
@@ -122,8 +122,8 @@ let () =
   test "list, simple2" "\n8.  Red\n1.  Green\n3.  Blue"
        [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
   test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
-       [Ol [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
-            [Paragraph[Text "Blue"]]]];
+       [Olp [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
+             [Paragraph[Text "Blue"]]]];
 
   (* Code
    ***********************************************************************)
