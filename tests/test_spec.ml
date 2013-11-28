@@ -72,7 +72,7 @@ let () =
   test "header, #####" "##### Title" [Omd.H5 [Omd.Text "Title"]];
   test "header, ######" "###### Title" [Omd.H6 [Omd.Text "Title"]];
   test "header, too deep" "######## Title\n"
-    [Omd.Paragraph[Omd.Text "########"; Omd.Text " "; Omd.Text "Title"]];
+    [Omd.Paragraph[Omd.Text "######## Title"]];
   test "header, # + space" "# Title  " [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
   test "header, # #" "# Title # " [Omd.H1 [Omd.Text "Title"]];
