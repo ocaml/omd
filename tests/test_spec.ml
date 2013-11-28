@@ -8,7 +8,7 @@ let failures = ref 0
 let () =
   let report () =
     if !failures = 0 then
-      printf "Congratulation, all tests passed!"
+      printf "Congratulation, all specification tests passed!\n"
     else
       printf "%d test%s passed, %d test%s failed.\n"
              !success (if !success > 1 then "s" else "")
@@ -20,12 +20,12 @@ let test name md_string desired_md =
     let md = Omd.of_string md_string in
     if md = desired_md then (
       incr success;
-      printf "%s: SUCCESS\n" name
+      (* printf "%s: SUCCESS\n" name *)
     )
     else (
       incr failures;
       printf "%s: FAILURE\n" name;
-      printf "input=%S\nexpected =%S\n  result =%S\n"
+      printf "   input = %S\nexpected = %S\n  result = %S\n"
         md_string
         (Omd_backend.sexpr_of_md desired_md)
         (Omd_backend.sexpr_of_md md)
