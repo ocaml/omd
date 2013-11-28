@@ -8,7 +8,7 @@ let failures = ref 0
 let () =
   let report () =
     if !failures = 0 then
-      printf "Congratulation, all specification tests passed!\n"
+      printf "Congratulation, all %d specification tests passed!\n" !success
     else
       printf "%d test%s passed, %d test%s failed.\n"
              !success (if !success > 1 then "s" else "")
@@ -124,6 +124,11 @@ let () =
   test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
        [Olp [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
              [Paragraph[Text "Blue"]]]];
+
+  test "list, *" "* AA\n* VV"
+       [Ul [[Text "AA"]; [Text "VV"]]];
+  test "list, 2 levels" "* AA\n\n* VV"
+       [Ulp [[Paragraph [Text "AA"]]; [Paragraph [Text "VV"]]]];
 
   (* Code
    ***********************************************************************)
