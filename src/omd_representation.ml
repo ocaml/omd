@@ -130,12 +130,25 @@ let rec loose_compare t1 t2 = match t1,t2 with
   | Img_ref (ref_container1, name1, x1, fallback1)::tl1,
         Img_ref (ref_container2, name2, x2, fallback2)::tl2
         ->
-      (match compare (name1, x1, fallback1) (name2, x2, fallback2) with
-         | 0 -> (match 
+      (match compare (name1, x1) (name2, x2) with
+         | 0 ->
+             let cff =
+               match compare fallback1 fallback2 with
+                | 0 -> 0
+                | i ->
+                    match String.length fallback2 - String.length fallback1 with
+                      | 2 -> compare (fallback1 ^ "[]") fallback2
+                      | -2 -> compare fallback1 (fallback2 ^ "[]")
+                      | _ -> i
+             in
+               if cff = 0 then
+                 match 
                    compare (ref_container1#get_all) (ref_container2#get_all)
                  with
                    | 0 -> loose_compare tl1 tl2
-                   | i -> i)
+                   | i -> i
+               else
+                 cff
          | i -> i)
 
   | X e1::tl1, X e2::tl2 ->
