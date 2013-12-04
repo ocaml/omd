@@ -1,4 +1,4 @@
-PKGNAME = $(shell oasis query name)
+xPKGNAME = $(shell oasis query name)
 PKGVERSION = $(shell oasis query version)
 PKG_TARBALL = $(PKGNAME)-$(PKGVERSION).tar.gz
 
@@ -56,4 +56,4 @@ opam:
 	head -n 31 _oasis_orig > _oasis
 	oasis2opam http://pw374.github.io/distrib/omd/$(PKGNAME)-$(PKGVERSION).tar.gz
 	mv _oasis_orig _oasis
-
+	printf 'tags: [\n  "org:ocamllabs"\n  "org:mirage"\n]\n' >> $(PKGNAME).$(PKGVERSION)/opam
