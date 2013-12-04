@@ -607,6 +607,8 @@ let rec markdown_of_md md =
       Buffer.add_string b "**";
       loop list_indent tl
     | Ol l :: tl ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+           Buffer.add_char b '\n';
       let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
       List.iter(fun li ->
                     incr c;
@@ -618,6 +620,8 @@ let rec markdown_of_md md =
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ul l :: tl ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+           Buffer.add_char b '\n';
       List.iter(fun li ->
                     add_spaces list_indent;
                     Printf.bprintf b "- ";
@@ -627,6 +631,8 @@ let rec markdown_of_md md =
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+           Buffer.add_char b '\n';
       let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
       List.iter(fun li -> add_spaces list_indent;
                        incr c;
@@ -636,6 +642,8 @@ let rec markdown_of_md md =
                ) l;
       loop list_indent tl
     | Ulp l :: tl ->
+      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
+           Buffer.add_char b '\n';
       List.iter(fun li -> add_spaces list_indent;
                        bprintf b "+ ";
                        loop ~is_in_list:true (list_indent+4) li;
