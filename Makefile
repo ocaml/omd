@@ -1,4 +1,4 @@
-xPKGNAME = $(shell oasis query name)
+PKGNAME = $(shell oasis query name)
 PKGVERSION = $(shell oasis query version)
 PKG_TARBALL = $(PKGNAME)-$(PKGVERSION).tar.gz
 
