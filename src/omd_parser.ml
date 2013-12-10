@@ -877,10 +877,11 @@ let hr l =
 exception NL_exception
 exception Premature_ending
 
-(* !!DO NOT DELETE THIS!!
+(* !!DO NOT DELETE THIS!! TODO: add ability to read code (github issue #85)
 The program that generates the generated part that follows right after.
   List.iter (fun (a,b,c) ->
   print_endline ("let read_until_"^a^" ?(no_nl=false) l =
+  assert_well_formed l;
   let rec loop accu n = function
     | (Backslash as a) :: ("^b^" as b) :: tl ->
       loop (b::a::accu) n tl
