@@ -298,10 +298,10 @@ let make_paragraphs md =
          | cp -> Paragraph(List.rev cp)::accu
         in
           List.rev accu
-    | Blockquote b1 :: Blockquote b2 :: tl
-    | Blockquote b1 :: (NL|Br) :: Blockquote b2 :: tl
-    | Blockquote b1 :: (NL|Br) :: (NL|Br) :: Blockquote b2 :: tl ->
+    | Blockquote b1 :: Blockquote b2 :: tl ->
         loop cp accu (Blockquote(b1@b2):: tl)
+    | Blockquote b1 :: (NL|Br as x) :: Blockquote b2 :: tl ->
+        loop cp accu (Blockquote(b1@(x::b2)):: tl)
     | Blockquote b :: tl ->
         let e = Blockquote(loop [] [] b) in
         (match cp with
@@ -1301,7 +1301,8 @@ let emailstyle_quoting main_loop r _p lexemes =
   match loop [] [] lexemes with
   | (Newline|Newlines _)::block, tl ->
     if debug then
-      eprintf "emailstyle_quoting %S\n%!" (Omd_lexer.string_of_tokens block);
+      eprintf "Omd_parser.emailstyle_quoting %S\n%!"
+        (Omd_lexer.string_of_tokens block);
     Some((Blockquote(main_loop [] [] block)::r), [Newline], tl)
   | _ ->
     None
