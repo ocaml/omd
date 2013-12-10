@@ -298,7 +298,7 @@ let main () =
     with End_of_file ->
       let lexed = Omd_lexer.lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
-      let parsed1 = Omd_parser.parse preprocessed in
+      let parsed1 = Omd_parser.default_parse preprocessed in
       let parsed2 =
         if !protect_html_comments then
           patch_html_comments parsed1
@@ -321,7 +321,8 @@ let main () =
         if Omd_utils.debug then
           print_endline
             (Omd_backend.sexpr_of_md
-               (Omd_parser.parse (preprocess(Omd_lexer.lex (Buffer.contents b)))));
+               (Omd_parser.default_parse
+                  (preprocess(Omd_lexer.lex (Buffer.contents b)))));
   )
     input_files
 

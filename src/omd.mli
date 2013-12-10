@@ -104,7 +104,7 @@ type code_stylist = lang:string -> string -> string
 (** {2 Input and Output} *)
 
 val of_string : ?extensions:Omd_representation.extensions ->
-                ?lang: name ->
+                ?default_lang: name ->
                 string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].

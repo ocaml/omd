@@ -8,8 +8,8 @@
 include Omd_representation
 include Omd_backend
 
-let of_string ?extensions ?lang s =
-  let md = Omd_parser.parse ?extensions ?lang (Omd_lexer.lex s) in
+let of_string ?extensions ?default_lang s =
+  let md = Omd_parser.default_parse ?extensions ?default_lang (Omd_lexer.lex s) in
   Omd_parser.make_paragraphs md
 
 
@@ -21,7 +21,7 @@ let to_text : t -> string = text_of_md
 let to_markdown : t -> string = markdown_of_md
 
 let html_of_string (html:string) : string =
-  html_of_md (Omd_parser.parse (Omd_lexer.lex html))
+  html_of_md (Omd_parser.default_parse (Omd_lexer.lex html))
 
 
 let rec set_default_lang lang = function

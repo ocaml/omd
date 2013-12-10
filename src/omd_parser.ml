@@ -761,7 +761,8 @@ let tag__maybe_h1 main_loop =
               end
           | _ ->
              if debug then
-               eprintf "Omd_parser.tag__maybe_h1 is wrongly used (p=%S)!\n"
+               eprintf "Warning: Omd_parser.tag__maybe_h1 is wrongly used \
+                        (p=%S)!\n"
                        (Omd_lexer.string_of_tokens p);
              None
      )
@@ -779,7 +780,8 @@ let tag__maybe_h2 main_loop =
               end
           | _ ->
              if debug then
-               eprintf "Omd_parser.tag__maybe_h2 is wrongly used (p=%S)!\n"
+               eprintf "Warning: Omd_parser.tag__maybe_h2 is wrongly used \
+                        (p=%S)!\n"
                        (Omd_lexer.string_of_tokens p);
              None
      )
@@ -1249,15 +1251,13 @@ let read_title main_loop n r _previous lexemes =
     loop [] lexemes
   in
   match n with
-  | 1 -> H1 title :: r, [Newline], rest
-  | 2 -> H2 title :: r, [Newline], rest
-  | 3 -> H3 title :: r, [Newline], rest
-  | 4 -> H4 title :: r, [Newline], rest
-  | 5 -> H5 title :: r, [Newline], rest
-  | 6 -> H6 title :: r, [Newline], rest
-  | _ -> failwith "Omd_parser.read_title uncorrectly used"
-
-
+  | 1 -> Some(H1 title :: r, [Newline], rest)
+  | 2 -> Some(H2 title :: r, [Newline], rest)
+  | 3 -> Some(H3 title :: r, [Newline], rest)
+  | 4 -> Some(H4 title :: r, [Newline], rest)
+  | 5 -> Some(H5 title :: r, [Newline], rest)
+  | 6 -> Some(H6 title :: r, [Newline], rest)
+  | _ -> None
 
 let maybe_extension extensions r p l =
   match extensions with
@@ -1299,13 +1299,12 @@ let emailstyle_quoting main_loop r _p lexemes =
     | e::tl -> loop block (e::cl) tl
   in
   match loop [] [] lexemes with
-  | Newline::block, tl ->
+  | (Newline|Newlines _)::block, tl ->
     if debug then
-      eprintf "##############################\n%s\n\
-               ##############################\n%!"
-              (Omd_lexer.string_of_tokens block);
-    (Blockquote(main_loop [] [] block)::r), [Newline], tl
-  | _ -> invalid_arg "Omd_parser.emailstyle_quoting"
+      eprintf "emailstyle_quoting %S\n%!" (Omd_lexer.string_of_tokens block);
+    Some((Blockquote(main_loop [] [] block)::r), [Newline], tl)
+  | _ ->
+    None
 
 (* maybe a reference *)
 let maybe_reference rc r _p l =
@@ -1536,8 +1535,8 @@ let icode default_lang r _p l =
      l is the remains *)
   let dummy_tag = Tag(fun r p l -> None) in
   let accu = Buffer.create 42 in
-  let rec loop = function
-    | (Newline|Newlines _ as p), ((Space|Spaces(0|1))::_ as tl) ->
+  let rec loop s tl = match s, tl with
+    | (Newline|Newlines _ as p), (Space|Spaces(0|1))::_ ->
        (* 1, 2 or 3 spaces. *)
        (* -> Return what's been found as code because what follows isn't. *)
        Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
@@ -1545,26 +1544,28 @@ let icode default_lang r _p l =
       assert(n>0);
       (* At least 4 spaces, it's still code. *)
       Buffer.add_string accu (Omd_lexer.string_of_token p);
-      loop ((if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag), tl)
+      loop
+        (if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag)
+        tl
     | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
       Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
         (* -> Return what's been found as code because it's no more code. *)
     | p, e::tl ->
       Buffer.add_string accu (Omd_lexer.string_of_token p);
       (* html entities are to be converted later! *)
-      loop (e, tl)
+      loop e tl
     | p, [] ->
       Buffer.add_string accu (Omd_lexer.string_of_token p);
       Code_block(default_lang, Buffer.contents accu)::r, [p], []
   in
     match l with
       | Spaces n::tl ->
-        loop ((if n >= 4 then Spaces(n-4)
-               else if n = 3 then Space
-               else dummy_tag),
-              tl)
+          if n >= 4 then
+            Some(loop (Spaces(n-4)) tl)
+          else if n = 3 then
+            Some(loop Space tl)
+          else Some(loop dummy_tag tl)                     
       | _ -> assert false
-
 
 let has_paragraphs l =
   (* Has at least 2 consecutive newlines. *)
@@ -1884,7 +1885,16 @@ let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
   else ( (* n>=4, blank line or indented code *)
     match lexemes with
     | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
-    | _ -> icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
+    | _ -> 
+        match
+          icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
+        with
+          | Some(r,p,l) -> r,p,l
+          | None ->
+              if debug then
+                eprintf "Omd_parser.icode or \
+                     Omd_parser.main_loop is broken\n%!";
+              assert false
   )
 
 let spaces_not_at_beginning_of_line n r lexemes =
@@ -1951,10 +1961,16 @@ let is_hex s =
          | _ -> false)
       in loop 1)
 
-let main_parse extensions default_lang lexemes =
-  assert_well_formed lexemes;
-  let rc = new Omd_representation.ref_container in
 
+module Make (Env:
+  sig
+    val rc: Omd_representation.ref_container
+    val extensions : Omd_representation.extensions
+    val default_lang : string
+  end
+) =
+struct
+open Env
   let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     if debug then
@@ -2002,9 +2018,15 @@ let main_parse extensions default_lang lexemes =
     (* email-style quoting / blockquote *)
     | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
       begin
-        let r, p, l =
+        match
           emailstyle_quoting main_loop r previous (Newline::lexemes)
-        in main_loop_rev r p l
+        with
+          | Some(r,p,l) -> main_loop_rev r p l
+          | None ->
+              if debug then
+                eprintf "Omd_parser.emailstyle_quoting or \
+                     Omd_parser.main_loop is broken\n%!";
+              assert false
       end
 
     (* email-style quoting, with lines starting with spaces! *)
@@ -2022,14 +2044,19 @@ let main_parse extensions default_lang lexemes =
           match
             emailstyle_quoting main_loop [] previous (Newline::(foo))
           with
-          | new_r, p, [] -> new_r, p, rest
-          | _ -> assert false
+          | Some(new_r, p, []) -> new_r, p, rest
+          | _ ->
+              if debug then
+                eprintf "Omd_parser.emailstyle_quoting or \
+                     Omd_parser.main_loop is broken\n%!";
+              assert false
         in
         main_loop_rev (new_r@r) [Newline] rest
       end
 
     (* minus *)
-    | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::((Space|Spaces _) ::_ as tl) ->
+    | ([]|[Newline|Newlines _]),
+        (Minus|Minuss _ as t) :: ((Space|Spaces _)::_ as tl) ->
       (* maybe hr *)
       begin match hr_m lexemes with
       | None -> (* no hr, so it could be a list *)
@@ -2068,8 +2095,13 @@ let main_parse extensions default_lang lexemes =
     | ([]|[(Newline|Newlines _)]),
                 (Hashs n as t) :: (ttl as tl) -> (* hash titles *)
       if n <= 4 then
-        let r, p, l = read_title main_loop (n+2) r previous ttl in
-        main_loop_rev r p l
+        match read_title main_loop (n+2) r previous ttl with
+        | Some(r, p, l) -> main_loop_rev r p l
+        | None ->
+            if debug then
+            eprintf "Omd_parser.read_title or \
+                     Omd_parser.main_loop is broken\n%!";
+            assert false
       else
         begin match maybe_extension extensions r previous lexemes with
         | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
@@ -2077,8 +2109,14 @@ let main_parse extensions default_lang lexemes =
         end
     | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
     | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
-      let r, p, l = read_title main_loop 1 r previous tl in
-      main_loop_rev r p l
+      begin match read_title main_loop 1 r previous tl with
+        | Some(r, p, l) -> main_loop_rev r p l
+        | None ->
+            if debug then
+            eprintf "Omd_parser.read_title or \
+                     Omd_parser.main_loop is broken\n%!";
+            assert false
+      end
     | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
       begin match maybe_extension extensions r previous lexemes with
       | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
@@ -2775,10 +2813,23 @@ let main_parse extensions default_lang lexemes =
   and main_loop (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     List.rev (main_loop_rev r previous lexemes)
-  in
+
+let main_parse lexemes =
   main_loop [] [] (tag_setext main_loop lexemes)
 
+let parse lexemes =
+  main_parse lexemes
 
-let parse ?(extensions=[]) ?(lang="") lexemes =
-  main_parse extensions lang lexemes
+end
+
+let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
+  let module M =
+    Make(struct
+           let rc = new Omd_representation.ref_container 
+           let extensions = extensions
+           let default_lang = default_lang
+         end)
+  in
+  M.main_parse lexemes
+
 
