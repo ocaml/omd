@@ -159,7 +159,7 @@ let rec loose_compare t1 t2 = match t1,t2 with
                       | _ -> i
              in
                if cff = 0 then
-                 match 
+                 match
                    compare (ref_container1#get_all) (ref_container2#get_all)
                  with
                    | 0 -> loose_compare tl1 tl2

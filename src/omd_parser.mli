@@ -26,7 +26,7 @@ and main_loop =
 (** most important loop, which has to be given as an argument *)
 
 
-val default_parse : 
+val default_parse :
   ?extensions:Omd_representation.extensions -> ?default_lang:string -> l
   -> Omd_representation.t
 (** Translate tokens to Markdown representation.
@@ -53,7 +53,7 @@ val unindent_rev :
   Omd_representation.tok list ->
   Omd_representation.tok list * Omd_representation.tok list
 (** [unindent_rev n l] returns the same couple as [unindent n l]
-    except that the first element (which is a list) is reversed. 
+    except that the first element (which is a list) is reversed.
     This function is used for lists. *)
 
 val unindent :
@@ -137,8 +137,8 @@ val eat_blank : Omd_representation.tok list -> Omd_representation.tok list
     that is not a blank). Blanks are spaces and newlines only. *)
 
 val tag__maybe_h1 : main_loop -> Omd_representation.tok
-(** [tag__maybe_h1 main_loop] is a tag that is injected everywhere that 
-    might preceed a H1 title. It needs [main_loop] as argument because 
+(** [tag__maybe_h1 main_loop] is a tag that is injected everywhere that
+    might preceed a H1 title. It needs [main_loop] as argument because
     it is used to parse the contents of the titles. *)
 
 val tag__maybe_h2 : main_loop -> Omd_representation.tok
@@ -209,26 +209,26 @@ val read_until_newline :
 (** [read_until_...] are functions that read from a token list
     and return two token lists: the first one is the tokens read
     until a specific token is met, and the second one is the remainder.
-    The particularity of these functions is that they do consider 
+    The particularity of these functions is that they do consider
     backslash-escaped characters and closing characters.
     For instance, [read_until_gt "1 < 2 > 3 > 4"] returns
     ["1 < 2 > 3 ", " 4"]: note that the ">" before " 4" has disappeared
-    and that [read_until_gt] takes a [tok list] (not a string) and 
-    returns a couple of [tok list] (not a couple of strings), the 
+    and that [read_until_gt] takes a [tok list] (not a string) and
+    returns a couple of [tok list] (not a couple of strings), the
     string notation is used here for concision.
 
     Until otherwise noted, those functions do *not* consider
-    backquote-trapped sections.  
-    For instance, [read_until_gt "1 < 2 > 3 `>` 4"] 
+    backquote-trapped sections.
+    For instance, [read_until_gt "1 < 2 > 3 `>` 4"]
     returns ["1 < 2 > 3 `", "` 4"].
     If you use these functions, you should make sure that they
     do what you think they do (i.e., do look at the code).
 
-    If the expected characters are not found, the exception 
-    [Premature_ending] is raised. For instance, 
+    If the expected characters are not found, the exception
+    [Premature_ending] is raised. For instance,
     [read_until_gt "1 < > 3"] raises [Premature_ending].
 
-    If [no_nl] is [true] (default value for [no_nl] is [false]) 
+    If [no_nl] is [true] (default value for [no_nl] is [false])
     and ['\n'] occurs before the splitting character,
     then [NL_exception] is raised.
 *)
@@ -242,7 +242,7 @@ val read_title : main_loop -> int -> r -> p -> l -> (r * p * l) option
     hash-declared title from [l], where the hashes have *already*
     been *removed*. If [n] is not between 1 and 6 (included), then
     it returns [None].
-    
+
     [main_loop] is used to parse the contents of the title.
 
     [r] and [p] are the classical "result" and "previous" parameters.
@@ -257,10 +257,10 @@ val maybe_extension :
 
 val emailstyle_quoting : main_loop -> r -> p -> l -> (r * p * l) option
 (** [emailstyle_quoting main_loop r p l] returns [Some(r,p,l)] with
-    [r] being the updated result, [p] being the last parsed token 
+    [r] being the updated result, [p] being the last parsed token
     and [l] being the remaining tokens to parse. If [emailstyle_quoting]
     fails, then it returns [None], in which case its user is advise
-    to investigate why it returns [None] because there's possibly a 
+    to investigate why it returns [None] because there's possibly a
     real problem. *)
 
 val maybe_reference :
@@ -288,7 +288,7 @@ val icode : Omd_representation.name -> r -> p -> l -> (r * p * l) option
 
 val parse_list : main_loop -> r -> p -> l -> r * p * l
 (** [parse_list main_loop r p l] parses a list from [l].
-    
+
     ***Important property***
     It is considered in Omd that a sub-list is always more indented than
     the item that contains it (so, 2 items with different indentations cannot

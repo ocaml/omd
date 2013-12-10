@@ -347,7 +347,7 @@ let make_paragraphs md =
       ->
       loop tl
     | l -> l
-    in 
+    in
     List.rev (loop (List.rev l))
   in
   let rec clean_paragraphs = function
@@ -1452,7 +1452,7 @@ let bcode default_lang r p l =
   let e, tl =
     match l with
     | (Backquote|Backquotes _ as e)::tl -> e, tl
-    | _ -> failwith "Omd_parser.bcode is wrongly called" 
+    | _ -> failwith "Omd_parser.bcode is wrongly called"
   in
   let rec code_block accu = function
     | [] ->
@@ -1486,7 +1486,7 @@ let bcode default_lang r p l =
     if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
       && (match p with []|[Newline|Newlines _] -> true | _ -> false)
       && (match e with Backquotes n when n > 0 -> true | _ -> false)
-    then 
+    then
       match cb with
       | Word lang :: (Space|Spaces _) :: Newline :: tl
       | Word lang :: Newline :: tl ->
@@ -1564,7 +1564,7 @@ let icode default_lang r _p l =
             Some(loop (Spaces(n-4)) tl)
           else if n = 3 then
             Some(loop Space tl)
-          else Some(loop dummy_tag tl)                     
+          else Some(loop dummy_tag tl)
       | _ -> assert false
 
 let has_paragraphs l =
@@ -1885,7 +1885,7 @@ let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
   else ( (* n>=4, blank line or indented code *)
     match lexemes with
     | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
-    | _ -> 
+    | _ ->
         match
           icode default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
         with
@@ -2539,7 +2539,7 @@ open Env
         main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
     (* inline html *)
-    | _, 
+    | _,
           (Lessthan as t)
           ::(Word(tagname) as w
              ::((Space|Spaces _|Greaterthan|Greaterthans _)
@@ -2825,7 +2825,7 @@ end
 let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
   let module M =
     Make(struct
-           let rc = new Omd_representation.ref_container 
+           let rc = new Omd_representation.ref_container
            let extensions = extensions
            let default_lang = default_lang
          end)

@@ -240,7 +240,7 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       if lang = "" && !default_language = "" then
         Buffer.add_string b "<pre><code>"
       else if lang = "" then
-        bprintf b "<pre class='%s'><code class='%s'>" 
+        bprintf b "<pre class='%s'><code class='%s'>"
           !default_language !default_language
       else
         bprintf b "<pre class='%s'><code class='%s'>" lang lang;
@@ -516,7 +516,7 @@ let escape_markdown_characters s =
   let b = Buffer.create (String.length s * 2) in
     for i = 0 to String.length s - 1 do
       match s.[i] with
-        | '\\' 
+        | '\\'
         | '*' | '+' | '.' | '-' | '[' | ']'
         | '!' | '(' | ')' | '<' | '>'
         | '`' | '#'
@@ -536,7 +536,7 @@ let rec markdown_of_md md =
     let rec loop nl i =
       if i < l then
         begin
-          if nl && i < l - 1 then 
+          if nl && i < l - 1 then
             (for i = 1 to indent do
                Buffer.add_char b ' '
              done;
