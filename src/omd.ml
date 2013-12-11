@@ -9,8 +9,11 @@ include Omd_representation
 include Omd_backend
 
 let of_string ?extensions ?default_lang s =
-  let md = Omd_parser.default_parse ?extensions ?default_lang (Omd_lexer.lex s) in
-  Omd_parser.make_paragraphs md
+  let module Parser = Omd_parser.Make(Omd_parser.Default_env) in
+  let md =
+    Parser.parse (Omd_lexer.lex s)
+  in
+  Parser.make_paragraphs md
 
 
 let to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string =

@@ -74,8 +74,6 @@ let nl2br = ref false
 
 let protect_html_comments = ref false
 
-let no_paragraphs = ref false
-
 let code_stylist =
   let module M = Map.Make(String) in
 object
@@ -127,6 +125,11 @@ let register_code_stylist_of_program x =
 let register_default_language l =
   Omd_backend.default_language := l
 
+
+(* HTML comments might contain some double-dash (--) that are not well
+    treated by HTML parsers. For instance "<!-- -- -->" should be
+    translated to "<!-- &#45;&#45; -->" when we want to ensure that
+    the generated HTML is correct! *)
 let patch_html_comments l =
   let htmlcomments s =
     let b = Buffer.create (String.length s) in
@@ -230,6 +233,13 @@ let split_comma_int_list s =
       List.rev !l
   )
 
+let omd_gh_uemph_or_bold_style =
+  ref Omd_parser.Default_env.gh_uemph_or_bold_style
+let omd_blind_html =
+  ref Omd_parser.Default_env.blind_html
+let omd_strict_html = ref
+    Omd_parser.Default_env.strict_html
+
 let main () =
   let input = ref []
   and output = ref ""
@@ -241,7 +251,7 @@ let main () =
         "file.html Specify the output file (default is stdout).";
         "--", Rest(fun s -> input := s :: !input),
         " Consider all remaining arguments as input file names.";
-        "-u", Clear(Omd_parser.gh_uemph_or_bold_style),
+        "-u", Clear(omd_gh_uemph_or_bold_style),
         " Use standard Markdown style for emph/bold when using `_'.";
         "-c", Unit(fun () -> preprocess_functions += remove_endline_comments),
         " Ignore lines that start with `!!!' (3 or more exclamation points).";
@@ -266,9 +276,9 @@ let main () =
         "ext Activate extension ext (not yet implemented).";
         "-l", Unit ignore,
         " List available extensions ext (not yet implemented).";
-        "-b", Set(Omd_parser.blind_html),
+        "-b", Set(omd_blind_html),
         " Don't check validity of HTML tag names.";
-        "-s", Set(Omd_parser.strict_html),
+        "-s", Set(omd_strict_html),
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
@@ -298,7 +308,16 @@ let main () =
     with End_of_file ->
       let lexed = Omd_lexer.lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
-      let parsed1 = Omd_parser.default_parse preprocessed in
+
+      let module Parser = Omd_parser.Make(
+        struct
+          include Omd_parser.Default_env
+          let gh_uemph_or_bold_style = !omd_gh_uemph_or_bold_style
+          let blind_html = !omd_blind_html
+          let strict_html = !omd_strict_html
+        end)
+      in
+      let parsed1 = Parser.parse preprocessed in
       let parsed2 =
         if !protect_html_comments then
           patch_html_comments parsed1
@@ -308,7 +327,7 @@ let main () =
       let parsed = parsed2 in
       let o1 = (* make either TOC or paragraphs, or leave as it is *)
         (if !otoc then Omd.toc ~start:!toc_start ~depth:!toc_depth
-         else Omd_parser.make_paragraphs)
+         else Parser.make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML, or markdown *)
         (if !notags then to_text
