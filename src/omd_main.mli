@@ -41,6 +41,18 @@ val toc_start : int list ref
 val nl2br : bool ref
 (** flag: convert newlines to "<br/>" when output is HTML *)
 
+val omd_gh_uemph_or_bold_style : bool ref
+(** flag: set on the command line, used for instanciating the
+    functor Omd_parser.Make *)
+
+val omd_blind_html : bool ref
+(** flag: set on the command line, used for instanciating the
+    functor Omd_parser.Make *)
+
+val omd_strict_html : bool ref
+(** flag: set on the command line, used for instanciating the
+    functor Omd_parser.Make *)
+
 val protect_html_comments : bool ref
 (** flag: for multiple dashes in HTML comments, replace dashes by &#45;  *)
 
@@ -60,3 +72,4 @@ val tag_toc : Omd_representation.tok list -> Omd_representation.tok list
 
 val main : unit -> unit
 (** main function *)
+
