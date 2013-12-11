@@ -5,10 +5,7 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-(** This module implements an end-user interface for OMD.  It mainly
-    uses the module [Omd], which implements the main interface to the
-    library OMD. There are still a few uses of other modules from the
-    OMD library but this may change.
+(** This module implements an end-user interface for OMD.  
 
     Treatments that are not specific to Markdown (such as table of
     contents generation) are done here. If you want to build an
