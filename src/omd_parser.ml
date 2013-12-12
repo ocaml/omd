@@ -990,7 +990,13 @@ struct
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b\\n%!\" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b => %S\\n%!\" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      "))
 
      [ "gt", "Greaterthan", "Lessthan";
@@ -1057,7 +1063,13 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_lt ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1101,7 +1113,13 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1154,7 +1172,13 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1198,7 +1222,13 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_dq ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1242,7 +1272,13 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_q ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1286,7 +1322,13 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_obracket ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1330,7 +1372,13 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1383,7 +1431,13 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
      
 let read_until_space ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
@@ -1427,7 +1481,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in loop [] 0 l
+     in
+     if debug then 
+       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+     let res = loop [] 0 l in
+     if debug then 
+       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+     res
   (* /end generated part *)
 
   let read_until_newline l =
@@ -1535,6 +1595,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | _ ->
       None
 
+
   (* maybe a reference *)
   let maybe_reference rc r _p l =
     assert_well_formed l;
@@ -1641,29 +1702,54 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     assert_well_formed l;
     let read_url name l =
       if debug then eprintf "# maybe_link>read_url\n";
-      let url_and_maybetitle, tl =
-        read_until_cparenth ~bq:false ~no_nl:false l
-      in
-      let url, title =
+      try
+        let l_cp, r_cp =
+          read_until_cparenth ~no_nl:true ~bq:false l
+        in
+        if debug then eprintf "maybe_link >> l_cp=%S r_cp=%S\n%!"
+          (Omd_lexer.string_of_tokens l_cp)
+          (Omd_lexer.string_of_tokens r_cp);
         try
-          let url, title = 
-            read_until_dq ~bq:false ~no_nl:false url_and_maybetitle
+          let l_dq, r_dq =
+            read_until_dq ~no_nl:true ~bq:false l
           in
-          if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
-          then raise Premature_ending;
-          let title, blanks = read_until_dq ~bq:false ~no_nl:true title in
-          if eat_blank blanks <> [] then raise Premature_ending;
-          url, title
-        with Premature_ending ->
-          (* no title *)
-          url_and_maybetitle, []
-      in
-      let url = match List.rev url with
-        | (Newline|Space|Spaces _)::tl -> List.rev tl
-        | _ -> url in
-      let url = Omd_lexer.string_of_tokens url in
-      let title = Omd_lexer.string_of_tokens title in
-      Some(Url(url, name, title) :: r, [Cparenthesis],tl)
+          if debug then eprintf "maybe_link >> l_dq=%S r_dq=%S\n%!"
+            (Omd_lexer.string_of_tokens l_dq)
+            (Omd_lexer.string_of_tokens r_dq);
+          (* maybe title *)
+          if List.length l_cp > List.length l_dq then (* title *)
+            begin
+              if debug then eprintf "maybe_link >> title\n%!";
+              let url =
+                match List.rev l_dq with
+                | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
+                | (Newline|Space|Spaces _)::tl ->
+                  Omd_lexer.string_of_tokens (List.rev tl)
+                | _ ->
+                  Omd_lexer.string_of_tokens l_dq
+              in
+              let title, rest = read_until_dq ~no_nl:false ~bq:false r_dq in
+              let rest = snd(read_until_cparenth rest) in
+              let title = Omd_lexer.string_of_tokens title in
+              Some(Url(url, name, title) :: r, [Cparenthesis], rest)
+            end
+          else (* no title *)
+            raise Premature_ending
+        with NL_exception | Premature_ending -> (* no title *)
+          begin
+            if debug then eprintf "maybe_link >> no title\n%!";
+            let url = match List.rev l_cp with
+              | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
+              | (Newline|Space|Spaces _)::tl -> List.rev tl
+              | _ -> l_cp
+            in
+            let title, rest = [], r_cp in
+            let url = Omd_lexer.string_of_tokens url in
+            let title = Omd_lexer.string_of_tokens title in
+            Some(Url(url, name, title) :: r, [Cparenthesis], rest)
+          end          
+      with NL_exception | Premature_ending ->
+        None
     in
     let read_name l =
       if debug then eprintf "# maybe_link>read_name\n";
