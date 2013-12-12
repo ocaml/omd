@@ -587,6 +587,8 @@ let rec markdown_of_md md =
     | Img_ref(rc, name, alt, fallback) :: tl ->
         if !references = None then references := Some rc;
         loop list_indent (Html(fallback)::tl)
+    | (Paragraph _ as p) :: NL :: tl ->
+      loop list_indent (p::tl)
     | Paragraph md :: tl ->
       if is_in_list then
         if fst_p_in_li then
