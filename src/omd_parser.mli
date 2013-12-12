@@ -38,8 +38,11 @@ val default_parse :
 module type Env =
 sig
   val rc: Omd_representation.ref_container
+  (** reference container *)
   val extensions : Omd_representation.extensions
+  (** list of parser extensions *)
   val default_lang : string
+  (** default language for code blocks *)
   val gh_uemph_or_bold_style : bool
   (** flag: bold/emph using using underscores is by default
       github-style, which means that underscores inside words are
@@ -58,6 +61,26 @@ module Default_env : Env
 
 module Make : functor (Env : Env) ->
 sig
+
+  val rc: Omd_representation.ref_container
+  (** reference container *)
+  val extensions : Omd_representation.extensions
+  (** list of parser extensions *)
+  val default_lang : string
+  (** default language for code blocks *)
+  val gh_uemph_or_bold_style : bool
+  (** flag: bold/emph using using underscores is by default
+      github-style, which means that underscores inside words are
+      left as underscore, rather than special characters, because
+      it's more convenient. However it is also less expressive
+      because then you can't bold/emph a part of a word. You might
+      want to set this flag to false. *)
+  val blind_html : bool
+  (** flag: if true, will not check whether a used HTML tag actually
+      exists in HTML. *)
+  val strict_html : bool
+  (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
+
 
   val htmlcodes_set : Omd_utils.StringSet.t
   (** set of known HTML codes *)

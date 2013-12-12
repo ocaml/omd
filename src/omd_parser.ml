@@ -48,7 +48,7 @@ end
 
 module Make (Env:Env) =
 struct
-  open Env
+  include Env
 
   (** set of known HTML codes *)
   let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
