@@ -37,7 +37,9 @@ module type Env = sig
   val strict_html : bool
 end
 
-module Default_env : Env = struct
+module Unit = struct end
+
+module Default_env (Unit:sig end) : Env = struct
   let rc = new Omd_representation.ref_container
   let extensions = []
   let default_lang = ""
@@ -2969,9 +2971,10 @@ end
 
 let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
   let e = extensions and d = default_lang in
+  let module E = Default_env(Unit) in
   let module M =
     Make(struct
-      include Default_env
+      include E
       let extensions = e
       let default_lang = d
     end)

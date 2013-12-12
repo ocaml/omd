@@ -9,7 +9,8 @@ include Omd_representation
 include Omd_backend
 
 let of_string ?extensions ?default_lang s =
-  let module Parser = Omd_parser.Make(Omd_parser.Default_env) in
+  let module E = Omd_parser.Default_env(struct end) in
+  let module Parser = Omd_parser.Make(E) in
   let md =
     Parser.parse (Omd_lexer.lex s)
   in

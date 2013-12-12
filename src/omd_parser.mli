@@ -57,7 +57,7 @@ sig
   (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
 end
 
-module Default_env : Env
+module Default_env : functor (Unit: sig end) -> Env
 
 module Make : functor (Env : Env) ->
 sig

@@ -231,11 +231,14 @@ let split_comma_int_list s =
   )
 
 let omd_gh_uemph_or_bold_style =
-  ref Omd_parser.Default_env.gh_uemph_or_bold_style
+  let module E = Omd_parser.Default_env(struct end) in
+  ref E.gh_uemph_or_bold_style
 let omd_blind_html =
-  ref Omd_parser.Default_env.blind_html
-let omd_strict_html = ref
-    Omd_parser.Default_env.strict_html
+  let module E = Omd_parser.Default_env(struct end) in
+  ref E.blind_html
+let omd_strict_html = 
+  let module E = Omd_parser.Default_env(struct end) in
+  ref E.strict_html
 
 let main () =
   let input = ref []
@@ -305,10 +308,10 @@ let main () =
     with End_of_file ->
       let lexed = Omd_lexer.lex (Buffer.contents b) in
       let preprocessed = preprocess lexed in
-
+      let module E = Omd_parser.Default_env(struct end) in
       let module Parser = Omd_parser.Make(
         struct
-          include Omd_parser.Default_env
+          include E
           let gh_uemph_or_bold_style = !omd_gh_uemph_or_bold_style
           let blind_html = !omd_blind_html
           let strict_html = !omd_strict_html
