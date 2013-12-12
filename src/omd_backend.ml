@@ -572,6 +572,12 @@ let rec markdown_of_md md =
              | Some s -> Buffer.add_string b s
              | None -> ());
         loop list_indent tl
+    | (Blockquote _ as b) :: NL :: tl ->
+      loop list_indent (b::tl)
+    | Blockquote q :: (Blockquote _ :: _ as tl) ->
+      Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
+      Buffer.add_string b "\n";
+      loop list_indent tl
     | Blockquote q :: tl ->
       Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
       loop list_indent tl
