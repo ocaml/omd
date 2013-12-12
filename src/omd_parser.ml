@@ -440,17 +440,26 @@ struct
     if debug then eprintf "CALL: Omd_parser.unindent_rev\n%!";
     assert_well_formed lexemes;
     let rec loop accu cl = function
-      | Newline::(Space|Spaces _ as s)::(
+      | Newlines x::(Space|Spaces _)::Newlines y::tl ->
+        loop accu cl (Newlines(x+y+2)::tl)
+      | Newline::(Space|Spaces _)::Newlines x::tl ->
+        loop accu cl (Newlines(1+x)::tl)
+      | Newlines x::(Space|Spaces _)::Newline::tl ->
+        loop accu cl (Newlines(1+x)::tl)
+      | Newline::(Space|Spaces _)::Newline::tl ->
+        loop accu cl (Newlines(0)::tl)
+
+      | (Newline|Newlines 0 as nl)::(Space|Spaces _ as s)::(
           (Number _::Dot::(Space|Spaces _)::_)
         | ((Star|Plus|Minus)::(Space|Spaces _)::_)
           as tl) as l ->
         if n = Omd_lexer.length s then
-          loop (Newline::cl@accu) [] tl
+          loop (nl::cl@accu) [] tl
         else
           (cl@accu), l
-      | Newline::(Space|Spaces _ as s)::tl ->
+      | (Newline|Newlines 0 as nl)::(Space|Spaces _ as s)::tl ->
         let x = Omd_lexer.length s - n in
-        loop (Newline::cl@accu)
+        loop (nl::cl@accu)
           (if x > 0 then [Omd_lexer.make_space x] else [])
           tl
       | Newlines(_)::_ as l ->
@@ -470,51 +479,6 @@ struct
 
   let unindent n lexemes =
     let fst, snd = unindent_rev n lexemes in
-    List.rev fst, snd
-
-
-  let unindent_strict_rev n lexemes =
-    if debug then eprintf "Omd_parser.unindent_strict_rev\n%!";
-    assert_well_formed lexemes;
-    let rec loop accu cl = function
-      | Newline::Space::tl as l ->
-        if n = 1 then
-          loop (Newline::cl@accu) [] tl
-        else
-          (cl@accu), l
-      | Newline::Spaces(0)::tl as l ->
-        if n = 1 then
-          loop (Newline::cl@accu) [Space] tl
-        else if n = 2 then
-          loop (Newline::cl@accu) [] tl
-        else
-          (cl@accu), l
-      | Newline::Spaces(s)::tl as l ->
-        assert(s>0);
-        if s+2 = n then
-          loop (Newline::cl@accu) [] tl
-        else if s+2 > n then
-          loop (Newline::cl@accu) (Omd_lexer.lex(String.make (s+2-n) ' ')) tl
-        else
-          (cl@accu), l
-      | Newlines(_)::_ as l ->
-        (cl@accu), l
-      | Newline::_ as l ->
-        (cl@accu), l
-      | e::tl ->
-        loop accu (e::cl) tl
-      | [] as l ->
-        (cl@accu), l
-    in
-    match loop [] [] lexemes with
-    | [], right -> [], right
-    | l, right ->
-      assert_well_formed l;
-      l, right
-
-  let unindent_strict n lexemes =
-    let fst, snd = unindent_strict_rev n lexemes
-    in
     List.rev fst, snd
 
   let rec is_blank = function
@@ -882,13 +846,97 @@ struct
     | None -> hr_s l
     | Some _ as tl -> tl
 
+
+  (** [bcode] parses code that's delimited by backquote(s) *)
+  let bcode ?(default_lang=default_lang) r p l =
+    assert_well_formed l;
+    let e, tl =
+      match l with
+      | (Backquote|Backquotes _ as e)::tl -> e, tl
+      | _ -> failwith "Omd_parser.bcode is wrongly called"
+    in
+    let rec code_block accu = function
+      | [] ->
+        None
+      | Backquote::tl ->
+        if e = Backquote then
+          match accu with
+          | Newline::accu ->
+            Some(List.rev accu, tl)
+          | _ ->
+            Some(List.rev accu, tl)
+        else
+          code_block (Backquote::accu) tl
+      | (Backquotes n as b)::tl ->
+        if e = b then
+          match accu with
+          | Newline::accu ->
+            Some(List.rev accu, tl)
+          | _ ->
+            Some(List.rev accu, tl)
+        else
+          code_block (b::accu) tl
+      | Tag _::tl ->
+        code_block accu tl
+      | e::tl ->
+        code_block (e::accu) tl
+    in
+    match code_block [] tl with
+    | None -> None
+    | Some(cb, l) ->
+      if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
+      && (match p with []|[Newline|Newlines _] -> true | _ -> false)
+      && (match e with Backquotes n when n > 0 -> true | _ -> false)
+      then
+        match cb with
+        | Word lang :: (Space|Spaces _) :: Newline :: tl
+        | Word lang :: Newline :: tl ->
+          let code = Omd_lexer.string_of_tokens tl in
+          Some(Code_block(lang, code) :: r, [Backquote], l)
+        | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
+        | Word lang :: Newlines 0 :: tl ->
+          let code = Omd_lexer.string_of_tokens(Newline::tl) in
+          Some(Code_block(lang, code) :: r, [Backquote], l)
+        | Word lang :: (Space|Spaces _) :: Newlines n :: tl
+        | Word lang :: Newlines n :: tl ->
+          let code = Omd_lexer.string_of_tokens (Newlines(n-1)::tl) in
+          Some(Code_block(lang, code) :: r, [Backquote], l)
+        | Newline :: tl ->
+          let code = Omd_lexer.string_of_tokens  tl in
+          Some(Code_block(default_lang, code) :: r, [Backquote], l)
+        | _ ->
+          let code = Omd_lexer.string_of_tokens cb in
+          Some(Code_block(default_lang, code) :: r, [Backquote], l)
+      else
+        let clean_bcode s =
+          let rec loop1 i =
+            if i = String.length s then 0
+            else match s.[i] with
+              | ' ' -> loop1(i+1)
+              | _ -> i
+          in
+          let rec loop2 i =
+            if i = -1 then String.length s
+            else match s.[i] with
+              | ' ' -> loop2(i-1)
+              | _ -> i+1
+          in
+          match loop1 0, loop2 (String.length s - 1) with
+          | 0, n when n = String.length s - 1 -> s
+          | i, n -> String.sub s i (n-i)
+        in
+        let code = Omd_lexer.string_of_tokens cb in
+        if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
+        Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
+
+
   exception NL_exception
   exception Premature_ending
 
   (* !!DO NOT DELETE THIS!! TODO: add ability to read code (github issue #85)
      The program that generates the generated part that follows right after.
      List.iter (fun (a,b,c) ->
-     print_endline ("let read_until_"^a^" ?(no_nl=false) l =
+     print_endline ("let read_until_"^a^" ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
       | (Backslash as a) :: ("^b^" as b) :: tl ->
@@ -902,6 +950,13 @@ struct
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
      "^(if c<>"" then "
       | (Backslash as a) :: ("^c^" as b) :: tl ->
         loop (b::a::accu) n tl
@@ -945,268 +1000,435 @@ struct
      "obracket", "Obracket", "";
      "cbracket", "Cbracket", "Obracket";
      "space", "Space", "";
-     "newline", "Newline", "";
      ]
   *)
 
   (* begin generated part *)
-  let read_until_gt ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Greaterthan as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Greaterthans 0 :: tl ->
-        loop (Greaterthan :: Backslash :: accu) n (Greaterthan :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Backslash as a)) :: ((Lessthan as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Lessthans 0 :: tl ->
-        loop (Lessthan :: Backslash :: accu) n (Lessthan :: tl)
-      | ((Lessthan as e)) :: tl -> loop (e :: accu) (n + 1) tl
-      | ((Lessthans x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
-      | ((Greaterthan as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+let read_until_gt ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Greaterthan as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Greaterthans 0) :: tl ->
+        loop (Greaterthan::Backslash::accu) n (Greaterthan::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+     
+      | (Backslash as a) :: (Lessthan as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Lessthans 0) :: tl ->
+        loop (Lessthan::Backslash::accu) n (Lessthan::tl)
+      | Lessthan as e :: tl ->
+        loop (e::accu) (n+1) tl
+      | Lessthans x as e :: tl ->
+        loop (e::accu) (n+x+2) tl
+         | Greaterthan as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Greaterthans 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Greaterthan :: tl))
-        else loop (Greaterthan :: accu) (n - 1) (Greaterthan :: tl)
+        if n = 0 then
+          List.rev accu, Greaterthan::tl
+        else
+          loop (Greaterthan::accu) (n-1) (Greaterthan::tl)
       | Greaterthans n :: tl ->
-        ((List.rev accu), ((Greaterthans (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_lt ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Lessthan as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Lessthans 0 :: tl ->
-        loop (Lessthan :: Backslash :: accu) n (Lessthan :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Lessthan as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        List.rev accu, Greaterthans(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_lt ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Lessthan as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Lessthans 0) :: tl ->
+        loop (Lessthan::Backslash::accu) n (Lessthan::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Lessthan as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Lessthans 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Lessthan :: tl))
-        else loop (Lessthan :: accu) (n - 1) (Lessthan :: tl)
-      | Lessthans n :: tl -> ((List.rev accu), ((Lessthans (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_cparenth ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Cparenthesis as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Cparenthesiss 0 :: tl ->
-        loop (Cparenthesis :: Backslash :: accu) n (Cparenthesis :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Backslash as a)) :: ((Oparenthesis as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Oparenthesiss 0 :: tl ->
-        loop (Oparenthesis :: Backslash :: accu) n (Oparenthesis :: tl)
-      | ((Oparenthesis as e)) :: tl -> loop (e :: accu) (n + 1) tl
-      | ((Oparenthesiss x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
-      | ((Cparenthesis as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        if n = 0 then
+          List.rev accu, Lessthan::tl
+        else
+          loop (Lessthan::accu) (n-1) (Lessthan::tl)
+      | Lessthans n :: tl ->
+        List.rev accu, Lessthans(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Cparenthesis as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Cparenthesiss 0) :: tl ->
+        loop (Cparenthesis::Backslash::accu) n (Cparenthesis::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+     
+      | (Backslash as a) :: (Oparenthesis as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Oparenthesiss 0) :: tl ->
+        loop (Oparenthesis::Backslash::accu) n (Oparenthesis::tl)
+      | Oparenthesis as e :: tl ->
+        loop (e::accu) (n+1) tl
+      | Oparenthesiss x as e :: tl ->
+        loop (e::accu) (n+x+2) tl
+         | Cparenthesis as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Cparenthesiss 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Cparenthesis :: tl))
-        else loop (Cparenthesis :: accu) (n - 1) (Cparenthesis :: tl)
+        if n = 0 then
+          List.rev accu, Cparenthesis::tl
+        else
+          loop (Cparenthesis::accu) (n-1) (Cparenthesis::tl)
       | Cparenthesiss n :: tl ->
-        ((List.rev accu), ((Cparenthesiss (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_oparenth ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Oparenthesis as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Oparenthesiss 0 :: tl ->
-        loop (Oparenthesis :: Backslash :: accu) n (Oparenthesis :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Oparenthesis as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        List.rev accu, Cparenthesiss(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Oparenthesis as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Oparenthesiss 0) :: tl ->
+        loop (Oparenthesis::Backslash::accu) n (Oparenthesis::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Oparenthesis as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Oparenthesiss 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Oparenthesis :: tl))
-        else loop (Oparenthesis :: accu) (n - 1) (Oparenthesis :: tl)
+        if n = 0 then
+          List.rev accu, Oparenthesis::tl
+        else
+          loop (Oparenthesis::accu) (n-1) (Oparenthesis::tl)
       | Oparenthesiss n :: tl ->
-        ((List.rev accu), ((Oparenthesiss (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_dq ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Doublequote as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Doublequotes 0 :: tl ->
-        loop (Doublequote :: Backslash :: accu) n (Doublequote :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Doublequote as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        List.rev accu, Oparenthesiss(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_dq ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Doublequote as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Doublequotes 0) :: tl ->
+        loop (Doublequote::Backslash::accu) n (Doublequote::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Doublequote as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Doublequotes 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Doublequote :: tl))
-        else loop (Doublequote :: accu) (n - 1) (Doublequote :: tl)
+        if n = 0 then
+          List.rev accu, Doublequote::tl
+        else
+          loop (Doublequote::accu) (n-1) (Doublequote::tl)
       | Doublequotes n :: tl ->
-        ((List.rev accu), ((Doublequotes (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_q ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Quote as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Quotes 0 :: tl ->
-        loop (Quote :: Backslash :: accu) n (Quote :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Quote as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        List.rev accu, Doublequotes(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_q ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Quote as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Quotes 0) :: tl ->
+        loop (Quote::Backslash::accu) n (Quote::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Quote as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Quotes 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Quote :: tl))
-        else loop (Quote :: accu) (n - 1) (Quote :: tl)
-      | Quotes n :: tl -> ((List.rev accu), ((Quotes (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_obracket ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Obracket as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Obrackets 0 :: tl ->
-        loop (Obracket :: Backslash :: accu) n (Obracket :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Obracket as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        if n = 0 then
+          List.rev accu, Quote::tl
+        else
+          loop (Quote::accu) (n-1) (Quote::tl)
+      | Quotes n :: tl ->
+        List.rev accu, Quotes(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_obracket ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Obracket as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Obrackets 0) :: tl ->
+        loop (Obracket::Backslash::accu) n (Obracket::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Obracket as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Obrackets 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Obracket :: tl))
-        else loop (Obracket :: accu) (n - 1) (Obracket :: tl)
-      | Obrackets n :: tl -> ((List.rev accu), ((Obrackets (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_cbracket ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Cbracket as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Cbrackets 0 :: tl ->
-        loop (Cbracket :: Backslash :: accu) n (Cbracket :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Backslash as a)) :: ((Obracket as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Obrackets 0 :: tl ->
-        loop (Obracket :: Backslash :: accu) n (Obracket :: tl)
-      | ((Obracket as e)) :: tl -> loop (e :: accu) (n + 1) tl
-      | ((Obrackets x as e)) :: tl -> loop (e :: accu) ((n + x) + 2) tl
-      | ((Cbracket as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        if n = 0 then
+          List.rev accu, Obracket::tl
+        else
+          loop (Obracket::accu) (n-1) (Obracket::tl)
+      | Obrackets n :: tl ->
+        List.rev accu, Obrackets(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Cbracket as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Cbrackets 0) :: tl ->
+        loop (Cbracket::Backslash::accu) n (Cbracket::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+     
+      | (Backslash as a) :: (Obracket as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Obrackets 0) :: tl ->
+        loop (Obracket::Backslash::accu) n (Obracket::tl)
+      | Obracket as e :: tl ->
+        loop (e::accu) (n+1) tl
+      | Obrackets x as e :: tl ->
+        loop (e::accu) (n+x+2) tl
+         | Cbracket as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Cbrackets 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Cbracket :: tl))
-        else loop (Cbracket :: accu) (n - 1) (Cbracket :: tl)
-      | Cbrackets n :: tl -> ((List.rev accu), ((Cbrackets (n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
-
-  let read_until_space ?(no_nl = false) l =
-    assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Space as b)) :: tl ->
-        loop (b :: a :: accu) n tl
-      | Backslash :: Spaces 0 :: tl ->
-        loop (Space :: Backslash :: accu) n (Space :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-        if (x mod 2) = 0
-        then loop (e :: accu) n tl
-        else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Space as e)) :: tl ->
-        if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
+        if n = 0 then
+          List.rev accu, Cbracket::tl
+        else
+          loop (Cbracket::accu) (n-1) (Cbracket::tl)
+      | Cbrackets n :: tl ->
+        List.rev accu, Cbrackets(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+     
+let read_until_space ?(bq=false) ?(no_nl=false) l =
+     assert_well_formed l;
+     let rec loop accu n = function
+      | (Backslash as a) :: (Space as b) :: tl ->
+        loop (b::a::accu) n tl
+      | Backslash :: (Spaces 0) :: tl ->
+        loop (Space::Backslash::accu) n (Space::tl)
+      | (Backslashs 0 as e) :: tl ->
+        loop (e::accu) n tl
+      | (Backslashs x as e) :: tl ->
+        if x mod 2 = 0 then
+          loop (e::accu) n tl
+        else
+          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+      | (Backquote|Backquotes _ as e)::_ as l ->
+        if bq then
+          match bcode [] [] l with
+          | None -> loop (e::accu) n l
+          | Some (r, _, l) -> loop (tag__md r::accu) n l
+        else
+         loop (e::accu) n l
+         | Space as e :: tl ->
+        if n = 0 then
+          List.rev accu, tl
+        else
+          loop (e::accu) (n-1) tl
       | Spaces 0 :: tl ->
-        if n = 0
-        then ((List.rev accu), (Space :: tl))
-        else loop (Space :: accu) (n - 1) (Space :: tl)
-      | Spaces n :: tl -> assert(n>0); ((List.rev accu), ((Spaces(n - 1)) :: tl))
-      | ((Newline | Newlines _ as e)) :: tl ->
-        if no_nl then raise NL_exception else loop (e :: accu) n tl
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
+        if n = 0 then
+          List.rev accu, Space::tl
+        else
+          loop (Space::accu) (n-1) (Space::tl)
+      | Spaces n :: tl ->
+        List.rev accu, Spaces(n-1)::tl
+      | (Newline|Newlines _ as e)::tl ->
+        if no_nl then
+          raise NL_exception
+        else
+          loop (e::accu) n tl
+      | e::tl ->
+        loop (e::accu) n tl
+      | [] ->
+        raise Premature_ending
+     in loop [] 0 l
+  (* /end generated part *)
 
-  let read_until_newline l = (* this has been patched post-generation *)
+  let read_until_newline l =
     assert_well_formed l;
     let rec loop accu n =
       function
@@ -1229,10 +1451,6 @@ struct
       | e :: tl -> loop (e :: accu) n tl
       | [] -> raise Premature_ending
     in loop [] 0 l
-  (* /end generated part *)
-
-
-
 
   (* H1, H2, H3, ... *)
   let read_title main_loop n r _previous lexemes =
@@ -1285,7 +1503,6 @@ struct
   (* blockquotes *)
   let emailstyle_quoting main_loop r _p lexemes =
     assert_well_formed lexemes;
-    if debug then eprintf "Omd_parser.emailstyle_quoting\n%!";
     let rec loop block cl =
       function
       | Newline::Greaterthan::(Newline::_ as tl) ->
@@ -1323,12 +1540,12 @@ struct
        it started with a '[' *)
     (* So it could be a reference or a link definition. *)
     let rec maybe_ref l =
-      let text, remains = read_until_cbracket l in
+      let text, remains = read_until_cbracket ~bq:true l in
       (* check that there is no ill-placed open bracket *)
-      if (try ignore(read_until_obracket text); true
+      if (try ignore(read_until_obracket ~bq:true text); true
           with Premature_ending -> false) then
         raise Premature_ending; (* <-- ill-placed open bracket *)
-      let blank, remains = read_until_obracket remains in
+      let blank, remains = read_until_obracket ~bq:true remains in
       (* check that there are no unwanted characters between CB and OB. *)
       if eat (let flag = ref true in
               function (* allow only a space, multiple spaces, or a newline *)
@@ -1337,7 +1554,7 @@ struct
               | _ -> false) blank <> [] then
         raise Premature_ending (* <-- not a regular reference *)
       else
-        match read_until_cbracket remains with
+        match read_until_cbracket ~bq:true remains with
         | [], remains ->
           let fallback = extract_fallback remains (Obracket::l) in
           let id = Omd_lexer.string_of_tokens text in (* implicit anchor *)
@@ -1349,9 +1566,9 @@ struct
                [Cbracket], remains)
     in
     let rec maybe_nonregular_ref l =
-      let text, remains = read_until_cbracket l in
+      let text, remains = read_until_cbracket ~bq:true l in
       (* check that there is no ill-placed open bracket *)
-      if (try ignore(read_until_obracket text); true
+      if (try ignore(read_until_obracket ~bq:true text); true
           with Premature_ending -> false) then
         raise Premature_ending; (* <-- ill-placed open bracket *)
       let fallback = extract_fallback remains (Obracket::l) in
@@ -1359,7 +1576,7 @@ struct
       Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
     in
     let rec maybe_def l =
-      match read_until_cbracket l with
+      match read_until_cbracket ~bq:true l with
       | _, [] -> raise Premature_ending
       | id, (Colon::(Space|Spaces _)::remains)
       | id, (Colon::remains) ->
@@ -1382,10 +1599,10 @@ struct
                   remains
               with
               | Doublequotes(0)::tl -> [], tl
-              | Doublequote::tl -> read_until_dq tl
+              | Doublequote::tl -> read_until_dq ~bq:true tl
               | Quotes(0)::tl -> [], tl
-              | Quote::tl -> read_until_q tl
-              | Oparenthesis::tl-> read_until_cparenth tl
+              | Quote::tl -> read_until_q ~bq:true tl
+              | Oparenthesis::tl-> read_until_cparenth ~bq:true tl
               | l -> [], l
             in
             let url =
@@ -1422,13 +1639,17 @@ struct
     assert_well_formed l;
     let read_url name l =
       if debug then eprintf "# maybe_link>read_url\n";
-      let url_and_maybetitle, tl = read_until_cparenth ~no_nl:false l in
+      let url_and_maybetitle, tl =
+        read_until_cparenth ~bq:false ~no_nl:false l
+      in
       let url, title =
         try
-          let url, title = read_until_dq ~no_nl:false url_and_maybetitle in
+          let url, title = 
+            read_until_dq ~bq:false ~no_nl:false url_and_maybetitle
+          in
           if List.exists (function (Newline|Newlines _) -> true | _ -> false) url
           then raise Premature_ending;
-          let title, blanks = read_until_dq ~no_nl:true title in
+          let title, blanks = read_until_dq ~bq:false ~no_nl:true title in
           if eat_blank blanks <> [] then raise Premature_ending;
           url, title
         with Premature_ending ->
@@ -1445,7 +1666,7 @@ struct
     let read_name l =
       if debug then eprintf "# maybe_link>read_name\n";
       try
-        match read_until_cbracket l with
+        match read_until_cbracket ~bq:false l with
         | name, (Oparenthesis::tl) ->
           read_url (main_loop [] [Obracket] name) (eat_blank tl)
         | _ ->
@@ -1893,87 +2114,6 @@ struct
         in loop 1)
 
 
-  (** [bcode] parses code that's delimited by backquote(s) *)
-  let bcode ?(default_lang=default_lang) r p l =
-    assert_well_formed l;
-    let e, tl =
-      match l with
-      | (Backquote|Backquotes _ as e)::tl -> e, tl
-      | _ -> failwith "Omd_parser.bcode is wrongly called"
-    in
-    let rec code_block accu = function
-      | [] ->
-        None
-      | Backquote::tl ->
-        if e = Backquote then
-          match accu with
-          | Newline::accu ->
-            Some(List.rev accu, tl)
-          | _ ->
-            Some(List.rev accu, tl)
-        else
-          code_block (Backquote::accu) tl
-      | (Backquotes n as b)::tl ->
-        if e = b then
-          match accu with
-          | Newline::accu ->
-            Some(List.rev accu, tl)
-          | _ ->
-            Some(List.rev accu, tl)
-        else
-          code_block (b::accu) tl
-      | Tag _::tl ->
-        code_block accu tl
-      | e::tl ->
-        code_block (e::accu) tl
-    in
-    match code_block [] tl with
-    | None -> None
-    | Some(cb, l) ->
-      if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
-      && (match p with []|[Newline|Newlines _] -> true | _ -> false)
-      && (match e with Backquotes n when n > 0 -> true | _ -> false)
-      then
-        match cb with
-        | Word lang :: (Space|Spaces _) :: Newline :: tl
-        | Word lang :: Newline :: tl ->
-          let code = Omd_lexer.string_of_tokens tl in
-          Some(Code_block(lang, code) :: r, [Backquote], l)
-        | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
-        | Word lang :: Newlines 0 :: tl ->
-          let code = Omd_lexer.string_of_tokens(Newline::tl) in
-          Some(Code_block(lang, code) :: r, [Backquote], l)
-        | Word lang :: (Space|Spaces _) :: Newlines n :: tl
-        | Word lang :: Newlines n :: tl ->
-          let code = Omd_lexer.string_of_tokens (Newlines(n-1)::tl) in
-          Some(Code_block(lang, code) :: r, [Backquote], l)
-        | Newline :: tl ->
-          let code = Omd_lexer.string_of_tokens  tl in
-          Some(Code_block(default_lang, code) :: r, [Backquote], l)
-        | _ ->
-          let code = Omd_lexer.string_of_tokens cb in
-          Some(Code_block(default_lang, code) :: r, [Backquote], l)
-      else
-        let clean_bcode s =
-          let rec loop1 i =
-            if i = String.length s then 0
-            else match s.[i] with
-              | ' ' -> loop1(i+1)
-              | _ -> i
-          in
-          let rec loop2 i =
-            if i = -1 then String.length s
-            else match s.[i] with
-              | ' ' -> loop2(i-1)
-              | _ -> i+1
-          in
-          match loop1 0, loop2 (String.length s - 1) with
-          | 0, n when n = String.length s - 1 -> s
-          | i, n -> String.sub s i (n-i)
-        in
-        let code = Omd_lexer.string_of_tokens cb in
-        if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
-        Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
   let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
@@ -2041,12 +2181,12 @@ struct
       begin
         let new_r, p, rest =
           let foo, rest =
-            match unindent_strict (Omd_lexer.length s) (Newline::lexemes) with
+            match unindent (Omd_lexer.length s) (Newline::lexemes) with
             | (Newline|Newlines _)::foo, rest -> foo, rest
             | res -> res
           in
           match
-            emailstyle_quoting main_loop [] previous (Newline::(foo))
+            emailstyle_quoting main_loop [] previous (Newline::foo)
           with
           | Some(new_r, p, []) -> new_r, p, rest
           | _ ->
@@ -2562,7 +2702,7 @@ struct
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
               (* MAYBE self-closing tags *)
               begin
-                let b, tl = read_until_gt tl in
+                let b, tl = read_until_gt ~bq:false tl in
                 match List.rev b with
                 | Slash::_ ->
                   let tv = Omd_lexer.string_of_tokens b in
@@ -2588,7 +2728,7 @@ struct
               else
                 loop (tag(sprintf "</%s>" tn)::accu) n tl
             | Lessthan::Word tn::tl -> (* <word... *)
-              let b, tl = read_until_gt tl in
+              let b, tl = read_until_gt ~bq:false tl in
               let tv = Omd_lexer.string_of_tokens b in
               loop (tag(sprintf "<%s%s>" tn tv) :: accu)
                 (if tn = tagname then n+1 else n)
@@ -2598,8 +2738,8 @@ struct
             | [] ->
               List.rev accu, []
           in
-          let b, tl = read_until_gt html_stuff in
-          if (try ignore(read_until_lt b); false
+          let b, tl = read_until_gt ~bq:false html_stuff in
+          if (try ignore(read_until_lt ~bq:false b); false
               with Premature_ending -> true) then
             (* there must not be any '<' in b *)
             let tv = Omd_lexer.string_of_tokens b in
@@ -2654,19 +2794,19 @@ struct
       (* ![](/path/to/img.jpg) *)
       (try
          begin
-           let b, tl = read_until_cparenth ~no_nl:false tl in
+           let b, tl = read_until_cparenth ~bq:true ~no_nl:false tl in
            (* new lines there are allowed *)
            let r (* updated result *) = match t with
              | Exclamations 0 -> Text "!" :: r
              | Exclamations n -> Text(String.make (n+1) '!') :: r
              | _ -> r in
            match
-             try Some(read_until_space ~no_nl:true b)
+             try Some(read_until_space ~bq:false ~no_nl:true b)
              with Premature_ending -> None
            with
            | Some(url, tls) ->
              let title, should_be_empty_list =
-               read_until_dq (snd (read_until_dq tls)) in
+               read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
              let url = Omd_lexer.string_of_tokens url in
              let title = Omd_lexer.string_of_tokens title in
              main_loop_rev (Img("", url, title) :: r) [Cparenthesis] tl
@@ -2688,7 +2828,7 @@ struct
       (* ref image insertion with no "alt" *)
       (* ![][ref] *)
       (try
-         let id, tl = read_until_cbracket ~no_nl:true tl in
+         let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
          let fallback = extract_fallback tl lexemes in
          let id = Omd_lexer.string_of_tokens id in
          main_loop_rev (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
@@ -2705,18 +2845,19 @@ struct
       (* image insertion with "alt" *)
       (* ![Alt text](/path/to/img.jpg "Optional title") *)
       (try
-         match read_until_cbracket tl with
+         match read_until_cbracket ~bq:true tl with
          | alt, Oparenthesis::ntl ->
            (try
               let alt = Omd_lexer.string_of_tokens alt in
-              let path_title, rest = read_until_cparenth
-                  ~no_nl:false ntl in
-              let path, title = try read_until_space
-                                      ~no_nl:true path_title
+              let path_title, rest = 
+                read_until_cparenth ~bq:true ~no_nl:false ntl in
+              let path, title =
+                try
+                  read_until_space ~bq:true ~no_nl:true path_title
                 with Premature_ending -> path_title, [] in
               let title, nothing =
                 if title <> [] then
-                  read_until_dq (snd(read_until_dq title))
+                  read_until_dq ~bq:true (snd(read_until_dq ~bq:true title))
                 else [], [] in
               if nothing <> [] then
                 raise NL_exception; (* caught right below *)
@@ -2750,7 +2891,7 @@ struct
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                            as ntl) ->
            (try
-              match read_until_cbracket ~no_nl:false ntl with
+              match read_until_cbracket ~bq:true ~no_nl:false ntl with
               | [], rest -> raise Premature_ending
               | id, rest ->
                 let fallback = extract_fallback rest lexemes in
