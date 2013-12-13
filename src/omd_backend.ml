@@ -577,7 +577,7 @@ let rec markdown_of_md md =
         (match x#to_t md with
            | Some t -> loop list_indent t
            | None ->
-             match x#to_html ~indent:0 markdown_of_md md with
+             match x#to_html ~indent:0 html_of_md md with
              | Some s -> Buffer.add_string b s
              | None -> ());
         loop list_indent tl
