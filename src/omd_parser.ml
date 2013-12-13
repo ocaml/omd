@@ -848,7 +848,6 @@ struct
     | None -> hr_s l
     | Some _ as tl -> tl
 
-
   (** [bcode] parses code that's delimited by backquote(s) *)
   let bcode ?(default_lang=default_lang) r p l =
     assert_well_formed l;
@@ -928,7 +927,8 @@ struct
           | i, n -> String.sub s i (n-i)
         in
         let code = Omd_lexer.string_of_tokens cb in
-        if debug then eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
+        if debug then
+          eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
         Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
 
@@ -956,7 +956,11 @@ struct
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
      "^(if c<>"" then "
@@ -1030,7 +1034,11 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
      
@@ -1089,7 +1097,11 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Lessthan as e :: tl ->
@@ -1139,7 +1151,11 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
      
@@ -1198,7 +1214,11 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Oparenthesis as e :: tl ->
@@ -1248,7 +1268,11 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Doublequote as e :: tl ->
@@ -1298,7 +1322,11 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Quote as e :: tl ->
@@ -1348,7 +1376,11 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Obracket as e :: tl ->
@@ -1398,7 +1430,11 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
      
@@ -1457,7 +1493,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         if bq then
           match bcode [] [] l with
           | None -> loop (e::accu) n tl
-          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
+          | Some (r, _, tl) ->
+            loop (* not very pretty kind of hack *)
+              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              n
+              tl
         else
          loop (e::accu) n tl
          | Space as e :: tl ->
