@@ -471,7 +471,7 @@ let rec sexpr_of_md md =
         bprintf b "(Html_comment %S)" s;
         loop tl
     | Url (href,s,title) :: tl ->
-        bprintf b "(Url %S %s %S)" href (html_of_md s) title;
+        bprintf b "(Url %S %S %S)" href (html_of_md s) title;
         loop tl
     | H1 md :: tl ->
         Buffer.add_string b "(H1";
@@ -538,7 +538,7 @@ let escape_markdown_characters s =
     Buffer.contents b
 
 let rec markdown_of_md md =
-  if debug then eprintf "markdown_of_md(%S)" (sexpr_of_md md);
+  if debug then eprintf "markdown_of_md(%S)\n%!" (sexpr_of_md md);
   let quote ?(indent=0) s =
     let b = Buffer.create (String.length s) in
     let l = String.length s in
@@ -577,7 +577,7 @@ let rec markdown_of_md md =
         (match x#to_t md with
            | Some t -> loop list_indent t
            | None ->
-             match x#to_html ~indent:0 html_of_md md with
+             match x#to_html ~indent:0 markdown_of_md md with
              | Some s -> Buffer.add_string b s
              | None -> ());
         loop list_indent tl
@@ -787,9 +787,9 @@ let rec markdown_of_md md =
       loop list_indent tl
     | Url (href,s,title) :: tl ->
       if title = "" then
-        bprintf b "[%s](%s)" (html_of_md s) href
+        bprintf b "[%s](%s)" (markdown_of_md s) href
       else
-        bprintf b "[%s](%s \"%s\")" (html_of_md s) href title;
+        bprintf b "[%s](%s \"%s\")" (markdown_of_md s) href title;
       loop list_indent tl
     | H1 md :: tl ->
       Buffer.add_string b "# ";
@@ -841,4 +841,6 @@ let rec markdown_of_md md =
             )
             r#get_all
     end;
-    Buffer.contents b
+    let res = Buffer.contents b in
+    if debug then eprintf "markdown_of_md(%S) => %S\n%!" (sexpr_of_md md) res;
+    res
