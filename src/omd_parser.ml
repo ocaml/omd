@@ -952,13 +952,13 @@ struct
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
      "^(if c<>"" then "
       | (Backslash as a) :: ("^c^" as b) :: tl ->
         loop (b::a::accu) n tl
@@ -1026,13 +1026,13 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
      
       | (Backslash as a) :: (Lessthan as b) :: tl ->
         loop (b::a::accu) n tl
@@ -1085,13 +1085,13 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Lessthan as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1135,13 +1135,13 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
      
       | (Backslash as a) :: (Oparenthesis as b) :: tl ->
         loop (b::a::accu) n tl
@@ -1194,13 +1194,13 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Oparenthesis as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1244,13 +1244,13 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Doublequote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1294,13 +1294,13 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Quote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1344,13 +1344,13 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Obracket as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1394,13 +1394,13 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
      
       | (Backslash as a) :: (Obracket as b) :: tl ->
         loop (b::a::accu) n tl
@@ -1453,13 +1453,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           loop (e::accu) n tl
         else
           loop (Backslashs(x-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::_ as l ->
+      | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
-          | None -> loop (e::accu) n l
-          | Some (r, _, l) -> loop (tag__md r::accu) n l
+          | None -> loop (e::accu) n tl
+          | Some (r, _, tl) -> loop (tag__md r::accu) n tl
         else
-         loop (e::accu) n l
+         loop (e::accu) n tl
          | Space as e :: tl ->
         if n = 0 then
           List.rev accu, tl
@@ -1752,9 +1752,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         None
     in
     let read_name l =
-      if debug then eprintf "# maybe_link>read_name\n";
+      (* it's not really the "name" of a URL but what
+         corresponds to the inner HTML of an HTML 'A' tag *)
+      if debug then eprintf "# maybe_link> read_name\n";
       try
-        match read_until_cbracket ~bq:false l with
+        match read_until_cbracket ~bq:true l with
         | name, (Oparenthesis::tl) ->
           read_url (main_loop [] [Obracket] name) (eat_blank tl)
         | _ ->
@@ -1762,9 +1764,6 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       with Premature_ending | NL_exception -> None
     in
     read_name l
-
-
-
 
 
   let has_paragraphs l =
