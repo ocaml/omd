@@ -36,7 +36,7 @@ Usage
 
 - to get the latest version of omd
 
-  `git clone git@github.com:pw374/omd.git`
+  `git clone git://github.com/pw374/omd.git`
 
 - to compile `omd`
   - using `oasis` and `ocamlbuild`
