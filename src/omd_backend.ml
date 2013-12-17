@@ -529,7 +529,8 @@ let escape_markdown_characters s =
         else
           Buffer.add_char b c
       | '+' | '-' as c ->
-        if i+1 < String.length s && s.[i+1] = ' ' then
+        if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
+          && (i+1 < String.length s && s.[i+1] = ' ') then
           begin
             Buffer.add_char b '\\';
             Buffer.add_char b c
