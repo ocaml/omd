@@ -517,7 +517,10 @@ let escape_markdown_characters s =
     for i = 0 to String.length s - 1 do
       match s.[i] with
       | '.' as c ->
-        if i > 0 && match s.[i-1] with '0' .. '9' -> true | _ -> false
+        if i > 0 &&
+           match s.[i-1] with
+           | '0' .. '9' -> i+1 < String.length s && s.[i+1] = ' '
+           | _ -> false
         then
           begin
             Buffer.add_char b '\\';
@@ -525,11 +528,51 @@ let escape_markdown_characters s =
           end
         else
           Buffer.add_char b c
-      | '\\'
-      | '*' | '+' | '-' | '[' | ']'
-      | '!' | '(' | ')' | '<' | '>'
-      | '`' | '#'
-        as c ->
+      | '+' | '-' as c ->
+        if i+1 < String.length s && s.[i+1] = ' ' then
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+        else
+            Buffer.add_char b c
+      | '!' as c ->
+        if i+1 < String.length s && s.[i+1] = '[' then
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+        else
+            Buffer.add_char b c
+      | '<' as c ->
+        if i = String.length s - 1 ||
+           (match s.[i+1] with 'a' .. 'z' | 'A' .. 'Z' -> false | _ -> true)
+        then
+            Buffer.add_char b c
+        else
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+      | '>' as c ->
+        if i = 0 ||
+          match s.[i-1] with ' ' | '\n' -> false | _ -> true
+        then
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+        else
+          Buffer.add_char b c
+      | '#' as c ->
+        if i > 0 && s.[i-1] = '#' then
+          Buffer.add_char b c
+        else
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+      | '\\' | '[' | ']' | '(' | ')' | '`' | '*' as c ->
         Buffer.add_char b '\\';
         Buffer.add_char b c
       | c ->
