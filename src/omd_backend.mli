@@ -1,3 +1,4 @@
+
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
@@ -46,6 +47,15 @@ val html_and_headers_of_md :
     and [headers_of_md] but this function instead.
     Optional parameters
 *)
+
+val escape_markdown_characters : string -> string
+(** [escape_markdown_characters s] returns a string where
+    markdown-significant characters in [s] have been
+    backslash-escaped. Note that [escape_markdown_characters] takes a
+    "raw" string, therefore it doesn't have the whole context in which
+    the string appears, thus the escaping cannot really be
+    minimal. However the implementation tries to minimalise the extra
+    escaping. *)
 
 val text_of_md : Omd_representation.t -> string
 (** [text_of_md md] is basically the same as [html_of_md md] but without
