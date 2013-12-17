@@ -528,9 +528,20 @@ let escape_markdown_characters s =
           end
         else
           Buffer.add_char b c
-      | '+' | '-' as c ->
+      | '-' as c ->
         if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
-          && (i+1 < String.length s && s.[i+1] = ' ') then
+          && (i+1 < String.length s && (s.[i+1] = ' '||s.[i+1] = '-'))
+        then
+          begin
+            Buffer.add_char b '\\';
+            Buffer.add_char b c
+          end
+        else
+            Buffer.add_char b c
+      | '+' as c ->
+        if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
+          && (i+1 < String.length s && s.[i+1] = ' ')
+        then
           begin
             Buffer.add_char b '\\';
             Buffer.add_char b c
