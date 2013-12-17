@@ -136,153 +136,441 @@ struct
       (* code to generate what follows...
          List.iter (fun e ->
          Printf.printf "
-         | %s::%s::tl -> if trackfix then eprintf \"%s 1\\n%!\"; loop accu (%ss 0::tl)
-         | %ss n::%s::tl -> if trackfix then eprintf \"%s 2\\n%!\"; loop accu (%ss(n+1)::tl)
-         | %s::%ss n::tl -> if trackfix then eprintf \"%s 3\\n%!\"; loop accu (%ss(n+1)::tl)
-         | %ss a::%ss b::tl -> if trackfix then eprintf \"%s 4\\n%!\"; loop accu (%ss(a+b+2)::tl)"
+         | %s::%s::tl ->
+            if trackfix then eprintf \"%s 1\\n%!\";
+            loop accu (%ss 0::tl)
+         | %ss n::%s::tl ->
+            if trackfix then eprintf \"%s 2\\n%!\";
+            loop accu (%ss(n+1)::tl)
+         | %s::%ss n::tl ->
+            if trackfix then eprintf \"%s 3\\n%!\";
+            loop accu (%ss(n+1)::tl)
+         | %ss a::%ss b::tl ->
+            if trackfix then eprintf \"%s 4\\n%!\";
+            loop accu (%ss(a+b+2)::tl)"
          e e e e e e e e e e e e e e e e)
          ["Ampersand"; "At"; "Backquote"; "Backslash"; "Bar"; "Caret"; "Cbrace"; "Colon"; "Comma"; "Cparenthesis"; "Cbracket"; "Dollar"; "Dot"; "Doublequote"; "Exclamation"; "Equal"; "Greaterthan"; "Hash"; "Lessthan"; "Minus"; "Newline"; "Obrace"; "Oparenthesis"; "Obracket"; "Percent"; "Plus"; "Question"; "Quote"; "Semicolon"; "Slash"; "Space"; "Star"; "Tab"; "Tilde"; "Underscore"];
          print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
-      | Ampersand::Ampersand::tl -> if trackfix then eprintf "Ampersand 1\n"; loop accu (Ampersands 0::tl)
-      | Ampersands n::Ampersand::tl -> if trackfix then eprintf "Ampersand 2\n"; loop accu (Ampersands(n+1)::tl)
-      | Ampersand::Ampersands n::tl -> if trackfix then eprintf "Ampersand 3\n"; loop accu (Ampersands(n+1)::tl)
-      | Ampersands a::Ampersands b::tl -> if trackfix then eprintf "Ampersand 4\n"; loop accu (Ampersands(a+b+2)::tl)
-      | At::At::tl -> if trackfix then eprintf "At 1\n"; loop accu (Ats 0::tl)
-      | Ats n::At::tl -> if trackfix then eprintf "At 2\n"; loop accu (Ats(n+1)::tl)
-      | At::Ats n::tl -> if trackfix then eprintf "At 3\n"; loop accu (Ats(n+1)::tl)
-      | Ats a::Ats b::tl -> if trackfix then eprintf "At 4\n"; loop accu (Ats(a+b+2)::tl)
-      | Backquote::Backquote::tl -> if trackfix then eprintf "Backquote 1\n"; loop accu (Backquotes 0::tl)
-      | Backquotes n::Backquote::tl -> if trackfix then eprintf "Backquote 2\n"; loop accu (Backquotes(n+1)::tl)
-      | Backquote::Backquotes n::tl -> if trackfix then eprintf "Backquote 3\n"; loop accu (Backquotes(n+1)::tl)
-      | Backquotes a::Backquotes b::tl -> if trackfix then eprintf "Backquote 4\n"; loop accu (Backquotes(a+b+2)::tl)
-      | Backslash::Backslash::tl -> if trackfix then eprintf "Backslash 1\n"; loop accu (Backslashs 0::tl)
-      | Backslashs n::Backslash::tl -> if trackfix then eprintf "Backslash 2\n"; loop accu (Backslashs(n+1)::tl)
-      | Backslash::Backslashs n::tl -> if trackfix then eprintf "Backslash 3\n"; loop accu (Backslashs(n+1)::tl)
-      | Backslashs a::Backslashs b::tl -> if trackfix then eprintf "Backslash 4\n"; loop accu (Backslashs(a+b+2)::tl)
-      | Bar::Bar::tl -> if trackfix then eprintf "Bar 1\n"; loop accu (Bars 0::tl)
-      | Bars n::Bar::tl -> if trackfix then eprintf "Bar 2\n"; loop accu (Bars(n+1)::tl)
-      | Bar::Bars n::tl -> if trackfix then eprintf "Bar 3\n"; loop accu (Bars(n+1)::tl)
-      | Bars a::Bars b::tl -> if trackfix then eprintf "Bar 4\n"; loop accu (Bars(a+b+2)::tl)
-      | Caret::Caret::tl -> if trackfix then eprintf "Caret 1\n"; loop accu (Carets 0::tl)
-      | Carets n::Caret::tl -> if trackfix then eprintf "Caret 2\n"; loop accu (Carets(n+1)::tl)
-      | Caret::Carets n::tl -> if trackfix then eprintf "Caret 3\n"; loop accu (Carets(n+1)::tl)
-      | Carets a::Carets b::tl -> if trackfix then eprintf "Caret 4\n"; loop accu (Carets(a+b+2)::tl)
-      | Cbrace::Cbrace::tl -> if trackfix then eprintf "Cbrace 1\n"; loop accu (Cbraces 0::tl)
-      | Cbraces n::Cbrace::tl -> if trackfix then eprintf "Cbrace 2\n"; loop accu (Cbraces(n+1)::tl)
-      | Cbrace::Cbraces n::tl -> if trackfix then eprintf "Cbrace 3\n"; loop accu (Cbraces(n+1)::tl)
-      | Cbraces a::Cbraces b::tl -> if trackfix then eprintf "Cbrace 4\n"; loop accu (Cbraces(a+b+2)::tl)
-      | Colon::Colon::tl -> if trackfix then eprintf "Colon 1\n"; loop accu (Colons 0::tl)
-      | Colons n::Colon::tl -> if trackfix then eprintf "Colon 2\n"; loop accu (Colons(n+1)::tl)
-      | Colon::Colons n::tl -> if trackfix then eprintf "Colon 3\n"; loop accu (Colons(n+1)::tl)
-      | Colons a::Colons b::tl -> if trackfix then eprintf "Colon 4\n"; loop accu (Colons(a+b+2)::tl)
-      | Comma::Comma::tl -> if trackfix then eprintf "Comma 1\n"; loop accu (Commas 0::tl)
-      | Commas n::Comma::tl -> if trackfix then eprintf "Comma 2\n"; loop accu (Commas(n+1)::tl)
-      | Comma::Commas n::tl -> if trackfix then eprintf "Comma 3\n"; loop accu (Commas(n+1)::tl)
-      | Commas a::Commas b::tl -> if trackfix then eprintf "Comma 4\n"; loop accu (Commas(a+b+2)::tl)
-      | Cparenthesis::Cparenthesis::tl -> if trackfix then eprintf "Cparenthesis 1\n"; loop accu (Cparenthesiss 0::tl)
-      | Cparenthesiss n::Cparenthesis::tl -> if trackfix then eprintf "Cparenthesis 2\n"; loop accu (Cparenthesiss(n+1)::tl)
-      | Cparenthesis::Cparenthesiss n::tl -> if trackfix then eprintf "Cparenthesis 3\n"; loop accu (Cparenthesiss(n+1)::tl)
-      | Cparenthesiss a::Cparenthesiss b::tl -> if trackfix then eprintf "Cparenthesis 4\n"; loop accu (Cparenthesiss(a+b+2)::tl)
-      | Cbracket::Cbracket::tl -> if trackfix then eprintf "Cbracket 1\n"; loop accu (Cbrackets 0::tl)
-      | Cbrackets n::Cbracket::tl -> if trackfix then eprintf "Cbracket 2\n"; loop accu (Cbrackets(n+1)::tl)
-      | Cbracket::Cbrackets n::tl -> if trackfix then eprintf "Cbracket 3\n"; loop accu (Cbrackets(n+1)::tl)
-      | Cbrackets a::Cbrackets b::tl -> if trackfix then eprintf "Cbracket 4\n"; loop accu (Cbrackets(a+b+2)::tl)
-      | Dollar::Dollar::tl -> if trackfix then eprintf "Dollar 1\n"; loop accu (Dollars 0::tl)
-      | Dollars n::Dollar::tl -> if trackfix then eprintf "Dollar 2\n"; loop accu (Dollars(n+1)::tl)
-      | Dollar::Dollars n::tl -> if trackfix then eprintf "Dollar 3\n"; loop accu (Dollars(n+1)::tl)
-      | Dollars a::Dollars b::tl -> if trackfix then eprintf "Dollar 4\n"; loop accu (Dollars(a+b+2)::tl)
-      | Dot::Dot::tl -> if trackfix then eprintf "Dot 1\n"; loop accu (Dots 0::tl)
-      | Dots n::Dot::tl -> if trackfix then eprintf "Dot 2\n"; loop accu (Dots(n+1)::tl)
-      | Dot::Dots n::tl -> if trackfix then eprintf "Dot 3\n"; loop accu (Dots(n+1)::tl)
-      | Dots a::Dots b::tl -> if trackfix then eprintf "Dot 4\n"; loop accu (Dots(a+b+2)::tl)
-      | Doublequote::Doublequote::tl -> if trackfix then eprintf "Doublequote 1\n"; loop accu (Doublequotes 0::tl)
-      | Doublequotes n::Doublequote::tl -> if trackfix then eprintf "Doublequote 2\n"; loop accu (Doublequotes(n+1)::tl)
-      | Doublequote::Doublequotes n::tl -> if trackfix then eprintf "Doublequote 3\n"; loop accu (Doublequotes(n+1)::tl)
-      | Doublequotes a::Doublequotes b::tl -> if trackfix then eprintf "Doublequote 4\n"; loop accu (Doublequotes(a+b+2)::tl)
-      | Exclamation::Exclamation::tl -> if trackfix then eprintf "Exclamation 1\n"; loop accu (Exclamations 0::tl)
-      | Exclamations n::Exclamation::tl -> if trackfix then eprintf "Exclamation 2\n"; loop accu (Exclamations(n+1)::tl)
-      | Exclamation::Exclamations n::tl -> if trackfix then eprintf "Exclamation 3\n"; loop accu (Exclamations(n+1)::tl)
-      | Exclamations a::Exclamations b::tl -> if trackfix then eprintf "Exclamation 4\n"; loop accu (Exclamations(a+b+2)::tl)
-      | Equal::Equal::tl -> if trackfix then eprintf "Equal 1\n"; loop accu (Equals 0::tl)
-      | Equals n::Equal::tl -> if trackfix then eprintf "Equal 2\n"; loop accu (Equals(n+1)::tl)
-      | Equal::Equals n::tl -> if trackfix then eprintf "Equal 3\n"; loop accu (Equals(n+1)::tl)
-      | Equals a::Equals b::tl -> if trackfix then eprintf "Equal 4\n"; loop accu (Equals(a+b+2)::tl)
-      | Greaterthan::Greaterthan::tl -> if trackfix then eprintf "Greaterthan 1\n"; loop accu (Greaterthans 0::tl)
-      | Greaterthans n::Greaterthan::tl -> if trackfix then eprintf "Greaterthan 2\n"; loop accu (Greaterthans(n+1)::tl)
-      | Greaterthan::Greaterthans n::tl -> if trackfix then eprintf "Greaterthan 3\n"; loop accu (Greaterthans(n+1)::tl)
-      | Greaterthans a::Greaterthans b::tl -> if trackfix then eprintf "Greaterthan 4\n"; loop accu (Greaterthans(a+b+2)::tl)
-      | Hash::Hash::tl -> if trackfix then eprintf "Hash 1\n"; loop accu (Hashs 0::tl)
-      | Hashs n::Hash::tl -> if trackfix then eprintf "Hash 2\n"; loop accu (Hashs(n+1)::tl)
-      | Hash::Hashs n::tl -> if trackfix then eprintf "Hash 3\n"; loop accu (Hashs(n+1)::tl)
-      | Hashs a::Hashs b::tl -> if trackfix then eprintf "Hash 4\n"; loop accu (Hashs(a+b+2)::tl)
-      | Lessthan::Lessthan::tl -> if trackfix then eprintf "Lessthan 1\n"; loop accu (Lessthans 0::tl)
-      | Lessthans n::Lessthan::tl -> if trackfix then eprintf "Lessthan 2\n"; loop accu (Lessthans(n+1)::tl)
-      | Lessthan::Lessthans n::tl -> if trackfix then eprintf "Lessthan 3\n"; loop accu (Lessthans(n+1)::tl)
-      | Lessthans a::Lessthans b::tl -> if trackfix then eprintf "Lessthan 4\n"; loop accu (Lessthans(a+b+2)::tl)
-      | Minus::Minus::tl -> if trackfix then eprintf "Minus 1\n"; loop accu (Minuss 0::tl)
-      | Minuss n::Minus::tl -> if trackfix then eprintf "Minus 2\n"; loop accu (Minuss(n+1)::tl)
-      | Minus::Minuss n::tl -> if trackfix then eprintf "Minus 3\n"; loop accu (Minuss(n+1)::tl)
-      | Minuss a::Minuss b::tl -> if trackfix then eprintf "Minus 4\n"; loop accu (Minuss(a+b+2)::tl)
-      | Newline::Newline::tl -> if trackfix then eprintf "Newline 1\n"; loop accu (Newlines 0::tl)
-      | Newlines n::Newline::tl -> if trackfix then eprintf "Newline 2\n"; loop accu (Newlines(n+1)::tl)
-      | Newline::Newlines n::tl -> if trackfix then eprintf "Newline 3\n"; loop accu (Newlines(n+1)::tl)
-      | Newlines a::Newlines b::tl -> if trackfix then eprintf "Newline 4\n"; loop accu (Newlines(a+b+2)::tl)
-      | Obrace::Obrace::tl -> if trackfix then eprintf "Obrace 1\n"; loop accu (Obraces 0::tl)
-      | Obraces n::Obrace::tl -> if trackfix then eprintf "Obrace 2\n"; loop accu (Obraces(n+1)::tl)
-      | Obrace::Obraces n::tl -> if trackfix then eprintf "Obrace 3\n"; loop accu (Obraces(n+1)::tl)
-      | Obraces a::Obraces b::tl -> if trackfix then eprintf "Obrace 4\n"; loop accu (Obraces(a+b+2)::tl)
-      | Oparenthesis::Oparenthesis::tl -> if trackfix then eprintf "Oparenthesis 1\n"; loop accu (Oparenthesiss 0::tl)
-      | Oparenthesiss n::Oparenthesis::tl -> if trackfix then eprintf "Oparenthesis 2\n"; loop accu (Oparenthesiss(n+1)::tl)
-      | Oparenthesis::Oparenthesiss n::tl -> if trackfix then eprintf "Oparenthesis 3\n"; loop accu (Oparenthesiss(n+1)::tl)
-      | Oparenthesiss a::Oparenthesiss b::tl -> if trackfix then eprintf "Oparenthesis 4\n"; loop accu (Oparenthesiss(a+b+2)::tl)
-      | Obracket::Obracket::tl -> if trackfix then eprintf "Obracket 1\n"; loop accu (Obrackets 0::tl)
-      | Obrackets n::Obracket::tl -> if trackfix then eprintf "Obracket 2\n"; loop accu (Obrackets(n+1)::tl)
-      | Obracket::Obrackets n::tl -> if trackfix then eprintf "Obracket 3\n"; loop accu (Obrackets(n+1)::tl)
-      | Obrackets a::Obrackets b::tl -> if trackfix then eprintf "Obracket 4\n"; loop accu (Obrackets(a+b+2)::tl)
-      | Percent::Percent::tl -> if trackfix then eprintf "Percent 1\n"; loop accu (Percents 0::tl)
-      | Percents n::Percent::tl -> if trackfix then eprintf "Percent 2\n"; loop accu (Percents(n+1)::tl)
-      | Percent::Percents n::tl -> if trackfix then eprintf "Percent 3\n"; loop accu (Percents(n+1)::tl)
-      | Percents a::Percents b::tl -> if trackfix then eprintf "Percent 4\n"; loop accu (Percents(a+b+2)::tl)
-      | Plus::Plus::tl -> if trackfix then eprintf "Plus 1\n"; loop accu (Pluss 0::tl)
-      | Pluss n::Plus::tl -> if trackfix then eprintf "Plus 2\n"; loop accu (Pluss(n+1)::tl)
-      | Plus::Pluss n::tl -> if trackfix then eprintf "Plus 3\n"; loop accu (Pluss(n+1)::tl)
-      | Pluss a::Pluss b::tl -> if trackfix then eprintf "Plus 4\n"; loop accu (Pluss(a+b+2)::tl)
-      | Question::Question::tl -> if trackfix then eprintf "Question 1\n"; loop accu (Questions 0::tl)
-      | Questions n::Question::tl -> if trackfix then eprintf "Question 2\n"; loop accu (Questions(n+1)::tl)
-      | Question::Questions n::tl -> if trackfix then eprintf "Question 3\n"; loop accu (Questions(n+1)::tl)
-      | Questions a::Questions b::tl -> if trackfix then eprintf "Question 4\n"; loop accu (Questions(a+b+2)::tl)
-      | Quote::Quote::tl -> if trackfix then eprintf "Quote 1\n"; loop accu (Quotes 0::tl)
-      | Quotes n::Quote::tl -> if trackfix then eprintf "Quote 2\n"; loop accu (Quotes(n+1)::tl)
-      | Quote::Quotes n::tl -> if trackfix then eprintf "Quote 3\n"; loop accu (Quotes(n+1)::tl)
-      | Quotes a::Quotes b::tl -> if trackfix then eprintf "Quote 4\n"; loop accu (Quotes(a+b+2)::tl)
-      | Semicolon::Semicolon::tl -> if trackfix then eprintf "Semicolon 1\n"; loop accu (Semicolons 0::tl)
-      | Semicolons n::Semicolon::tl -> if trackfix then eprintf "Semicolon 2\n"; loop accu (Semicolons(n+1)::tl)
-      | Semicolon::Semicolons n::tl -> if trackfix then eprintf "Semicolon 3\n"; loop accu (Semicolons(n+1)::tl)
-      | Semicolons a::Semicolons b::tl -> if trackfix then eprintf "Semicolon 4\n"; loop accu (Semicolons(a+b+2)::tl)
-      | Slash::Slash::tl -> if trackfix then eprintf "Slash 1\n"; loop accu (Slashs 0::tl)
-      | Slashs n::Slash::tl -> if trackfix then eprintf "Slash 2\n"; loop accu (Slashs(n+1)::tl)
-      | Slash::Slashs n::tl -> if trackfix then eprintf "Slash 3\n"; loop accu (Slashs(n+1)::tl)
-      | Slashs a::Slashs b::tl -> if trackfix then eprintf "Slash 4\n"; loop accu (Slashs(a+b+2)::tl)
-      | Space::Space::tl -> if trackfix then eprintf "Space 1\n"; loop accu (Spaces 0::tl)
-      | Spaces n::Space::tl -> if trackfix then eprintf "Space 2\n"; loop accu (Spaces(n+1)::tl)
-      | Space::Spaces n::tl -> if trackfix then eprintf "Space 3\n"; loop accu (Spaces(n+1)::tl)
-      | Spaces a::Spaces b::tl -> if trackfix then eprintf "Space 4\n"; loop accu (Spaces(a+b+2)::tl)
-      | Star::Star::tl -> if trackfix then eprintf "Star 1\n"; loop accu (Stars 0::tl)
-      | Stars n::Star::tl -> if trackfix then eprintf "Star 2\n"; loop accu (Stars(n+1)::tl)
-      | Star::Stars n::tl -> if trackfix then eprintf "Star 3\n"; loop accu (Stars(n+1)::tl)
-      | Stars a::Stars b::tl -> if trackfix then eprintf "Star 4\n"; loop accu (Stars(a+b+2)::tl)
-      | Tab::Tab::tl -> if trackfix then eprintf "Tab 1\n"; loop accu (Tabs 0::tl)
-      | Tabs n::Tab::tl -> if trackfix then eprintf "Tab 2\n"; loop accu (Tabs(n+1)::tl)
-      | Tab::Tabs n::tl -> if trackfix then eprintf "Tab 3\n"; loop accu (Tabs(n+1)::tl)
-      | Tabs a::Tabs b::tl -> if trackfix then eprintf "Tab 4\n"; loop accu (Tabs(a+b+2)::tl)
-      | Tilde::Tilde::tl -> if trackfix then eprintf "Tilde 1\n"; loop accu (Tildes 0::tl)
-      | Tildes n::Tilde::tl -> if trackfix then eprintf "Tilde 2\n"; loop accu (Tildes(n+1)::tl)
-      | Tilde::Tildes n::tl -> if trackfix then eprintf "Tilde 3\n"; loop accu (Tildes(n+1)::tl)
-      | Tildes a::Tildes b::tl -> if trackfix then eprintf "Tilde 4\n"; loop accu (Tildes(a+b+2)::tl)
-      | Underscore::Underscore::tl -> if trackfix then eprintf "Underscore 1\n"; loop accu (Underscores 0::tl)
-      | Underscores n::Underscore::tl -> if trackfix then eprintf "Underscore 2\n"; loop accu (Underscores(n+1)::tl)
-      | Underscore::Underscores n::tl -> if trackfix then eprintf "Underscore 3\n"; loop accu (Underscores(n+1)::tl)
-      | Underscores a::Underscores b::tl -> if trackfix then eprintf "Underscore 4\n"; loop accu (Underscores(a+b+2)::tl)| x::tl -> loop (x::accu) tl
+      | Ampersand::Ampersand::tl ->
+        if trackfix then eprintf "Ampersand 1\n";
+        loop accu (Ampersands 0::tl)
+      | Ampersands n::Ampersand::tl ->
+        if trackfix then eprintf "Ampersand 2\n";
+        loop accu (Ampersands(n+1)::tl)
+      | Ampersand::Ampersands n::tl ->
+        if trackfix then eprintf "Ampersand 3\n";
+        loop accu (Ampersands(n+1)::tl)
+      | Ampersands a::Ampersands b::tl ->
+        if trackfix then eprintf "Ampersand 4\n";
+        loop accu (Ampersands(a+b+2)::tl)
+      | At::At::tl ->
+        if trackfix then eprintf "At 1\n";
+        loop accu (Ats 0::tl)
+      | Ats n::At::tl ->
+        if trackfix then eprintf "At 2\n";
+        loop accu (Ats(n+1)::tl)
+      | At::Ats n::tl ->
+        if trackfix then eprintf "At 3\n";
+        loop accu (Ats(n+1)::tl)
+      | Ats a::Ats b::tl ->
+        if trackfix then eprintf "At 4\n";
+        loop accu (Ats(a+b+2)::tl)
+      | Backquote::Backquote::tl ->
+        if trackfix then eprintf "Backquote 1\n";
+        loop accu (Backquotes 0::tl)
+      | Backquotes n::Backquote::tl ->
+        if trackfix then eprintf "Backquote 2\n";
+        loop accu (Backquotes(n+1)::tl)
+      | Backquote::Backquotes n::tl ->
+        if trackfix then eprintf "Backquote 3\n";
+        loop accu (Backquotes(n+1)::tl)
+      | Backquotes a::Backquotes b::tl ->
+        if trackfix then eprintf "Backquote 4\n";
+        loop accu (Backquotes(a+b+2)::tl)
+      | Backslash::Backslash::tl ->
+        if trackfix then eprintf "Backslash 1\n";
+        loop accu (Backslashs 0::tl)
+      | Backslashs n::Backslash::tl ->
+        if trackfix then eprintf "Backslash 2\n";
+        loop accu (Backslashs(n+1)::tl)
+      | Backslash::Backslashs n::tl ->
+        if trackfix then eprintf "Backslash 3\n";
+        loop accu (Backslashs(n+1)::tl)
+      | Backslashs a::Backslashs b::tl ->
+        if trackfix then eprintf "Backslash 4\n";
+        loop accu (Backslashs(a+b+2)::tl)
+      | Bar::Bar::tl ->
+        if trackfix then eprintf "Bar 1\n";
+        loop accu (Bars 0::tl)
+      | Bars n::Bar::tl ->
+        if trackfix then eprintf "Bar 2\n";
+        loop accu (Bars(n+1)::tl)
+      | Bar::Bars n::tl ->
+        if trackfix then eprintf "Bar 3\n";
+        loop accu (Bars(n+1)::tl)
+      | Bars a::Bars b::tl ->
+        if trackfix then eprintf "Bar 4\n";
+        loop accu (Bars(a+b+2)::tl)
+      | Caret::Caret::tl ->
+        if trackfix then eprintf "Caret 1\n";
+        loop accu (Carets 0::tl)
+      | Carets n::Caret::tl ->
+        if trackfix then eprintf "Caret 2\n";
+        loop accu (Carets(n+1)::tl)
+      | Caret::Carets n::tl ->
+        if trackfix then eprintf "Caret 3\n";
+        loop accu (Carets(n+1)::tl)
+      | Carets a::Carets b::tl ->
+        if trackfix then eprintf "Caret 4\n";
+        loop accu (Carets(a+b+2)::tl)
+      | Cbrace::Cbrace::tl ->
+        if trackfix then eprintf "Cbrace 1\n";
+        loop accu (Cbraces 0::tl)
+      | Cbraces n::Cbrace::tl ->
+        if trackfix then eprintf "Cbrace 2\n";
+        loop accu (Cbraces(n+1)::tl)
+      | Cbrace::Cbraces n::tl ->
+        if trackfix then eprintf "Cbrace 3\n";
+        loop accu (Cbraces(n+1)::tl)
+      | Cbraces a::Cbraces b::tl ->
+        if trackfix then eprintf "Cbrace 4\n";
+        loop accu (Cbraces(a+b+2)::tl)
+      | Colon::Colon::tl ->
+        if trackfix then eprintf "Colon 1\n";
+        loop accu (Colons 0::tl)
+      | Colons n::Colon::tl ->
+        if trackfix then eprintf "Colon 2\n";
+        loop accu (Colons(n+1)::tl)
+      | Colon::Colons n::tl ->
+        if trackfix then eprintf "Colon 3\n";
+        loop accu (Colons(n+1)::tl)
+      | Colons a::Colons b::tl ->
+        if trackfix then eprintf "Colon 4\n";
+        loop accu (Colons(a+b+2)::tl)
+      | Comma::Comma::tl ->
+        if trackfix then eprintf "Comma 1\n";
+        loop accu (Commas 0::tl)
+      | Commas n::Comma::tl ->
+        if trackfix then eprintf "Comma 2\n";
+        loop accu (Commas(n+1)::tl)
+      | Comma::Commas n::tl ->
+        if trackfix then eprintf "Comma 3\n";
+        loop accu (Commas(n+1)::tl)
+      | Commas a::Commas b::tl ->
+        if trackfix then eprintf "Comma 4\n";
+        loop accu (Commas(a+b+2)::tl)
+      | Cparenthesis::Cparenthesis::tl ->
+        if trackfix then eprintf "Cparenthesis 1\n";
+        loop accu (Cparenthesiss 0::tl)
+      | Cparenthesiss n::Cparenthesis::tl ->
+        if trackfix then eprintf "Cparenthesis 2\n";
+        loop accu (Cparenthesiss(n+1)::tl)
+      | Cparenthesis::Cparenthesiss n::tl ->
+        if trackfix then eprintf "Cparenthesis 3\n";
+        loop accu (Cparenthesiss(n+1)::tl)
+      | Cparenthesiss a::Cparenthesiss b::tl ->
+        if trackfix then eprintf "Cparenthesis 4\n";
+        loop accu (Cparenthesiss(a+b+2)::tl)
+      | Cbracket::Cbracket::tl ->
+        if trackfix then eprintf "Cbracket 1\n";
+        loop accu (Cbrackets 0::tl)
+      | Cbrackets n::Cbracket::tl ->
+        if trackfix then eprintf "Cbracket 2\n";
+        loop accu (Cbrackets(n+1)::tl)
+      | Cbracket::Cbrackets n::tl ->
+        if trackfix then eprintf "Cbracket 3\n";
+        loop accu (Cbrackets(n+1)::tl)
+      | Cbrackets a::Cbrackets b::tl ->
+        if trackfix then eprintf "Cbracket 4\n";
+        loop accu (Cbrackets(a+b+2)::tl)
+      | Dollar::Dollar::tl ->
+        if trackfix then eprintf "Dollar 1\n";
+        loop accu (Dollars 0::tl)
+      | Dollars n::Dollar::tl ->
+        if trackfix then eprintf "Dollar 2\n";
+        loop accu (Dollars(n+1)::tl)
+      | Dollar::Dollars n::tl ->
+        if trackfix then eprintf "Dollar 3\n";
+        loop accu (Dollars(n+1)::tl)
+      | Dollars a::Dollars b::tl ->
+        if trackfix then eprintf "Dollar 4\n";
+        loop accu (Dollars(a+b+2)::tl)
+      | Dot::Dot::tl ->
+        if trackfix then eprintf "Dot 1\n";
+        loop accu (Dots 0::tl)
+      | Dots n::Dot::tl ->
+        if trackfix then eprintf "Dot 2\n";
+        loop accu (Dots(n+1)::tl)
+      | Dot::Dots n::tl ->
+        if trackfix then eprintf "Dot 3\n";
+        loop accu (Dots(n+1)::tl)
+      | Dots a::Dots b::tl ->
+        if trackfix then eprintf "Dot 4\n";
+        loop accu (Dots(a+b+2)::tl)
+      | Doublequote::Doublequote::tl ->
+        if trackfix then eprintf "Doublequote 1\n";
+        loop accu (Doublequotes 0::tl)
+      | Doublequotes n::Doublequote::tl ->
+        if trackfix then eprintf "Doublequote 2\n";
+        loop accu (Doublequotes(n+1)::tl)
+      | Doublequote::Doublequotes n::tl ->
+        if trackfix then eprintf "Doublequote 3\n";
+        loop accu (Doublequotes(n+1)::tl)
+      | Doublequotes a::Doublequotes b::tl ->
+        if trackfix then eprintf "Doublequote 4\n";
+        loop accu (Doublequotes(a+b+2)::tl)
+      | Exclamation::Exclamation::tl ->
+        if trackfix then eprintf "Exclamation 1\n";
+        loop accu (Exclamations 0::tl)
+      | Exclamations n::Exclamation::tl ->
+        if trackfix then eprintf "Exclamation 2\n";
+        loop accu (Exclamations(n+1)::tl)
+      | Exclamation::Exclamations n::tl ->
+        if trackfix then eprintf "Exclamation 3\n";
+        loop accu (Exclamations(n+1)::tl)
+      | Exclamations a::Exclamations b::tl ->
+        if trackfix then eprintf "Exclamation 4\n";
+        loop accu (Exclamations(a+b+2)::tl)
+      | Equal::Equal::tl ->
+        if trackfix then eprintf "Equal 1\n";
+        loop accu (Equals 0::tl)
+      | Equals n::Equal::tl ->
+        if trackfix then eprintf "Equal 2\n";
+        loop accu (Equals(n+1)::tl)
+      | Equal::Equals n::tl ->
+        if trackfix then eprintf "Equal 3\n";
+        loop accu (Equals(n+1)::tl)
+      | Equals a::Equals b::tl ->
+        if trackfix then eprintf "Equal 4\n";
+        loop accu (Equals(a+b+2)::tl)
+      | Greaterthan::Greaterthan::tl ->
+        if trackfix then eprintf "Greaterthan 1\n";
+        loop accu (Greaterthans 0::tl)
+      | Greaterthans n::Greaterthan::tl ->
+        if trackfix then eprintf "Greaterthan 2\n";
+        loop accu (Greaterthans(n+1)::tl)
+      | Greaterthan::Greaterthans n::tl ->
+        if trackfix then eprintf "Greaterthan 3\n";
+        loop accu (Greaterthans(n+1)::tl)
+      | Greaterthans a::Greaterthans b::tl ->
+        if trackfix then eprintf "Greaterthan 4\n";
+        loop accu (Greaterthans(a+b+2)::tl)
+      | Hash::Hash::tl ->
+        if trackfix then eprintf "Hash 1\n";
+        loop accu (Hashs 0::tl)
+      | Hashs n::Hash::tl ->
+        if trackfix then eprintf "Hash 2\n";
+        loop accu (Hashs(n+1)::tl)
+      | Hash::Hashs n::tl ->
+        if trackfix then eprintf "Hash 3\n";
+        loop accu (Hashs(n+1)::tl)
+      | Hashs a::Hashs b::tl ->
+        if trackfix then eprintf "Hash 4\n";
+        loop accu (Hashs(a+b+2)::tl)
+      | Lessthan::Lessthan::tl ->
+        if trackfix then eprintf "Lessthan 1\n";
+        loop accu (Lessthans 0::tl)
+      | Lessthans n::Lessthan::tl ->
+        if trackfix then eprintf "Lessthan 2\n";
+        loop accu (Lessthans(n+1)::tl)
+      | Lessthan::Lessthans n::tl ->
+        if trackfix then eprintf "Lessthan 3\n";
+        loop accu (Lessthans(n+1)::tl)
+      | Lessthans a::Lessthans b::tl ->
+        if trackfix then eprintf "Lessthan 4\n";
+        loop accu (Lessthans(a+b+2)::tl)
+      | Minus::Minus::tl ->
+        if trackfix then eprintf "Minus 1\n";
+        loop accu (Minuss 0::tl)
+      | Minuss n::Minus::tl ->
+        if trackfix then eprintf "Minus 2\n";
+        loop accu (Minuss(n+1)::tl)
+      | Minus::Minuss n::tl ->
+        if trackfix then eprintf "Minus 3\n";
+        loop accu (Minuss(n+1)::tl)
+      | Minuss a::Minuss b::tl ->
+        if trackfix then eprintf "Minus 4\n";
+        loop accu (Minuss(a+b+2)::tl)
+      | Newline::Newline::tl ->
+        if trackfix then eprintf "Newline 1\n";
+        loop accu (Newlines 0::tl)
+      | Newlines n::Newline::tl ->
+        if trackfix then eprintf "Newline 2\n";
+        loop accu (Newlines(n+1)::tl)
+      | Newline::Newlines n::tl ->
+        if trackfix then eprintf "Newline 3\n";
+        loop accu (Newlines(n+1)::tl)
+      | Newlines a::Newlines b::tl ->
+        if trackfix then eprintf "Newline 4\n";
+        loop accu (Newlines(a+b+2)::tl)
+      | Obrace::Obrace::tl ->
+        if trackfix then eprintf "Obrace 1\n";
+        loop accu (Obraces 0::tl)
+      | Obraces n::Obrace::tl ->
+        if trackfix then eprintf "Obrace 2\n";
+        loop accu (Obraces(n+1)::tl)
+      | Obrace::Obraces n::tl ->
+        if trackfix then eprintf "Obrace 3\n";
+        loop accu (Obraces(n+1)::tl)
+      | Obraces a::Obraces b::tl ->
+        if trackfix then eprintf "Obrace 4\n";
+        loop accu (Obraces(a+b+2)::tl)
+      | Oparenthesis::Oparenthesis::tl ->
+        if trackfix then eprintf "Oparenthesis 1\n";
+        loop accu (Oparenthesiss 0::tl)
+      | Oparenthesiss n::Oparenthesis::tl ->
+        if trackfix then eprintf "Oparenthesis 2\n";
+        loop accu (Oparenthesiss(n+1)::tl)
+      | Oparenthesis::Oparenthesiss n::tl ->
+        if trackfix then eprintf "Oparenthesis 3\n";
+        loop accu (Oparenthesiss(n+1)::tl)
+      | Oparenthesiss a::Oparenthesiss b::tl ->
+        if trackfix then eprintf "Oparenthesis 4\n";
+        loop accu (Oparenthesiss(a+b+2)::tl)
+      | Obracket::Obracket::tl ->
+        if trackfix then eprintf "Obracket 1\n";
+        loop accu (Obrackets 0::tl)
+      | Obrackets n::Obracket::tl ->
+        if trackfix then eprintf "Obracket 2\n";
+        loop accu (Obrackets(n+1)::tl)
+      | Obracket::Obrackets n::tl ->
+        if trackfix then eprintf "Obracket 3\n";
+        loop accu (Obrackets(n+1)::tl)
+      | Obrackets a::Obrackets b::tl ->
+        if trackfix then eprintf "Obracket 4\n";
+        loop accu (Obrackets(a+b+2)::tl)
+      | Percent::Percent::tl ->
+        if trackfix then eprintf "Percent 1\n";
+        loop accu (Percents 0::tl)
+      | Percents n::Percent::tl ->
+        if trackfix then eprintf "Percent 2\n";
+        loop accu (Percents(n+1)::tl)
+      | Percent::Percents n::tl ->
+        if trackfix then eprintf "Percent 3\n";
+        loop accu (Percents(n+1)::tl)
+      | Percents a::Percents b::tl ->
+        if trackfix then eprintf "Percent 4\n";
+        loop accu (Percents(a+b+2)::tl)
+      | Plus::Plus::tl ->
+        if trackfix then eprintf "Plus 1\n";
+        loop accu (Pluss 0::tl)
+      | Pluss n::Plus::tl ->
+        if trackfix then eprintf "Plus 2\n";
+        loop accu (Pluss(n+1)::tl)
+      | Plus::Pluss n::tl ->
+        if trackfix then eprintf "Plus 3\n";
+        loop accu (Pluss(n+1)::tl)
+      | Pluss a::Pluss b::tl ->
+        if trackfix then eprintf "Plus 4\n";
+        loop accu (Pluss(a+b+2)::tl)
+      | Question::Question::tl ->
+        if trackfix then eprintf "Question 1\n";
+        loop accu (Questions 0::tl)
+      | Questions n::Question::tl ->
+        if trackfix then eprintf "Question 2\n";
+        loop accu (Questions(n+1)::tl)
+      | Question::Questions n::tl ->
+        if trackfix then eprintf "Question 3\n";
+        loop accu (Questions(n+1)::tl)
+      | Questions a::Questions b::tl ->
+        if trackfix then eprintf "Question 4\n";
+        loop accu (Questions(a+b+2)::tl)
+      | Quote::Quote::tl ->
+        if trackfix then eprintf "Quote 1\n";
+        loop accu (Quotes 0::tl)
+      | Quotes n::Quote::tl ->
+        if trackfix then eprintf "Quote 2\n";
+        loop accu (Quotes(n+1)::tl)
+      | Quote::Quotes n::tl ->
+        if trackfix then eprintf "Quote 3\n";
+        loop accu (Quotes(n+1)::tl)
+      | Quotes a::Quotes b::tl ->
+        if trackfix then eprintf "Quote 4\n";
+        loop accu (Quotes(a+b+2)::tl)
+      | Semicolon::Semicolon::tl ->
+        if trackfix then eprintf "Semicolon 1\n";
+        loop accu (Semicolons 0::tl)
+      | Semicolons n::Semicolon::tl ->
+        if trackfix then eprintf "Semicolon 2\n";
+        loop accu (Semicolons(n+1)::tl)
+      | Semicolon::Semicolons n::tl ->
+        if trackfix then eprintf "Semicolon 3\n";
+        loop accu (Semicolons(n+1)::tl)
+      | Semicolons a::Semicolons b::tl ->
+        if trackfix then eprintf "Semicolon 4\n";
+        loop accu (Semicolons(a+b+2)::tl)
+      | Slash::Slash::tl ->
+        if trackfix then eprintf "Slash 1\n";
+        loop accu (Slashs 0::tl)
+      | Slashs n::Slash::tl ->
+        if trackfix then eprintf "Slash 2\n";
+        loop accu (Slashs(n+1)::tl)
+      | Slash::Slashs n::tl ->
+        if trackfix then eprintf "Slash 3\n";
+        loop accu (Slashs(n+1)::tl)
+      | Slashs a::Slashs b::tl ->
+        if trackfix then eprintf "Slash 4\n";
+        loop accu (Slashs(a+b+2)::tl)
+      | Space::Space::tl ->
+        if trackfix then eprintf "Space 1\n";
+        loop accu (Spaces 0::tl)
+      | Spaces n::Space::tl ->
+        if trackfix then eprintf "Space 2\n";
+        loop accu (Spaces(n+1)::tl)
+      | Space::Spaces n::tl ->
+        if trackfix then eprintf "Space 3\n";
+        loop accu (Spaces(n+1)::tl)
+      | Spaces a::Spaces b::tl ->
+        if trackfix then eprintf "Space 4\n";
+        loop accu (Spaces(a+b+2)::tl)
+      | Star::Star::tl ->
+        if trackfix then eprintf "Star 1\n";
+        loop accu (Stars 0::tl)
+      | Stars n::Star::tl ->
+        if trackfix then eprintf "Star 2\n";
+        loop accu (Stars(n+1)::tl)
+      | Star::Stars n::tl ->
+        if trackfix then eprintf "Star 3\n";
+        loop accu (Stars(n+1)::tl)
+      | Stars a::Stars b::tl ->
+        if trackfix then eprintf "Star 4\n";
+        loop accu (Stars(a+b+2)::tl)
+      | Tab::Tab::tl ->
+        if trackfix then eprintf "Tab 1\n";
+        loop accu (Tabs 0::tl)
+      | Tabs n::Tab::tl ->
+        if trackfix then eprintf "Tab 2\n";
+        loop accu (Tabs(n+1)::tl)
+      | Tab::Tabs n::tl ->
+        if trackfix then eprintf "Tab 3\n";
+        loop accu (Tabs(n+1)::tl)
+      | Tabs a::Tabs b::tl ->
+        if trackfix then eprintf "Tab 4\n";
+        loop accu (Tabs(a+b+2)::tl)
+      | Tilde::Tilde::tl ->
+        if trackfix then eprintf "Tilde 1\n";
+        loop accu (Tildes 0::tl)
+      | Tildes n::Tilde::tl ->
+        if trackfix then eprintf "Tilde 2\n";
+        loop accu (Tildes(n+1)::tl)
+      | Tilde::Tildes n::tl ->
+        if trackfix then eprintf "Tilde 3\n";
+        loop accu (Tildes(n+1)::tl)
+      | Tildes a::Tildes b::tl ->
+        if trackfix then eprintf "Tilde 4\n";
+        loop accu (Tildes(a+b+2)::tl)
+      | Underscore::Underscore::tl ->
+        if trackfix then eprintf "Underscore 1\n";
+        loop accu (Underscores 0::tl)
+      | Underscores n::Underscore::tl ->
+        if trackfix then eprintf "Underscore 2\n";
+        loop accu (Underscores(n+1)::tl)
+      | Underscore::Underscores n::tl ->
+        if trackfix then eprintf "Underscore 3\n";
+        loop accu (Underscores(n+1)::tl)
+      | Underscores a::Underscores b::tl ->
+        if trackfix then eprintf "Underscore 4\n";
+        loop accu (Underscores(a+b+2)::tl)| x::tl -> loop (x::accu) tl
       | [] -> List.rev accu
     in
     loop [] l
