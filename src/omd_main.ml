@@ -240,6 +240,21 @@ let omd_strict_html =
   let module E = Omd_parser.Default_env(struct end) in
   ref E.strict_html
 
+let list_html_tags ~inline =
+  let module E = Omd_parser.Default_env(struct end) in
+  let module Parser = Omd_parser.Make(E)
+  in
+  if inline then
+    let () = print_endline "foo" in
+    Omd_utils.StringSet.iter
+      (fun e -> print_string e; print_char '\n')
+      Parser.inline_htmltags_set
+  else
+    let () = print_endline "bar" in
+    Omd_utils.StringSet.iter
+      (fun e -> print_string e; print_char '\n')
+      Parser.htmltags_set
+
 let main () =
   let input = ref []
   and output = ref ""
@@ -282,6 +297,10 @@ let main () =
         " (might not work as expected yet) Block HTML only in block HTML, \
            inline HTML only in inline HTML \
            (semantics undefined if use both -b and -s).";
+        "-LHTML", Unit(fun () -> list_html_tags ~inline:false; exit 0),
+        " List all known HTML tags";
+        "-LHTMLi", Unit(fun () -> list_html_tags ~inline:true; exit 0),
+        " List all known inline HTML tags";
         "-version", Unit(fun () -> print_endline "This is version VERSION.";
                                 exit 0), "Print version.";
       ])
