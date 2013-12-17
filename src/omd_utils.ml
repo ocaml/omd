@@ -31,8 +31,10 @@ module StringSet : sig
   val mem : elt -> t -> bool
   val union : t -> t -> t
   val of_list : elt list -> t
+  val iter : (elt -> unit) -> t -> unit
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 end = struct
-  include Set.Make(struct type t = string let compare = String.compare end)
+  include Set.Make(String)
   let of_list l = List.fold_left (fun r e -> add e r) empty l
 end
 

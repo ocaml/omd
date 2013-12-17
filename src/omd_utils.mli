@@ -10,6 +10,8 @@ module StringSet :
     val mem : elt -> t -> bool
     val union : t -> t -> t
     val of_list : elt list -> t
+    val iter : (elt -> unit) -> t -> unit
+    val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
   end
 type 'a split = 'a list -> 'a split_action
 and 'a split_action =
