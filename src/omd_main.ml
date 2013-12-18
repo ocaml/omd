@@ -245,12 +245,10 @@ let list_html_tags ~inline =
   let module Parser = Omd_parser.Make(E)
   in
   if inline then
-    let () = print_endline "foo" in
     Omd_utils.StringSet.iter
       (fun e -> print_string e; print_char '\n')
       Parser.inline_htmltags_set
   else
-    let () = print_endline "bar" in
     Omd_utils.StringSet.iter
       (fun e -> print_string e; print_char '\n')
       Parser.htmltags_set
