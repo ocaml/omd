@@ -703,24 +703,32 @@ let rec markdown_of_md md =
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
-      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
-           Buffer.add_char b '\n';
       let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
-      List.iter(fun li -> add_spaces list_indent;
-                       incr c;
-                       bprintf b "%d. " !c;
-                       loop ~is_in_list:true (list_indent+4) li;
-                       (* Paragraphs => No need of '\n' *)
-               ) l;
+      List.iter(fun li ->
+        if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
+        then Buffer.add_char b '\n';
+        add_spaces list_indent;
+        incr c;
+        bprintf b "%d. " !c;
+        loop ~is_in_list:true (list_indent+4) li;
+               (* Paragraphs => No need of '\n' *)
+      ) l;
       loop list_indent tl
     | Ulp l :: tl ->
-      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
-           Buffer.add_char b '\n';
-      List.iter(fun li -> add_spaces list_indent;
-                       bprintf b "+ ";
-                       loop ~is_in_list:true (list_indent+4) li;
-                       (* Paragraphs => No need of '\n' *)
+      List.iter(fun li ->
+        if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
+        then Buffer.add_char b '\n';
+        add_spaces list_indent;
+        bprintf b "+ ";
+        loop ~is_in_list:true (list_indent+4) li;
+               (* Paragraphs => No need of '\n' *)
                ) l;
+      begin match tl with
+      | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
+      | NL::(H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
+        -> Buffer.add_char b '\n'
+      | _ -> ()
+      end;
       loop list_indent tl
     | Code(_lang, c) :: tl -> (* FIXME *)
       let n = (* compute how many backquotes we need to use *)
