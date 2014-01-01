@@ -130,6 +130,18 @@ let () =
   test "list, 2 levels" "* AA\n\n* VV"
        [Ulp [[Paragraph [Text "AA"]]; [Paragraph [Text "VV"]]]];
 
+  test "list + code + space + header" "- A
+- B
+
+    ```
+    code
+    ```
+
+# header"
+       [Ulp [[Paragraph [Omd.Text "A"]];
+             [Paragraph [Omd.Text "B"]; Code_block ("", "code")]];
+        NL; H1 [Text "header"]];
+
   (* Code
    ***********************************************************************)
 
