@@ -2113,7 +2113,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     let end_of_item (indent:int) l : tok split_action  = match l with
       | [] ->
         Split([],[])
-      | Newlines 0 :: ((Spaces n) :: Greaterthan :: (Space | Spaces _) :: tl as s) ->
+      | Newlines 0 :: ((Spaces n) :: Greaterthan :: (Space | Spaces _) :: tl
+                       as s) ->
         assert(n>=0);
         if n+2 = indent+4 then (* blockquote *)
           match unindent (n+2) (Newline::s) with
@@ -2205,20 +2206,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       match items with
       | (U,_,item)::_ ->
         if p then
-          Ulp((List.map(fun (_,_,i) -> i) items))
+          Ulp(List.map (fun (_,_,i) -> i) items)
         else
-          Ul((List.map(fun (_,_,i) -> i) items))
+          Ul(List.map (fun (_,_,i) -> i) items)
       | (O,_,item)::_ ->
         if p then
-          Olp((List.map(fun (_,_,i) -> i) items))
+          Olp(List.map (fun (_,_,i) -> i) items)
         else
-          Ol((List.map(fun (_,_,i) -> i) items))
+          Ol(List.map (fun (_,_,i) -> i) items)
       | [] ->
         failwith "make_up called with []" (* assert false *)
     in
     let rec list_items ~p indents items l =
-      if debug then
-        eprintf "list_items: p=%b l=(%s)\n%!" p (Omd_lexer.destring_of_tokens l);
+      if debug then eprintf "list_items: p=%b l=(%s)\n%!"
+                            p (Omd_lexer.destring_of_tokens l);
       match l with
       (* no more list items *)
       | [] ->
@@ -2253,7 +2254,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | [] ->
               assert(items = []);
               list_items ~p [1] ((U,[1],rev_to_t new_item)::items) rest
-            | 1::_ ->
+             | 1::_ ->
               list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
             | i::_ ->
               if i > 1 then
@@ -2282,7 +2283,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
                   i n (Omd_lexer.string_of_tokens l);
               if i = n + 2 then
-                list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
+                let items = (U,indents,rev_to_t new_item) :: items in
+                list_items ~p indents items rest
               else if i < n + 2 then
                 let sublist, remains =
                   list_items ~p ((n+2)::indents)
@@ -2375,8 +2377,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             let rec string_of_items items =
               match items with
               | [] -> ""
-              | (O,indent::_,item)::tl -> sprintf "(O,%d,%s)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
-              | (U,indent::_,item)::tl -> sprintf "(U,%d,%s)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
+              | (O,indent::_,item)::tl ->
+                 sprintf "(O,%d,%s)" (indent) (Omd_backend.html_of_md item)
+                 ^ string_of_items tl
+              | (U,indent::_,item)::tl ->
+                 sprintf "(U,%d,%s)" (indent) (Omd_backend.html_of_md item)
+                 ^ string_of_items tl
               | _ -> "(weird)"
             in
             eprintf "NALI parse_list: l=(%S) items=%s\n%!"

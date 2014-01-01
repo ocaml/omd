@@ -37,7 +37,7 @@ let process successes failures file =
      md, Omd.to_html md
    with e -> [], Printexc.to_string e
   in
-  (* Make sure a round trip produce identical results *)
+  (* Make sure a round trip produces identical results *)
   let round_trip = Omd.of_string(Omd.to_markdown md) in
   if expected <> observed && remove_blank expected <> remove_blank observed
   then (
@@ -47,7 +47,7 @@ let process successes failures file =
     incr failures
   )
   else if Omd_representation.(
-    loose_compare md round_trip <> 0 
+    loose_compare md round_trip <> 0
     && loose_compare (normalise_md md) (normalise_md round_trip) <> 0
   )
   then (
@@ -68,6 +68,7 @@ let () =
   let files = Array.to_list (Sys.readdir dir) in
   let files = List.map (fun f -> Filename.concat dir f) files in
   let md_files = List.filter (fun f -> Filename.check_suffix f ".md") files in
+  let md_files = List.sort String.compare md_files in
   let successes = ref 0
   and failures = ref 0 in
   List.iter (process successes failures) md_files;
