@@ -188,3 +188,17 @@ val loose_compare : t -> t -> int
 val normalise_md : t -> t
 (** [normalise_md md] returns a copy of [md] where some elements
     have been factorized. *)
+
+val visit : (element -> t option) -> t -> t
+(** visitor for structures of type t: [visit f md] will return a new
+    potentially altered copy of [md] that has been created by the
+    visit of [md] by [f].
+
+    The function [f] takes each [element] (from [md]) and returns
+    [Some t] if it has effectively been applied to [element], and
+    [None] otherwise. When it returns [Some t], [t] replaces [element]
+    in the copy of [md], and when it returns [None], either [element]
+    is copied as it is in the copy of [md] or a visited version is
+    copied instead (well, that depends on if [element] has elements
+    inside of it or not).
+*)
