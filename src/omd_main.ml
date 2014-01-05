@@ -160,57 +160,40 @@ let patch_html_comments l =
 
 let tag_toc l =
   let open Omd_representation in
-  if !toc then
-    let rec loop = function
-      | Star::
-          Word "Table"::Space::
-          Word "of"::Space::
-          Word "contents"::Star::tl ->
-        Tag(fun r p l ->
-          Some(X(
-                object
-                  (* [shield] is used to prevent endless loops.
-                     If one wants to use system threads at some point,
-                     and calls methods of this object  concurrently,
-                     then there is a real problem. *)
-                  val mutable shield = false
-                  method name="toc"
-                  method to_html ?indent f md =
-                    if shield || not !toc then
-                      None
-                    else
-                      begin
-                        shield <- true;
-                        let r = f (Omd.toc md) in
-                        shield <- false;
-                        Some r
-                      end
-                  method to_sexpr f md =
-                    if shield || not !toc then
-                      None
-                    else
-                      begin
-                        shield <- true;
-                        let r = f (Omd.toc md) in
-                        shield <- false;
-                        Some r
-                      end
-                  method to_t md =
-                    if shield || not !toc then
-                      None
-                    else
-                      begin
-                        shield <- true;
-                        let r = (Omd.toc md) in
-                        shield <- false;
-                        Some r
-                      end
-                end)::r,p,l)) :: loop tl
-      | e::tl -> e::loop tl
-      | [] -> []
-    in loop l
-  else
-    l
+  let x =
+    let open Printf in
+    object(self)
+      (* [shield] is used to prevent endless loops.
+         If one wants to use system threads at some point,
+         and calls methods of this object concurrently,
+         then there is a real problem. *)
+      val remove = fun e md ->
+        visit
+          (function X(v) when v==e-> Some[] | _ -> None)
+          md
+      method name = "toc"
+      method to_html ?indent f md =
+        let r = f (Omd.toc(remove self md)) in
+        Some r
+      method to_sexpr f md =
+        let r = f (Omd.toc(remove self md)) in
+        Some r
+      method to_t md =
+        let r = (Omd.toc(remove self md)) in
+        Some r
+    end
+  in
+  let rec loop = function
+    | Star::
+      Word "Table"::Space::
+      Word "of"::Space::
+      Word "contents"::Star::tl ->
+      Tag(fun r p l ->
+          Some(X(x)::r,p,l)) :: loop tl
+    | e::tl -> e::loop tl
+    | [] -> []
+  in loop l
+
 
 
 let split_comma_int_list s =
@@ -324,7 +307,7 @@ let main () =
       done; assert false
     with End_of_file ->
       let lexed = Omd_lexer.lex (Buffer.contents b) in
-      let preprocessed = preprocess lexed in
+      let preprocessed = preprocess (if !toc then tag_toc lexed else lexed) in
       let module E = Omd_parser.Default_env(struct end) in
       let module Parser = Omd_parser.Make(
         struct
@@ -347,10 +330,17 @@ let main () =
          else Parser.make_paragraphs)
           parsed in
       let o2 = (* output either Text or HTML, or markdown *)
-        (if !notags then to_text
-         else if !omarkdown then to_markdown
-         else to_html ~pindent:true ~nl2br:false ~cs:code_stylist#style)
-          o1
+        if !notags then to_text o1
+        else if !omarkdown then to_markdown o1
+        else
+          to_html
+            ~pindent:true ~nl2br:false ~cs:code_stylist#style
+            (* FIXME: this is a quick fix for -toc which doesn't work
+               if to_html is directly applied to o1, and that seems to have 
+               something to do with Parser.make_paragraphs, which seems to 
+               prevent tag_toc from working properly when using to_html!
+            *)
+            (Parser.make_paragraphs(Parser.parse(Omd_lexer.lex(to_markdown o1))))
       in
         output_string output o2;
         flush output;
