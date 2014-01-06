@@ -332,7 +332,7 @@ let main () =
       let o2 = (* output either Text or HTML, or markdown *)
         if !notags then to_text o1
         else if !omarkdown then to_markdown o1
-        else
+        else if !toc then
           to_html
             ~pindent:true ~nl2br:false ~cs:code_stylist#style
             (* FIXME: this is a quick fix for -toc which doesn't work
@@ -341,6 +341,11 @@ let main () =
                prevent tag_toc from working properly when using to_html!
             *)
             (Parser.make_paragraphs(Parser.parse(Omd_lexer.lex(to_markdown o1))))
+        else
+          to_html
+            ~pindent:true ~nl2br:false ~cs:code_stylist#style
+            (* The normal behaviour is to convert directly, like this. *)
+            o1
       in
         output_string output o2;
         flush output;
