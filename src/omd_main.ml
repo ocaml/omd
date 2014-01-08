@@ -332,7 +332,7 @@ let main () =
       let o2 = (* output either Text or HTML, or markdown *)
         if !notags then to_text o1
         else if !omarkdown then to_markdown o1
-        else if !toc then
+        else if !toc && not !otoc then
           to_html
             ~pindent:true ~nl2br:false ~cs:code_stylist#style
             (* FIXME: this is a quick fix for -toc which doesn't work
