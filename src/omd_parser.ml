@@ -619,7 +619,7 @@ struct
          | [] -> loop [] (e::accu) tl
          | [NL] | [Br] -> loop [] (e::NL::accu) tl
          | _ -> loop (e::cp) accu tl)
-      | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
+      | (Raw_block _ | Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
         | Html_block _) as e :: tl ->
         (match cp with
          | [] | [NL] | [Br] -> loop cp (e::accu) tl
@@ -691,6 +691,8 @@ struct
       | NL
       | Ref _
       | Img_ref _
+      | Raw _
+      | Raw_block _
       | Html _
       | Html_block _
       | Html_comment _

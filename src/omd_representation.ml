@@ -60,6 +60,8 @@ type element =
   | Html of string
   | Html_block of string
   | Html_comment of string
+  | Raw of string
+  | Raw_block of string
   | Blockquote of t
   | Img of alt * src * title
   | X of
@@ -106,6 +108,8 @@ let rec loose_compare t1 t2 = match t1,t2 with
   | (NL as e1)::tl1, (NL as e2)::tl2
   | (Html _ as e1)::tl1, (Html _ as e2)::tl2
   | (Html_block _ as e1)::tl1, (Html_block _ as e2)::tl2
+  | (Raw _ as e1)::tl1, (Raw _ as e2)::tl2
+  | (Raw_block _ as e1)::tl1, (Raw_block _ as e2)::tl2
   | (Html_comment _ as e1)::tl1, (Html_comment _ as e2)::tl2
   | (Img _ as e1)::tl1, (Img _ as e2)::tl2
   | (Text _ as e1)::tl1, (Text _ as e2)::tl2
@@ -279,7 +283,8 @@ let rec normalise_md l =
     | [] -> []
     | NL::NL::NL::tl -> loop (NL::NL::tl)
     | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
-    | NL::(((Paragraph _|Html_block _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _|Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
+    | NL::(((Paragraph _|Html_block _|Raw_block _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _
+            |Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
     | Paragraph[Text " "]::tl -> loop tl
     | Paragraph[]::tl -> loop tl
     | Paragraph(p)::tl -> Paragraph(loop p)::loop tl
@@ -308,6 +313,8 @@ let rec normalise_md l =
     | Html _
     | Html_block _
     | Html_comment _
+    | Raw _
+    | Raw_block _
     | Img _
     | X _ as v::tl -> v::loop tl
   in
@@ -442,6 +449,16 @@ let rec visit f = function
       | None -> e::visit f tl
     end
   | Html_comment _ as e::tl ->
+    begin match f e with
+      | Some(l) -> l@visit f tl
+      | None -> e::visit f tl
+    end
+  | Raw _ as e::tl ->
+    begin match f e with
+      | Some(l) -> l@visit f tl
+      | None -> e::visit f tl
+    end
+  | Raw_block _ as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl

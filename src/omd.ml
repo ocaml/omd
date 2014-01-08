@@ -63,8 +63,8 @@ let rec set_default_lang lang = function
   | Blockquote t :: tl -> Blockquote(set_default_lang lang t)
                          :: set_default_lang lang tl
   (* Elements that do not contain Markdown. *)
-  | (Text _|Code _|Code_block _|Br|Hr|NL|Ref _|Img_ref _|Html _
-     |Html_block _|Html_comment _|Img _|X _) as e :: tl ->
+  | (Text _|Code _|Code_block _|Br|Hr|NL|Ref _|Img_ref _|Raw _|Raw_block _
+    |Html _|Html_block _|Html_comment _|Img _|X _) as e :: tl ->
      e :: set_default_lang lang tl
   | [] -> []
 

@@ -40,6 +40,14 @@ let text_of_md md =
     | Text t :: tl ->
         Buffer.add_string b (htmlentities ~md:true t);
         loop tl
+    | Raw t :: tl ->
+        Buffer.add_string b t;
+        loop tl
+    | Raw_block t :: tl ->
+        Buffer.add_char b '\n';
+        Buffer.add_string b t;
+        Buffer.add_char b '\n';
+        loop tl
     | Emph md :: tl ->
         loop md;
         loop tl
@@ -273,6 +281,13 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
       if nl then Buffer.add_string b "\n";
       Buffer.add_string b "<hr/>\n";
       loop indent tl
+    | Raw s :: tl ->
+      Buffer.add_string b s;
+      loop indent tl
+    | Raw_block s :: tl ->
+      if nl then Buffer.add_string b "\n";
+      Buffer.add_string b s;
+      loop indent ~nl:true tl
     | Html s :: tl ->
       Buffer.add_string b s;
       loop indent tl
@@ -460,6 +475,12 @@ let rec sexpr_of_md md =
         loop tl
     | Hr :: tl ->
         Buffer.add_string b "(Hr)";
+        loop tl
+    | Raw s :: tl ->
+        bprintf b "(Raw %S)" s;
+        loop tl
+    | Raw_block s :: tl ->
+        bprintf b "(Raw_block %S)" s;
         loop tl
     | Html s :: tl ->
         bprintf b "(Html %S)" s;
@@ -819,6 +840,14 @@ let rec markdown_of_md md =
       loop list_indent tl
     | Hr :: tl ->
       Buffer.add_string b "* * *\n";
+      loop list_indent tl
+    | Raw s :: tl ->
+      Buffer.add_string b s;
+      loop list_indent tl
+    | Raw_block s :: tl ->
+      Buffer.add_char b '\n';
+      Buffer.add_string b s;
+      Buffer.add_char b '\n';
       loop list_indent tl
     | Html s :: tl ->
       Buffer.add_string b s;

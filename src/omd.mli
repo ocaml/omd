@@ -67,6 +67,10 @@ and element = Omd_representation.element =
   | Html_block of string
   | Html_comment of string
   (** An HTML comment, including "<!--" and "-->". *)
+  | Raw of string
+  (** Raw: something that shall never be converted *)
+  | Raw_block of string
+  (** Raw_block: a block with contents that shall never be converted *)
   | Blockquote of t  (** Quoted block *)
   | Img of alt * src * title
   | X of (< (* extension of [element]. *)

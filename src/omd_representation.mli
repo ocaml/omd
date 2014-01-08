@@ -61,6 +61,8 @@ type element =
   | Html of string
   | Html_block of string
   | Html_comment of string
+  | Raw of string
+  | Raw_block of string
   | Blockquote of t
   | Img of alt * src * title
   | X of
