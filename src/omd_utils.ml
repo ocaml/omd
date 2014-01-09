@@ -241,6 +241,23 @@ let rec extract_html_attributes (html:string) =
     extract_html_attributes
       (remove_prefix_spaces (String.sub html 1 (String.length html - 1)))
   | _ ->
-    let html = snd (cut_on_char_from html 0 ' ') in
-    loop (String.sub html 0 (String.index html '>')) [] 0
+    try
+      let html = snd (cut_on_char_from html 0 ' ') in
+      loop (String.sub html 0 (String.index html '>')) [] 0
+    with Not_found -> []
+
+let rec extract_inner_html (html:string) =
+  let rec cut_on_char_from s i c =
+    match String.index_from s i c with
+    | 0 -> "", String.sub s 1 (String.length s - 1)
+    | j -> String.sub s i (j-i), String.sub s (j+1) (String.length s - (j+1))
+  in
+  let rec rcut_on_char_from s i c =
+    match String.rindex_from s i c with
+    | 0 -> "", String.sub s 1 (String.length s - 1)
+    | j -> String.sub s 0 j, String.sub s (j+1) (String.length s - (j+1))
+  in
+  let _, p = cut_on_char_from html 0 '>' in
+  let r, _ = rcut_on_char_from p (String.length p - 1) '<' in
+  r
 

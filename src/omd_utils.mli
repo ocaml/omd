@@ -59,3 +59,8 @@ val extract_html_attributes : string -> (string * string) list
     * Attribute values are either delimited by the double quote
       or the simple quote character.
 *)
+
+val extract_inner_html : string -> string
+(** Takes an HTML node and returns the contents of the node.
+    If it's not given a node, it returns something rubbish.
+*)
