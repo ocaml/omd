@@ -96,8 +96,13 @@ let text_of_md md =
 
 let default_code_stylist ~lang code = code
 
-let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
-                               ?cs:(code_style=default_code_stylist) md =
+let rec html_and_headers_of_md
+    ?(override=(fun (e:element) -> (None:string option)))
+    ?(pindent=true)
+    ?(nl2br=false)
+    ?cs:(code_style=default_code_stylist)
+    md
+  =
   let ids = object(this)
     val mutable ids = StringSet.add "" StringSet.empty
     method mangle id =
@@ -113,18 +118,17 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
           (ids <- StringSet.add id ids;
            id)
       in m 0
-
   end in
   let empty s =
     let rec loop i =
       if i < String.length s then
         match s.[i] with
-          | ' ' | '\n' -> loop (i+1)
-          | _ -> false
+        | ' ' | '\n' -> loop (i+1)
+        | _ -> false
       else
         true
     in
-      loop 0
+    loop 0
   in
   let remove_trailing_blanks s =
     let rec loop i =
@@ -143,41 +147,60 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
   let b = Buffer.create 42 in
   let headers = ref [] in
   let rec loop indent ?(nl=false) = function
-    | X x :: tl ->
-        (match x#to_t md with
+    | X x as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None -> 
+          (match x#to_t md with
            | Some t -> loop indent t
            | None ->
-               match x#to_html ~indent:indent html_of_md md with
-                 | Some s -> Buffer.add_string b s
-                 | None -> ());
-        loop indent tl
-    | Blockquote q :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b "<blockquote>";
-      loop indent q;
-      Buffer.add_string b "</blockquote>";
-      loop indent ~nl:true tl
-    | Ref(rc, name, text, fallback) :: tl ->
-      begin match rc#get_ref name with
-        | Some(href, title) ->
-          loop indent
-            (Url(htmlentities ~md:true href,
-                 [Text(text)],
-                 htmlentities ~md:true title)
-             ::tl)
-        | None -> loop indent (Text(fallback)::tl)
+             match x#to_html ~indent:indent html_of_md md with
+             | Some s -> Buffer.add_string b s
+             | None -> ());
+          loop indent tl
       end
-    | Img_ref(rc, name, alt, fallback) :: tl ->
-        begin match rc#get_ref name with
-          | Some(src, title) ->
-            loop indent
-              (Img(htmlentities ~md:true alt,
-                   htmlentities ~md:true src,
-                   htmlentities ~md:true title)::tl)
-          | None -> loop indent (Text(fallback)::tl)
-        end
-    | Paragraph md :: tl ->
-        (let s = html_of_md md in
+    | Blockquote q as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b "<blockquote>";
+          loop indent q;
+          Buffer.add_string b "</blockquote>";
+          loop indent ~nl:true tl
+      end
+    | Ref(rc, name, text, fallback) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          begin match rc#get_ref name with
+            | Some(href, title) ->
+              loop indent
+                (Url(htmlentities ~md:true href,
+                     [Text(text)],
+                     htmlentities ~md:true title)
+                 ::tl)
+            | None -> loop indent (Text(fallback)::tl)
+          end
+      end
+    | Img_ref(rc, name, alt, fallback) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          begin match rc#get_ref name with
+            | Some(src, title) ->
+              loop indent
+                (Img(htmlentities ~md:true alt,
+                     htmlentities ~md:true src,
+                     htmlentities ~md:true title)::tl)
+            | None -> loop indent (Text(fallback)::tl)
+          end
+      end
+    | Paragraph md as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          (let s = html_of_md md in
            if empty s then
              ()
            else
@@ -187,211 +210,306 @@ let rec html_and_headers_of_md ?(pindent=true) ?(nl2br=false)
                Buffer.add_string b (remove_trailing_blanks s);
                Buffer.add_string b "</p>";
              end);
-        loop indent ~nl:true tl
-    | Img(alt, src, title) :: tl ->
-        Buffer.add_string b "<img src='";
-        Buffer.add_string b (htmlentities ~md:true src);
-        Buffer.add_string b "' alt='";
-        Buffer.add_string b (htmlentities ~md:true alt);
-        Buffer.add_string b "' ";
-        if title <> "" then
-          (Buffer.add_string b " title='";
-           Buffer.add_string b (htmlentities ~md:true title);
-           Buffer.add_string b "' ");
-        Buffer.add_string b "/>";
-        loop indent tl
-    | Text t :: tl ->
-        (* Buffer.add_string b t; *)
-        Buffer.add_string b (htmlentities ~md:true t);
-        loop indent tl
-    | Emph md :: tl ->
-        Buffer.add_string b "<em>";
-        loop indent md;
-        Buffer.add_string b "</em>";
-        loop indent tl
-    | Bold md :: tl ->
-        Buffer.add_string b "<strong>";
-        loop indent md;
-        Buffer.add_string b "</strong>";
-        loop indent tl
+          loop indent ~nl:true tl
+      end
+    | Img(alt, src, title) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          Buffer.add_string b "<img src='";
+          Buffer.add_string b (htmlentities ~md:true src);
+          Buffer.add_string b "' alt='";
+          Buffer.add_string b (htmlentities ~md:true alt);
+          Buffer.add_string b "' ";
+          if title <> "" then
+            (Buffer.add_string b " title='";
+             Buffer.add_string b (htmlentities ~md:true title);
+             Buffer.add_string b "' ");
+          Buffer.add_string b "/>";
+          loop indent tl
+      end
+    | Text t as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          (* Buffer.add_string b t; *)
+          Buffer.add_string b (htmlentities ~md:true t);
+          loop indent tl
+      end
+    | Emph md as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          Buffer.add_string b "<em>";
+          loop indent md;
+          Buffer.add_string b "</em>";
+          loop indent tl
+      end
+    | Bold md as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          Buffer.add_string b "<strong>";
+          loop indent md;
+          Buffer.add_string b "</strong>";
+          loop indent tl
+      end
     | (Ul l|Ol l|Ulp l|Olp l as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      (* if pindent then Buffer.add_char b '\n'; *)
-      if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      Buffer.add_string b (match e with
-                           | Ol _|Olp _ -> "<ol>"
-                           | _ -> "<ul>");
-      if pindent then Buffer.add_char b '\n';
-      List.iter
-        (fun li ->
-           if pindent then for i = 1 to indent + 1 do
-               Buffer.add_char b ' '
-             done;
-           Buffer.add_string b "<li>";
-           loop (indent+2) li;
-           if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
-           then
-             if pindent then for i = 1 to indent + 1 do
-                 Buffer.add_char b ' '
-               done;
-           Buffer.add_string b "</li>";
-           if pindent then Buffer.add_char b '\n')
-        l;
-      if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
-      Buffer.add_string b (match e with
-                           | Ol _|Olp _ -> "</ol>"
-                           | _ -> "</ul>");
-      if pindent then Buffer.add_char b '\n';
-      loop indent tl
-    | Code_block(lang, c) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      if lang = "" && !default_language = "" then
-        Buffer.add_string b "<pre><code>"
-      else if lang = "" then
-        bprintf b "<pre class='%s'><code class='%s'>"
-          !default_language !default_language
-      else
-        bprintf b "<pre class='%s'><code class='%s'>" lang lang;
-      let new_c = code_style ~lang:lang c in
-      if c = new_c then
-        Buffer.add_string b (htmlentities ~md:false c)
-      else
-        Buffer.add_string b new_c;
-      Buffer.add_string b "</code></pre>";
-      loop indent ~nl:true tl
-    | Code(lang, c) :: tl ->
-      if lang = "" && !default_language = "" then
-        Buffer.add_string b "<code>"
-      else if lang = "" then
-        bprintf b "<code class='%s'>" !default_language
-      else
-        bprintf b "<code class='%s'>" lang;
-      let new_c = code_style ~lang:lang c in
-      if c = new_c then
-        Buffer.add_string b (htmlentities ~md:false c)
-      else
-        Buffer.add_string b new_c;
-      Buffer.add_string b "</code>";
-      loop indent tl
-    | Br :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b "<br/>\n";
-      loop indent tl
-    | Hr :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b "<hr/>\n";
-      loop indent tl
-    | Raw s :: tl ->
-      Buffer.add_string b s;
-      loop indent tl
-    | Raw_block s :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b s;
-      loop indent ~nl:true tl
-    | Html s :: tl ->
-      Buffer.add_string b s;
-      loop indent tl
-    | Html_block s :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b s;
-      loop indent ~nl:true tl
-    | Html_comment s :: tl ->
-      if nl then Buffer.add_string b "\n";
-      Buffer.add_string b s;
-      loop indent ~nl:nl tl
-    | Url (href,s,title) :: tl ->
-      let s = html_of_md s in
-      Buffer.add_string b "<a href='";
-      Buffer.add_string b (htmlentities ~md:true href);
-      Buffer.add_string b "'";
-      if title <> "" then
-        begin
-          Buffer.add_string b " title='";
-          Buffer.add_string b (htmlentities ~md:true title);
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          (* if pindent then Buffer.add_char b '\n'; *)
+          if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
+          Buffer.add_string b (match e with
+              | Ol _|Olp _ -> "<ol>"
+              | _ -> "<ul>");
+          if pindent then Buffer.add_char b '\n';
+          List.iter
+            (fun li ->
+               if pindent then for i = 1 to indent + 1 do
+                   Buffer.add_char b ' '
+                 done;
+               Buffer.add_string b "<li>";
+               loop (indent+2) li;
+               if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
+               then
+                 if pindent then for i = 1 to indent + 1 do
+                     Buffer.add_char b ' '
+                   done;
+               Buffer.add_string b "</li>";
+               if pindent then Buffer.add_char b '\n')
+            l;
+          if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
+          Buffer.add_string b (match e with
+              | Ol _|Olp _ -> "</ol>"
+              | _ -> "</ul>");
+          if pindent then Buffer.add_char b '\n';
+          loop indent tl
+      end
+    | Code_block(lang, c) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          if lang = "" && !default_language = "" then
+            Buffer.add_string b "<pre><code>"
+          else if lang = "" then
+            bprintf b "<pre class='%s'><code class='%s'>"
+              !default_language !default_language
+          else
+            bprintf b "<pre class='%s'><code class='%s'>" lang lang;
+          let new_c = code_style ~lang:lang c in
+          if c = new_c then
+            Buffer.add_string b (htmlentities ~md:false c)
+          else
+            Buffer.add_string b new_c;
+          Buffer.add_string b "</code></pre>";
+          loop indent ~nl:true tl
+      end
+    | Code(lang, c) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if lang = "" && !default_language = "" then
+            Buffer.add_string b "<code>"
+          else if lang = "" then
+            bprintf b "<code class='%s'>" !default_language
+          else
+            bprintf b "<code class='%s'>" lang;
+          let new_c = code_style ~lang:lang c in
+          if c = new_c then
+            Buffer.add_string b (htmlentities ~md:false c)
+          else
+            Buffer.add_string b new_c;
+          Buffer.add_string b "</code>";
+          loop indent tl
+      end
+    | Br as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b "<br/>\n";
+          loop indent tl
+      end
+    | Hr as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b "<hr/>\n";
+          loop indent tl
+      end
+    | Raw s as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          Buffer.add_string b s;
+          loop indent tl
+      end
+    | Raw_block s as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b s;
+          loop indent ~nl:true tl
+      end
+    | Html s as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          Buffer.add_string b s;
+          loop indent tl
+      end
+    | Html_block s as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b s;
+          loop indent ~nl:true tl
+      end
+    | Html_comment s as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          Buffer.add_string b s;
+          loop indent ~nl:nl tl
+      end
+    | Url (href,s,title) as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          let s = html_of_md s in
+          Buffer.add_string b "<a href='";
+          Buffer.add_string b (htmlentities ~md:true href);
           Buffer.add_string b "'";
-        end;
-      Buffer.add_string b ">";
-      Buffer.add_string b s;
-      Buffer.add_string b "</a>";
-      loop indent tl
+          if title <> "" then
+            begin
+              Buffer.add_string b " title='";
+              Buffer.add_string b (htmlentities ~md:true title);
+              Buffer.add_string b "'";
+            end;
+          Buffer.add_string b ">";
+          Buffer.add_string b s;
+          Buffer.add_string b "</a>";
+          loop indent tl
+      end
     | (H1 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h1 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h1>";
-      loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h1 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h1>";
+          loop indent tl
+      end
     | (H2 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h2 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h2>";
-      loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h2 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h2>";
+          loop indent tl
+      end
     | (H3 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h3 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h3>";
-      loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h3 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h3>";
+          loop indent tl
+      end
     | (H4 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h4 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h4>";
-      loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h4 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h4>";
+          loop indent tl
+      end
     | (H5 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h5 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h5>";
-      loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h5 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h5>";
+          loop indent tl
+      end
     | (H6 md as e) :: tl ->
-      if nl then Buffer.add_string b "\n";
-      let ih = html_of_md md in
-      let id = id_of_string ids (text_of_md md) in
-      headers := (e, id, ih) :: !headers;
-      Buffer.add_string b "<h6 id=\"";
-      Buffer.add_string b id;
-      Buffer.add_string b "\">";
-      Buffer.add_string b ih;
-      Buffer.add_string b "</h6>";
-      loop indent tl
-    | NL :: tl ->
-        if nl2br then Buffer.add_string b "<br />";
-        Buffer.add_char b '\n';
-        loop indent tl
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl then Buffer.add_string b "\n";
+          let ih = html_of_md md in
+          let id = id_of_string ids (text_of_md md) in
+          headers := (e, id, ih) :: !headers;
+          Buffer.add_string b "<h6 id=\"";
+          Buffer.add_string b id;
+          Buffer.add_string b "\">";
+          Buffer.add_string b ih;
+          Buffer.add_string b "</h6>";
+          loop indent tl
+      end
+    | NL as e :: tl ->
+      begin match override e with
+        | Some s -> Buffer.add_string b s
+        | None ->
+          if nl2br then Buffer.add_string b "<br />";
+          Buffer.add_char b '\n';
+          loop indent tl
+      end
     | [] ->
       if nl then Buffer.add_string b "\n"
   in
-    loop 0 md;
-    Buffer.contents b, List.rev !headers
+  loop 0 md;
+  Buffer.contents b, List.rev !headers
 
-and html_of_md ?(pindent=true) ?(nl2br=false) ?cs md =
-  fst (html_and_headers_of_md ~pindent:pindent ~nl2br:nl2br ?cs md)
+and html_of_md
+    ?(override=(fun (e:element) -> (None:string option)))
+    ?(pindent=true)
+    ?(nl2br=false)
+    ?cs
+    md
+  =
+  fst (html_and_headers_of_md ~override ~pindent ~nl2br ?cs md)
 and headers_of_md md =
   snd (html_and_headers_of_md md)
 

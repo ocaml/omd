@@ -1,4 +1,3 @@
-
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
 (* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
@@ -15,6 +14,7 @@ val default_language : string ref
     by default it is the empty string *)
 
 val html_of_md :
+  ?override:(Omd_representation.element -> string option) ->
   ?pindent:bool ->
   ?nl2br:bool ->
   ?cs:code_stylist ->
@@ -35,6 +35,7 @@ val headers_of_md :
     both the headers and the HTML version of [md]. *)
 
 val html_and_headers_of_md :
+  ?override:(Omd_representation.element -> string option) ->
   ?pindent:bool ->
   ?nl2br:bool ->
   ?cs:code_stylist ->

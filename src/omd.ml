@@ -23,7 +23,14 @@ let of_string ?extensions:e ?default_lang:d s =
   Parser.make_paragraphs md
 
 
-let to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string =
+let to_html :
+  ?override:(Omd_representation.element -> string option) ->
+  ?pindent:bool ->
+  ?nl2br:bool ->
+  ?cs:code_stylist ->
+  t ->
+  string
+  =
   html_of_md
 
 let to_text : t -> string = text_of_md

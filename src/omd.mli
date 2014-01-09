@@ -124,7 +124,9 @@ val set_default_lang : name -> t -> t
     language of all [Code] or [Code_block] with an empty language is
     set to [lang]. *)
 
-val to_html : ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
+val to_html :
+  ?override:(Omd_representation.element -> string option) ->
+  ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
     convert [Html of string] and [Html_block of string]
