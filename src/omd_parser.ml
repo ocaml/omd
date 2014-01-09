@@ -3103,7 +3103,34 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         in
         let html, tl = read_html() in
         let html = Omd_lexer.string_of_tokens html in
-        main_loop_rev (Html_block html :: r) [Greaterthan] tl
+        let attributes = Omd_utils.extract_html_attributes html in
+        if List.mem ("media:type","text/omd") attributes then
+          let innerHTML = Omd_utils.extract_inner_html html in
+          let l_innerHTML = Omd_lexer.lex innerHTML in
+          let parsed_innerHTML = main_loop [] [] l_innerHTML in
+          let s_attributes =
+            List.fold_left
+              (fun r -> function
+                 | "media:type","text/omd" -> r
+                 | n, v ->
+                   if String.contains v '"' then
+                     Printf.sprintf "%s %s='%s'" r n v
+                   else
+                     Printf.sprintf "%s %s=\"%s\"" r n v
+              )
+              ""
+              attributes
+          in
+          let html =
+            Printf.sprintf "<%s%s>%s</%s>"
+              tagname
+              s_attributes
+              (Omd_backend.html_of_md parsed_innerHTML)
+              tagname
+          in
+          main_loop_rev (Html_block html :: r) [Greaterthan] tl
+        else            
+          main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
     (* inline html *)
     | _,
