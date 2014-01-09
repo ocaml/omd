@@ -21,7 +21,25 @@ val html_of_md :
   Omd_representation.t -> string
 (** [html_of_md md] returns a string containing the HTML version of
     [md]. Note that [md] uses the internal representation of
-    Markdown. *)
+    Markdown.
+
+    The optional parameter [override] allows to override an precise
+    behaviour for a constructor of Omd_representation.element, 
+    as in the following example:
+
+let customized_to_html =
+  Omd.html_of_md 
+    ~override:(function
+        | Url (href,s,title) ->
+          Some("<a href='" 
+               ^ (Omd_utils.htmlentities ~md:true href) ^ "'"
+               ^ (if title <> "" then
+                    " title='" ^ (Omd_utils.htmlentities ~md:true title) ^ "'"
+                  else "")
+               ^ ">"
+               ^ Omd_backend.html_of_md s ^ " target='_blank'</a>")
+        | _ -> None)
+ *)
 
 val headers_of_md :
   Omd_representation.t ->
@@ -44,9 +62,8 @@ val html_and_headers_of_md :
     (Omd_representation.element * Omd_utils.StringSet.elt * string) list
 (** [html_and_headers_of_md md] is the same as [(html_of_md md,
     headers_of_md md)] except that it's two times faster.
-    If you need headers and html, don't use [html_of_md]
+    If you need both headers and html, don't use [html_of_md]
     and [headers_of_md] but this function instead.
-    Optional parameters
 *)
 
 val escape_markdown_characters : string -> string
