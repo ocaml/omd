@@ -185,3 +185,62 @@ let minimalize_blanks s =
 let rec eat f = function
   | [] -> []
   | e::tl as l -> if f e then eat f tl else l
+
+
+let rec extract_html_attributes (html:string) =
+  let rec cut_on_char_from s i c =
+    match String.index_from s i c with
+    | 0 -> "", String.sub s 1 (String.length s - 1)
+    | j -> String.sub s i (j-i), String.sub s (j+1) (String.length s - (j+1))
+  in
+  let remove_prefix_spaces s = 
+    if s = "" then
+      s 
+    else if s.[0] <> ' ' then
+      s
+    else
+      let rec loop i =
+        match s.[i] with
+        | ' ' -> loop (i+1)
+        | _ -> String.sub s i (String.length s - i)
+      in loop 1
+  in
+  let remove_suffix_spaces s =
+    if s = "" then
+      s 
+    else if s.[String.length s - 1] <> ' ' then
+      s
+    else
+      let rec loop i =
+        match s.[i] with
+        | ' ' -> loop (i-1)
+        | _ -> String.sub s 0 (i+1)
+      in loop (String.length s - 1)
+  in
+  let rec loop s res i =
+    if i = String.length s then
+      res
+    else
+      match
+        try
+          Some (take_attribute s i)
+        with Not_found -> None
+      with
+      | Some (((_,_) as a), new_s) ->
+        loop new_s (a::res) 0
+      | None -> res
+  and take_attribute s i =
+      let name, after_eq = cut_on_char_from s i '=' in
+      let name = remove_suffix_spaces name in
+      let after_eq = remove_prefix_spaces after_eq in
+      let value, rest = cut_on_char_from after_eq 1 after_eq.[0] in
+      (name,value), remove_prefix_spaces rest
+  in
+  match html.[1] with
+  | '<' | ' ' -> 
+    extract_html_attributes
+      (remove_prefix_spaces (String.sub html 1 (String.length html - 1)))
+  | _ ->
+    let html = snd (cut_on_char_from html 0 ' ') in
+    loop (String.sub html 0 (String.index html '>')) [] 0
+

@@ -47,3 +47,15 @@ val minimalize_blanks : string -> string
 val eat : ('a -> bool) -> 'a list -> 'a list
 (** [eat f l] returns [l] where elements satisfying [f] have been removed,
     but it stops removing as soon as one element doesn't satisfy [f]. *)
+
+
+val extract_html_attributes : string -> (string * string) list
+(** Takes some HTML and returns the list of attributes of the first
+    HTML tag.
+    Notes:
+    * Doesn't check the validity of HTML tags or attributes.
+    * Doesn't support backslash escaping.
+    * Attribute names are delimited by the space and equal characters.
+    * Attribute values are either delimited by the double quote
+      or the simple quote character.
+*)
