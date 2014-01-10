@@ -3121,6 +3121,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               ""
               attributes
           in
+          (* Here we have to delay the conversion to HTML because
+             the inner markdown might use some references that are
+             defined further in the document, hence the use of 
+             the extension constructor [X]. *)
           let x = object
             val f = fun convert ->
               Printf.sprintf "<%s%s>%s</%s>"
@@ -3132,7 +3136,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             method to_html ?indent to_html _t = Some(f to_html)
             method to_sexpr to_sexpr _t = Some(f to_sexpr)
             method to_t _t = Some([Html_block(f Omd_backend.html_of_md)])
-          end 
+          end
           in
           main_loop_rev (X(x) :: r) [Greaterthan] tl
         else            
