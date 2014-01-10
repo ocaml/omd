@@ -1024,7 +1024,7 @@ struct
               Some((title::r), [Newline], tl)
           end
         | _ ->
-          if debug then
+           if debug then
             eprintf "Warning: Omd_parser.tag__maybe_h1 is wrongly used \
                      (p=%S)!\n"
               (Omd_lexer.string_of_tokens p);
@@ -3106,8 +3106,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         let attributes = Omd_utils.extract_html_attributes html in
         if List.mem ("media:type","text/omd") attributes then
           let innerHTML = Omd_utils.extract_inner_html html in
-          let l_innerHTML = Omd_lexer.lex innerHTML in
-          let parsed_innerHTML = main_loop [] [] l_innerHTML in
+          let l_innerHTML = tag_setext main_loop (Omd_lexer.lex innerHTML) in
+          let parsed_innerHTML = make_paragraphs(main_loop [] [] l_innerHTML) in
           let s_attributes =
             List.fold_left
               (fun r -> function
