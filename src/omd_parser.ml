@@ -3121,14 +3121,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               ""
               attributes
           in
-          let html =
-            Printf.sprintf "<%s%s>%s</%s>"
-              tagname
-              s_attributes
-              (Omd_backend.html_of_md parsed_innerHTML)
-              tagname
+          let x = object
+            val f = fun convert ->
+              Printf.sprintf "<%s%s>%s</%s>"
+                tagname
+                s_attributes
+                (convert parsed_innerHTML)
+                tagname
+            method name = "Html_block"
+            method to_html ?indent to_html _t = Some(f to_html)
+            method to_sexpr to_sexpr _t = Some(f to_sexpr)
+            method to_t _t = Some([Html_block(f Omd_backend.html_of_md)])
+          end 
           in
-          main_loop_rev (Html_block html :: r) [Greaterthan] tl
+          main_loop_rev (X(x) :: r) [Greaterthan] tl
         else            
           main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
