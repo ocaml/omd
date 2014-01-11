@@ -3062,7 +3062,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | ([]|[Newline|Newlines _]),
       (Lessthan as t)
       ::(Word(tagname)
-         ::(Space|Spaces _|Greaterthan|Greaterthans _ as x)
+         ::(Space|Spaces _|Greaterthan|Greaterthans _ as aftertagname)
          ::tl as tlx) ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
@@ -3099,7 +3099,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | [] ->
               List.rev accu, []
           in
-          loop [x;Word(tagname);Lessthan] 0 tl
+          loop [aftertagname;Word(tagname);Lessthan] 0 tl
         in
         let html, tl = read_html() in
         let html = Omd_lexer.string_of_tokens html in
