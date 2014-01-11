@@ -236,8 +236,14 @@ let rec extract_html_attributes (html:string) =
       let value, rest = cut_on_char_from after_eq 1 after_eq.[0] in
       (name,value), remove_prefix_spaces rest
   in
+  if (* Has it at least one attribute? *)
+    try String.index html '>' < String.index html ' '
+    with Not_found -> true
+  then
+    []
+  else
   match html.[1] with
-  | '<' | ' ' -> 
+  | '<' | ' ' ->
     extract_html_attributes
       (remove_prefix_spaces (String.sub html 1 (String.length html - 1)))
   | _ ->
