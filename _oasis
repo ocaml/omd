@@ -53,3 +53,5 @@ Executable "test_spec"
 Test "spec"
   Type: Custom (0.0.1)
   Command: $test_spec
+
+# N.B. If the number of lines in this file changes, don't forget to adapt the Makefile!
