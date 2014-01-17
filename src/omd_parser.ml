@@ -619,7 +619,8 @@ struct
          | [] -> loop [] (e::accu) tl
          | [NL] | [Br] -> loop [] (e::NL::accu) tl
          | _ -> loop (e::cp) accu tl)
-      | (Raw_block _ | Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
+      | (Raw_block _ | Code_block _
+        | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
         | Html_block _) as e :: tl ->
         (match cp with
          | [] | [NL] | [Br] -> loop cp (e::accu) tl
@@ -632,8 +633,41 @@ struct
           | [] | [NL] | [Br] -> loop [] (NL::accu) tl
           | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
         end
-      | x::tl ->
-        loop (x::cp) accu tl
+      | X(x) as e :: tl ->
+        (* If the extension returns a block as first element,
+           then consider the extension as a block. However
+           don't take its contents as it is yet, the contents
+           of the extension shall be considered final as late
+           as possible. *)
+        begin match x#to_t md with
+          | None -> loop (e::cp) accu tl
+          | Some(t) -> match t with
+            | ( H1 _
+              | H2 _
+              | H3 _
+              | H4 _
+              | H5  _
+              | H6  _
+              | Paragraph  _
+              | Ul _
+              | Ol _
+              | Ulp _
+              | Olp _
+              | Code_block _
+              | Hr
+              | Html_block _
+              | Raw_block _
+              | Blockquote _
+              ) :: tl
+              ->
+              (match cp with
+               | [] | [NL] | [Br] -> loop cp (e::accu) tl
+               | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+            | _ ->
+              loop (e::cp) accu tl
+        end
+      | e::tl ->
+        loop (e::cp) accu tl
     in
     let remove_white_crumbs l =
       let rec loop = function
