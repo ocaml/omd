@@ -265,7 +265,7 @@ type tok = (* Cs(n) means (n+2) times C *)
 | Underscore
 | Underscores of int
 | Word of string
-| Tag of extension
+| Tag of name * extension
 
 and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option))
 

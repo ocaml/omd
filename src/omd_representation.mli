@@ -151,7 +151,7 @@ type tok =
   | Underscore (* _ *)
   | Underscores of int (* __.. *)
   | Word of string
-  | Tag of extension
+  | Tag of name * extension
 (** Lexer's tokens. If you want to use the parser with an extended
     lexer, you may use the constructor [Tag] to implement
     the parser's extension. In the parser, [Tag] is used (at least)

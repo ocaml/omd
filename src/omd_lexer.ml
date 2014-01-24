@@ -29,7 +29,7 @@ type token = Omd_representation.tok
 type t = Omd_representation.tok list
 
 let string_of_token = function
-  | Tag _ -> if Omd_utils.debug then "TAG" else ""
+  | Tag (name, _) -> if Omd_utils.debug then "TAG("^name^")" else ""
   | Ampersand -> "&"
   | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
   | At -> "@"

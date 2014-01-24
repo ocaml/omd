@@ -1047,7 +1047,7 @@ struct
 
 
   let tag__maybe_h1 main_loop =
-    Tag(fun r p l ->
+    Tag("tag__maybe_h1", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
           begin match setext_title l with
@@ -1066,7 +1066,7 @@ struct
       )
 
   let tag__maybe_h2 main_loop =
-    Tag(fun r p l ->
+    Tag("tag__maybe_h2", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
           begin match setext_title l with
@@ -1085,7 +1085,7 @@ struct
       )
 
   let tag__md md = (* [md] should be in reverse *)
-    Tag(fun r p l -> Some(md@r, [], l))
+    Tag("tag__md", fun r p l -> Some(md@r, [], l))
 
   (* Let's tag the lines that *might* be titles using setext-style.
      "might" because if they are, for instance, in a code section,
@@ -2204,7 +2204,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | Newline :: (Spaces _ as s) :: tl ->
         Continue_with
           ([s;
-            Tag(fun r p ->
+            Tag("parse_list/remember spaces", fun r p ->
                 function Spaces _::tl -> Some(r,p,Space::tl)
                        | _ -> None);
             Newline],
@@ -2212,7 +2212,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | Newline :: (Space as s) :: tl ->
         Continue_with
           ([s;
-            Tag(fun r p ->
+            Tag("parse_list/remember space", fun r p ->
                 function (Space|Spaces _)::tl -> Some(r,p,Space::tl)
                        | _ -> None);
             Newline],
@@ -2414,10 +2414,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               match items with
               | [] -> ""
               | (O,indent::_,item)::tl ->
-                 sprintf "(O,%d,%s)" (indent) (Omd_backend.html_of_md item)
+                 sprintf "(O,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
                  ^ string_of_items tl
               | (U,indent::_,item)::tl ->
-                 sprintf "(U,%d,%s)" (indent) (Omd_backend.html_of_md item)
+                 sprintf "(U,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
                  ^ string_of_items tl
               | _ -> "(weird)"
             in
@@ -2437,7 +2437,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     assert_well_formed l;
     (* indented code: returns (r,p,l) where r is the result, p is the
        last thing read, l is the remains *)
-    let dummy_tag = Tag(fun r p l -> None) in
+    let dummy_tag = Tag("dummy_tag", fun r p l -> None) in
     let accu = Buffer.create 42 in
     let rec loop s tl = match s, tl with
       | (Newline|Newlines _ as p), (Space|Spaces(0|1))::_ ->
@@ -2586,7 +2586,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       r
 
     (* Tag: tag system $\cup$ high-priority extension mechanism *)
-    | _, Tag(e) :: tl ->
+    | _, Tag(_name, e) :: tl ->
       begin match e r previous tl with
         | Some(r, p, l) ->
           main_loop_rev r p l

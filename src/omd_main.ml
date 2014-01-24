@@ -188,7 +188,7 @@ let tag_toc l =
       Word "Table"::Space::
       Word "of"::Space::
       Word "contents"::Star::tl ->
-      Tag(fun r p l ->
+      Tag("tag_toc", fun r p l ->
           Some(X(x)::r,p,l)) :: loop tl
     | e::tl -> e::loop tl
     | [] -> []
@@ -349,7 +349,7 @@ let main () =
       in
         output_string output o2;
         flush output;
-        if Omd_utils.debug then
+        if false && Omd_utils.debug then
           print_endline
             (Omd_backend.sexpr_of_md
                (Omd_parser.default_parse
