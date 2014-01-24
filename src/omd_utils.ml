@@ -1,12 +1,36 @@
+(***********************************************************************)
+(* omd: Markdown frontend in OCaml                                     *)
+(* (c) 2013/2014 by Philippe Wang <philippe.wang@cl.cam.ac.uk>         *)
+(* Licence : ISC                                                       *)
+(* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
+(***********************************************************************)
+
 open Printf
 
 let debug =
-  try
-    ignore(Sys.getenv "DEBUG");
-    eprintf "omd: debug mode activated.\n%!";
-    true
-  with Not_found ->
-    false
+  let _DEBUG =
+    try
+      Some(Sys.getenv "DEBUG")
+    with _ -> None
+  and _OMD_DEBUG =
+    try
+      Some(Sys.getenv "OMD_DEBUG")
+    with _ -> None
+  in
+  match _DEBUG, _OMD_DEBUG with
+  | _, Some "false" ->
+     false
+  | Some _, None ->
+     eprintf "omd: debug mode activated because DEBUG is set, \
+              you can deactivate the mode by setting OMD_DEBUG \
+              to the string \"false\".\n%!";
+     true
+  | None, None ->
+     false
+  | _, Some _ ->
+     eprintf "omd: debug mode activated because OMD_DEBUG is set
+              to a value that isn't the string \"false\".\n%!";
+     true
 
 let trackfix =
   try
@@ -19,9 +43,11 @@ let trackfix =
 
 let raise =
   if debug then
-    (fun e -> eprintf "Exception raised: %s\n%!" (Printexc.to_string e) ; raise e)
+    (fun e ->
+     eprintf "Exception raised: %s\n%!" (Printexc.to_string e);
+     raise e)
   else
-    raise
+    Pervasives.raise
 
 module StringSet : sig
   type elt = string
@@ -45,22 +71,7 @@ and 'a split_action =
   | Continue_with of 'a list * 'a list
   | Split of 'a list * 'a list
 
-(** [fsplit_rev ?excl ~f l] returns [Some(x,y)] where [x] is the
-    **reversed** list of the consecutive elements of [l] that obey the
-    split function [f].
-    Note that [f] is applied to a list of elements and not just an
-    element, so that [f] can look farther in the list when applied.
-    [f l] returns [Continue] if there're more elements to consume,
-    [Continue_with(left,right)] if there's more elements to consume
-    but we want to choose what goes to the left part and what remains
-    to process (right part), and returns [Split(left,right)] if
-    the splitting is decided.
-    When [f] is applied to an empty list, if it returns [Continue]
-    then the result will be [None].
 
-    If [excl] is given, then [excl] is applied before [f] is, to check
-    if the splitting should be stopped right away. When the split
-    fails, it returns [None]. *)
 let fsplit_rev ?(excl=(fun _ -> false)) ~(f:'a split) l
     : ('a list * 'a list) option =
   let rec loop accu = function
@@ -80,8 +91,6 @@ let fsplit_rev ?(excl=(fun _ -> false)) ~(f:'a split) l
           | Continue ->                loop (e::accu) tl
   in loop [] l
 
-(** [fsplit ?excl ~f l] returns [Some(List.rev x, y)] if [fsplit ?excl
-    ~f l] returns [Some(x,y)], else it returns [None]. *)
 let fsplit ?(excl=(fun _ -> false)) ~f l =
   match fsplit_rev ~excl:excl ~f:f l with
     | None -> None
