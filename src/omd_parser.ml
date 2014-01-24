@@ -2201,6 +2201,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | (Number _ :: Dot :: (Space|Spaces _) :: _)
           as tl) ->
         Split([Newline], tl)
+      | Newline :: (Space | Spaces _) :: (Newline | Newlines _) :: _ ->
+         Split([], l)
       | Newline :: (Spaces _ as s) :: tl ->
         Continue_with
           ([s;
