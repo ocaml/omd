@@ -22,8 +22,8 @@ let debug =
      false
   | Some _, None ->
      eprintf "omd: debug mode activated because DEBUG is set, \
-              you can deactivate the mode by setting OMD_DEBUG \
-              to the string \"false\".\n%!";
+              you can deactivate the mode by unsetting DEBUG \
+              or by setting OMD_DEBUG to the string \"false\".\n%!";
      true
   | None, None ->
      false
