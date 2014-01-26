@@ -2201,7 +2201,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | (Number _ :: Dot :: (Space|Spaces _) :: _)
           as tl) ->
         Split([Newline], tl)
-      | Newline :: (Space | Spaces _) :: (Newline | Newlines _) :: _ ->
+      | Newline :: (Space | Spaces _) :: Newline :: tl ->
+        (* A line with spaces shouldn't interfere here,
+           which is about exactly 2 consecutive newlines,
+           so we rewrite the head of the lexing stream. *)
+        Continue_with([], Newlines 0 :: tl)
+      | Newline :: (Space | Spaces _) :: (Newlines _) :: _ ->
+        (* A line with spaces shouldn't interfere here,
+           which is about at least 3 consecutive newlines,
+           so we stop. *)
          Split([], l)
       | Newline :: (Spaces _ as s) :: tl ->
         Continue_with
