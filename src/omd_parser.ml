@@ -1259,23 +1259,27 @@ struct
   exception NL_exception
   exception Premature_ending
 
-  (* !!DO NOT DELETE THIS!! TODO: add ability to read code (github issue #85)
+  (* !!DO NOT DELETE THIS!!
      The program that generates the generated part that follows right after.
      List.iter (fun (a,b,c) ->
      print_endline ("let read_until_"^a^" ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: ("^b^" as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: ("^b^" as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: ("^b^"s 0) :: tl ->
-        loop ("^b^"::Backslash::accu) n ("^b^"::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop ("^b^"::accu) n ("^b^"::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1286,12 +1290,12 @@ struct
               n
               tl
         else
-         loop (e::accu) n tl
-     "^(if c<>"" then "
-      | (Backslash as a) :: ("^c^" as b) :: tl ->
-        loop (b::a::accu) n tl
+         loop (e::accu) n tl"
+      ^(if c<>"" then "
+      | Backslash :: ("^c^" as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: ("^c^"s 0) :: tl ->
-        loop ("^c^"::Backslash::accu) n ("^c^"::tl)
+        loop ("^c^"::accu) n ("^c^"::tl)
       | "^c^" as e :: tl ->
         loop (e::accu) (n+1) tl
       | "^c^"s x as e :: tl ->
@@ -1340,20 +1344,24 @@ struct
   *)
 
   (* begin generated part *)
-let read_until_gt ?(bq=false) ?(no_nl=false) l =
+  let read_until_gt ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Greaterthan as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Greaterthan as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Greaterthans 0) :: tl ->
-        loop (Greaterthan::Backslash::accu) n (Greaterthan::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Greaterthan::accu) n (Greaterthan::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1365,11 +1373,10 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
               tl
         else
          loop (e::accu) n tl
-     
-      | (Backslash as a) :: (Lessthan as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Lessthan as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Lessthans 0) :: tl ->
-        loop (Lessthan::Backslash::accu) n (Lessthan::tl)
+        loop (Lessthan::accu) n (Lessthan::tl)
       | Lessthan as e :: tl ->
         loop (e::accu) (n+1) tl
       | Lessthans x as e :: tl ->
@@ -1406,17 +1413,21 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
 let read_until_lt ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Lessthan as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Lessthan as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Lessthans 0) :: tl ->
-        loop (Lessthan::Backslash::accu) n (Lessthan::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Lessthan::accu) n (Lessthan::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1427,8 +1438,7 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Lessthan as e :: tl ->
+         loop (e::accu) n tl    | Lessthan as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1460,17 +1470,21 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
 let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Cparenthesis as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Cparenthesis as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Cparenthesiss 0) :: tl ->
-        loop (Cparenthesis::Backslash::accu) n (Cparenthesis::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Cparenthesis::accu) n (Cparenthesis::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1482,11 +1496,10 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
               tl
         else
          loop (e::accu) n tl
-     
-      | (Backslash as a) :: (Oparenthesis as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Oparenthesis as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Oparenthesiss 0) :: tl ->
-        loop (Oparenthesis::Backslash::accu) n (Oparenthesis::tl)
+        loop (Oparenthesis::accu) n (Oparenthesis::tl)
       | Oparenthesis as e :: tl ->
         loop (e::accu) (n+1) tl
       | Oparenthesiss x as e :: tl ->
@@ -1523,17 +1536,21 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
 let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Oparenthesis as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Oparenthesis as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Oparenthesiss 0) :: tl ->
-        loop (Oparenthesis::Backslash::accu) n (Oparenthesis::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Oparenthesis::accu) n (Oparenthesis::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1544,8 +1561,7 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Oparenthesis as e :: tl ->
+         loop (e::accu) n tl    | Oparenthesis as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1577,17 +1593,21 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
 let read_until_dq ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Doublequote as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Doublequote as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Doublequotes 0) :: tl ->
-        loop (Doublequote::Backslash::accu) n (Doublequote::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Doublequote::accu) n (Doublequote::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1598,8 +1618,7 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Doublequote as e :: tl ->
+         loop (e::accu) n tl    | Doublequote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1631,17 +1650,21 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
 let read_until_q ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Quote as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Quote as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Quotes 0) :: tl ->
-        loop (Quote::Backslash::accu) n (Quote::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Quote::accu) n (Quote::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1652,8 +1675,7 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Quote as e :: tl ->
+         loop (e::accu) n tl    | Quote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1685,17 +1707,21 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
 let read_until_obracket ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Obracket as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Obracket as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Obrackets 0) :: tl ->
-        loop (Obracket::Backslash::accu) n (Obracket::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Obracket::accu) n (Obracket::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1706,8 +1732,7 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Obracket as e :: tl ->
+         loop (e::accu) n tl    | Obracket as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1739,17 +1764,21 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
 let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Cbracket as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Cbracket as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Cbrackets 0) :: tl ->
-        loop (Cbracket::Backslash::accu) n (Cbracket::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Cbracket::accu) n (Cbracket::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1761,11 +1790,10 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
               tl
         else
          loop (e::accu) n tl
-     
-      | (Backslash as a) :: (Obracket as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Obracket as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Obrackets 0) :: tl ->
-        loop (Obracket::Backslash::accu) n (Obracket::tl)
+        loop (Obracket::accu) n (Obracket::tl)
       | Obracket as e :: tl ->
         loop (e::accu) (n+1) tl
       | Obrackets x as e :: tl ->
@@ -1802,17 +1830,21 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
 let read_until_space ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
-      | (Backslash as a) :: (Space as b) :: tl ->
-        loop (b::a::accu) n tl
+      | Backslash :: (Space as b) :: tl ->
+        loop (b::accu) n tl
       | Backslash :: (Spaces 0) :: tl ->
-        loop (Space::Backslash::accu) n (Space::tl)
-      | (Backslashs 0 as e) :: tl ->
-        loop (e::accu) n tl
-      | (Backslashs x as e) :: tl ->
+        loop (Space::accu) n (Space::tl)
+      | Backslashs 0 :: tl ->
+        loop (Backslash::accu) n tl
+      | Backslashs 1 :: tl ->
+        loop (Backslash::accu) n (Backslash::tl)
+      | Backslashs 2 :: tl ->
+        loop (Backslashs 0::accu) n tl
+      | (Backslashs x) :: tl ->
         if x mod 2 = 0 then
-          loop (e::accu) n tl
+          loop (Backslashs(x/2-1)::accu) n tl
         else
-          loop (Backslashs(x-1)::accu) n (Backslash::tl)
+          loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
       | (Backquote|Backquotes _ as e)::tl as l ->
         if bq then
           match bcode [] [] l with
@@ -1823,8 +1855,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
-         | Space as e :: tl ->
+         loop (e::accu) n tl    | Space as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
