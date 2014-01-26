@@ -5,8 +5,8 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-(** You should either use this module or OMd_lexer, not both.
-    This module includes OMd_lexer.
+(** You should either use this module or Omd_lexer, not both.
+    This module includes Omd_lexer.
 *)
 
 include Omd_lexer
