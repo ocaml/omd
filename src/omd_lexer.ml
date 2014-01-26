@@ -305,9 +305,9 @@ let lex s =
   List.rev !result
 
 let make_space = function
-  | 0 -> invalid_arg "Md_lexer.make_space"
+  | 0 -> invalid_arg "Omd_lexer.make_space"
   | 1 -> Space
-  | n -> if n < 0 then invalid_arg "Md_lexer.make_space" else Spaces (n-2)
+  | n -> if n < 0 then invalid_arg "Omd_lexer.make_space" else Spaces (n-2)
 
 
 (*
