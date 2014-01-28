@@ -1,4 +1,4 @@
-About (OMD)[https://github.com/pw374/omd/]
+About [OMD](https://github.com/pw374/omd/)
 ==========================================
 
 The implementation of this library and command-line tool
@@ -51,7 +51,7 @@ if you find something that seems wrong.**
   first element on a line is a code block. The backquotes should be 
   followed by a language name (made of a-z characters) or by a newline.
 
-- A code block starting with several backquotes (e.g., `` ``` ``) 
+- A code block starting with several backquotes (e.g., ```` ``` ````) 
   immediately followed by a word W made of a-z characters is a code block
   for which the code language is W. (If you use other characters than
   a-z, the semantics is currently undefined although it's deterministic
