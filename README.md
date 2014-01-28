@@ -76,10 +76,19 @@ As new releases come out and bugs are discovered, a version can stop
 being recommended.
 
 - **0.9.6**: fix a bug (concerning extensions) introduced by 0.9.4.
-- 0.9.5: bug fix + `Tag of extension` changed to `Tag of name ** extension`
+
+  This version is recommended. If you need to have a version that still has
+  `Tag of extension` instead of `Tag of name * extension`, you should use 0.9.3
+
+- 0.9.5: bug fix + `Tag of extension` changed to `Tag of name * extension`
+
 - 0.9.4: fixes a bug for the new feature
+
 - **0.9.3**: new feature `media:type="text/omd"`. 
+
   This version is recommended if you do not use that new feature. 
   Otherwise, it's strongly recommended that you use 0.9.6 instead.
+
 - 0.9.2: not released...
+
 - older versions: cf. [commit log](https://github.com/pw374/omd/commits/master)
