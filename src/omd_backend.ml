@@ -519,13 +519,22 @@ let rec sexpr_of_md md =
   let rec loop = function
     | X x :: tl ->
         (match x#to_t md with
-           | Some t -> loop t
+           | Some t ->
+             Buffer.add_string b "(X";
+             loop t;
+             Buffer.add_string b ")"
            | None ->
                match x#to_sexpr sexpr_of_md md with
-                 | Some s -> Buffer.add_string b s
+                 | Some s ->
+                   Buffer.add_string b "(X";
+                   Buffer.add_string b s;
+                   Buffer.add_string b ")"
                  | None ->
                      match x#to_html ~indent:0 html_of_md md with
-                       | Some s -> Buffer.add_string b s
+                       | Some s ->
+                         Buffer.add_string b "(X";
+                         Buffer.add_string b s;
+                         Buffer.add_string b ")"
                        | None -> ());
         loop tl
     | Blockquote q :: tl ->
