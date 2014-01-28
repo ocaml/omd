@@ -1,29 +1,46 @@
-`omd`
-=====
+Omd: a Markdown parser in OCaml
+=================================
 
-Short description
------------------
+Omd implements a Markdown parser in OCaml.
 
-`omd` implements a Markdown frontend in OCaml (with no external
-dependencies).
+Omd provides two things:
 
-If you build the binary, `omd`, then you have a
-[Markdown](http://daringfireball.net/projects/markdown/syntax) to HTML
-converter (and also a markdown to markdown tool if you use the option `-m`).
+1. the command-line tool `omd`, which takes some Markdown and 
+   converts it to HTML or Markdown.
 
-An extensible Markdown-parser library is represented in `src/omd.ml`
-and `src/omd.mli`, but you can also check the other files if you need
-to access lower-level functions.
+   Use `omd -help` for more information on how to use it.
 
-`omd` aims at implementing the ["original Markdown 
+2. the OCaml library `omd`, which provides several modules:
+   - the module `Omd` contains most functions a user will need for basic
+     Markdown manipulation.
+   - the modules `Omd_parser`, `Omd_lexer`, `Omd_backend`, `Omd_representation` and `Omd_utils` basically implement what their names say:
+     * `Omd_parser` implements the parser (the hardest part).
+     * `Omd_lexer` implements a (basic) lexer.
+     * `Omd_backend` implements 3 backends:
+        1. HTML: default backend.
+        2. Markdown: sometimes it's useful to show that 
+           the fix-point is easily reachable.
+        3. S-expression: it's mainly used for debugging.
+     * `Omd_representation` declares the datatypes used in `Omd`. 
+       It also provides some functions to work on those datatypes.
+     * `Omd_utils` provides some useful tools that are not very specific
+       to the `Omd`-specific datatypes.
+
+
+Omd aims at implementing the ["original Markdown 
 specs"](http://daringfireball.net/projects/markdown/syntax) with a few
-Github Flavour Markdown characteristics.
+Github Flavour Markdown characteristics. Omd is also meant to be more
+"sane" than other Markdown parsers from the semantics point of view: if 
+something bothers you from the semantics point of view, please [open an
+issue](https://github.com/pw374/omd/issues).
 
 Dependencies
 ------------
 
-`omd` has been developed using OCaml 4.00.1. It is the only
-dependency (for now). However it should work with OCaml 3.12 as well.
+`omd` is implemented in OCaml, therefore it needs it to be compiled.
+OCaml 4.00.1 and then 4.01.0 have been used. Omd should be compatible
+with 3.12.0 as well, if it's not then please [open an
+issue](https://github.com/pw374/omd/issues).
 
 
 ----------------
@@ -31,7 +48,7 @@ dependency (for now). However it should work with OCaml 3.12 as well.
 Usage
 -----
 
-- to install `omd` using opam
+- to install `omd` using opam (recommended)
 
    `opam install omd`
 
@@ -40,23 +57,29 @@ Usage
   `git clone git://github.com/pw374/omd.git`
 
 - to compile `omd`
+  - without `oasis` nor `ocamlbuild`
+
+      `cd omd/src && make`
+
   - using `oasis` and `ocamlbuild`
 
       `cd omd && make`
 
-  - without `oasis`
-
-      `cd omd/src && make`
-
 
 ----------------
 
-N.B. You probably need to know markdown first if you plan on reading
-the parser's source code. This implementation was driven mainly by two
-things: the original Markdown syntax documentation
-(<http://daringfireball.net/projects/markdown/syntax>) and
-try-and-see-what-it-produces on
-<https://github.com/pw374/sandbox>. Also, I used Pandoc to check its
-behaviour sometimes. Now I can say than Pandoc does not really support
-Github flavour Markdown even if it pretends to do so.
+Log
+---
 
+The recommended version numbers are typefaced in **bold**.
+As new releases come out and bugs are discovered, a version can stop
+being recommended.
+
+- **0.9.6**: fix a bug (concerning extensions) introduced by 0.9.4.
+- 0.9.5: bug fix + `Tag of extension` changed to `Tag of name ** extension`
+- 0.9.4: fixes a bug for the new feature
+- **0.9.3**: new feature `media:type="text/omd"`. 
+  This version is recommended if you do not use that new feature. 
+  Otherwise, it's strongly recommended that you use 0.9.6 instead.
+- 0.9.2: not released...
+- older versions: cf. [commit log](https://github.com/pw374/omd/commits/master)
