@@ -641,7 +641,8 @@ struct
            as possible. *)
         begin match x#to_t md with
           | None -> loop (e::cp) accu tl
-          | Some(t) -> match t with
+          | Some(t) ->
+            match t with
             | ( H1 _
               | H2 _
               | H3 _
@@ -658,11 +659,13 @@ struct
               | Html_block _
               | Raw_block _
               | Blockquote _
-              ) :: tl
+              ) :: _
               ->
               (match cp with
-               | [] | [NL] | [Br] -> loop cp (e::accu) tl
-               | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+               | [] | [NL] | [Br] ->
+                 loop cp (e::accu) tl
+               | _ ->
+                 loop [] (e::Paragraph(List.rev cp)::accu) tl)
             | _ ->
               loop (e::cp) accu tl
         end
