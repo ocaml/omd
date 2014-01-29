@@ -34,6 +34,12 @@ Github Flavour Markdown characteristics. OMD is also meant to be more
 something bothers you from the semantics point of view, please [open an
 issue](https://github.com/pw374/omd/issues).
 
+
+Encoding
+--------
+
+**OMD assumes its input is US-ASCII or UTF-8 encoded.**
+
 Dependencies
 ------------
 
