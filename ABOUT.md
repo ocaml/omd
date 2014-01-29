@@ -68,7 +68,11 @@ if you find something that seems wrong.**
   If you want a parenthesis or bracket not to count in the balanced parsing,
   escape it with a backslash, such as in `[a\[b](http://c/\(d)`.
   *This is typically something that's not defined in [DFMSD].*
-  - Note about baskslashes in URLs: some web browsers (e.g., Safari) automatically convert `\` to `/`. It's not the case of CURL.
+  - Note about backslashes in URLs: some web browsers (e.g., Safari) 
+    automatically convert `\` to `/`. It's not the case of CURL.
+    However I assume it's safe to consider that backslashes are not
+    to be used in URLs. Still it's always possible to
+    backslashe-escape them anyways.
 
 - HTML is somewhat a part of Markdown. Omd will partially parse HTML tags
   and if you have a tag that isn't a knowned HTML tag, then it's possible
