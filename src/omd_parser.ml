@@ -965,7 +965,7 @@ struct
 
 
   (* used by tag__maybe_h1 and tag__maybe_h2 *)
-  let setext_title (l:l) : (Omd_representation.tok list * l) option =
+  let setext_title main_loop (l:l) : (Omd_representation.tok list * l) option =
     assert_well_formed l;
     let rec detect_balanced_bqs n r l =
       (* If there's a balanced (complete) backquote-started code block
@@ -1038,22 +1038,33 @@ struct
       | e::tl ->
         loop (e::r) tl
     in
-    let result = loop [] l in
-    if debug then
-      eprintf "setext_title l=%S result=%S,%S\n%!"
-        (Omd_lexer.string_of_tokens l)
-        (match result with None -> ""
-                         | Some (x,tl) -> Omd_lexer.string_of_tokens x)
-        (match result with None -> ""
-                         | Some (x,tl) -> Omd_lexer.string_of_tokens tl);
-    result
-
-
+    if match l with
+      | Lessthan::Word _::_ ->
+        begin match main_loop [] [] l with
+          | (Html_block _ | Code_block _ | Raw_block _)::_ ->
+            true
+          | _ ->
+            false
+        end
+      | _ -> false
+    then
+      None
+    else
+      let result = loop [] l in
+      if debug then
+        eprintf "setext_title l=%S result=%S,%S\n%!"
+          (Omd_lexer.string_of_tokens l)
+          (match result with None -> ""
+                           | Some (x,tl) -> Omd_lexer.string_of_tokens x)
+          (match result with None -> ""
+                           | Some (x,tl) -> Omd_lexer.string_of_tokens tl);
+      result
+      
   let tag__maybe_h1 main_loop =
     Tag("tag__maybe_h1", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
-          begin match setext_title l with
+          begin match setext_title main_loop l with
             | None ->
               None
             | Some(title, tl) ->
@@ -1072,7 +1083,7 @@ struct
     Tag("tag__maybe_h2", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
-          begin match setext_title l with
+          begin match setext_title main_loop l with
             | None ->
               None
             | Some(title, tl) ->
