@@ -92,7 +92,7 @@ History
 -------
 
 OMD has been developed by [Philippe Wang](https://github.com/pw374/)
-at [OCaml Labs](http://ocaml.io/) in (Cambridge)[http://www.cl.cam.ac.uk].
+at [OCaml Labs](http://ocaml.io/) in [Cambridge](http://www.cl.cam.ac.uk).
 
 Its development was motivated by at least these facts:
 
