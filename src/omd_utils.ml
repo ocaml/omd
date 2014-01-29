@@ -209,9 +209,12 @@ let rec extract_html_attributes (html:string) =
       s
     else
       let rec loop i =
-        match s.[i] with
-        | ' ' -> loop (i+1)
-        | _ -> String.sub s i (String.length s - i)
+        if i = String.length s then
+          String.sub s i (String.length s - i)
+        else
+          match s.[i] with
+          | ' ' -> loop (i+1)
+          | _ -> String.sub s i (String.length s - i)
       in loop 1
   in
   let remove_suffix_spaces s =
