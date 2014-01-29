@@ -3140,7 +3140,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | ([]|[Newline|Newlines _]),
       (Lessthan as t)
       ::(Word(tagname)
-         ::(Space|Spaces _|Greaterthan|Greaterthans _ as aftertagname)
+         ::(Space|Spaces _|Greaterthan|Greaterthans _ as after_tagname)
          ::tl as tlx) ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
@@ -3174,14 +3174,61 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 loop (Word tn::Lessthan::accu) n tl
             | x::tl ->
               loop (x::accu) n tl
-            | [] ->
-              List.rev accu, []
+            | [] -> (* Invalid HTML because it's unfinished *)
+              (* List.rev accu, [] <-- to allow incomplete HTML *)
+              raise Not_found
+              (* This exception is caught a few lines farther. *)
           in
-          loop [aftertagname;Word(tagname);Lessthan] 0 tl
+          loop [after_tagname;Word(tagname);Lessthan] 0 tl
         in
-        let html, tl = read_html() in
+        if (try ignore(read_html()); false with Not_found -> true)
+        then
+        begin match maybe_extension extensions r previous lexemes with
+          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | Some(r, p, l) -> main_loop_rev r p l
+        end          
+        else
+        let html, tl_after_html = read_html() in
         let html = Omd_lexer.string_of_tokens html in
         let attributes = Omd_utils.extract_html_attributes html in
+        let html, tl =
+          try begin (* specified end of HTML block *)
+            let stop = Omd_lexer.lex (List.assoc "media:stop" attributes) in
+            if stop = [] then raise Not_found;
+            match
+              fsplit
+                ~f:(fun l ->
+                    let rec comp a b = match a, b with
+                      | _, [] -> Continue
+                      | [], _ ->
+                        begin
+                          match
+                            fsplit
+                              ~f:(function
+                                  |Greaterthan::x as g ->
+                                    Split(g, x)
+                                  | Greaterthans 0::x ->
+                                    Split([Greaterthan], Greaterthan::x)
+                                  | Greaterthans n::x ->
+                                    Split([Greaterthan], Greaterthans(n-1)::x)
+                                  | _ -> Continue)
+                              b
+                          with
+                          | Some(a, b) -> 
+                            Split(a, b)
+                          | None ->
+                            raise Not_found
+                        end
+                      | a::b, c::d when a = c -> comp b d
+                      | _ -> Continue
+                    in
+                    comp stop l)
+                tl
+            with
+            | Some(a,b) -> Omd_lexer.string_of_tokens a, b
+            | None -> raise Not_found
+          end with Not_found -> html, tl_after_html
+        in
         if List.mem ("media:type","text/omd") attributes then
           let innerHTML = Omd_utils.extract_inner_html html in
           let l_innerHTML = tag_setext main_loop (Omd_lexer.lex innerHTML) in
@@ -3189,7 +3236,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           let s_attributes =
             List.fold_left
               (fun r -> function
-                 | "media:type","text/omd" -> r
+                 | "media:type","text/omd"
+                 | "media:end", _ -> r
                  | n, v ->
                    if String.contains v '"' then
                      Printf.sprintf "%s %s='%s'" r n v
@@ -3223,9 +3271,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* inline html *)
     | _,
       (Lessthan as t)
-      ::(Word(tagname) as w
-                          ::((Space|Spaces _|Greaterthan|Greaterthans _)
-                             ::_ as html_stuff) as tlx) ->
+      ::((Word(tagname) as w)
+         ::((Space|Spaces _|Greaterthan|Greaterthans _)
+            ::_ as html_stuff) as tlx) ->
       if (strict_html && not(StringSet.mem tagname inline_htmltags_set))
       || not(blind_html || StringSet.mem tagname htmltags_set)
       then
