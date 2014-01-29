@@ -1,16 +1,16 @@
-Omd: a Markdown parser in OCaml
+OMD: a Markdown parser in OCaml
 =================================
 
-Omd implements a Markdown parser in OCaml.
+OMD implements a Markdown parser in OCaml.
 
-Omd provides two things:
+OMD provides two things:
 
 1. the command-line tool `omd`, which takes some Markdown and 
    converts it to HTML or Markdown.
 
    Use `omd -help` for more information on how to use it.
 
-2. the OCaml library `omd`, which provides several modules:
+2. the library for OCaml contains several modules:
    - the module `Omd` contains most functions a user will need for basic
      Markdown manipulation.
    - the modules `Omd_parser`, `Omd_lexer`, `Omd_backend`, `Omd_representation` and `Omd_utils` basically implement what their names say:
@@ -24,12 +24,12 @@ Omd provides two things:
      * `Omd_representation` declares the datatypes used in `Omd`. 
        It also provides some functions to work on those datatypes.
      * `Omd_utils` provides some useful tools that are not very specific
-       to the `Omd`-specific datatypes.
+       to the OMD-specific datatypes.
 
 
-Omd aims at implementing the ["original Markdown 
+OMD aims at implementing the ["original Markdown 
 specs"](http://daringfireball.net/projects/markdown/syntax) with a few
-Github Flavour Markdown characteristics. Omd is also meant to be more
+Github Flavour Markdown characteristics. OMD is also meant to be more
 "sane" than other Markdown parsers from the semantics point of view: if 
 something bothers you from the semantics point of view, please [open an
 issue](https://github.com/pw374/omd/issues).
@@ -38,7 +38,7 @@ Dependencies
 ------------
 
 `omd` is implemented in OCaml, therefore it needs it to be compiled.
-OCaml 4.00.1 and then 4.01.0 have been used. Omd should be compatible
+OCaml 4.00.1 and then 4.01.0 have been used. OMD should be compatible
 with 3.12.0 as well, if it's not then please [open an
 issue](https://github.com/pw374/omd/issues).
 
