@@ -43,7 +43,7 @@ Encoding
 Dependencies
 ------------
 
-`omd` is implemented in OCaml, therefore it needs it to be compiled.
+OMD is implemented in OCaml, therefore it needs it to be compiled.
 OCaml 4.00.1 and then 4.01.0 have been used. OMD should be compatible
 with 3.12.0 as well, if it's not then please [open an
 issue](https://github.com/pw374/omd/issues).
