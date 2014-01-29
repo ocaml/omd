@@ -3193,20 +3193,22 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         let attributes = Omd_utils.extract_html_attributes html in
         let html, tl =
           try begin (* specified end of HTML block *)
-            let stop = Omd_lexer.lex (List.assoc "media:stop" attributes) in
+            let stop = Omd_lexer.lex (List.assoc "media:end" attributes) in
             if stop = [] then raise Not_found;
             match
               fsplit
-                ~f:(fun l ->
-                    let rec comp a b = match a, b with
+                ~f:(
+                  let first = ref true in
+                  fun l ->
+                    let rec comp s b = match s, b with
                       | _, [] -> Continue
                       | [], _ ->
                         begin
                           match
                             fsplit
                               ~f:(function
-                                  |Greaterthan::x as g ->
-                                    Split(g, x)
+                                  | Greaterthan as g::x ->
+                                    Split([g], x)
                                   | Greaterthans 0::x ->
                                     Split([Greaterthan], Greaterthan::x)
                                   | Greaterthans n::x ->
@@ -3214,18 +3216,59 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                   | _ -> Continue)
                               b
                           with
-                          | Some(a, b) -> 
-                            Split(a, b)
+                          | Some(a, b) ->
+                            if !first then
+                              (first := false; Continue)
+                            else
+                              Split(List.rev a, b)
                           | None ->
                             raise Not_found
                         end
-                      | a::b, c::d when a = c -> comp b d
-                      | _ -> Continue
+                      | a::b, c::d ->
+                        if a = c then
+                          comp b d
+                        else
+                          (*match a, c with
+                           | (Word wa|Number wa), (Word wc|Number wc)
+                             when String.length wa < String.length wc
+                             ->
+                             begin
+                               let rescue_substring s1 s2 =
+                                 let ls1 = String.length s1
+                                 and ls2 = String.length s2 in
+                                 let rec loop n =
+                                   if ls1 <= ls2 - n then
+                                     if String.sub s2 n ls1 = s1 then
+                                       Some(String.sub s2 0 n,
+                                            String.sub s2 n ls1,
+                                            String.sub s2 ls1 (ls2-ls1-n))
+                                     else
+                                       loop (n+1)
+                                   else
+                                     None
+                                 in loop 0
+                               in
+                               match rescue_substring wa wc with
+                               | None ->
+                                 Continue
+                               | Some(before, victim, after) ->
+                                 comp s
+                                   (Word before::Word victim::Word after::d)
+                                (* This doesn't work. A large generalization
+                                   is required to make this idea work
+                                   because there are many other ways to
+                                   make this difficult, as for instance
+                                   "!" is a substring of "!!!!". *)
+                             end
+                           | _ -> Continue
+                          *)
+                          Continue
                     in
                     comp stop l)
-                tl
+                 tl
             with
-            | Some(a,b) -> Omd_lexer.string_of_tokens a, b
+            | Some(a,b) ->
+              Omd_lexer.string_of_tokens a, b
             | None -> raise Not_found
           end with Not_found -> html, tl_after_html
         in
@@ -3253,7 +3296,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
              the extension constructor [X]. *)
           let x = object
             val f = fun convert ->
-              Printf.sprintf "<%s%s>%s</%s>"
+              sprintf "<%s%s>%s</%s>"
                 tagname
                 s_attributes
                 (convert parsed_innerHTML)
@@ -3265,7 +3308,34 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           end
           in
           main_loop_rev (X(x) :: r) [Greaterthan] tl
-        else            
+        else
+        if try ignore(List.assoc "media:end" attributes); true
+          with Not_found -> false
+        then
+          let innerHTML = Omd_utils.extract_inner_html html in
+          let s_attributes =
+            List.fold_left
+              (fun r -> function
+                 | "media:type","text/omd"
+                 | "media:end", _ -> r
+                 | n, v ->
+                   if String.contains v '"' then
+                     sprintf "%s %s='%s'" r n v
+                   else
+                     sprintf "%s %s=\"%s\"" r n v
+              )
+              ""
+              attributes
+          in
+          let html = 
+            sprintf "<%s%s>%s</%s>"
+              tagname
+              s_attributes
+              innerHTML
+              tagname
+          in
+          main_loop_rev (Html_block html :: r) [Greaterthan] tl
+        else
           main_loop_rev (Html_block html :: r) [Greaterthan] tl
 
     (* inline html *)
