@@ -164,13 +164,14 @@ Miscellaneous notes
   a program.
 
 - OMD 1.0.0 will probably use some external libraries,
-  e.g., [UUNF](http://erratique.ch/software/uunf).
+  e.g., [UUNF](http://erratique.ch/software/uunf)
+  and perhaps [Xmlm](http://erratique.ch/software/xmlm/doc/Xmlm)
 
 
 - "OMD" is the name of this library and command-line tool.
   - It might be written "Omd" or "omd" sometimes, but it should
     be written using capital letters because it should be read 
-    *əʊ ɛm diː* rather than *ə'md* or *ˌɒmd*.
+    `əʊ ɛm diː` rather than `ə'md` or `ˌɒmd`.
 
 - "`Omd`" is a module.
   - It's written using monospace font and it's capitalized.
@@ -179,4 +180,8 @@ Miscellaneous notes
   - It's written using monospace font and it's always lowercase letters only
     because unless you have a non-sensitive file system, calling `Omd` on the
     command line is not just another way of calling `omd`.
+
+- OMD has been added on the quite long list of Markdown parsers
+  <https://github.com/markdown/markdown.github.com/wiki/Implementations>
+  on the 29th of January.
 
