@@ -1927,6 +1927,26 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
   let read_title main_loop n r _previous lexemes =
     let title, rest =
       let rec loop accu = function
+        | Backslash::Hash::tl ->
+          loop (Hash::Backslash::accu) tl
+        | Backslashs(n)::Hash::tl when n mod 2 = 1 ->
+          loop (Hash::Backslashs(n-1)::accu) tl
+        | Backslash::Hashs(0)::tl ->
+          begin match tl with
+            | (Space|Spaces _)::(Newline|Newlines _)::_
+            | (Newline|Newlines _)::_ ->
+              loop (Hash::Backslash::accu) (Hash::tl)
+            | _ ->
+              loop (Hashs(0)::Backslash::accu) tl
+          end
+        | Backslashs(n)::Hashs(0)::tl when n mod 2 = 1 ->
+          begin match tl with
+            | (Space|Spaces _)::(Newline|Newlines _)::_
+            | (Newline|Newlines _)::_ ->
+              loop (Hash::Backslashs(n)::accu) (Hash::tl)
+            | _ ->
+              loop (Hashs(0)::Backslashs(n)::accu) tl
+          end
         | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
         | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
         | ((Newline|Newlines _) :: _ as l)
