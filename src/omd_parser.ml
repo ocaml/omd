@@ -1941,8 +1941,6 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | [(Space|Spaces _); Hash|Hashs _]
         | [(Space|Spaces _); (Hash|Hashs _); (Space|Spaces _)] ->
           main_loop [] [] (List.rev accu), []
-        | (Hash|Hashs _ as x) :: tl ->
-          loop (Word(Omd_lexer.string_of_token x)::accu) tl
         | x::tl ->
           loop (x::accu) tl
       in
