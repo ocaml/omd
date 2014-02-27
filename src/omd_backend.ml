@@ -670,68 +670,40 @@ let escape_markdown_characters s =
            | '0' .. '9' -> i+1 < String.length s && s.[i+1] = ' '
            | _ -> false
         then
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
-        else
-          Buffer.add_char b c
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '-' as c ->
         if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
           && (i+1 < String.length s && (s.[i+1] = ' '||s.[i+1] = '-'))
         then
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
-        else
-            Buffer.add_char b c
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '+' as c ->
         if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
           && (i+1 < String.length s && s.[i+1] = ' ')
         then
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
-        else
-            Buffer.add_char b c
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '!' as c ->
         if i+1 < String.length s && s.[i+1] = '[' then
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
-        else
-            Buffer.add_char b c
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '<' as c ->
-        if i = String.length s - 1 ||
-           (match s.[i+1] with 'a' .. 'z' | 'A' .. 'Z' -> false | _ -> true)
+        if i <> String.length s - 1 &&
+             (match s.[i+1] with 'a' .. 'z' | 'A' .. 'Z' -> false | _ -> true)
         then
-            Buffer.add_char b c
-        else
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '>' as c ->
         if i = 0 ||
-          match s.[i-1] with ' ' | '\n' -> false | _ -> true
+             (match s.[i-1] with ' ' | '\n' -> false | _ -> true)
         then
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
-        else
-          Buffer.add_char b c
+          Buffer.add_char b '\\';
+        Buffer.add_char b c
       | '#' as c ->
-        if i > 0 && s.[i-1] = '#' then
-          Buffer.add_char b c
-        else
-          begin
-            Buffer.add_char b '\\';
-            Buffer.add_char b c
-          end
+         if i = 0 || s.[i-1] = '\n' then
+           Buffer.add_char b '\\';
+         Buffer.add_char b c
       | '\\' | '[' | ']' | '(' | ')' | '`' | '*' as c ->
         Buffer.add_char b '\\';
         Buffer.add_char b c
