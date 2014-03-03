@@ -149,7 +149,9 @@ let rec html_and_headers_of_md
   let rec loop indent ?(nl=false) = function
     | X x as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None -> 
           (match x#to_t md with
            | Some t -> loop indent t
@@ -161,7 +163,9 @@ let rec html_and_headers_of_md
       end
     | Blockquote q as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b "<blockquote>";
@@ -171,7 +175,9 @@ let rec html_and_headers_of_md
       end
     | Ref(rc, name, text, fallback) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           begin match rc#get_ref name with
             | Some(href, title) ->
@@ -185,7 +191,9 @@ let rec html_and_headers_of_md
       end
     | Img_ref(rc, name, alt, fallback) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           begin match rc#get_ref name with
             | Some(src, title) ->
@@ -198,7 +206,9 @@ let rec html_and_headers_of_md
       end
     | Paragraph md as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           (let s = html_of_md md in
            if empty s then
@@ -214,7 +224,9 @@ let rec html_and_headers_of_md
       end
     | Img(alt, src, title) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           Buffer.add_string b "<img src='";
           Buffer.add_string b (htmlentities ~md:true src);
@@ -230,7 +242,9 @@ let rec html_and_headers_of_md
       end
     | Text t as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           (* Buffer.add_string b t; *)
           Buffer.add_string b (htmlentities ~md:true t);
@@ -238,7 +252,9 @@ let rec html_and_headers_of_md
       end
     | Emph md as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           Buffer.add_string b "<em>";
           loop indent md;
@@ -247,7 +263,9 @@ let rec html_and_headers_of_md
       end
     | Bold md as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           Buffer.add_string b "<strong>";
           loop indent md;
@@ -256,7 +274,9 @@ let rec html_and_headers_of_md
       end
     | (Ul l|Ol l|Ulp l|Olp l as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           (* if pindent then Buffer.add_char b '\n'; *)
@@ -289,7 +309,9 @@ let rec html_and_headers_of_md
       end
     | Code_block(lang, c) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           if lang = "" && !default_language = "" then
@@ -309,7 +331,9 @@ let rec html_and_headers_of_md
       end
     | Code(lang, c) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if lang = "" && !default_language = "" then
             Buffer.add_string b "<code>"
@@ -327,7 +351,9 @@ let rec html_and_headers_of_md
       end
     | Br as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b "<br/>\n";
@@ -335,7 +361,9 @@ let rec html_and_headers_of_md
       end
     | Hr as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b "<hr/>\n";
@@ -343,14 +371,18 @@ let rec html_and_headers_of_md
       end
     | Raw s as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           Buffer.add_string b s;
           loop indent tl
       end
     | Raw_block s as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
@@ -358,14 +390,18 @@ let rec html_and_headers_of_md
       end
     | Html s as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           Buffer.add_string b s;
           loop indent tl
       end
     | Html_block s as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
@@ -373,7 +409,9 @@ let rec html_and_headers_of_md
       end
     | Html_comment s as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
@@ -381,7 +419,9 @@ let rec html_and_headers_of_md
       end
     | Url (href,s,title) as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           let s = html_of_md s in
           Buffer.add_string b "<a href='";
@@ -400,7 +440,9 @@ let rec html_and_headers_of_md
       end
     | (H1 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -415,7 +457,9 @@ let rec html_and_headers_of_md
       end
     | (H2 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -430,7 +474,9 @@ let rec html_and_headers_of_md
       end
     | (H3 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -445,7 +491,9 @@ let rec html_and_headers_of_md
       end
     | (H4 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -460,7 +508,9 @@ let rec html_and_headers_of_md
       end
     | (H5 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -475,7 +525,9 @@ let rec html_and_headers_of_md
       end
     | (H6 md as e) :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
@@ -490,7 +542,9 @@ let rec html_and_headers_of_md
       end
     | NL as e :: tl ->
       begin match override e with
-        | Some s -> Buffer.add_string b s
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
         | None ->
           if nl2br then Buffer.add_string b "<br />";
           Buffer.add_char b '\n';
