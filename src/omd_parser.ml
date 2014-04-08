@@ -3084,15 +3084,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if StringSet.mem w htmlcodes_set then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Html("&"^w^";")::r) [s] tl
+            main_loop_rev (Raw("&"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Html("&"^w^";")::r) [s] (Semicolon::tl)
+            main_loop_rev (Raw("&"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Html("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_loop_rev (Raw("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Html("&amp;")::r) [] tl2
+        main_loop_rev (Raw("&amp;")::r) [] tl2
 
     (* digit-coded html entity *)
     | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl)
@@ -3100,15 +3100,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if String.length w <= 4 then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] tl
+            main_loop_rev (Raw("&#"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolon::tl)
+            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Html("&amp;")::r) [] tl2
+        main_loop_rev (Raw("&amp;")::r) [] tl2
 
     (* maybe hex digit-coded html entity *)
     | _, Ampersand::((Hash::Word w::((Semicolon|Semicolons _) as s)::tl)
@@ -3116,28 +3116,28 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if String.length w <= 4 then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] tl
+            main_loop_rev (Raw("&#"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolon::tl)
+            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Html("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Html("&amp;")::r) [] tl2
+        main_loop_rev (Raw("&amp;")::r) [] tl2
 
 
     (* Ampersand *)
     | _, Ampersand::tl ->
-      main_loop_rev (Html("&amp;")::r) [Ampersand] tl
+      main_loop_rev (Raw("&amp;")::r) [Ampersand] tl
 
     (* 2 Ampersands *)
     | _, Ampersands(0)::tl ->
-      main_loop_rev (Html("&amp;")::r) [] (Ampersand::tl)
+      main_loop_rev (Raw("&amp;")::r) [] (Ampersand::tl)
 
     (* Several Ampersands (more than 2) *)
     | _, Ampersands(n)::tl ->
-      main_loop_rev (Html("&amp;")::r) [] (Ampersands(n-1)::tl)
+      main_loop_rev (Raw("&amp;")::r) [] (Ampersands(n-1)::tl)
 
     (* backquotes *)
     | _, (Backquote|Backquotes _ as t)::tl ->
@@ -3158,11 +3158,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           ::(Greaterthan|Greaterthans _ as g)::tl) ->
       begin match g with
         | Greaterthans 0 ->
-          main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
+          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
         | Greaterthans n ->
-          main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] (Greaterthans(n-1)::tl)
+          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan]
+            (Greaterthans(n-1)::tl)
         | _ ->
-          main_loop_rev (Html("<"^w^" />")::r) [Greaterthan] tl
+          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] tl
       end
 
     (* block html *)
@@ -3333,7 +3334,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             method name = "Html_block"
             method to_html ?indent to_html _t = Some(f to_html)
             method to_sexpr to_sexpr _t = Some(f to_sexpr)
-            method to_t _t = Some([Html_block(f Omd_backend.html_of_md)])
+            method to_t _t = Some([Raw_block(f Omd_backend.html_of_md)])
           end
           in
           main_loop_rev (X(x) :: r) [Greaterthan] tl
@@ -3363,9 +3364,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               innerHTML
               tagname
           in
-          main_loop_rev (Html_block html :: r) [Greaterthan] tl
+          main_loop_rev (Raw_block html :: r) [Greaterthan] tl
         else
-          main_loop_rev (Html_block html :: r) [Greaterthan] tl
+          main_loop_rev (Raw_block html :: r) [Greaterthan] tl
 
     (* inline html *)
     | _,
@@ -3382,7 +3383,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         end
       else
         let read_html() =
-          let tag s = tag__md [Html s] in
+          let tag s = tag__md [Raw s] in
           let rec loop accu n = function
             | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
               (* MAYBE self-closing tags *)
@@ -3413,11 +3414,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               else
                 loop (tag(sprintf "</%s>" tn)::accu) n tl
             | Lessthan::Word tn::tl -> (* <word... *)
-              let b, tl = read_until_gt ~bq:false tl in
-              let tv = Omd_lexer.string_of_tokens b in
-              loop (tag(sprintf "<%s%s>" tn tv) :: accu)
-                (if tn = tagname then n+1 else n)
-                tl
+              begin
+                let b, tl = read_until_gt ~bq:false tl in
+                let tv = Omd_lexer.string_of_tokens b in
+                loop (tag(sprintf "<%s%s>" tn tv) :: accu)
+                  (if tn = tagname then n+1 else n)
+                  tl
+              end
             | x::tl ->
               loop (x::accu) n tl
             | [] ->

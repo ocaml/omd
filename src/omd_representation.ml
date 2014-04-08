@@ -57,8 +57,8 @@ type element =
   | Url of href * t * title
   | Ref of ref_container * name * string * fallback
   | Img_ref of ref_container * name * alt * fallback
-  | Html of string
-  | Html_block of string
+  | Html of name * (string * string) list * t
+  | Html_block of name * (string * string) list * t
   | Html_comment of string
   | Raw of string
   | Raw_block of string
@@ -76,6 +76,7 @@ and src = string
 and href = string
 and title = string
 and t = element list
+
 
 let rec loose_compare t1 t2 = match t1,t2 with
   | H1 e1::tl1, H1 e2::tl2

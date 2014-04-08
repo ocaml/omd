@@ -70,9 +70,11 @@ let text_of_md md =
         loop tl
     | Hr :: tl ->
         loop tl
-    | Html s :: tl ->
+    | Html(tagname, attrs, body) :: tl ->
+        loop body;
         loop tl
-    | Html_block s :: tl ->
+    | Html_block(tagname, attrs, body) :: tl ->
+        loop body;
         loop tl
     | Html_comment s :: tl ->
         loop tl
@@ -388,23 +390,31 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent ~nl:true tl
       end
-    | Html s as e :: tl ->
+    | Html(tagname, attrs, body) as e :: tl ->
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          Buffer.add_string b s;
+          Printf.bprintf b "<%s" tagname;
+          Buffer.add_string b (string_of_attrs attrs);
+          Buffer.add_string b ">";
+          loop indent body;
+          Printf.bprintf b "</%s>" tagname;
           loop indent tl
       end
-    | Html_block s as e :: tl ->
+    | Html_block(tagname, attrs, body) as e :: tl ->
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
           loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
-          Buffer.add_string b s;
+          Printf.bprintf b "<%s" tagname;
+          Buffer.add_string b (string_of_attrs attrs);
+          Buffer.add_string b ">";
+          loop indent body;
+          Printf.bprintf b "</%s>" tagname;
           loop indent ~nl:true tl
       end
     | Html_comment s as e :: tl ->
@@ -556,6 +566,19 @@ let rec html_and_headers_of_md
   loop 0 md;
   Buffer.contents b, List.rev !headers
 
+and string_of_attrs attrs =
+  let b = Buffer.create 42 in
+  List.iter
+    (fun (a,v) ->
+       if String.contains v '"' then
+         Printf.bprintf b " %s='%s'" a v
+       else if String.contains v '\'' then
+         Printf.bprintf b " %s=\"%s\"" a v
+       else
+         Printf.bprintf b " %s=\"%s\"" a v)
+    attrs;
+  Buffer.contents b
+
 and html_of_md
     ?(override=(fun (e:element) -> (None:string option)))
     ?(pindent=true)
@@ -663,11 +686,15 @@ let rec sexpr_of_md md =
     | Raw_block s :: tl ->
         bprintf b "(Raw_block %S)" s;
         loop tl
-    | Html s :: tl ->
-        bprintf b "(Html %S)" s;
+    | Html(tagname, attrs, body) :: tl ->
+        bprintf b "(Html %s %s " tagname (string_of_attrs attrs);
+        loop body;
+        bprintf b ")";
         loop tl
-    | Html_block s :: tl ->
-        bprintf b "(Html_block %S)" s;
+    | Html_block(tagname, attrs, body) :: tl ->
+        bprintf b "(Html_block %s %s " tagname (string_of_attrs attrs);
+        loop body;
+        bprintf b ")";
         loop tl
     | Html_comment s :: tl ->
         bprintf b "(Html_comment %S)" s;
@@ -821,10 +848,10 @@ let rec markdown_of_md md =
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
         if !references = None then references := Some rc;
-        loop list_indent (Html(fallback)::tl)
+        loop list_indent (Raw(fallback)::tl)
     | Img_ref(rc, name, alt, fallback) :: tl ->
         if !references = None then references := Some rc;
-        loop list_indent (Html(fallback)::tl)
+        loop list_indent (Raw(fallback)::tl)
     | (Paragraph _ as p) :: NL :: tl ->
       loop list_indent (p::tl)
     | Paragraph md :: tl ->
@@ -1002,29 +1029,29 @@ let rec markdown_of_md md =
       Buffer.add_string b s;
       Buffer.add_char b '\n';
       loop list_indent tl
-    | Html s :: tl ->
-      Buffer.add_string b s;
+    | (Html(tagname, attrs, body) as e) :: tl ->
+      Buffer.add_string b (html_of_md [e]);
       loop list_indent tl
-    | Html_block s::NL::((Html_block _:: _) as tl)
-    | Html_block s::NL::NL::((Html_block _:: _) as tl)
-    | Html_block s::((Html_block _:: _) as tl) ->
+    | (Html_block _ as e)::NL::((Html_block _:: _) as tl)
+    | (Html_block _ as e)::NL::NL::((Html_block _:: _) as tl)
+    | (Html_block _ as e)::((Html_block _:: _) as tl) ->
       if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
         Buffer.add_string b "\n\n"
       else if Buffer.length b = 0 then
         ()
       else
         Buffer.add_string b "\n";
-      Buffer.add_string b s;
+      Buffer.add_string b (html_of_md [e]);
       Buffer.add_string b "\n";
       loop list_indent tl
-    | Html_block s :: tl ->
+    | (Html_block _ as e) :: tl ->
       if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
         Buffer.add_string b "\n\n"
       else if Buffer.length b = 0 then
         ()
       else
         Buffer.add_string b "\n";
-      Buffer.add_string b s;
+      Buffer.add_string b (html_of_md [e]);
       Buffer.add_string b "\n\n";
       loop list_indent tl
     | Html_comment s :: tl ->
