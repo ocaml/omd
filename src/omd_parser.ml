@@ -3418,6 +3418,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         ::body)
                     attrs tagstatus (Lessthan::tokens)
               end
+            (* self-closing tags *)
+            | Slash::Greaterthan::tokens ->
+              begin match tagstatus with
+                | T.Awaiting("br"|"hr" as tagname)::tagstatus ->
+                  loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
+                | _ ->
+                  loop (T.TOKENS[Greaterthan;Slash]::body)
+                    attrs tagstatus tokens
+              end
             (* multiple newlines are not to be seen in inline HTML *)
             | Newlines _ :: _ ->
               if debug then eprintf "Multiple lines in inline HTML\n%!";
@@ -3448,8 +3457,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   end
               end
             (* closing the tag opener *)
-            | Lessthan::Slash::Word(tagname)::(Greaterthan|Greaterthans _ as g)
-              ::tokens ->
+            | Lessthan::Slash::(Word(tagname) as w)
+              ::(Greaterthan|Greaterthans _ as g)::tokens ->
               begin match tagstatus with
                 | T.Open t :: _ when t = tagname ->
                   if debug then
@@ -3462,7 +3471,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | T.Open t :: _ ->
                   if debug then
                     eprintf "~~~~~~~~~~ wrongly closing %S 1\n%!" t;
-                  None
+                  loop (T.TOKENS[g;w;Slash;Lessthan]::body) [] tagstatus tokens
                 | T.Awaiting _ :: _ ->
                   if debug then
                     eprintf "~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
@@ -3473,7 +3482,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   None
               end
             (* tag *)
-            | Lessthan::(Word(tagname) as word)::tokens ->
+            | Lessthan::(Word(tagname) as word)::tokens
+              when
+                blind_html
+                || (strict_html && StringSet.mem tagname inline_htmltags_set)
+                || (not strict_html && StringSet.mem tagname htmltags_set)
+              ->
               if debug then eprintf "<Word...\n%!";
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
@@ -3858,5 +3872,25 @@ let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
     end)
   in
   M.main_parse lexemes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
