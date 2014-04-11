@@ -3371,11 +3371,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* inline html *)
     | _,
       (Lessthan as t)
-      ::((Word(tagname) as w)
+      ::((Word(tagnametop) as w)
          ::((Space|Spaces _|Greaterthan|Greaterthans _)
             ::_ as html_stuff) as tlx) ->
-      if (strict_html && not(StringSet.mem tagname inline_htmltags_set))
-      || not(blind_html || StringSet.mem tagname htmltags_set)
+      if (strict_html && not(StringSet.mem tagnametop inline_htmltags_set))
+      || not(blind_html || StringSet.mem tagnametop htmltags_set)
       then
         begin match maybe_extension extensions r previous lexemes with
           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
@@ -3383,65 +3383,257 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         end
       else
         let read_html() =
-          let tag s = tag__md [Raw s] in
-          let rec loop accu n = function
-            | Lessthan::Word("img"|"br"|"hr" as tn)::tl ->
-              (* MAYBE self-closing tags *)
-              begin
-                let b, tl = read_until_gt ~bq:false tl in
-                match List.rev b with
-                | Slash::_ ->
-                  let tv = Omd_lexer.string_of_tokens b in
-                  loop (tag(sprintf "<%s%s>" tn tv) :: accu) n tl
-                | _ ->
-                  let tv = Omd_lexer.string_of_tokens b in
-                  loop (tag(sprintf "<%s%s>" tn tv) :: accu)
-                    (if tn = tagname then n+1 else n)
-                    tl
-              end
-            | Lessthan::Slash::Word tn::Greaterthans 0::tl ->
-              loop accu n
-                (Lessthan::Slash::Word tn::Greaterthan::Greaterthan::tl)
-            | Lessthan::Slash::Word tn::Greaterthans g::tl ->
-              loop accu n
-                (Lessthan::Slash::Word tn::Greaterthan::Greaterthans(g-1)::tl)
-            | Lessthan::Slash::Word tn::Greaterthan::tl -> (* </word> ... *)
-              if tn = tagname then
-                if n = 0 then
-                  List.rev (tag(sprintf "</%s>" tn)::accu), tl
-                else
-                  loop (tag(sprintf "</%s>" tn)::accu) (n-1) tl
-              else
-                loop (tag(sprintf "</%s>" tn)::accu) n tl
-            | Lessthan::Word tn::tl -> (* <word... *)
-              begin
-                let b, tl = read_until_gt ~bq:false tl in
-                let tv = Omd_lexer.string_of_tokens b in
-                loop (tag(sprintf "<%s%s>" tn tv) :: accu)
-                  (if tn = tagname then n+1 else n)
-                  tl
-              end
-            | x::tl ->
-              loop (x::accu) n tl
+          let module T = struct
+            type t =
+              | Awaiting of string
+              | Open of string
+            type interm =
+              | HTML of string * (string * string) list * interm list
+              | TOKENS of Omd_lexer.t
+              | MD of Omd_representation.t
+            let rec md_of_interm_list = function
+              | [] -> []
+              | HTML(t, a, c)::tl ->
+                Html(t, a, md_of_interm_list c)::md_of_interm_list tl
+              | MD md::tl -> md@md_of_interm_list tl
+              | TOKENS t1::TOKENS t2::tl ->
+                md_of_interm_list (TOKENS(t2@t1)::tl)
+              | TOKENS t :: tl ->
+                main_loop_rev [] [Word ""] (List.rev t)
+                @ md_of_interm_list tl
+          end in
+          let rec loop (body:T.interm list) attrs tagstatus tokens =
+            if debug then
+              printf "loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
+            match tokens with
+            (* not enough to read means failure to read HTML *)
             | [] ->
-              List.rev accu, []
-          in
-          let b, tl = read_until_gt ~bq:false html_stuff in
-          if (try ignore(read_until_lt ~bq:false b); false
-              with Premature_ending -> true) then
-            (* there must not be any '<' in b *)
-            let tv = Omd_lexer.string_of_tokens b in
-            loop [tag(Printf.sprintf "<%s%s>" tagname tv)] 0 tl
-          else
-            raise Premature_ending
+              if debug then eprintf "Not enough to read for inline HTML\n%!";
+              None
+            | Lessthans n::tokens ->
+              begin match tagstatus with
+                | T.Awaiting _ :: _ -> None
+                | _ ->
+                  loop (T.TOKENS[(if n = 0 then Lessthan else Lessthans(n-1))]
+                        ::body)
+                    attrs tagstatus (Lessthan::tokens)
+              end
+            (* multiple newlines are not to be seen in inline HTML *)
+            | Newlines _ :: _ ->
+              if debug then eprintf "Multiple lines in inline HTML\n%!";
+              None
+            (* maybe code *)
+            | (Backquote | Backquotes _ as b)::tl ->
+              begin match tagstatus with
+                | T.Awaiting _ :: _ ->
+                  if debug then
+                    eprintf "maybe code in inline HTML: no code\n%!";
+                  None
+                | [] ->
+                  if debug then
+                    eprintf "maybe code in inline HTML: none\n%!";
+                  None
+                | T.Open _ :: _ ->
+                  if debug then
+                    eprintf "maybe code in inline HTML: let's try\n%!";
+                  begin match bcode [] [Space] tokens with
+                    | Some (((Code _::_) as c), p, l) ->
+                      if debug then
+                        eprintf "maybe code in inline HTML: confirmed\n%!";
+                      loop (T.MD c::body) [] tagstatus l
+                    | _ ->
+                      if debug then
+                        eprintf "maybe code in inline HTML: failed\n%!";
+                      loop (T.TOKENS[b]::body) [] tagstatus tl
+                  end
+              end
+            (* closing the tag opener *)
+            | Lessthan::Slash::Word(tagname)::(Greaterthan|Greaterthans _ as g)
+              ::tokens ->
+              begin match tagstatus with
+                | T.Open t :: _ when t = tagname ->
+                  if debug then
+                    eprintf "~~~~~~~~~~ properly closing %S\n%!" t;
+                  Some(body,
+                       (match g with
+                        | Greaterthans 0 -> Greaterthan :: tokens
+                        | Greaterthans n -> Greaterthans(n-1) :: tokens
+                        | _ -> tokens))
+                | T.Open t :: _ ->
+                  if debug then
+                    eprintf "~~~~~~~~~~ wrongly closing %S 1\n%!" t;
+                  None
+                | T.Awaiting _ :: _ ->
+                  if debug then
+                    eprintf "~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
+                  None
+                | [] ->
+                  if debug then
+                    eprintf "~~~~~~~~~~ wrongly closing %S 3\n%!" tagname;
+                  None
+              end
+            (* tag *)
+            | Lessthan::(Word(tagname) as word)::tokens ->
+              if debug then eprintf "<Word...\n%!";
+              begin match tagstatus with
+                | T.Awaiting _ :: _ -> None
+                | _ ->
+                  if attrs <> [] then
+                    begin
+                      if debug then
+                        eprintf "tag %s but attrs <> []\n%!" tagname;
+                      None
+                    end
+                  else
+                    begin
+                      if debug then
+                        eprintf "tag %s, attrs=[]\n%!" tagname;
+                      match loop [] [] (T.Awaiting tagname::tagstatus) tokens
+                      with
+                      | None ->
+                        loop (T.TOKENS[Lessthan;word]::body)
+                          [] tagstatus tokens
+                      | r -> r
+                    end
+              end
+            (* end of opening tag *)
+            | Greaterthan::tokens ->
+              begin match tagstatus with
+                | T.Awaiting t :: tagstatus ->
+                  begin match loop body [] (T.Open t::tagstatus) tokens with
+                    | None ->
+                      if debug then
+                        eprintf "Couldn't find an closing tag for %S\n%!"
+                          t;
+                      None
+                    | Some(body, l) ->
+                      if debug then
+                        eprintf "Found a closing tag %s\n%!" t;
+                      match tagstatus with
+                      | T.Open _ :: _ ->
+                        begin match
+                            loop [] [] tagstatus l
+                          with
+                          | Some(b, l) ->
+                            Some(T.HTML(t, attrs, body)::b, l)
+                          | None ->
+                            None
+                        end
+                      | [] ->
+                        Some([T.HTML(t, attrs, body)], l)
+                      | _ -> assert false
+                  end
+                | T.Open t :: _ ->
+                  if debug then
+                    eprintf "Turns out an `>` isn't for an opening tag\n%!";
+                  loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
+                | [] ->
+                  if debug then
+                    eprintf "This should be impossible\n%!";
+                  None
+              end
+            (* maybe attribute *)
+            | (Space|Spaces _)::Word(attributename)::tokens
+            | Word(attributename)::tokens
+              when (match tagstatus with
+                  | T.Awaiting _ :: _ -> true
+                  | _ -> false) ->
+              begin match tokens with
+                | Newlines _ :: _ -> None
+                | Equal :: Quotes 0 :: tokens ->
+                  if debug then
+                    eprintf "empty attribute 1 %S\n%!"
+                      (Omd_lexer.string_of_tokens tokens);
+                  loop body ((attributename, "")::attrs) tagstatus tokens
+                | Equal :: Quote :: tokens ->
+                  begin
+                    if debug then
+                      eprintf "non empty attribute 1 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    match
+                      fsplit
+                        ~excl:(function
+                            | Quotes _ :: _ -> true
+                            | _ -> false)
+                        ~f:(function
+                            | Quote::tl -> Split([], tl)
+                            | _ -> Continue)
+                        tokens
+                    with
+                    | None -> None
+                    | Some(at_val, tokens) ->
+                      loop body ((attributename,
+                                  Omd_lexer.string_of_tokens at_val)
+                                 ::attrs) tagstatus tokens
+                  end
+                | Equal :: Doublequotes 0 :: tokens ->
+                  begin
+                    if debug then
+                      Printf.printf "empty attribute 2 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    loop body ((attributename, "")::attrs) tagstatus tokens
+                  end
+                | Equal :: Doublequote :: tokens ->
+                  begin
+                    if debug then
+                      eprintf "non empty attribute 2 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    match fsplit
+                            ~excl:(function
+                                | Doublequotes _ :: _ -> true
+                                | _ -> false)
+                            ~f:(function
+                                | Doublequote::tl -> Split([], tl)
+                                | _ -> Continue)
+                            tokens
+                    with
+                    | None -> None
+                    | Some(at_val, tokens) ->
+                      if debug then
+                        eprintf "=\"... %S\n%!"
+                          (Omd_lexer.string_of_tokens tokens);
+                      loop body ((attributename,
+                                  Omd_lexer.string_of_tokens at_val)
+                                 ::attrs) tagstatus tokens
+                  end
+                | _ -> None
+              end
+            | x::tokens 
+              when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
+              begin
+                if debug then
+                  eprintf "general %S\n%!"
+                    (Omd_lexer.string_of_tokens tokens);
+                loop (T.TOKENS[x]::body) attrs tagstatus tokens
+              end
+            | (Newline | Space | Spaces _) :: tokens
+              when
+                (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+              begin
+                if debug then eprintf "spaces\n%!";
+                loop body attrs tagstatus tokens
+              end
+            | _ ->
+              if debug then
+                eprintf "fallback with tokens=%s and tagstatus=%s\n%!"
+                  (Omd_lexer.destring_of_tokens tokens)
+                  (match tagstatus with
+                   | [] -> "None" 
+                   | T.Awaiting _ :: _ -> "Awaiting"
+                   | T.Open _ :: _ -> "Open (can't be)");
+              None
+          in match loop [] [] [] lexemes with
+          | Some(html, rest) ->
+            Some(T.md_of_interm_list html, rest)
+          | None -> None
         in
-        (match try Some(read_html()) with Premature_ending -> None with
-          | Some(html, tl) ->
-            main_loop_rev (main_loop_rev [] [] html @ r) [Greaterthan] tl
+        begin match read_html() with
+          | Some(html, rest) ->
+            main_loop_rev (html@r) [Greaterthan] rest
           | None ->
             let text = Omd_lexer.string_of_token t in
-            main_loop_rev (Text(text ^ tagname)::r) [w] html_stuff
-        )
+            main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
+        end
     (* / end of inline HTML. *)
 
     (* < : emails *)
