@@ -81,16 +81,21 @@ The recommended version numbers are typefaced in **bold**.
 As new releases come out and bugs are discovered, a version can stop
 being recommended.
 
-- **1.0.0**: this release won't be/isn't compatible with previous versions.
+- 1.0.0: this release won't be/isn't compatible with previous versions.
   Hopefully it won't break too many things when it gets released.
 
-- **1.0.0.b**: rewrite parser of inline HTML to use the updated Omd.t
+- tags 1.0.0.x precede 1.0.0.
+Also, tags 1.0.0.x will not be released in OPAM, next release will be 1.0.0.
+And 1.0.0.x may not be compatible with each other.
 
-- **1.0.0.a**: upgrade Omd.t for HTML representation
+
+- tag 1.0.0.b: rewrite parser of inline HTML to use the updated Omd.t
+
+- tag 1.0.0.a: upgrade Omd.t for HTML representation
 
 - **0.9.7**: introduction of media:end + bug fixes
 
-- **0.9.6**: fix a bug (concerning extensions) introduced by 0.9.4.
+- 0.9.6: fix a bug (concerning extensions) introduced by 0.9.4.
 
   This version is recommended. If you need to have a version that still has
   `Tag of extension` instead of `Tag of name * extension`, you should use 0.9.3
