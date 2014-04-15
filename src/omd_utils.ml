@@ -41,11 +41,13 @@ let trackfix =
   with Not_found ->
     false
 
+let _ = if debug then Printexc.record_backtrace true
+
 let raise =
   if debug then
     (fun e ->
-     eprintf "Exception raised: %s\n%!" (Printexc.to_string e);
-     raise e)
+       eprintf "(OMD) Exception raised: %s\n%!" (Printexc.to_string e);
+       raise e)
   else
     Pervasives.raise
 
