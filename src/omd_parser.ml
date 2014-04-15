@@ -152,424 +152,424 @@ struct
          ["Ampersand"; "At"; "Backquote"; "Backslash"; "Bar"; "Caret"; "Cbrace"; "Colon"; "Comma"; "Cparenthesis"; "Cbracket"; "Dollar"; "Dot"; "Doublequote"; "Exclamation"; "Equal"; "Greaterthan"; "Hash"; "Lessthan"; "Minus"; "Newline"; "Obrace"; "Oparenthesis"; "Obracket"; "Percent"; "Plus"; "Question"; "Quote"; "Semicolon"; "Slash"; "Space"; "Star"; "Tab"; "Tilde"; "Underscore"];
          print_string "| x::tl -> loop (x::accu) tl\n| [] -> List.rev accu\n"; *)
       | Ampersand::Ampersand::tl ->
-        if trackfix then eprintf "Ampersand 1\n";
+        if trackfix then eprintf "(OMD) Ampersand 1\n";
         loop accu (Ampersands 0::tl)
       | Ampersands n::Ampersand::tl ->
-        if trackfix then eprintf "Ampersand 2\n";
+        if trackfix then eprintf "(OMD) Ampersand 2\n";
         loop accu (Ampersands(n+1)::tl)
       | Ampersand::Ampersands n::tl ->
-        if trackfix then eprintf "Ampersand 3\n";
+        if trackfix then eprintf "(OMD) Ampersand 3\n";
         loop accu (Ampersands(n+1)::tl)
       | Ampersands a::Ampersands b::tl ->
-        if trackfix then eprintf "Ampersand 4\n";
+        if trackfix then eprintf "(OMD) Ampersand 4\n";
         loop accu (Ampersands(a+b+2)::tl)
       | At::At::tl ->
-        if trackfix then eprintf "At 1\n";
+        if trackfix then eprintf "(OMD) At 1\n";
         loop accu (Ats 0::tl)
       | Ats n::At::tl ->
-        if trackfix then eprintf "At 2\n";
+        if trackfix then eprintf "(OMD) At 2\n";
         loop accu (Ats(n+1)::tl)
       | At::Ats n::tl ->
-        if trackfix then eprintf "At 3\n";
+        if trackfix then eprintf "(OMD) At 3\n";
         loop accu (Ats(n+1)::tl)
       | Ats a::Ats b::tl ->
-        if trackfix then eprintf "At 4\n";
+        if trackfix then eprintf "(OMD) At 4\n";
         loop accu (Ats(a+b+2)::tl)
       | Backquote::Backquote::tl ->
-        if trackfix then eprintf "Backquote 1\n";
+        if trackfix then eprintf "(OMD) Backquote 1\n";
         loop accu (Backquotes 0::tl)
       | Backquotes n::Backquote::tl ->
-        if trackfix then eprintf "Backquote 2\n";
+        if trackfix then eprintf "(OMD) Backquote 2\n";
         loop accu (Backquotes(n+1)::tl)
       | Backquote::Backquotes n::tl ->
-        if trackfix then eprintf "Backquote 3\n";
+        if trackfix then eprintf "(OMD) Backquote 3\n";
         loop accu (Backquotes(n+1)::tl)
       | Backquotes a::Backquotes b::tl ->
-        if trackfix then eprintf "Backquote 4\n";
+        if trackfix then eprintf "(OMD) Backquote 4\n";
         loop accu (Backquotes(a+b+2)::tl)
       | Backslash::Backslash::tl ->
-        if trackfix then eprintf "Backslash 1\n";
+        if trackfix then eprintf "(OMD) Backslash 1\n";
         loop accu (Backslashs 0::tl)
       | Backslashs n::Backslash::tl ->
-        if trackfix then eprintf "Backslash 2\n";
+        if trackfix then eprintf "(OMD) Backslash 2\n";
         loop accu (Backslashs(n+1)::tl)
       | Backslash::Backslashs n::tl ->
-        if trackfix then eprintf "Backslash 3\n";
+        if trackfix then eprintf "(OMD) Backslash 3\n";
         loop accu (Backslashs(n+1)::tl)
       | Backslashs a::Backslashs b::tl ->
-        if trackfix then eprintf "Backslash 4\n";
+        if trackfix then eprintf "(OMD) Backslash 4\n";
         loop accu (Backslashs(a+b+2)::tl)
       | Bar::Bar::tl ->
-        if trackfix then eprintf "Bar 1\n";
+        if trackfix then eprintf "(OMD) Bar 1\n";
         loop accu (Bars 0::tl)
       | Bars n::Bar::tl ->
-        if trackfix then eprintf "Bar 2\n";
+        if trackfix then eprintf "(OMD) Bar 2\n";
         loop accu (Bars(n+1)::tl)
       | Bar::Bars n::tl ->
-        if trackfix then eprintf "Bar 3\n";
+        if trackfix then eprintf "(OMD) Bar 3\n";
         loop accu (Bars(n+1)::tl)
       | Bars a::Bars b::tl ->
-        if trackfix then eprintf "Bar 4\n";
+        if trackfix then eprintf "(OMD) Bar 4\n";
         loop accu (Bars(a+b+2)::tl)
       | Caret::Caret::tl ->
-        if trackfix then eprintf "Caret 1\n";
+        if trackfix then eprintf "(OMD) Caret 1\n";
         loop accu (Carets 0::tl)
       | Carets n::Caret::tl ->
-        if trackfix then eprintf "Caret 2\n";
+        if trackfix then eprintf "(OMD) Caret 2\n";
         loop accu (Carets(n+1)::tl)
       | Caret::Carets n::tl ->
-        if trackfix then eprintf "Caret 3\n";
+        if trackfix then eprintf "(OMD) Caret 3\n";
         loop accu (Carets(n+1)::tl)
       | Carets a::Carets b::tl ->
-        if trackfix then eprintf "Caret 4\n";
+        if trackfix then eprintf "(OMD) Caret 4\n";
         loop accu (Carets(a+b+2)::tl)
       | Cbrace::Cbrace::tl ->
-        if trackfix then eprintf "Cbrace 1\n";
+        if trackfix then eprintf "(OMD) Cbrace 1\n";
         loop accu (Cbraces 0::tl)
       | Cbraces n::Cbrace::tl ->
-        if trackfix then eprintf "Cbrace 2\n";
+        if trackfix then eprintf "(OMD) Cbrace 2\n";
         loop accu (Cbraces(n+1)::tl)
       | Cbrace::Cbraces n::tl ->
-        if trackfix then eprintf "Cbrace 3\n";
+        if trackfix then eprintf "(OMD) Cbrace 3\n";
         loop accu (Cbraces(n+1)::tl)
       | Cbraces a::Cbraces b::tl ->
-        if trackfix then eprintf "Cbrace 4\n";
+        if trackfix then eprintf "(OMD) Cbrace 4\n";
         loop accu (Cbraces(a+b+2)::tl)
       | Colon::Colon::tl ->
-        if trackfix then eprintf "Colon 1\n";
+        if trackfix then eprintf "(OMD) Colon 1\n";
         loop accu (Colons 0::tl)
       | Colons n::Colon::tl ->
-        if trackfix then eprintf "Colon 2\n";
+        if trackfix then eprintf "(OMD) Colon 2\n";
         loop accu (Colons(n+1)::tl)
       | Colon::Colons n::tl ->
-        if trackfix then eprintf "Colon 3\n";
+        if trackfix then eprintf "(OMD) Colon 3\n";
         loop accu (Colons(n+1)::tl)
       | Colons a::Colons b::tl ->
-        if trackfix then eprintf "Colon 4\n";
+        if trackfix then eprintf "(OMD) Colon 4\n";
         loop accu (Colons(a+b+2)::tl)
       | Comma::Comma::tl ->
-        if trackfix then eprintf "Comma 1\n";
+        if trackfix then eprintf "(OMD) Comma 1\n";
         loop accu (Commas 0::tl)
       | Commas n::Comma::tl ->
-        if trackfix then eprintf "Comma 2\n";
+        if trackfix then eprintf "(OMD) Comma 2\n";
         loop accu (Commas(n+1)::tl)
       | Comma::Commas n::tl ->
-        if trackfix then eprintf "Comma 3\n";
+        if trackfix then eprintf "(OMD) Comma 3\n";
         loop accu (Commas(n+1)::tl)
       | Commas a::Commas b::tl ->
-        if trackfix then eprintf "Comma 4\n";
+        if trackfix then eprintf "(OMD) Comma 4\n";
         loop accu (Commas(a+b+2)::tl)
       | Cparenthesis::Cparenthesis::tl ->
-        if trackfix then eprintf "Cparenthesis 1\n";
+        if trackfix then eprintf "(OMD) Cparenthesis 1\n";
         loop accu (Cparenthesiss 0::tl)
       | Cparenthesiss n::Cparenthesis::tl ->
-        if trackfix then eprintf "Cparenthesis 2\n";
+        if trackfix then eprintf "(OMD) Cparenthesis 2\n";
         loop accu (Cparenthesiss(n+1)::tl)
       | Cparenthesis::Cparenthesiss n::tl ->
-        if trackfix then eprintf "Cparenthesis 3\n";
+        if trackfix then eprintf "(OMD) Cparenthesis 3\n";
         loop accu (Cparenthesiss(n+1)::tl)
       | Cparenthesiss a::Cparenthesiss b::tl ->
-        if trackfix then eprintf "Cparenthesis 4\n";
+        if trackfix then eprintf "(OMD) Cparenthesis 4\n";
         loop accu (Cparenthesiss(a+b+2)::tl)
       | Cbracket::Cbracket::tl ->
-        if trackfix then eprintf "Cbracket 1\n";
+        if trackfix then eprintf "(OMD) Cbracket 1\n";
         loop accu (Cbrackets 0::tl)
       | Cbrackets n::Cbracket::tl ->
-        if trackfix then eprintf "Cbracket 2\n";
+        if trackfix then eprintf "(OMD) Cbracket 2\n";
         loop accu (Cbrackets(n+1)::tl)
       | Cbracket::Cbrackets n::tl ->
-        if trackfix then eprintf "Cbracket 3\n";
+        if trackfix then eprintf "(OMD) Cbracket 3\n";
         loop accu (Cbrackets(n+1)::tl)
       | Cbrackets a::Cbrackets b::tl ->
-        if trackfix then eprintf "Cbracket 4\n";
+        if trackfix then eprintf "(OMD) Cbracket 4\n";
         loop accu (Cbrackets(a+b+2)::tl)
       | Dollar::Dollar::tl ->
-        if trackfix then eprintf "Dollar 1\n";
+        if trackfix then eprintf "(OMD) Dollar 1\n";
         loop accu (Dollars 0::tl)
       | Dollars n::Dollar::tl ->
-        if trackfix then eprintf "Dollar 2\n";
+        if trackfix then eprintf "(OMD) Dollar 2\n";
         loop accu (Dollars(n+1)::tl)
       | Dollar::Dollars n::tl ->
-        if trackfix then eprintf "Dollar 3\n";
+        if trackfix then eprintf "(OMD) Dollar 3\n";
         loop accu (Dollars(n+1)::tl)
       | Dollars a::Dollars b::tl ->
-        if trackfix then eprintf "Dollar 4\n";
+        if trackfix then eprintf "(OMD) Dollar 4\n";
         loop accu (Dollars(a+b+2)::tl)
       | Dot::Dot::tl ->
-        if trackfix then eprintf "Dot 1\n";
+        if trackfix then eprintf "(OMD) Dot 1\n";
         loop accu (Dots 0::tl)
       | Dots n::Dot::tl ->
-        if trackfix then eprintf "Dot 2\n";
+        if trackfix then eprintf "(OMD) Dot 2\n";
         loop accu (Dots(n+1)::tl)
       | Dot::Dots n::tl ->
-        if trackfix then eprintf "Dot 3\n";
+        if trackfix then eprintf "(OMD) Dot 3\n";
         loop accu (Dots(n+1)::tl)
       | Dots a::Dots b::tl ->
-        if trackfix then eprintf "Dot 4\n";
+        if trackfix then eprintf "(OMD) Dot 4\n";
         loop accu (Dots(a+b+2)::tl)
       | Doublequote::Doublequote::tl ->
-        if trackfix then eprintf "Doublequote 1\n";
+        if trackfix then eprintf "(OMD) Doublequote 1\n";
         loop accu (Doublequotes 0::tl)
       | Doublequotes n::Doublequote::tl ->
-        if trackfix then eprintf "Doublequote 2\n";
+        if trackfix then eprintf "(OMD) Doublequote 2\n";
         loop accu (Doublequotes(n+1)::tl)
       | Doublequote::Doublequotes n::tl ->
-        if trackfix then eprintf "Doublequote 3\n";
+        if trackfix then eprintf "(OMD) Doublequote 3\n";
         loop accu (Doublequotes(n+1)::tl)
       | Doublequotes a::Doublequotes b::tl ->
-        if trackfix then eprintf "Doublequote 4\n";
+        if trackfix then eprintf "(OMD) Doublequote 4\n";
         loop accu (Doublequotes(a+b+2)::tl)
       | Exclamation::Exclamation::tl ->
-        if trackfix then eprintf "Exclamation 1\n";
+        if trackfix then eprintf "(OMD) Exclamation 1\n";
         loop accu (Exclamations 0::tl)
       | Exclamations n::Exclamation::tl ->
-        if trackfix then eprintf "Exclamation 2\n";
+        if trackfix then eprintf "(OMD) Exclamation 2\n";
         loop accu (Exclamations(n+1)::tl)
       | Exclamation::Exclamations n::tl ->
-        if trackfix then eprintf "Exclamation 3\n";
+        if trackfix then eprintf "(OMD) Exclamation 3\n";
         loop accu (Exclamations(n+1)::tl)
       | Exclamations a::Exclamations b::tl ->
-        if trackfix then eprintf "Exclamation 4\n";
+        if trackfix then eprintf "(OMD) Exclamation 4\n";
         loop accu (Exclamations(a+b+2)::tl)
       | Equal::Equal::tl ->
-        if trackfix then eprintf "Equal 1\n";
+        if trackfix then eprintf "(OMD) Equal 1\n";
         loop accu (Equals 0::tl)
       | Equals n::Equal::tl ->
-        if trackfix then eprintf "Equal 2\n";
+        if trackfix then eprintf "(OMD) Equal 2\n";
         loop accu (Equals(n+1)::tl)
       | Equal::Equals n::tl ->
-        if trackfix then eprintf "Equal 3\n";
+        if trackfix then eprintf "(OMD) Equal 3\n";
         loop accu (Equals(n+1)::tl)
       | Equals a::Equals b::tl ->
-        if trackfix then eprintf "Equal 4\n";
+        if trackfix then eprintf "(OMD) Equal 4\n";
         loop accu (Equals(a+b+2)::tl)
       | Greaterthan::Greaterthan::tl ->
-        if trackfix then eprintf "Greaterthan 1\n";
+        if trackfix then eprintf "(OMD) Greaterthan 1\n";
         loop accu (Greaterthans 0::tl)
       | Greaterthans n::Greaterthan::tl ->
-        if trackfix then eprintf "Greaterthan 2\n";
+        if trackfix then eprintf "(OMD) Greaterthan 2\n";
         loop accu (Greaterthans(n+1)::tl)
       | Greaterthan::Greaterthans n::tl ->
-        if trackfix then eprintf "Greaterthan 3\n";
+        if trackfix then eprintf "(OMD) Greaterthan 3\n";
         loop accu (Greaterthans(n+1)::tl)
       | Greaterthans a::Greaterthans b::tl ->
-        if trackfix then eprintf "Greaterthan 4\n";
+        if trackfix then eprintf "(OMD) Greaterthan 4\n";
         loop accu (Greaterthans(a+b+2)::tl)
       | Hash::Hash::tl ->
-        if trackfix then eprintf "Hash 1\n";
+        if trackfix then eprintf "(OMD) Hash 1\n";
         loop accu (Hashs 0::tl)
       | Hashs n::Hash::tl ->
-        if trackfix then eprintf "Hash 2\n";
+        if trackfix then eprintf "(OMD) Hash 2\n";
         loop accu (Hashs(n+1)::tl)
       | Hash::Hashs n::tl ->
-        if trackfix then eprintf "Hash 3\n";
+        if trackfix then eprintf "(OMD) Hash 3\n";
         loop accu (Hashs(n+1)::tl)
       | Hashs a::Hashs b::tl ->
-        if trackfix then eprintf "Hash 4\n";
+        if trackfix then eprintf "(OMD) Hash 4\n";
         loop accu (Hashs(a+b+2)::tl)
       | Lessthan::Lessthan::tl ->
-        if trackfix then eprintf "Lessthan 1\n";
+        if trackfix then eprintf "(OMD) Lessthan 1\n";
         loop accu (Lessthans 0::tl)
       | Lessthans n::Lessthan::tl ->
-        if trackfix then eprintf "Lessthan 2\n";
+        if trackfix then eprintf "(OMD) Lessthan 2\n";
         loop accu (Lessthans(n+1)::tl)
       | Lessthan::Lessthans n::tl ->
-        if trackfix then eprintf "Lessthan 3\n";
+        if trackfix then eprintf "(OMD) Lessthan 3\n";
         loop accu (Lessthans(n+1)::tl)
       | Lessthans a::Lessthans b::tl ->
-        if trackfix then eprintf "Lessthan 4\n";
+        if trackfix then eprintf "(OMD) Lessthan 4\n";
         loop accu (Lessthans(a+b+2)::tl)
       | Minus::Minus::tl ->
-        if trackfix then eprintf "Minus 1\n";
+        if trackfix then eprintf "(OMD) Minus 1\n";
         loop accu (Minuss 0::tl)
       | Minuss n::Minus::tl ->
-        if trackfix then eprintf "Minus 2\n";
+        if trackfix then eprintf "(OMD) Minus 2\n";
         loop accu (Minuss(n+1)::tl)
       | Minus::Minuss n::tl ->
-        if trackfix then eprintf "Minus 3\n";
+        if trackfix then eprintf "(OMD) Minus 3\n";
         loop accu (Minuss(n+1)::tl)
       | Minuss a::Minuss b::tl ->
-        if trackfix then eprintf "Minus 4\n";
+        if trackfix then eprintf "(OMD) Minus 4\n";
         loop accu (Minuss(a+b+2)::tl)
       | Newline::Newline::tl ->
-        if trackfix then eprintf "Newline 1\n";
+        if trackfix then eprintf "(OMD) Newline 1\n";
         loop accu (Newlines 0::tl)
       | Newlines n::Newline::tl ->
-        if trackfix then eprintf "Newline 2\n";
+        if trackfix then eprintf "(OMD) Newline 2\n";
         loop accu (Newlines(n+1)::tl)
       | Newline::Newlines n::tl ->
-        if trackfix then eprintf "Newline 3\n";
+        if trackfix then eprintf "(OMD) Newline 3\n";
         loop accu (Newlines(n+1)::tl)
       | Newlines a::Newlines b::tl ->
-        if trackfix then eprintf "Newline 4\n";
+        if trackfix then eprintf "(OMD) Newline 4\n";
         loop accu (Newlines(a+b+2)::tl)
       | Obrace::Obrace::tl ->
-        if trackfix then eprintf "Obrace 1\n";
+        if trackfix then eprintf "(OMD) Obrace 1\n";
         loop accu (Obraces 0::tl)
       | Obraces n::Obrace::tl ->
-        if trackfix then eprintf "Obrace 2\n";
+        if trackfix then eprintf "(OMD) Obrace 2\n";
         loop accu (Obraces(n+1)::tl)
       | Obrace::Obraces n::tl ->
-        if trackfix then eprintf "Obrace 3\n";
+        if trackfix then eprintf "(OMD) Obrace 3\n";
         loop accu (Obraces(n+1)::tl)
       | Obraces a::Obraces b::tl ->
-        if trackfix then eprintf "Obrace 4\n";
+        if trackfix then eprintf "(OMD) Obrace 4\n";
         loop accu (Obraces(a+b+2)::tl)
       | Oparenthesis::Oparenthesis::tl ->
-        if trackfix then eprintf "Oparenthesis 1\n";
+        if trackfix then eprintf "(OMD) Oparenthesis 1\n";
         loop accu (Oparenthesiss 0::tl)
       | Oparenthesiss n::Oparenthesis::tl ->
-        if trackfix then eprintf "Oparenthesis 2\n";
+        if trackfix then eprintf "(OMD) Oparenthesis 2\n";
         loop accu (Oparenthesiss(n+1)::tl)
       | Oparenthesis::Oparenthesiss n::tl ->
-        if trackfix then eprintf "Oparenthesis 3\n";
+        if trackfix then eprintf "(OMD) Oparenthesis 3\n";
         loop accu (Oparenthesiss(n+1)::tl)
       | Oparenthesiss a::Oparenthesiss b::tl ->
-        if trackfix then eprintf "Oparenthesis 4\n";
+        if trackfix then eprintf "(OMD) Oparenthesis 4\n";
         loop accu (Oparenthesiss(a+b+2)::tl)
       | Obracket::Obracket::tl ->
-        if trackfix then eprintf "Obracket 1\n";
+        if trackfix then eprintf "(OMD) Obracket 1\n";
         loop accu (Obrackets 0::tl)
       | Obrackets n::Obracket::tl ->
-        if trackfix then eprintf "Obracket 2\n";
+        if trackfix then eprintf "(OMD) Obracket 2\n";
         loop accu (Obrackets(n+1)::tl)
       | Obracket::Obrackets n::tl ->
-        if trackfix then eprintf "Obracket 3\n";
+        if trackfix then eprintf "(OMD) Obracket 3\n";
         loop accu (Obrackets(n+1)::tl)
       | Obrackets a::Obrackets b::tl ->
-        if trackfix then eprintf "Obracket 4\n";
+        if trackfix then eprintf "(OMD) Obracket 4\n";
         loop accu (Obrackets(a+b+2)::tl)
       | Percent::Percent::tl ->
-        if trackfix then eprintf "Percent 1\n";
+        if trackfix then eprintf "(OMD) Percent 1\n";
         loop accu (Percents 0::tl)
       | Percents n::Percent::tl ->
-        if trackfix then eprintf "Percent 2\n";
+        if trackfix then eprintf "(OMD) Percent 2\n";
         loop accu (Percents(n+1)::tl)
       | Percent::Percents n::tl ->
-        if trackfix then eprintf "Percent 3\n";
+        if trackfix then eprintf "(OMD) Percent 3\n";
         loop accu (Percents(n+1)::tl)
       | Percents a::Percents b::tl ->
-        if trackfix then eprintf "Percent 4\n";
+        if trackfix then eprintf "(OMD) Percent 4\n";
         loop accu (Percents(a+b+2)::tl)
       | Plus::Plus::tl ->
-        if trackfix then eprintf "Plus 1\n";
+        if trackfix then eprintf "(OMD) Plus 1\n";
         loop accu (Pluss 0::tl)
       | Pluss n::Plus::tl ->
-        if trackfix then eprintf "Plus 2\n";
+        if trackfix then eprintf "(OMD) Plus 2\n";
         loop accu (Pluss(n+1)::tl)
       | Plus::Pluss n::tl ->
-        if trackfix then eprintf "Plus 3\n";
+        if trackfix then eprintf "(OMD) Plus 3\n";
         loop accu (Pluss(n+1)::tl)
       | Pluss a::Pluss b::tl ->
-        if trackfix then eprintf "Plus 4\n";
+        if trackfix then eprintf "(OMD) Plus 4\n";
         loop accu (Pluss(a+b+2)::tl)
       | Question::Question::tl ->
-        if trackfix then eprintf "Question 1\n";
+        if trackfix then eprintf "(OMD) Question 1\n";
         loop accu (Questions 0::tl)
       | Questions n::Question::tl ->
-        if trackfix then eprintf "Question 2\n";
+        if trackfix then eprintf "(OMD) Question 2\n";
         loop accu (Questions(n+1)::tl)
       | Question::Questions n::tl ->
-        if trackfix then eprintf "Question 3\n";
+        if trackfix then eprintf "(OMD) Question 3\n";
         loop accu (Questions(n+1)::tl)
       | Questions a::Questions b::tl ->
-        if trackfix then eprintf "Question 4\n";
+        if trackfix then eprintf "(OMD) Question 4\n";
         loop accu (Questions(a+b+2)::tl)
       | Quote::Quote::tl ->
-        if trackfix then eprintf "Quote 1\n";
+        if trackfix then eprintf "(OMD) Quote 1\n";
         loop accu (Quotes 0::tl)
       | Quotes n::Quote::tl ->
-        if trackfix then eprintf "Quote 2\n";
+        if trackfix then eprintf "(OMD) Quote 2\n";
         loop accu (Quotes(n+1)::tl)
       | Quote::Quotes n::tl ->
-        if trackfix then eprintf "Quote 3\n";
+        if trackfix then eprintf "(OMD) Quote 3\n";
         loop accu (Quotes(n+1)::tl)
       | Quotes a::Quotes b::tl ->
-        if trackfix then eprintf "Quote 4\n";
+        if trackfix then eprintf "(OMD) Quote 4\n";
         loop accu (Quotes(a+b+2)::tl)
       | Semicolon::Semicolon::tl ->
-        if trackfix then eprintf "Semicolon 1\n";
+        if trackfix then eprintf "(OMD) Semicolon 1\n";
         loop accu (Semicolons 0::tl)
       | Semicolons n::Semicolon::tl ->
-        if trackfix then eprintf "Semicolon 2\n";
+        if trackfix then eprintf "(OMD) Semicolon 2\n";
         loop accu (Semicolons(n+1)::tl)
       | Semicolon::Semicolons n::tl ->
-        if trackfix then eprintf "Semicolon 3\n";
+        if trackfix then eprintf "(OMD) Semicolon 3\n";
         loop accu (Semicolons(n+1)::tl)
       | Semicolons a::Semicolons b::tl ->
-        if trackfix then eprintf "Semicolon 4\n";
+        if trackfix then eprintf "(OMD) Semicolon 4\n";
         loop accu (Semicolons(a+b+2)::tl)
       | Slash::Slash::tl ->
-        if trackfix then eprintf "Slash 1\n";
+        if trackfix then eprintf "(OMD) Slash 1\n";
         loop accu (Slashs 0::tl)
       | Slashs n::Slash::tl ->
-        if trackfix then eprintf "Slash 2\n";
+        if trackfix then eprintf "(OMD) Slash 2\n";
         loop accu (Slashs(n+1)::tl)
       | Slash::Slashs n::tl ->
-        if trackfix then eprintf "Slash 3\n";
+        if trackfix then eprintf "(OMD) Slash 3\n";
         loop accu (Slashs(n+1)::tl)
       | Slashs a::Slashs b::tl ->
-        if trackfix then eprintf "Slash 4\n";
+        if trackfix then eprintf "(OMD) Slash 4\n";
         loop accu (Slashs(a+b+2)::tl)
       | Space::Space::tl ->
-        if trackfix then eprintf "Space 1\n";
+        if trackfix then eprintf "(OMD) Space 1\n";
         loop accu (Spaces 0::tl)
       | Spaces n::Space::tl ->
-        if trackfix then eprintf "Space 2\n";
+        if trackfix then eprintf "(OMD) Space 2\n";
         loop accu (Spaces(n+1)::tl)
       | Space::Spaces n::tl ->
-        if trackfix then eprintf "Space 3\n";
+        if trackfix then eprintf "(OMD) Space 3\n";
         loop accu (Spaces(n+1)::tl)
       | Spaces a::Spaces b::tl ->
-        if trackfix then eprintf "Space 4\n";
+        if trackfix then eprintf "(OMD) Space 4\n";
         loop accu (Spaces(a+b+2)::tl)
       | Star::Star::tl ->
-        if trackfix then eprintf "Star 1\n";
+        if trackfix then eprintf "(OMD) Star 1\n";
         loop accu (Stars 0::tl)
       | Stars n::Star::tl ->
-        if trackfix then eprintf "Star 2\n";
+        if trackfix then eprintf "(OMD) Star 2\n";
         loop accu (Stars(n+1)::tl)
       | Star::Stars n::tl ->
-        if trackfix then eprintf "Star 3\n";
+        if trackfix then eprintf "(OMD) Star 3\n";
         loop accu (Stars(n+1)::tl)
       | Stars a::Stars b::tl ->
-        if trackfix then eprintf "Star 4\n";
+        if trackfix then eprintf "(OMD) Star 4\n";
         loop accu (Stars(a+b+2)::tl)
       | Tab::Tab::tl ->
-        if trackfix then eprintf "Tab 1\n";
+        if trackfix then eprintf "(OMD) Tab 1\n";
         loop accu (Tabs 0::tl)
       | Tabs n::Tab::tl ->
-        if trackfix then eprintf "Tab 2\n";
+        if trackfix then eprintf "(OMD) Tab 2\n";
         loop accu (Tabs(n+1)::tl)
       | Tab::Tabs n::tl ->
-        if trackfix then eprintf "Tab 3\n";
+        if trackfix then eprintf "(OMD) Tab 3\n";
         loop accu (Tabs(n+1)::tl)
       | Tabs a::Tabs b::tl ->
-        if trackfix then eprintf "Tab 4\n";
+        if trackfix then eprintf "(OMD) Tab 4\n";
         loop accu (Tabs(a+b+2)::tl)
       | Tilde::Tilde::tl ->
-        if trackfix then eprintf "Tilde 1\n";
+        if trackfix then eprintf "(OMD) Tilde 1\n";
         loop accu (Tildes 0::tl)
       | Tildes n::Tilde::tl ->
-        if trackfix then eprintf "Tilde 2\n";
+        if trackfix then eprintf "(OMD) Tilde 2\n";
         loop accu (Tildes(n+1)::tl)
       | Tilde::Tildes n::tl ->
-        if trackfix then eprintf "Tilde 3\n";
+        if trackfix then eprintf "(OMD) Tilde 3\n";
         loop accu (Tildes(n+1)::tl)
       | Tildes a::Tildes b::tl ->
-        if trackfix then eprintf "Tilde 4\n";
+        if trackfix then eprintf "(OMD) Tilde 4\n";
         loop accu (Tildes(a+b+2)::tl)
       | Underscore::Underscore::tl ->
-        if trackfix then eprintf "Underscore 1\n";
+        if trackfix then eprintf "(OMD) Underscore 1\n";
         loop accu (Underscores 0::tl)
       | Underscores n::Underscore::tl ->
-        if trackfix then eprintf "Underscore 2\n";
+        if trackfix then eprintf "(OMD) Underscore 2\n";
         loop accu (Underscores(n+1)::tl)
       | Underscore::Underscores n::tl ->
-        if trackfix then eprintf "Underscore 3\n";
+        if trackfix then eprintf "(OMD) Underscore 3\n";
         loop accu (Underscores(n+1)::tl)
       | Underscores a::Underscores b::tl ->
-        if trackfix then eprintf "Underscore 4\n";
+        if trackfix then eprintf "(OMD) Underscore 4\n";
         loop accu (Underscores(a+b+2)::tl)| x::tl -> loop (x::accu) tl
       | [] -> List.rev accu
     in
@@ -766,7 +766,7 @@ struct
 
 
   let unindent_rev n lexemes =
-    if debug then eprintf "CALL: Omd_parser.unindent_rev\n%!";
+    if debug then eprintf "(OMD) CALL: Omd_parser.unindent_rev\n%!";
     assert_well_formed lexemes;
     let rec loop accu cl = function
       | Newlines x::(Space|Spaces _)::Newlines y::tl ->
@@ -973,7 +973,7 @@ struct
          follows is part of a code block, so it's not defining a
          setext-style title. *)
       if debug then
-        eprintf "detect_balanced_bqs n=%d r=%S l=%S\n%!"
+        eprintf "(OMD) detect_balanced_bqs n=%d r=%S l=%S\n%!"
           n (Omd_lexer.string_of_tokens r) (Omd_lexer.string_of_tokens l);
       match l with
       | [] ->
@@ -1033,7 +1033,7 @@ struct
         else
           Some(List.rev r, tl)
       | (Newline|Newlines _)::_ ->
-        if debug then eprintf "Omd_parser.setext_title is wrongly used!\n%!";
+        if debug then eprintf "(OMD) Omd_parser.setext_title is wrongly used!\n%!";
         None
       | e::tl ->
         loop (e::r) tl
@@ -1052,7 +1052,7 @@ struct
     else
       let result = loop [] l in
       if debug then
-        eprintf "setext_title l=%S result=%S,%S\n%!"
+        eprintf "(OMD) setext_title l=%S result=%S,%S\n%!"
           (Omd_lexer.string_of_tokens l)
           (match result with None -> ""
                            | Some (x,tl) -> Omd_lexer.string_of_tokens x)
@@ -1073,7 +1073,7 @@ struct
           end
         | _ ->
            if debug then
-            eprintf "Warning: Omd_parser.tag__maybe_h1 is wrongly used \
+            eprintf "(OMD) Warning: Omd_parser.tag__maybe_h1 is wrongly used \
                      (p=%S)!\n"
               (Omd_lexer.string_of_tokens p);
           None
@@ -1092,7 +1092,7 @@ struct
           end
         | _ ->
           if debug then
-            eprintf "Warning: Omd_parser.tag__maybe_h2 is wrongly used \
+            eprintf "(OMD) Warning: Omd_parser.tag__maybe_h2 is wrongly used \
                      (p=%S)!\n"
               (Omd_lexer.string_of_tokens p);
           None
@@ -1266,7 +1266,7 @@ struct
         in
         let code = Omd_lexer.string_of_tokens cb in
         if debug then
-          eprintf "clean_bcode %S => %S\n%!" code (clean_bcode code);
+          eprintf "(OMD) clean_bcode %S => %S\n%!" code (clean_bcode code);
         Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
 
 
@@ -1418,10 +1418,10 @@ struct
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_lt ?(bq=false) ?(no_nl=false) l =
@@ -1475,10 +1475,10 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
@@ -1541,10 +1541,10 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
@@ -1598,10 +1598,10 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_dq ?(bq=false) ?(no_nl=false) l =
@@ -1655,10 +1655,10 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_q ?(bq=false) ?(no_nl=false) l =
@@ -1712,10 +1712,10 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_obracket ?(bq=false) ?(no_nl=false) l =
@@ -1769,10 +1769,10 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
@@ -1835,10 +1835,10 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
 
 let read_until_space ?(bq=false) ?(no_nl=false) l =
@@ -1892,10 +1892,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
      res
   (* /end generated part *)
 
@@ -2016,7 +2016,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     match loop [] [] lexemes with
     | (Newline|Newlines _)::block, tl ->
       if debug then
-        eprintf "Omd_parser.emailstyle_quoting %S\n%!"
+        eprintf "(OMD) Omd_parser.emailstyle_quoting %S\n%!"
           (Omd_lexer.string_of_tokens block);
       Some((Blockquote(main_loop [] [] block)::r), [Newline], tl)
     | _ ->
@@ -2125,28 +2125,28 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
   (** maybe a link *)
   let maybe_link main_loop r _p l =
-    if debug then eprintf "# maybe_link\n";
+    if debug then eprintf "(OMD) # maybe_link\n";
     assert_well_formed l;
     let read_url name l =
-      if debug then eprintf "# maybe_link>read_url\n";
+      if debug then eprintf "(OMD) # maybe_link>read_url\n";
       try
         let l_cp, r_cp =
           read_until_cparenth ~no_nl:true ~bq:false l
         in
-        if debug then eprintf "maybe_link >> l_cp=%S r_cp=%S\n%!"
+        if debug then eprintf "(OMD) maybe_link >> l_cp=%S r_cp=%S\n%!"
           (Omd_lexer.string_of_tokens l_cp)
           (Omd_lexer.string_of_tokens r_cp);
         try
           let l_dq, r_dq =
             read_until_dq ~no_nl:true ~bq:false l
           in
-          if debug then eprintf "maybe_link >> l_dq=%S r_dq=%S\n%!"
+          if debug then eprintf "(OMD) maybe_link >> l_dq=%S r_dq=%S\n%!"
             (Omd_lexer.string_of_tokens l_dq)
             (Omd_lexer.string_of_tokens r_dq);
           (* maybe title *)
           if List.length l_cp > List.length l_dq then (* title *)
             begin
-              if debug then eprintf "maybe_link >> title\n%!";
+              if debug then eprintf "(OMD) maybe_link >> title\n%!";
               let url =
                 match List.rev l_dq with
                 | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
@@ -2164,7 +2164,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             raise Premature_ending
         with NL_exception | Premature_ending -> (* no title *)
           begin
-            if debug then eprintf "maybe_link >> no title\n%!";
+            if debug then eprintf "(OMD) maybe_link >> no title\n%!";
             let url = match List.rev l_cp with
               | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
               | (Newline|Space|Spaces _)::tl -> List.rev tl
@@ -2181,7 +2181,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     let read_name l =
       (* it's not really the "name" of a URL but what
          corresponds to the inner HTML of an HTML 'A' tag *)
-      if debug then eprintf "# maybe_link> read_name\n";
+      if debug then eprintf "(OMD) # maybe_link> read_name\n";
       try
         match read_until_cbracket ~bq:true l with
         | name, (Oparenthesis::tl) ->
@@ -2200,7 +2200,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
   let parse_list main_loop r _p l =
     assert_well_formed l;
     if debug then begin
-      eprintf "parse_list r=(%s) p=(%s) l=(%s)\n%!"
+      eprintf "(OMD) parse_list r=(%s) p=(%s) l=(%s)\n%!"
         "" (* (Omd_backend.sexpr_of_md (List.rev r)) *)
         "" (* (destring_of_tl p) *)
         (Omd_lexer.destring_of_tokens ~limit:40 l);
@@ -2208,7 +2208,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     let module UO = struct type ordered = O | U end in
     let open UO in
     if debug then
-      eprintf "parse_list: l=(%s)\n%!" (Omd_lexer.destring_of_tokens l);
+      eprintf "(OMD) parse_list: l=(%s)\n%!" (Omd_lexer.destring_of_tokens l);
     let end_of_item (indent:int) l : tok split_action  = match l with
       | [] ->
         Split([],[])
@@ -2301,7 +2301,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       main_loop [] [Newline] (List.rev l)
     in
     let add (sublist:element) items =
-      if debug then eprintf "add\n%!";
+      if debug then eprintf "(OMD) add\n%!";
       match items with
       | [] -> assert false
       | (O,indents,item)::tl ->
@@ -2310,7 +2310,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         (U,indents,(item@[sublist]))::tl
     in
     let make_up ~p items : Omd_representation.element =
-      if debug then eprintf "make_up p=%b\n%!" p;
+      if debug then eprintf "(OMD) make_up p=%b\n%!" p;
       let items = List.rev items in
       match items with
       | (U,_,item)::_ ->
@@ -2327,7 +2327,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         failwith "make_up called with []" (* assert false *)
     in
     let rec list_items ~p indents items l =
-      if debug then eprintf "list_items: p=%b l=(%s)\n%!"
+      if debug then eprintf "(OMD) list_items: p=%b l=(%s)\n%!"
                             p (Omd_lexer.destring_of_tokens l);
       match l with
       (* no more list items *)
@@ -2343,7 +2343,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | Some(new_item, rest) ->
             let p = p || has_paragraphs new_item in
             if debug then
-              eprintf "new_item=%S\n%!" (Omd_lexer.destring_of_tokens new_item);
+              eprintf "(OMD) (2346) new_item=%S\n%!"
+                (Omd_lexer.destring_of_tokens new_item);
             match indents with
             | [] ->
               assert(items = []);
@@ -2385,11 +2386,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             match indents with
             | [] ->
               if debug then
-                eprintf "spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
+                eprintf "(OMD) spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
               assert(items = []); (* aïe... listes mal formées ?! *)
               list_items ~p [n+2] ((U,[n+2],rev_to_t new_item)::items) rest
             | i::_ ->
-              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
+              if debug then eprintf "(OMD) spaces(%d::_) n=%d l=(%S)\n%!"
                   i n (Omd_lexer.string_of_tokens l);
               if i = n + 2 then
                 let items = (U,indents,rev_to_t new_item) :: items in
@@ -2453,12 +2454,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             let p = p || has_paragraphs new_item in
             match indents with
             | [] ->
-              if debug then eprintf "spaces[] l=(%S)\n%!"
+              if debug then eprintf "(OMD) spaces[] l=(%S)\n%!"
                   (Omd_lexer.string_of_tokens l);
               assert(items = []); (* aïe... listes mal formées ?! *)
               list_items ~p [n+2] ((O,[n+2],rev_to_t new_item)::items) rest
             | i::_ ->
-              if debug then eprintf "spaces(%d::_) n=%d l=(%S)\n%!"
+              if debug then eprintf "(OMD) spaces(%d::_) n=%d l=(%S)\n%!"
                   i n (Omd_lexer.string_of_tokens l);
               if i = n + 2 then
                 list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
@@ -2494,7 +2495,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                  ^ string_of_items tl
               | _ -> "(weird)"
             in
-            eprintf "NALI parse_list: l=(%S) items=%s\n%!"
+            eprintf "(OMD) NALI parse_list: l=(%S) items=%s\n%!"
               (Omd_lexer.string_of_tokens l) (string_of_items items)
           end;
         (* not a list item *)
@@ -2574,7 +2575,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r,p,l) -> r,p,l
         | None ->
           if debug then
-            eprintf "Omd_parser.icode or \
+            eprintf "(OMD) Omd_parser.icode or \
                      Omd_parser.main_loop is broken\n%!";
           assert false
     )
@@ -2643,12 +2644,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | _ -> false)
         in loop 1)
 
-
+  let mediatypetextomd : string list ref = ref []
+  exception Orphan_closing of string * r * l
 
   let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
     if debug then
-      eprintf "main_loop_rev r=%s p=(%s) l=(%s)\n%!"
+      eprintf "(OMD) main_loop_rev r=%s p=(%s) l=(%s)\n%!"
         (Omd_backend.sexpr_of_md (List.rev r))
         (Omd_lexer.destring_of_tokens previous)
         (Omd_lexer.destring_of_tokens lexemes);
@@ -2698,7 +2700,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r,p,l) -> main_loop_rev r p l
         | None ->
           if debug then
-            eprintf "Omd_parser.emailstyle_quoting or \
+            eprintf "(OMD) Omd_parser.emailstyle_quoting or \
                      Omd_parser.main_loop is broken\n%!";
           assert false
       end
@@ -2721,7 +2723,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | Some(new_r, p, []) -> new_r, p, rest
           | _ ->
             if debug then
-              eprintf "Omd_parser.emailstyle_quoting or \
+              eprintf "(OMD) Omd_parser.emailstyle_quoting or \
                        Omd_parser.main_loop is broken\n%!";
             assert false
         in
@@ -2773,7 +2775,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
           if debug then
-            eprintf "Omd_parser.read_title or \
+            eprintf "(OMD) Omd_parser.read_title or \
                      Omd_parser.main_loop is broken\n%!";
           assert false
       else
@@ -2787,7 +2789,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
           if debug then
-            eprintf "Omd_parser.read_title or \
+            eprintf "(OMD) Omd_parser.read_title or \
                      Omd_parser.main_loop is broken\n%!";
           assert false
       end
@@ -3166,12 +3168,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] tl
       end
 
-    (* block html *)
+    (* old block html *)
     | ([]|[Newline|Newlines _]),
       (Lessthan as t)
       ::(Word(tagname)
          ::(Space|Spaces _|Greaterthan|Greaterthans _ as after_tagname)
-         ::tl as tlx) ->
+         ::tl as tlx)
+      when false
+      ->
       if StringSet.mem tagname inline_htmltags_set then
         main_loop_rev r [Word ""] lexemes
       else if not (blind_html || StringSet.mem tagname htmltags_set) then
@@ -3367,6 +3371,326 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           main_loop_rev (Raw_block html :: r) [Greaterthan] tl
         else
           main_loop_rev (Raw_block html :: r) [Greaterthan] tl
+    (* / end of old block HTML. *)
+
+    | _, Lessthan::Slash::Word(w)::Greaterthan::tl when !mediatypetextomd <> [] ->
+      raise (Orphan_closing(w, r, tl))
+
+    | _, Lessthan::Slash::Word(w)::Greaterthans(n)::tl when !mediatypetextomd <> [] ->
+      raise (Orphan_closing(w,
+                            r,
+                            (if n = 0 then
+                               Greaterthan
+                             else
+                               Greaterthans(n-1))
+                            ::tl))
+
+    (* block html *)
+    | ([] | [Newline|Newlines _]),
+      (Lessthan as t)
+      ::((Word(tagnametop) as w)
+         ::((Space|Spaces _|Greaterthan|Greaterthans _)
+            ::_ as html_stuff) as tlx) ->
+      if StringSet.mem tagnametop inline_htmltags_set then
+        main_loop_rev r [Word ""] lexemes
+      else if not (blind_html || StringSet.mem tagnametop htmltags_set) then
+        begin match maybe_extension extensions r previous lexemes with
+          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | Some(r, p, l) -> main_loop_rev r p l
+        end
+      else
+        let read_html() =
+          let module T = struct
+            type t =
+              | Awaiting of string
+              | Open of string
+            type interm =
+              | HTML of string * (string * string) list * interm list
+              | TOKENS of Omd_lexer.t
+              | MD of Omd_representation.t
+            (* let md_of_interm_list x = *)
+            (*   let rec md_of_interm_list (i:bool) = function *)
+            (*     | [] -> [] *)
+            (*     | HTML(t, a, c)::tl -> *)
+            (*       let i = List.mem ("media:type","text/omd") a in *)
+            (*       Html_block(t, a, md_of_interm_list i c)::md_of_interm_list i tl *)
+            (*     | MD md::tl -> md@md_of_interm_list i tl *)
+            (*     | TOKENS t1::TOKENS t2::tl -> *)
+            (*       md_of_interm_list i (TOKENS(t2@t1)::tl) *)
+            (*     | TOKENS t :: tl -> *)
+            (*       if i then *)
+            (*         main_loop_rev [] [Word ""] (List.rev t) *)
+            (*         @ md_of_interm_list i tl *)
+            (*       else *)
+            (*         let () = *)
+            (*           if debug then *)
+            (*             eprintf "(OMD) (OMD) %S\n" (Omd_lexer.string_of_tokens t) *)
+            (*         in *)
+            (*         Raw(Omd_lexer.string_of_tokens ( t)) *)
+            (*         ::md_of_interm_list i tl *)
+            (*   in md_of_interm_list false x *)
+              let rec md_of_interm_list = function
+                | [] -> []
+                | HTML(t, a, c)::tl ->
+                  Html_block(t, a, md_of_interm_list c)::md_of_interm_list tl
+                | MD md::tl -> md@md_of_interm_list tl
+                | TOKENS t1::TOKENS t2::tl ->
+                  md_of_interm_list (TOKENS(t2@t1)::tl)
+                | TOKENS t :: tl ->
+                    main_loop_rev [] [Word ""] (List.rev t)
+                    @ md_of_interm_list tl
+          end in
+          let rec loop (body:T.interm list) attrs tagstatus tokens =
+            if debug then
+              eprintf "(OMD) (3433) loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
+            match tokens with
+            (* not enough to read means failure to read HTML *)
+            | [] ->
+              if debug then eprintf "(OMD) Not enough to read for block HTML\n%!";
+              None
+            | Lessthans n::tokens ->
+              begin match tagstatus with
+                | T.Awaiting _ :: _ -> None
+                | _ ->
+                  loop (T.TOKENS[(if n = 0 then Lessthan else Lessthans(n-1))]
+                        ::body)
+                    attrs tagstatus (Lessthan::tokens)
+              end
+            (* self-closing tags *)
+            | Slash::Greaterthan::tokens ->
+              begin match tagstatus with
+                | T.Awaiting("br"|"hr" as tagname)::tagstatus ->
+                  loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
+                | _ ->
+                  loop (T.TOKENS[Greaterthan;Slash]::body)
+                    attrs tagstatus tokens
+              end
+            (* closing the tag opener *)
+            | Lessthan::Slash::(Word(tagname) as w)
+              ::(Greaterthan|Greaterthans _ as g)::tokens ->
+              begin match tagstatus with
+                | T.Open t :: _ when t = tagname ->
+                  if debug then
+                    eprintf "(OMD) ~~~~~~~~~~ properly closing %S\n%!" t;
+                  Some(body,
+                       (match g with
+                        | Greaterthans 0 -> Greaterthan :: tokens
+                        | Greaterthans n -> Greaterthans(n-1) :: tokens
+                        | _ -> tokens))
+                | T.Open t :: _ ->
+                  if debug then
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 1\n%!" t;
+                  loop (T.TOKENS[g;w;Slash;Lessthan]::body) [] tagstatus tokens
+                | T.Awaiting t :: _ ->
+                  if debug then
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
+                  if !mediatypetextomd <> [] then
+                    raise (Orphan_closing(t, T.md_of_interm_list body, tokens))
+                  else
+                    None
+                | [] ->
+                  if debug then
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 3\n%!" tagname;
+                  None
+              end
+            (* tag *)
+            | Lessthan::(Word(tagname) as word)::tokens
+              when
+                blind_html
+                || (strict_html && StringSet.mem tagname inline_htmltags_set)
+                || (not strict_html && StringSet.mem tagname htmltags_set)
+              ->
+              if debug then eprintf "(OMD) Block HTML: <Word...\n%!";
+              begin match tagstatus with
+                | T.Awaiting _ :: _ -> None
+                | _ ->
+                  if attrs <> [] then
+                    begin
+                      if debug then
+                        eprintf "(OMD) tag %s but attrs <> []\n%!" tagname;
+                      None
+                    end
+                  else
+                    begin
+                      if debug then
+                        eprintf "(OMD) tag %s, attrs=[], tokens=%s\n%!"
+                          tagname (Omd_lexer.destring_of_tokens tokens);
+                      match loop [] [] (T.Awaiting tagname::tagstatus) tokens
+                      with
+                      | None ->
+                        loop (T.TOKENS[Lessthan;word]::body)
+                          [] tagstatus tokens
+                      | r -> r
+                    end
+              end
+            (* end of opening tag *)
+            | Greaterthan::tokens ->
+              begin match tagstatus with
+                | T.Awaiting t :: tagstatus ->
+                  if List.mem ("media:type","text/omd") attrs then
+                    begin
+                      mediatypetextomd := t :: !mediatypetextomd;
+                      begin
+                        try
+                          ignore(main_loop_rev [] [] tokens);
+                          if debug then
+                            eprintf "(OMD) (3524) closing tag not found\n%!";
+                          None
+                        with Orphan_closing(tagname, before, after) ->
+                          if tagname = t then
+                            Some([T.HTML(t,
+                                         List.filter
+                                           (function
+                                             | ("media:type", "text/omd") -> false
+                                             | _ -> true)
+                                           attrs,
+                                         [T.MD before])],
+                                 after)
+                          else
+                            match !mediatypetextomd with
+                            | _ :: tl -> mediatypetextomd := tl; None
+                            | [] -> assert false
+                      end
+                    end
+                  else
+                    begin match loop body [] (T.Open t::tagstatus) tokens with
+                      | None ->
+                        if debug then
+                          eprintf "(OMD) Couldn't find an closing tag for %S\n%!"
+                            t;
+                        None
+                      | Some(body, l) ->
+                        if debug then
+                          eprintf "(OMD) Found a closing tag %s\n%!" t;
+                        match tagstatus with
+                        | T.Open _ :: _ ->
+                          begin match
+                              loop [] [] tagstatus l
+                            with
+                            | Some(b, l) ->
+                              Some(T.HTML(t, attrs, body)::b, l)
+                            | None ->
+                              None
+                          end
+                        | [] ->
+                          Some([T.HTML(t, attrs, body)], l)
+                        | _ -> assert false
+                      end
+                | T.Open t :: _ ->
+                  if debug then
+                    eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
+                  loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
+                | [] ->
+                  if debug then
+                    eprintf "(OMD) This should be impossible\n%!";
+                  None
+              end
+            (* maybe attribute *)
+            | (Space|Spaces _)::Word(attributename)::tokens
+            | Word(attributename)::tokens
+              when (match tagstatus with
+                  | T.Awaiting _ :: _ -> true
+                  | _ -> false) ->
+              begin match tokens with
+                | Equal :: Quotes 0 :: tokens ->
+                  if debug then
+                    eprintf "(OMD) empty attribute 1 %S\n%!"
+                      (Omd_lexer.string_of_tokens tokens);
+                  loop body ((attributename, "")::attrs) tagstatus tokens
+                | Equal :: Quote :: tokens ->
+                  begin
+                    if debug then
+                      eprintf "(OMD) non empty attribute 1 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    match
+                      fsplit
+                        ~excl:(function
+                            | Quotes _ :: _ -> true
+                            | _ -> false)
+                        ~f:(function
+                            | Quote::tl -> Split([], tl)
+                            | _ -> Continue)
+                        tokens
+                    with
+                    | None -> None
+                    | Some(at_val, tokens) ->
+                      loop body ((attributename,
+                                  Omd_lexer.string_of_tokens at_val)
+                                 ::attrs) tagstatus tokens
+                  end
+                | Equal :: Doublequotes 0 :: tokens ->
+                  begin
+                    if debug then
+                      Printf.printf "empty attribute 2 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    loop body ((attributename, "")::attrs) tagstatus tokens
+                  end
+                | Equal :: Doublequote :: tokens ->
+                  begin
+                    if debug then
+                      eprintf "(OMD) non empty attribute 2 %S\n%!"
+                        (Omd_lexer.string_of_tokens tokens);
+                    match fsplit
+                            ~excl:(function
+                                | Doublequotes _ :: _ -> true
+                                | _ -> false)
+                            ~f:(function
+                                | Doublequote::tl -> Split([], tl)
+                                | _ -> Continue)
+                            tokens
+                    with
+                    | None -> None
+                    | Some(at_val, tokens) ->
+                      if debug then
+                        eprintf "(OMD) (3632) %s=%S %s\n%!" attributename
+                          (Omd_lexer.string_of_tokens at_val)
+                          (Omd_lexer.destring_of_tokens tokens);
+                      loop body ((attributename,
+                                  Omd_lexer.string_of_tokens at_val)
+                                 ::attrs) tagstatus tokens
+                  end
+                | Colon::Word(w)::tokens ->
+                  loop body attrs tagstatus (Word(attributename^":"^w)::tokens)
+                | _ -> None
+              end
+            | x::tokens
+              when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
+              begin
+                if debug then
+                  eprintf "(OMD) general %S\n%!"
+                    (Omd_lexer.string_of_tokens tokens);
+                loop (T.TOKENS[x]::body) attrs tagstatus tokens
+              end
+            | (Newlines _ | Newline | Space | Spaces _ as x) :: tokens
+              when
+                (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+              begin
+                if debug then eprintf "(OMD) spaces\n%!";
+                loop (T.TOKENS[x]::body) attrs tagstatus tokens
+              end
+            | _ ->
+              if debug then
+                eprintf "(OMD) (Block HTML) fallback with tokens=%s and tagstatus=%s\n%!"
+                  (Omd_lexer.destring_of_tokens tokens)
+                  (match tagstatus with
+                   | [] -> "None"
+                   | T.Awaiting _ :: _ -> "Awaiting"
+                   | T.Open _ :: _ -> "Open (can't be)");
+              None
+          in match loop [] [] [] lexemes with
+          | Some(html, rest) ->
+            Some(T.md_of_interm_list html, rest)
+          | None -> None
+        in
+        begin match read_html() with
+          | Some(html, rest) ->
+            main_loop_rev (html@r) [Greaterthan] rest
+          | None ->
+            let text = Omd_lexer.string_of_token t in
+            main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
+        end
+    (* / end of block HTML. *)
+
 
     (* inline html *)
     | _,
@@ -3404,11 +3728,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           end in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              printf "loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
+              eprintf "(OMD) (3718) loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
             match tokens with
             (* not enough to read means failure to read HTML *)
             | [] ->
-              if debug then eprintf "Not enough to read for inline HTML\n%!";
+              if debug then eprintf "(OMD) Not enough to read for inline HTML\n%!";
               None
             | Lessthans n::tokens ->
               begin match tagstatus with
@@ -3429,30 +3753,30 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               end
             (* multiple newlines are not to be seen in inline HTML *)
             | Newlines _ :: _ ->
-              if debug then eprintf "Multiple lines in inline HTML\n%!";
+              if debug then eprintf "(OMD) Multiple lines in inline HTML\n%!";
               None
             (* maybe code *)
             | (Backquote | Backquotes _ as b)::tl ->
               begin match tagstatus with
                 | T.Awaiting _ :: _ ->
                   if debug then
-                    eprintf "maybe code in inline HTML: no code\n%!";
+                    eprintf "(OMD) maybe code in inline HTML: no code\n%!";
                   None
                 | [] ->
                   if debug then
-                    eprintf "maybe code in inline HTML: none\n%!";
+                    eprintf "(OMD) maybe code in inline HTML: none\n%!";
                   None
                 | T.Open _ :: _ ->
                   if debug then
-                    eprintf "maybe code in inline HTML: let's try\n%!";
+                    eprintf "(OMD) maybe code in inline HTML: let's try\n%!";
                   begin match bcode [] [Space] tokens with
                     | Some (((Code _::_) as c), p, l) ->
                       if debug then
-                        eprintf "maybe code in inline HTML: confirmed\n%!";
+                        eprintf "(OMD) maybe code in inline HTML: confirmed\n%!";
                       loop (T.MD c::body) [] tagstatus l
                     | _ ->
                       if debug then
-                        eprintf "maybe code in inline HTML: failed\n%!";
+                        eprintf "(OMD) maybe code in inline HTML: failed\n%!";
                       loop (T.TOKENS[b]::body) [] tagstatus tl
                   end
               end
@@ -3462,7 +3786,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin match tagstatus with
                 | T.Open t :: _ when t = tagname ->
                   if debug then
-                    eprintf "~~~~~~~~~~ properly closing %S\n%!" t;
+                    eprintf "(OMD) ~~~~~~~~~~ properly closing %S\n%!" t;
                   Some(body,
                        (match g with
                         | Greaterthans 0 -> Greaterthan :: tokens
@@ -3470,15 +3794,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | _ -> tokens))
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "~~~~~~~~~~ wrongly closing %S 1\n%!" t;
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 1\n%!" t;
                   loop (T.TOKENS[g;w;Slash;Lessthan]::body) [] tagstatus tokens
                 | T.Awaiting _ :: _ ->
                   if debug then
-                    eprintf "~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
                   None
                 | [] ->
                   if debug then
-                    eprintf "~~~~~~~~~~ wrongly closing %S 3\n%!" tagname;
+                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 3\n%!" tagname;
                   None
               end
             (* tag *)
@@ -3488,20 +3812,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 || (strict_html && StringSet.mem tagname inline_htmltags_set)
                 || (not strict_html && StringSet.mem tagname htmltags_set)
               ->
-              if debug then eprintf "<Word...\n%!";
+              if debug then eprintf "(OMD) <Word...\n%!";
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                   if attrs <> [] then
                     begin
                       if debug then
-                        eprintf "tag %s but attrs <> []\n%!" tagname;
+                        eprintf "(OMD) tag %s but attrs <> []\n%!" tagname;
                       None
                     end
                   else
                     begin
                       if debug then
-                        eprintf "tag %s, attrs=[]\n%!" tagname;
+                        eprintf "(OMD) tag %s, attrs=[]\n%!" tagname;
                       match loop [] [] (T.Awaiting tagname::tagstatus) tokens
                       with
                       | None ->
@@ -3517,12 +3841,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   begin match loop body [] (T.Open t::tagstatus) tokens with
                     | None ->
                       if debug then
-                        eprintf "Couldn't find an closing tag for %S\n%!"
+                        eprintf "(OMD) Couldn't find an closing tag for %S\n%!"
                           t;
                       None
                     | Some(body, l) ->
                       if debug then
-                        eprintf "Found a closing tag %s\n%!" t;
+                        eprintf "(OMD) Found a closing tag %s\n%!" t;
                       match tagstatus with
                       | T.Open _ :: _ ->
                         begin match
@@ -3539,11 +3863,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   end
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "Turns out an `>` isn't for an opening tag\n%!";
+                    eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
                   loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
                 | [] ->
                   if debug then
-                    eprintf "This should be impossible\n%!";
+                    eprintf "(OMD) This should be impossible\n%!";
                   None
               end
             (* maybe attribute *)
@@ -3556,13 +3880,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Newlines _ :: _ -> None
                 | Equal :: Quotes 0 :: tokens ->
                   if debug then
-                    eprintf "empty attribute 1 %S\n%!"
+                    eprintf "(OMD) empty attribute 1 %S\n%!"
                       (Omd_lexer.string_of_tokens tokens);
                   loop body ((attributename, "")::attrs) tagstatus tokens
                 | Equal :: Quote :: tokens ->
                   begin
                     if debug then
-                      eprintf "non empty attribute 1 %S\n%!"
+                      eprintf "(OMD) non empty attribute 1 %S\n%!"
                         (Omd_lexer.string_of_tokens tokens);
                     match
                       fsplit
@@ -3590,7 +3914,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Equal :: Doublequote :: tokens ->
                   begin
                     if debug then
-                      eprintf "non empty attribute 2 %S\n%!"
+                      eprintf "(OMD) non empty attribute 2 %S\n%!"
                         (Omd_lexer.string_of_tokens tokens);
                     match fsplit
                             ~excl:(function
@@ -3604,7 +3928,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | None -> None
                     | Some(at_val, tokens) ->
                       if debug then
-                        eprintf "=\"... %S\n%!"
+                        eprintf "(OMD) %s=%S %S\n%!" attributename
+                          (Omd_lexer.string_of_tokens at_val)
                           (Omd_lexer.string_of_tokens tokens);
                       loop body ((attributename,
                                   Omd_lexer.string_of_tokens at_val)
@@ -3616,7 +3941,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
                 if debug then
-                  eprintf "general %S\n%!"
+                  eprintf "(OMD) general %S\n%!"
                     (Omd_lexer.string_of_tokens tokens);
                 loop (T.TOKENS[x]::body) attrs tagstatus tokens
               end
@@ -3624,12 +3949,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               when
                 (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
               begin
-                if debug then eprintf "spaces\n%!";
+                if debug then eprintf "(OMD) spaces\n%!";
                 loop body attrs tagstatus tokens
               end
             | _ ->
               if debug then
-                eprintf "fallback with tokens=%s and tagstatus=%s\n%!"
+                eprintf "(OMD) fallback with tokens=%s and tagstatus=%s\n%!"
                   (Omd_lexer.destring_of_tokens tokens)
                   (match tagstatus with
                    | [] -> "None"
