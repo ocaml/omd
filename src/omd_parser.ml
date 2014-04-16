@@ -2645,7 +2645,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         in loop 1)
 
   let mediatypetextomd : string list ref = ref []
-  exception Orphan_closing of string * r * l
+
+  exception Orphan_closing of string * l * l
 
   let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
@@ -3374,11 +3375,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* / end of old block HTML. *)
 
     | _, Lessthan::Slash::Word(w)::Greaterthan::tl when !mediatypetextomd <> [] ->
-      raise (Orphan_closing(w, r, tl))
+      raise (Orphan_closing(w, lexemes, tl))
 
     | _, Lessthan::Slash::Word(w)::Greaterthans(n)::tl when !mediatypetextomd <> [] ->
       raise (Orphan_closing(w,
-                            r,
+                            lexemes,
                             (if n = 0 then
                                Greaterthan
                              else
@@ -3408,27 +3409,6 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | HTML of string * (string * string) list * interm list
               | TOKENS of Omd_lexer.t
               | MD of Omd_representation.t
-            (* let md_of_interm_list x = *)
-            (*   let rec md_of_interm_list (i:bool) = function *)
-            (*     | [] -> [] *)
-            (*     | HTML(t, a, c)::tl -> *)
-            (*       let i = List.mem ("media:type","text/omd") a in *)
-            (*       Html_block(t, a, md_of_interm_list i c)::md_of_interm_list i tl *)
-            (*     | MD md::tl -> md@md_of_interm_list i tl *)
-            (*     | TOKENS t1::TOKENS t2::tl -> *)
-            (*       md_of_interm_list i (TOKENS(t2@t1)::tl) *)
-            (*     | TOKENS t :: tl -> *)
-            (*       if i then *)
-            (*         main_loop_rev [] [Word ""] (List.rev t) *)
-            (*         @ md_of_interm_list i tl *)
-            (*       else *)
-            (*         let () = *)
-            (*           if debug then *)
-            (*             eprintf "(OMD) (OMD) %S\n" (Omd_lexer.string_of_tokens t) *)
-            (*         in *)
-            (*         Raw(Omd_lexer.string_of_tokens ( t)) *)
-            (*         ::md_of_interm_list i tl *)
-            (*   in md_of_interm_list false x *)
               let rec md_of_interm_list = function
                 | [] -> []
                 | HTML(t, a, c)::tl ->
@@ -3485,7 +3465,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   if debug then
                     eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
                   if !mediatypetextomd <> [] then
-                    raise (Orphan_closing(t, T.md_of_interm_list body, tokens))
+                    raise
+                      (Orphan_closing(t, lexemes,
+                                      (match g with
+                                       | Greaterthans 0 ->
+                                         Greaterthan::tokens
+                                       | Greaterthans n ->
+                                         Greaterthans(n-1)::tokens
+                                       | _ -> tokens)))
                   else
                     None
                 | [] ->
@@ -3536,7 +3523,41 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                           if debug then
                             eprintf "(OMD) (3524) closing tag not found\n%!";
                           None
-                        with Orphan_closing(tagname, before, after) ->
+                        with Orphan_closing(tagname, delimiter, after) ->
+                          let before =
+                            let rec f r = function
+                              | Lessthans n as e :: tl ->
+                                begin match delimiter with
+                                  | Lessthan::_ ->
+                                    if Lessthan::tl = delimiter then
+                                      List.rev
+                                        (if n = 0 then
+                                           Lessthan::r
+                                         else
+                                           Lessthans(n-1)::r)
+                                    else
+                                      f (e::r) tl
+                                  | _ ->
+                                    if tl == delimiter || tl = delimiter then
+                                      List.rev r
+                                    else
+                                      f (e::r) tl
+                                end
+                              | e::tl ->
+                                if tl == delimiter || tl = delimiter then
+                                  List.rev r
+                                else
+                                  f (e::r) tl
+                              | [] -> r
+                            in
+                            f [] tokens
+                          in
+                          if debug then
+                            eprintf "(OMD) (3552) tokens=%s delimiter=%s after=%s before=%s\n%!"
+                              (Omd_lexer.destring_of_tokens tokens)
+                              (Omd_lexer.destring_of_tokens delimiter)
+                              (Omd_lexer.destring_of_tokens after)
+                              (Omd_lexer.destring_of_tokens before);
                           if tagname = t then
                             Some([T.HTML(t,
                                          List.filter
@@ -3544,7 +3565,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                              | ("media:type", "text/omd") -> false
                                              | _ -> true)
                                            attrs,
-                                         [T.MD before])],
+                                         [T.MD (main_loop_rev [] [] before)])],
                                  after)
                           else
                             match !mediatypetextomd with
