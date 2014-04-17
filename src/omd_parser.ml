@@ -8,6 +8,7 @@
 open Printf
 open Omd_representation
 open Omd_utils
+module L = Omd_lexer
 
 type r = Omd_representation.t
 (** accumulator (beware, reversed tokens) *)
@@ -756,10 +757,10 @@ struct
   (** Generate fallback for references. *)
   let extract_fallback remains l =
     let rec loop accu = function
-      | [] -> Omd_lexer.string_of_tokens (List.rev accu)
+      | [] -> L.string_of_tokens (List.rev accu)
       | e::tl as r ->
         if r == remains then
-          Omd_lexer.string_of_tokens (List.rev accu)
+          L.string_of_tokens (List.rev accu)
         else
           loop (e::accu) tl
     in loop [] l
@@ -782,14 +783,14 @@ struct
           (Number _::Dot::(Space|Spaces _)::_)
         | ((Star|Plus|Minus)::(Space|Spaces _)::_)
           as tl) as l ->
-        if n = Omd_lexer.length s then
+        if n = L.length s then
           loop (nl::cl@accu) [] tl
         else
           (cl@accu), l
       | (Newline|Newlines 0 as nl)::(Space|Spaces _ as s)::tl ->
-        let x = Omd_lexer.length s - n in
+        let x = L.length s - n in
         loop (nl::cl@accu)
-          (if x > 0 then [Omd_lexer.make_space x] else [])
+          (if x > 0 then [L.make_space x] else [])
           tl
       | Newlines(_)::_ as l ->
         (cl@accu), l
@@ -848,7 +849,7 @@ struct
             | (Space|Spaces _ as x)::(Star|Stars _ as s)::tl ->
               Continue_with([s;x],tl)
             | (Star|Stars _ as s)::tl ->
-              if Omd_lexer.length s = n then
+              if L.length s = n then
                 Split([],tl)
               else
                 Continue
@@ -892,7 +893,7 @@ struct
             | (Space|Spaces _ as x)::(Underscore|Underscores _ as s)::tl ->
               Continue_with([s;x],tl)
             | (Underscore|Underscores _ as s)::tl ->
-              if Omd_lexer.length s = n then
+              if L.length s = n then
                 Split([],tl)
               else
                 Continue
@@ -939,7 +940,7 @@ struct
             | (Underscore|Underscores _ as s)::(Word _|Number _ as w):: tl ->
               Continue_with([w;s],tl)
             | (Underscore|Underscores _ as s)::tl ->
-              if Omd_lexer.length s = n then
+              if L.length s = n then
                 Split([],tl)
               else
                 Continue
@@ -974,7 +975,7 @@ struct
          setext-style title. *)
       if debug then
         eprintf "(OMD) detect_balanced_bqs n=%d r=%S l=%S\n%!"
-          n (Omd_lexer.string_of_tokens r) (Omd_lexer.string_of_tokens l);
+          n (L.string_of_tokens r) (L.string_of_tokens l);
       match l with
       | [] ->
         None
@@ -1033,7 +1034,8 @@ struct
         else
           Some(List.rev r, tl)
       | (Newline|Newlines _)::_ ->
-        if debug then eprintf "(OMD) Omd_parser.setext_title is wrongly used!\n%!";
+        if debug then
+          eprintf "(OMD) Omd_parser.setext_title is wrongly used!\n%!";
         None
       | e::tl ->
         loop (e::r) tl
@@ -1053,11 +1055,13 @@ struct
       let result = loop [] l in
       if debug then
         eprintf "(OMD) setext_title l=%S result=%S,%S\n%!"
-          (Omd_lexer.string_of_tokens l)
-          (match result with None -> ""
-                           | Some (x,tl) -> Omd_lexer.string_of_tokens x)
-          (match result with None -> ""
-                           | Some (x,tl) -> Omd_lexer.string_of_tokens tl);
+          (L.string_of_tokens l)
+          (match result with
+           | None -> ""
+           | Some (x,tl) -> L.string_of_tokens x)
+          (match result with
+           | None -> ""
+           | Some (x,tl) -> L.string_of_tokens tl);
       result
 
   let tag__maybe_h1 main_loop =
@@ -1075,7 +1079,7 @@ struct
            if debug then
             eprintf "(OMD) Warning: Omd_parser.tag__maybe_h1 is wrongly used \
                      (p=%S)!\n"
-              (Omd_lexer.string_of_tokens p);
+              (L.string_of_tokens p);
           None
       )
 
@@ -1094,7 +1098,7 @@ struct
           if debug then
             eprintf "(OMD) Warning: Omd_parser.tag__maybe_h2 is wrongly used \
                      (p=%S)!\n"
-              (Omd_lexer.string_of_tokens p);
+              (L.string_of_tokens p);
           None
       )
 
@@ -1230,21 +1234,21 @@ struct
         match cb with
         | Word lang :: (Space|Spaces _) :: Newline :: tl
         | Word lang :: Newline :: tl ->
-          let code = Omd_lexer.string_of_tokens tl in
+          let code = L.string_of_tokens tl in
           Some(Code_block(lang, code) :: r, [Backquote], l)
         | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
         | Word lang :: Newlines 0 :: tl ->
-          let code = Omd_lexer.string_of_tokens(Newline::tl) in
+          let code = L.string_of_tokens(Newline::tl) in
           Some(Code_block(lang, code) :: r, [Backquote], l)
         | Word lang :: (Space|Spaces _) :: Newlines n :: tl
         | Word lang :: Newlines n :: tl ->
-          let code = Omd_lexer.string_of_tokens (Newlines(n-1)::tl) in
+          let code = L.string_of_tokens (Newlines(n-1)::tl) in
           Some(Code_block(lang, code) :: r, [Backquote], l)
         | Newline :: tl ->
-          let code = Omd_lexer.string_of_tokens  tl in
+          let code = L.string_of_tokens  tl in
           Some(Code_block(default_lang, code) :: r, [Backquote], l)
         | _ ->
-          let code = Omd_lexer.string_of_tokens cb in
+          let code = L.string_of_tokens cb in
           Some(Code_block(default_lang, code) :: r, [Backquote], l)
       else
         let clean_bcode s =
@@ -1264,7 +1268,7 @@ struct
           | 0, n when n = String.length s - 1 -> s
           | i, n -> String.sub s i (n-i)
         in
-        let code = Omd_lexer.string_of_tokens cb in
+        let code = L.string_of_tokens cb in
         if debug then
           eprintf "(OMD) clean_bcode %S => %S\n%!" code (clean_bcode code);
         Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
@@ -1300,7 +1304,7 @@ struct
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1338,10 +1342,10 @@ struct
         raise Premature_ending
      in
      if debug then
-       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b\\n%!\" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b\\n%!\" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b => %S\\n%!\" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b => %S\\n%!\" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
      "))
 
@@ -1382,7 +1386,7 @@ struct
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1418,10 +1422,17 @@ struct
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_lt ?(bq=false) ?(no_nl=false) l =
@@ -1448,7 +1459,7 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1475,10 +1486,17 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
@@ -1505,7 +1523,7 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1541,10 +1559,18 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => \
+                %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
@@ -1571,7 +1597,7 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1598,10 +1624,18 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_oparenth \
+                %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_dq ?(bq=false) ?(no_nl=false) l =
@@ -1628,7 +1662,7 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1655,10 +1689,17 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_q ?(bq=false) ?(no_nl=false) l =
@@ -1685,7 +1726,7 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1712,10 +1753,17 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_obracket ?(bq=false) ?(no_nl=false) l =
@@ -1742,7 +1790,7 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1769,10 +1817,18 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_obracket \
+                %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
@@ -1799,7 +1855,7 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1835,10 +1891,18 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_cbracket \
+                %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
 
 let read_until_space ?(bq=false) ?(no_nl=false) l =
@@ -1865,7 +1929,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | None -> loop (e::accu) n tl
           | Some (r, _, tl) ->
             loop (* not very pretty kind of hack *)
-              (List.rev(Omd_lexer.lex(Omd_backend.markdown_of_md r))@accu)
+              (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
               n
               tl
         else
@@ -1892,10 +1956,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (Omd_lexer.string_of_tokens l) bq no_nl;
+       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (Omd_lexer.string_of_tokens l) bq no_nl (Omd_lexer.string_of_tokens (fst res));
+       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!"
+         (L.string_of_tokens l)
+         bq
+         no_nl
+         (L.string_of_tokens (fst res));
      res
   (* /end generated part *)
 
@@ -2017,7 +2088,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | (Newline|Newlines _)::block, tl ->
       if debug then
         eprintf "(OMD) Omd_parser.emailstyle_quoting %S\n%!"
-          (Omd_lexer.string_of_tokens block);
+          (L.string_of_tokens block);
       Some((Blockquote(main_loop [] [] block)::r), [Newline], tl)
     | _ ->
       None
@@ -2047,12 +2118,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         match read_until_cbracket ~bq:true remains with
         | [], remains ->
           let fallback = extract_fallback remains (Obracket::l) in
-          let id = Omd_lexer.string_of_tokens text in (* implicit anchor *)
+          let id = L.string_of_tokens text in (* implicit anchor *)
           Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
         | id, remains ->
           let fallback = extract_fallback remains (Obracket::l) in
-          Some(((Ref(rc, Omd_lexer.string_of_tokens id,
-                     Omd_lexer.string_of_tokens text, fallback))::r),
+          Some(((Ref(rc, L.string_of_tokens id,
+                     L.string_of_tokens text, fallback))::r),
                [Cbracket], remains)
     in
     let rec maybe_nonregular_ref l =
@@ -2062,7 +2133,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           with Premature_ending -> false) then
         raise Premature_ending; (* <-- ill-placed open bracket *)
       let fallback = extract_fallback remains (Obracket::l) in
-      let id = Omd_lexer.string_of_tokens text in (* implicit anchor *)
+      let id = L.string_of_tokens text in (* implicit anchor *)
       Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
     in
     let rec maybe_def l =
@@ -2096,15 +2167,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | l -> [], l
             in
             let url =
-              let url = Omd_lexer.string_of_tokens url in
+              let url = L.string_of_tokens url in
               if String.length url > 2 && url.[0] = '<'
                  && url.[String.length url - 1] = '>' then
                 String.sub url 1 (String.length url - 2)
               else
                 url
             in
-            rc#add_ref (Omd_lexer.string_of_tokens id)
-              (Omd_lexer.string_of_tokens title) url;
+            rc#add_ref (L.string_of_tokens id) (L.string_of_tokens title) url;
             Some(r, [Newline], remains)
         end
       | _ -> raise Premature_ending
@@ -2134,15 +2204,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           read_until_cparenth ~no_nl:true ~bq:false l
         in
         if debug then eprintf "(OMD) maybe_link >> l_cp=%S r_cp=%S\n%!"
-          (Omd_lexer.string_of_tokens l_cp)
-          (Omd_lexer.string_of_tokens r_cp);
+          (L.string_of_tokens l_cp)
+          (L.string_of_tokens r_cp);
         try
           let l_dq, r_dq =
             read_until_dq ~no_nl:true ~bq:false l
           in
           if debug then eprintf "(OMD) maybe_link >> l_dq=%S r_dq=%S\n%!"
-            (Omd_lexer.string_of_tokens l_dq)
-            (Omd_lexer.string_of_tokens r_dq);
+            (L.string_of_tokens l_dq)
+            (L.string_of_tokens r_dq);
           (* maybe title *)
           if List.length l_cp > List.length l_dq then (* title *)
             begin
@@ -2151,13 +2221,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match List.rev l_dq with
                 | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
                 | (Newline|Space|Spaces _)::tl ->
-                  Omd_lexer.string_of_tokens (List.rev tl)
+                  L.string_of_tokens (List.rev tl)
                 | _ ->
-                  Omd_lexer.string_of_tokens l_dq
+                  L.string_of_tokens l_dq
               in
               let title, rest = read_until_dq ~no_nl:false ~bq:false r_dq in
               let rest = snd(read_until_cparenth rest) in
-              let title = Omd_lexer.string_of_tokens title in
+              let title = L.string_of_tokens title in
               Some(Url(url, name, title) :: r, [Cparenthesis], rest)
             end
           else (* no title *)
@@ -2171,8 +2241,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | _ -> l_cp
             in
             let title, rest = [], r_cp in
-            let url = Omd_lexer.string_of_tokens url in
-            let title = Omd_lexer.string_of_tokens title in
+            let url = L.string_of_tokens url in
+            let title = L.string_of_tokens title in
             Some(Url(url, name, title) :: r, [Cparenthesis], rest)
           end
       with NL_exception | Premature_ending ->
@@ -2203,12 +2273,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       eprintf "(OMD) parse_list r=(%s) p=(%s) l=(%s)\n%!"
         "" (* (Omd_backend.sexpr_of_md (List.rev r)) *)
         "" (* (destring_of_tl p) *)
-        (Omd_lexer.destring_of_tokens ~limit:40 l);
+        (L.destring_of_tokens ~limit:40 l);
     end;
     let module UO = struct type ordered = O | U end in
     let open UO in
     if debug then
-      eprintf "(OMD) parse_list: l=(%s)\n%!" (Omd_lexer.destring_of_tokens l);
+      eprintf "(OMD) parse_list: l=(%s)\n%!" (L.destring_of_tokens l);
     let end_of_item (indent:int) l : tok split_action  = match l with
       | [] ->
         Split([],[])
@@ -2328,7 +2398,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     in
     let rec list_items ~p indents items l =
       if debug then eprintf "(OMD) list_items: p=%b l=(%s)\n%!"
-                            p (Omd_lexer.destring_of_tokens l);
+                            p (L.destring_of_tokens l);
       match l with
       (* no more list items *)
       | [] ->
@@ -2344,7 +2414,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             let p = p || has_paragraphs new_item in
             if debug then
               eprintf "(OMD) (2346) new_item=%S\n%!"
-                (Omd_lexer.destring_of_tokens new_item);
+                (L.destring_of_tokens new_item);
             match indents with
             | [] ->
               assert(items = []);
@@ -2386,12 +2456,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             match indents with
             | [] ->
               if debug then
-                eprintf "(OMD) spaces[] l=(%S)\n%!" (Omd_lexer.string_of_tokens l);
+                eprintf "(OMD) spaces[] l=(%S)\n%!" (L.string_of_tokens l);
               assert(items = []); (* aïe... listes mal formées ?! *)
               list_items ~p [n+2] ((U,[n+2],rev_to_t new_item)::items) rest
             | i::_ ->
               if debug then eprintf "(OMD) spaces(%d::_) n=%d l=(%S)\n%!"
-                  i n (Omd_lexer.string_of_tokens l);
+                  i n (L.string_of_tokens l);
               if i = n + 2 then
                 let items = (U,indents,rev_to_t new_item) :: items in
                 list_items ~p indents items rest
@@ -2455,14 +2525,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             match indents with
             | [] ->
               if debug then eprintf "(OMD) spaces[] l=(%S)\n%!"
-                  (Omd_lexer.string_of_tokens l);
+                  (L.string_of_tokens l);
               assert(items = []); (* aïe... listes mal formées ?! *)
               list_items ~p [n+2] ((O,[n+2],rev_to_t new_item)::items) rest
             | i::_ ->
               if debug then eprintf "(OMD) spaces(%d::_) n=%d l=(%S)\n%!"
-                  i n (Omd_lexer.string_of_tokens l);
+                  i n (L.string_of_tokens l);
               if i = n + 2 then
-                list_items ~p indents ((O,indents,rev_to_t new_item)::items) rest
+                list_items ~p indents ((O,indents,rev_to_t new_item)::items)
+                  rest
               else if i < n + 2 then
                 let sublist, remains =
                   list_items ~p
@@ -2496,7 +2567,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | _ -> "(weird)"
             in
             eprintf "(OMD) NALI parse_list: l=(%S) items=%s\n%!"
-              (Omd_lexer.string_of_tokens l) (string_of_items items)
+              (L.string_of_tokens l) (string_of_items items)
           end;
         (* not a list item *)
         make_up p items, l
@@ -2521,7 +2592,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | (Newline|Newlines _ as p), Spaces(n)::tl ->
         assert(n>0);
         (* At least 4 spaces, it's still code. *)
-        Buffer.add_string accu (Omd_lexer.string_of_token p);
+        Buffer.add_string accu (L.string_of_token p);
         loop
           (if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag)
           tl
@@ -2529,11 +2600,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
       (* -> Return what's been found as code because it's no more code. *)
       | p, e::tl ->
-        Buffer.add_string accu (Omd_lexer.string_of_token p);
+        Buffer.add_string accu (L.string_of_token p);
         (* html entities are to be converted later! *)
         loop e tl
       | p, [] ->
-        Buffer.add_string accu (Omd_lexer.string_of_token p);
+        Buffer.add_string accu (L.string_of_token p);
         Code_block(default_lang, Buffer.contents accu)::r, [p], []
     in
     match l with
@@ -2555,10 +2626,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       match lexemes with
       | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
         (* unordered list *)
-        parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+        parse_list main_loop r [] (L.make_space n::lexemes)
       | (Number _)::Dot::(Space|Spaces _)::tl ->
         (* ordered list *)
-        parse_list main_loop r [] (Omd_lexer.make_space n::lexemes)
+        parse_list main_loop r [] (L.make_space n::lexemes)
       | []
       | (Newline|Newlines _) :: _  -> (* blank line, skip spaces *)
         r, previous, lexemes
@@ -2570,7 +2641,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
       | _ ->
         match
-          icode ~default_lang r [Newline] (Omd_lexer.make_space n :: lexemes)
+          icode ~default_lang r [Newline] (L.make_space n :: lexemes)
         with
         | Some(r,p,l) -> r,p,l
         | None ->
@@ -2615,9 +2686,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None -> None
         | Some(left, right) ->
           match
-            fsplit ~excl:(function (Newline|Newlines _|Space|Spaces _) :: _-> true
-                                 | [] -> true
-                                 | _ -> false)
+            fsplit
+              ~excl:(function
+                  | (Newline|Newlines _|Space|Spaces _) :: _-> true
+                  | [] -> true
+                  | _ -> false)
               ~f:(function Greaterthan::tl -> Split([],tl)
                          | Greaterthans 0::tl -> Split([],Greaterthan::tl)
                          | Greaterthans n::tl -> Split([],Greaterthans(n-1)::tl)
@@ -2626,8 +2699,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           with
           | None -> None
           | Some(domain, tl) ->
-            let email = Omd_lexer.string_of_tokens left
-                        ^ "@" ^ Omd_lexer.string_of_tokens domain in
+            let email = L.string_of_tokens left
+                        ^ "@" ^ L.string_of_tokens domain in
             Some(Url("mailto:"^email,[Text email],"")::r,[Greaterthan],tl)
       end
     | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
@@ -2653,8 +2726,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     if debug then
       eprintf "(OMD) main_loop_rev r=%s p=(%s) l=(%s)\n%!"
         (Omd_backend.sexpr_of_md (List.rev r))
-        (Omd_lexer.destring_of_tokens previous)
-        (Omd_lexer.destring_of_tokens lexemes);
+        (L.destring_of_tokens previous)
+        (L.destring_of_tokens lexemes);
     match previous, lexemes with
     (* no more to process *)
     | _, [] ->
@@ -2683,12 +2756,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None ->
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
               main_loop_rev r p l
           end
         | Some (comments, new_tl) ->
-          let r = Html_comment(Omd_lexer.string_of_tokens comments) :: r in
+          let r = Html_comment(L.string_of_tokens comments) :: r in
           main_loop_rev r [Greaterthan] new_tl
       end
 
@@ -2714,7 +2787,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       begin
         let new_r, p, rest =
           let foo, rest =
-            match unindent (Omd_lexer.length s) (Newline::lexemes) with
+            match unindent (L.length s) (Newline::lexemes) with
             | (Newline|Newlines _)::foo, rest -> foo, rest
             | res -> res
           in
@@ -2746,7 +2819,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | _ -> (* not a list *)
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
                 | Some(r, p, l) ->
                   main_loop_rev r p l
               end
@@ -2759,8 +2832,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None -> (* no hr, and it's not a list either
                      because it's not followed by spaces *)
           begin match maybe_extension extensions r previous lexemes with
-            | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
-            | Some(r, p, l) -> main_loop_rev r p l
+            | None ->
+              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+            | Some(r, p, l) ->
+              main_loop_rev r p l
           end
         | Some l -> (* hr *)
           main_loop_rev (Hr::r) [Newline] l
@@ -2781,7 +2856,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           assert false
       else
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
           | Some(r, p, l) -> main_loop_rev r p l
         end
     | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
@@ -2796,7 +2871,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       end
     | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
       end
 
@@ -2805,7 +2880,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       begin match hr tl with
         | None ->
           (* No [Hr], but maybe [Ul], [Ol], code,... *)
-          let n = Omd_lexer.length sp in
+          let n = L.length sp in
           let r, p, l = spaces_at_beginning_of_line
               main_loop default_lang n r previous tl in
           main_loop_rev r p l
@@ -2816,7 +2891,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
-      let n = Omd_lexer.length t in
+      let n = L.length t in
       let r, p, l = spaces_not_at_beginning_of_line n r tl in
       main_loop_rev r p l
 
@@ -2825,7 +2900,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (match uemph_or_bold 1 tl with
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
        | Some(x, new_tl) ->
@@ -2836,7 +2911,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (match uemph_or_bold (n+2) tl with
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
        | Some(x, new_tl) ->
@@ -2888,8 +2963,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
              main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
            | None ->
              begin match maybe_extension extensions r previous lexemes with
-               | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
-               | Some(r, p, l) -> main_loop_rev r p l
+               | None ->
+                 main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+               | Some(r, p, l) ->
+                 main_loop_rev r p l
              end
           )
       end
@@ -2899,7 +2976,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -2913,7 +2990,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
            main_loop_rev (Emph([Bold(main_loop [] [t] x)]) :: r) [t] new_tl
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -3054,9 +3131,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           let url =
             (match t with Lessthans 0 -> "<"
                         | Lessthans n -> String.make (n-2) '<' | _ -> "")
-            ^ (Omd_lexer.string_of_token w) ^ "://"
+            ^ (L.string_of_token w) ^ "://"
             ^ (if n = 0 then "" else String.make (n-2) '/')
-            ^ Omd_lexer.string_of_tokens (List.rev accu)
+            ^ L.string_of_tokens (List.rev accu)
           in Some(url, tl)
         | x::tl ->
           read_url (x::accu) tl
@@ -3068,8 +3145,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           main_loop_rev (Url(url,[Text url],"")::r) [] new_tl
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-            | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
-            | Some(r, p, l) -> main_loop_rev r p l
+            | None ->
+              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+            | Some(r, p, l) ->
+              main_loop_rev r p l
           end
       end
 
@@ -3148,8 +3227,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-            | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
-            | Some(r, p, l) -> main_loop_rev r p l
+            | None ->
+              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+            | Some(r, p, l) ->
+              main_loop_rev r p l
           end
       end
 
@@ -3181,7 +3262,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         main_loop_rev r [Word ""] lexemes
       else if not (blind_html || StringSet.mem tagname htmltags_set) then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
           | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -3219,16 +3300,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         if (try ignore(read_html()); false with Not_found -> true)
         then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
           | Some(r, p, l) -> main_loop_rev r p l
         end
         else
         let html, tl_after_html = read_html() in
-        let html = Omd_lexer.string_of_tokens html in
+        let html = L.string_of_tokens html in
         let attributes = Omd_utils.extract_html_attributes html in
         let html, tl =
           try begin (* specified end of HTML block *)
-            let stop = Omd_lexer.lex (List.assoc "media:end" attributes) in
+            let stop = L.lex (List.assoc "media:end" attributes) in
             if stop = [] then raise Not_found;
             match
               fsplit
@@ -3303,13 +3384,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                  tl
             with
             | Some(a,b) ->
-              Omd_lexer.string_of_tokens a, b
+              L.string_of_tokens a, b
             | None -> raise Not_found
           end with Not_found -> html, tl_after_html
         in
         if List.mem ("media:type","text/omd") attributes then
           let innerHTML = Omd_utils.extract_inner_html html in
-          let l_innerHTML = tag_setext main_loop (Omd_lexer.lex innerHTML) in
+          let l_innerHTML = tag_setext main_loop (L.lex innerHTML) in
           let parsed_innerHTML = make_paragraphs(main_loop [] [] l_innerHTML) in
           let s_attributes =
             List.fold_left
@@ -3374,17 +3455,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           main_loop_rev (Raw_block html :: r) [Greaterthan] tl
     (* / end of old block HTML. *)
 
-    | _, Lessthan::Slash::Word(w)::Greaterthan::tl when !mediatypetextomd <> [] ->
-      raise (Orphan_closing(w, lexemes, tl))
-
-    | _, Lessthan::Slash::Word(w)::Greaterthans(n)::tl when !mediatypetextomd <> [] ->
+    | _, Lessthan::Slash::Word(w)::(Greaterthan|Greaterthans _ as g)::tl
+      when !mediatypetextomd <> [] ->
       raise (Orphan_closing(w,
                             lexemes,
-                            (if n = 0 then
-                               Greaterthan
-                             else
-                               Greaterthans(n-1))
-                            ::tl))
+                            (match g with
+                             | Greaterthans 0 ->
+                               Greaterthan::tl
+                             | Greaterthans n ->
+                               Greaterthans(n-1)::tl
+                             | _ -> tl)))
 
     (* block html *)
     | ([] | [Newline|Newlines _]),
@@ -3396,7 +3476,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         main_loop_rev r [Word ""] lexemes
       else if not (blind_html || StringSet.mem tagnametop htmltags_set) then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
           | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -3407,7 +3487,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | Open of string
             type interm =
               | HTML of string * (string * string) list * interm list
-              | TOKENS of Omd_lexer.t
+              | TOKENS of L.t
               | MD of Omd_representation.t
               let rec md_of_interm_list = function
                 | [] -> []
@@ -3422,11 +3502,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           end in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              eprintf "(OMD) (3433) loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
+              eprintf "(OMD) (3433) loop %s\n%!"
+                (L.destring_of_tokens tokens);
             match tokens with
             (* not enough to read means failure to read HTML *)
             | [] ->
-              if debug then eprintf "(OMD) Not enough to read for block HTML\n%!";
+              if debug then
+                eprintf "(OMD) Not enough to read for block HTML\n%!";
               None
             | Lessthans n::tokens ->
               begin match tagstatus with
@@ -3501,7 +3583,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     begin
                       if debug then
                         eprintf "(OMD) tag %s, attrs=[], tokens=%s\n%!"
-                          tagname (Omd_lexer.destring_of_tokens tokens);
+                          tagname (L.destring_of_tokens tokens);
                       match loop [] [] (T.Awaiting tagname::tagstatus) tokens
                       with
                       | None ->
@@ -3553,19 +3635,21 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                             f [] tokens
                           in
                           if debug then
-                            eprintf "(OMD) (3552) tokens=%s delimiter=%s after=%s before=%s\n%!"
-                              (Omd_lexer.destring_of_tokens tokens)
-                              (Omd_lexer.destring_of_tokens delimiter)
-                              (Omd_lexer.destring_of_tokens after)
-                              (Omd_lexer.destring_of_tokens before);
+                            eprintf "(OMD) (3552) tokens=%s delimiter=%s \
+                                     after=%s before=%s\n%!"
+                              (L.destring_of_tokens tokens)
+                              (L.destring_of_tokens delimiter)
+                              (L.destring_of_tokens after)
+                              (L.destring_of_tokens before);
                           if tagname = t then
-                            Some([T.HTML(t,
-                                         List.filter
-                                           (function
-                                             | ("media:type", "text/omd") -> false
-                                             | _ -> true)
-                                           attrs,
-                                         [T.MD (main_loop_rev [] [] before)])],
+                            Some([T.HTML
+                                    (t,
+                                     List.filter
+                                       (function
+                                         | ("media:type", "text/omd") -> false
+                                         | _ -> true)
+                                       attrs,
+                                     [T.MD (main_loop_rev [] [] before)])],
                                  after)
                           else
                             match !mediatypetextomd with
@@ -3577,7 +3661,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     begin match loop body [] (T.Open t::tagstatus) tokens with
                       | None ->
                         if debug then
-                          eprintf "(OMD) Couldn't find an closing tag for %S\n%!"
+                          eprintf
+                            "(OMD) Couldn't find an closing tag for %S\n%!"
                             t;
                         None
                       | Some(body, l) ->
@@ -3599,7 +3684,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                       end
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
+                    eprintf
+                      "(OMD) Turns out an `>` isn't for an opening tag\n%!";
                   loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
                 | [] ->
                   if debug then
@@ -3616,13 +3702,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Equal :: Quotes 0 :: tokens ->
                   if debug then
                     eprintf "(OMD) empty attribute 1 %S\n%!"
-                      (Omd_lexer.string_of_tokens tokens);
+                      (L.string_of_tokens tokens);
                   loop body ((attributename, "")::attrs) tagstatus tokens
                 | Equal :: Quote :: tokens ->
                   begin
                     if debug then
                       eprintf "(OMD) non empty attribute 1 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     match
                       fsplit
                         ~excl:(function
@@ -3636,21 +3722,21 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | None -> None
                     | Some(at_val, tokens) ->
                       loop body ((attributename,
-                                  Omd_lexer.string_of_tokens at_val)
+                                  L.string_of_tokens at_val)
                                  ::attrs) tagstatus tokens
                   end
                 | Equal :: Doublequotes 0 :: tokens ->
                   begin
                     if debug then
                       Printf.printf "empty attribute 2 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     loop body ((attributename, "")::attrs) tagstatus tokens
                   end
                 | Equal :: Doublequote :: tokens ->
                   begin
                     if debug then
                       eprintf "(OMD) non empty attribute 2 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     match fsplit
                             ~excl:(function
                                 | Doublequotes _ :: _ -> true
@@ -3664,10 +3750,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Some(at_val, tokens) ->
                       if debug then
                         eprintf "(OMD) (3632) %s=%S %s\n%!" attributename
-                          (Omd_lexer.string_of_tokens at_val)
-                          (Omd_lexer.destring_of_tokens tokens);
+                          (L.string_of_tokens at_val)
+                          (L.destring_of_tokens tokens);
                       loop body ((attributename,
-                                  Omd_lexer.string_of_tokens at_val)
+                                  L.string_of_tokens at_val)
                                  ::attrs) tagstatus tokens
                   end
                 | Colon::Word(w)::tokens ->
@@ -3679,7 +3765,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin
                 if debug then
                   eprintf "(OMD) general %S\n%!"
-                    (Omd_lexer.string_of_tokens tokens);
+                    (L.string_of_tokens tokens);
                 loop (T.TOKENS[x]::body) attrs tagstatus tokens
               end
             | (Newlines _ | Newline | Space | Spaces _ as x) :: tokens
@@ -3691,8 +3777,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               end
             | _ ->
               if debug then
-                eprintf "(OMD) (Block HTML) fallback with tokens=%s and tagstatus=%s\n%!"
-                  (Omd_lexer.destring_of_tokens tokens)
+                eprintf "(OMD) (Block HTML) fallback with \
+                         tokens=%s and tagstatus=%s\n%!"
+                  (L.destring_of_tokens tokens)
                   (match tagstatus with
                    | [] -> "None"
                    | T.Awaiting _ :: _ -> "Awaiting"
@@ -3707,7 +3794,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | Some(html, rest) ->
             main_loop_rev (html@r) [Greaterthan] rest
           | None ->
-            let text = Omd_lexer.string_of_token t in
+            let text = L.string_of_token t in
             main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
         end
     (* / end of block HTML. *)
@@ -3723,7 +3810,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       || not(blind_html || StringSet.mem tagnametop htmltags_set)
       then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tlx
+          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
           | Some(r, p, l) -> main_loop_rev r p l
         end
       else
@@ -3734,7 +3821,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | Open of string
             type interm =
               | HTML of string * (string * string) list * interm list
-              | TOKENS of Omd_lexer.t
+              | TOKENS of L.t
               | MD of Omd_representation.t
             let rec md_of_interm_list = function
               | [] -> []
@@ -3749,11 +3836,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           end in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              eprintf "(OMD) (3718) loop %s\n%!" (Omd_lexer.destring_of_tokens tokens);
+              eprintf "(OMD) (3718) loop %s\n%!"
+                (L.destring_of_tokens tokens);
             match tokens with
             (* not enough to read means failure to read HTML *)
             | [] ->
-              if debug then eprintf "(OMD) Not enough to read for inline HTML\n%!";
+              if debug then
+                eprintf "(OMD) Not enough to read for inline HTML\n%!";
               None
             | Lessthans n::tokens ->
               begin match tagstatus with
@@ -3793,7 +3882,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   begin match bcode [] [Space] tokens with
                     | Some (((Code _::_) as c), p, l) ->
                       if debug then
-                        eprintf "(OMD) maybe code in inline HTML: confirmed\n%!";
+                        eprintf "(OMD) maybe code in inline HTML: \
+                                 confirmed\n%!";
                       loop (T.MD c::body) [] tagstatus l
                     | _ ->
                       if debug then
@@ -3884,7 +3974,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   end
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
+                    eprintf "(OMD) Turns out an `>` \
+                             isn't for an opening tag\n%!";
                   loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
                 | [] ->
                   if debug then
@@ -3902,13 +3993,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Equal :: Quotes 0 :: tokens ->
                   if debug then
                     eprintf "(OMD) empty attribute 1 %S\n%!"
-                      (Omd_lexer.string_of_tokens tokens);
+                      (L.string_of_tokens tokens);
                   loop body ((attributename, "")::attrs) tagstatus tokens
                 | Equal :: Quote :: tokens ->
                   begin
                     if debug then
                       eprintf "(OMD) non empty attribute 1 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     match
                       fsplit
                         ~excl:(function
@@ -3922,21 +4013,21 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | None -> None
                     | Some(at_val, tokens) ->
                       loop body ((attributename,
-                                  Omd_lexer.string_of_tokens at_val)
+                                  L.string_of_tokens at_val)
                                  ::attrs) tagstatus tokens
                   end
                 | Equal :: Doublequotes 0 :: tokens ->
                   begin
                     if debug then
                       Printf.printf "empty attribute 2 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     loop body ((attributename, "")::attrs) tagstatus tokens
                   end
                 | Equal :: Doublequote :: tokens ->
                   begin
                     if debug then
                       eprintf "(OMD) non empty attribute 2 %S\n%!"
-                        (Omd_lexer.string_of_tokens tokens);
+                        (L.string_of_tokens tokens);
                     match fsplit
                             ~excl:(function
                                 | Doublequotes _ :: _ -> true
@@ -3950,10 +4041,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Some(at_val, tokens) ->
                       if debug then
                         eprintf "(OMD) %s=%S %S\n%!" attributename
-                          (Omd_lexer.string_of_tokens at_val)
-                          (Omd_lexer.string_of_tokens tokens);
+                          (L.string_of_tokens at_val)
+                          (L.string_of_tokens tokens);
                       loop body ((attributename,
-                                  Omd_lexer.string_of_tokens at_val)
+                                  L.string_of_tokens at_val)
                                  ::attrs) tagstatus tokens
                   end
                 | _ -> None
@@ -3963,7 +4054,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin
                 if debug then
                   eprintf "(OMD) general %S\n%!"
-                    (Omd_lexer.string_of_tokens tokens);
+                    (L.string_of_tokens tokens);
                 loop (T.TOKENS[x]::body) attrs tagstatus tokens
               end
             | (Newline | Space | Spaces _) :: tokens
@@ -3976,7 +4067,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | _ ->
               if debug then
                 eprintf "(OMD) fallback with tokens=%s and tagstatus=%s\n%!"
-                  (Omd_lexer.destring_of_tokens tokens)
+                  (L.destring_of_tokens tokens)
                   (match tagstatus with
                    | [] -> "None"
                    | T.Awaiting _ :: _ -> "Awaiting"
@@ -3991,7 +4082,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | Some(html, rest) ->
             main_loop_rev (html@r) [Greaterthan] rest
           | None ->
-            let text = Omd_lexer.string_of_token t in
+            let text = L.string_of_token t in
             main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
         end
     (* / end of inline HTML. *)
@@ -4002,8 +4093,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | Some(r,p,l) -> main_loop_rev r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
-            | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
-            | Some(r, p, l) -> main_loop_rev r p l
+            | None ->
+              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+            | Some(r, p, l) ->
+              main_loop_rev r p l
           end
       end
 
@@ -4022,7 +4115,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | Some(r, p, l) -> main_loop_rev r p l
           | None ->
             begin match maybe_extension extensions r previous lexemes with
-              | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+              | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
               | Some(r, p, l) -> main_loop_rev r p l
             end
       end
@@ -4047,17 +4140,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
            | Some(url, tls) ->
              let title, should_be_empty_list =
                read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
-             let url = Omd_lexer.string_of_tokens url in
-             let title = Omd_lexer.string_of_tokens title in
+             let url = L.string_of_tokens url in
+             let title = L.string_of_tokens title in
              main_loop_rev (Img("", url, title) :: r) [Cparenthesis] tl
            | None ->
-             let url = Omd_lexer.string_of_tokens b in
+             let url = L.string_of_tokens b in
              main_loop_rev (Img("", url, "") :: r) [Cparenthesis] tl
          end
        with
        | NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -4070,11 +4163,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (try
          let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
          let fallback = extract_fallback tl lexemes in
-         let id = Omd_lexer.string_of_tokens id in
+         let id = L.string_of_tokens id in
          main_loop_rev (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
        with NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -4088,7 +4181,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          match read_until_cbracket ~bq:true tl with
          | alt, Oparenthesis::ntl ->
            (try
-              let alt = Omd_lexer.string_of_tokens alt in
+              let alt = L.string_of_tokens alt in
               let path_title, rest =
                 read_until_cparenth ~bq:true ~no_nl:false ntl in
               let path, title =
@@ -4106,8 +4199,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Exclamations 0 -> Text "!" :: r
                 | Exclamations n -> Text(String.make (n+1) '!') :: r
                 | _ -> r in
-              let path = Omd_lexer.string_of_tokens path in
-              let title = Omd_lexer.string_of_tokens title in
+              let path = L.string_of_tokens path in
+              let title = L.string_of_tokens title in
               main_loop_rev (Img(alt, path, title) :: r) [Cparenthesis] rest
             with
             | NL_exception
@@ -4115,7 +4208,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | Premature_ending ->
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
                 | Some(r, p, l) ->
                   main_loop_rev r p l
               end
@@ -4126,7 +4219,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 ::Cbracket::ntl
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
            let fallback = extract_fallback ntl lexemes in
-           let alt = Omd_lexer.string_of_tokens alt in
+           let alt = L.string_of_tokens alt in
            main_loop_rev (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                            as ntl) ->
@@ -4135,8 +4228,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | [], rest -> raise Premature_ending
               | id, rest ->
                 let fallback = extract_fallback rest lexemes in
-                let id = Omd_lexer.string_of_tokens id in
-                let alt = Omd_lexer.string_of_tokens alt in
+                let id = L.string_of_tokens id in
+                let alt = L.string_of_tokens alt in
                 main_loop_rev (Img_ref(rc, id, alt, fallback)::r)
                   [Cbracket]
                   rest
@@ -4145,19 +4238,19 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | NL_exception ->
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
                 | Some(r, p, l) -> main_loop_rev r p l
               end
            )
          | _ ->
            begin match maybe_extension extensions r previous lexemes with
-             | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+             | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
              | Some(r, p, l) -> main_loop_rev r p l
            end
        with
        | Premature_ending ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
            | Some(r, p, l) -> main_loop_rev r p l
          end
       )
@@ -4169,12 +4262,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       |Greaterthan as t)::tl
       ->
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
       end
     | _, (Number _  as t):: tl ->
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(Omd_lexer.string_of_token t)::r) [t] tl
+        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
         | Some(r, p, l) -> main_loop_rev r p l
       end
 
@@ -4187,8 +4280,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          :: tl ->
       begin match maybe_extension extensions r previous lexemes with
         | None ->
-          let tk0, tks = Omd_lexer.split_first tk in
-          let text = Omd_lexer.string_of_token tk0 in
+          let tk0, tks = L.split_first tk in
+          let text = L.string_of_token tk0 in
           main_loop_rev (Text text :: r) [tk0] (tks :: tl)
         | Some(r, p, l) ->
           main_loop_rev r p l
