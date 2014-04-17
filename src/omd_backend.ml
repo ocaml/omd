@@ -633,10 +633,16 @@ let rec sexpr_of_md md =
     | Img(alt, src, title) :: tl ->
         bprintf b "(Img %S %S %S)" alt src title;
         loop tl
-    | Text t1 :: Text t2 :: tl ->
-        loop (Text(t1^t2)::tl)
     | Text t :: tl ->
-        bprintf b "(Text %S)" t;
+        bprintf b "(Text %S" t;
+        let rec f = function
+          | Text t :: tl ->
+            bprintf b " %S" t;
+            f tl
+          | x -> x
+        in
+        let tl = f tl in
+        bprintf b ")";
         loop tl
     | Emph md :: tl ->
         Buffer.add_string b "(Emph";
