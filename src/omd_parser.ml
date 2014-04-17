@@ -20,6 +20,7 @@ and l = Omd_representation.tok list
 (** tokens to parse *)
 
 and main_loop =
+  ?html:bool ->
   r -> (* accumulator (beware, reversed tokens) *)
   p -> (* info: previous elements *)
   l -> (* tokens to parse *)
@@ -1064,7 +1065,7 @@ struct
            | Some (x,tl) -> L.string_of_tokens tl);
       result
 
-  let tag__maybe_h1 main_loop =
+  let tag__maybe_h1 (main_loop:main_loop) =
     Tag("tag__maybe_h1", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
@@ -1083,7 +1084,7 @@ struct
           None
       )
 
-  let tag__maybe_h2 main_loop =
+  let tag__maybe_h2 (main_loop:main_loop) =
     Tag("tag__maybe_h2", fun r p l ->
         match p with
         | ([]|[Newline|Newlines _]) ->
@@ -1995,7 +1996,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     in loop [] 0 l
 
   (* H1, H2, H3, ... *)
-  let read_title main_loop n r _previous lexemes =
+  let read_title (main_loop:main_loop) n r _previous lexemes =
     let title, rest =
       let rec loop accu = function
         | Backslash::Hash::tl ->
@@ -2061,7 +2062,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         extensions
 
   (* blockquotes *)
-  let emailstyle_quoting main_loop r _p lexemes =
+  let emailstyle_quoting (main_loop:main_loop) r _p lexemes =
     assert_well_formed lexemes;
     let rec loop block cl =
       function
@@ -2194,7 +2195,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
 
   (** maybe a link *)
-  let maybe_link main_loop r _p l =
+  let maybe_link (main_loop:main_loop) r _p l =
     if debug then eprintf "(OMD) # maybe_link\n";
     assert_well_formed l;
     let read_url name l =
@@ -2267,7 +2268,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* Has at least 2 consecutive newlines. *)
     List.exists (function Newlines _ -> true | _ -> false) l
 
-  let parse_list main_loop r _p l =
+  let parse_list (main_loop:main_loop) r _p l =
     assert_well_formed l;
     if debug then begin
       eprintf "(OMD) parse_list r=(%s) p=(%s) l=(%s)\n%!"
@@ -2651,18 +2652,22 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           assert false
     )
 
-  let spaces_not_at_beginning_of_line n r lexemes =
+  let spaces_not_at_beginning_of_line ?(html=false) n r lexemes =
     assert_well_formed lexemes;
     assert (n > 0);
     if n = 1 then
       (Text " "::r), [Space], lexemes
     else (
       match lexemes with
-      | Newline :: tl ->
-        (* 2 or more spaces before a newline, eat the newline *)
+      | Newline :: tl when not html ->
+        if debug then
+          eprintf
+            "(OMD) 2 or more spaces before a newline, eat the newline\n%!";
         Br::r, [Spaces(n-2)], tl
-      | Newlines k :: tl ->
-        (* 2 or more spaces before a newline, eat 1 newline *)
+      | Newlines k :: tl when not html ->
+        if debug then
+          eprintf
+            "(OMD) 2 or more spaces before a newline, eat 1 newline";
         let newlines = if k = 0 then Newline else Newlines(k-1) in
         Br::r, [Spaces(n-2)], newlines :: tl
       | _ ->
@@ -2721,10 +2726,18 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
   exception Orphan_closing of string * l * l
 
-  let rec main_loop_rev (r:r) (previous:p) (lexemes:l) =
+  let rec main_loop_rev ?(html=false) (r:r) (previous:p) (lexemes:l) =
+    let main_loop_rev ?(html=html) r p l =
+      if debug then eprintf "(OMD) main_loop_rev html=%b\n%!" html;
+      main_loop_rev ~html r p l
+    and main_loop ?(html=html) r p l =
+      if debug then eprintf "(OMD) main_loop html=%b\n%!" html;
+      main_loop ~html r p l
+    in
     assert_well_formed lexemes;
     if debug then
-      eprintf "(OMD) main_loop_rev r=%s p=(%s) l=(%s)\n%!"
+      eprintf "(OMD) main_loop_rev html=%b r=%s p=(%s) l=(%s)\n%!"
+        html
         (Omd_backend.sexpr_of_md (List.rev r))
         (L.destring_of_tokens previous)
         (L.destring_of_tokens lexemes);
@@ -2892,7 +2905,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let n = L.length t in
-      let r, p, l = spaces_not_at_beginning_of_line n r tl in
+      let r, p, l = spaces_not_at_beginning_of_line ~html:html n r tl in
       main_loop_rev r p l
 
     (* underscores *)
@@ -3285,16 +3298,28 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | HTML of string * (string * string) list * interm list
               | TOKENS of L.t
               | MD of Omd_representation.t
-              let rec md_of_interm_list = function
+              let rec md_of_interm_list html l =
+                let md_of_interm_list ?(html=html) l =
+                  md_of_interm_list html l
+                in
+                match l with
                 | [] -> []
                 | HTML(t, a, c)::tl ->
-                  Html_block(t, a, md_of_interm_list c)::md_of_interm_list tl
-                | MD md::tl -> md@md_of_interm_list tl
+                  Html_block
+                    (t,
+                     a,
+                     md_of_interm_list
+                       ~html:(not(List.mem ("media:type","text/omd") a))
+                       c)
+                  :: md_of_interm_list tl
+                | MD md::tl ->
+                  md@md_of_interm_list tl
                 | TOKENS t1::TOKENS t2::tl ->
                   md_of_interm_list (TOKENS(t2@t1)::tl)
                 | TOKENS t :: tl ->
-                    main_loop_rev [] [Word ""] (List.rev t)
-                    @ md_of_interm_list tl
+                  main_loop_rev ~html:html [] [Word ""] (List.rev t)
+                  @ md_of_interm_list tl
+              let md_of_interm_list l = md_of_interm_list false l
           end in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
@@ -3445,11 +3470,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                | [] -> assert false);
                               Some([T.HTML
                                       (t,
-                                       List.filter
-                                         (function
-                                           | ("media:type", "text/omd") -> false
-                                           | _ -> true)
-                                         attrs,
+                                       attrs,
                                        [T.MD
                                           (main_loop [] []
                                              (tag_setext main_loop before))])],
@@ -4092,9 +4113,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       end
 
 
-  and main_loop (r:r) (previous:p) (lexemes:l) =
+  and main_loop ?(html=false) (r:r) (previous:p) (lexemes:l) =
     assert_well_formed lexemes;
-    List.rev (main_loop_rev r previous lexemes)
+    List.rev (main_loop_rev ~html:html r previous lexemes)
 
   let main_parse lexemes =
     main_loop [] [] (tag_setext main_loop lexemes)
