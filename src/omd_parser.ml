@@ -1111,6 +1111,8 @@ struct
   let tag_setext main_loop lexemes =
     assert_well_formed lexemes;
     let rec loop pl res = function
+      | [] | [Newline|Newlines _] ->
+        pl@res
       | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
         begin
           match
@@ -1149,8 +1151,6 @@ struct
         loop [] (e1::pl@res) tl
       | e::tl ->
         loop (e::pl) res tl
-      | [] ->
-        pl@res
     in
     List.rev (loop [] [] lexemes)
 
@@ -3250,211 +3250,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] tl
       end
 
-    (* old block html *)
-    | ([]|[Newline|Newlines _]),
-      (Lessthan as t)
-      ::(Word(tagname)
-         ::(Space|Spaces _|Greaterthan|Greaterthans _ as after_tagname)
-         ::tl as tlx)
-      when false
-      ->
-      if StringSet.mem tagname inline_htmltags_set then
-        main_loop_rev r [Word ""] lexemes
-      else if not (blind_html || StringSet.mem tagname htmltags_set) then
-        begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_loop_rev r p l
-        end
-      else
-        let read_html() =
-          let rec loop accu n = function
-            | Lessthan::Slash::Word tn::Greaterthans 0::tl ->
-              loop accu n
-                (Lessthan::Slash::Word tn::Greaterthan::Greaterthan::tl)
-            | Lessthan::Slash::Word tn::Greaterthans g::tl ->
-              loop accu n
-                (Lessthan::Slash::Word tn::Greaterthan::Greaterthans(g-1)::tl)
-            | Lessthan::Slash::Word tn::Greaterthan::tl ->
-              if tn = tagname then
-                if n = 0 then
-                  List.rev (Greaterthan::Word tn::Slash::Lessthan::accu), tl
-                else
-                  loop (Greaterthan::Word tn::Slash::Lessthan::accu)
-                    (n-1) tl
-              else
-                loop (Greaterthan::Word tn::Slash::Lessthan::accu) n tl
-            | Lessthan::Word(tn)::tl ->
-              if tn = tagname then
-                loop (Word tn::Lessthan::accu) (n+1) tl
-              else
-                loop (Word tn::Lessthan::accu) n tl
-            | x::tl ->
-              loop (x::accu) n tl
-            | [] -> (* Invalid HTML because it's unfinished *)
-              (* List.rev accu, [] <-- to allow incomplete HTML *)
-              raise Not_found
-              (* This exception is caught a few lines farther. *)
-          in
-          loop [after_tagname;Word(tagname);Lessthan] 0 tl
-        in
-        if (try ignore(read_html()); false with Not_found -> true)
-        then
-        begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_loop_rev r p l
-        end
-        else
-        let html, tl_after_html = read_html() in
-        let html = L.string_of_tokens html in
-        let attributes = Omd_utils.extract_html_attributes html in
-        let html, tl =
-          try begin (* specified end of HTML block *)
-            let stop = L.lex (List.assoc "media:end" attributes) in
-            if stop = [] then raise Not_found;
-            match
-              fsplit
-                ~f:(
-                  let first = ref true in
-                  fun l ->
-                    let rec comp s b = match s, b with
-                      | _, [] -> Continue
-                      | [], _ ->
-                        begin
-                          match
-                            fsplit
-                              ~f:(function
-                                  | Greaterthan as g::x ->
-                                    Split([g], x)
-                                  | Greaterthans 0::x ->
-                                    Split([Greaterthan], Greaterthan::x)
-                                  | Greaterthans n::x ->
-                                    Split([Greaterthan], Greaterthans(n-1)::x)
-                                  | _ -> Continue)
-                              b
-                          with
-                          | Some(a, b) ->
-                            if !first then
-                              (first := false; Continue)
-                            else
-                              Split(List.rev a, b)
-                          | None ->
-                            raise Not_found
-                        end
-                      | a::b, c::d ->
-                        if a = c then
-                          comp b d
-                        else
-                          (*match a, c with
-                           | (Word wa|Number wa), (Word wc|Number wc)
-                             when String.length wa < String.length wc
-                             ->
-                             begin
-                               let rescue_substring s1 s2 =
-                                 let ls1 = String.length s1
-                                 and ls2 = String.length s2 in
-                                 let rec loop n =
-                                   if ls1 <= ls2 - n then
-                                     if String.sub s2 n ls1 = s1 then
-                                       Some(String.sub s2 0 n,
-                                            String.sub s2 n ls1,
-                                            String.sub s2 ls1 (ls2-ls1-n))
-                                     else
-                                       loop (n+1)
-                                   else
-                                     None
-                                 in loop 0
-                               in
-                               match rescue_substring wa wc with
-                               | None ->
-                                 Continue
-                               | Some(before, victim, after) ->
-                                 comp s
-                                   (Word before::Word victim::Word after::d)
-                                (* This doesn't work. A large generalization
-                                   is required to make this idea work
-                                   because there are many other ways to
-                                   make this difficult, as for instance
-                                   "!" is a substring of "!!!!". *)
-                             end
-                           | _ -> Continue
-                          *)
-                          Continue
-                    in
-                    comp stop l)
-                 tl
-            with
-            | Some(a,b) ->
-              L.string_of_tokens a, b
-            | None -> raise Not_found
-          end with Not_found -> html, tl_after_html
-        in
-        if List.mem ("media:type","text/omd") attributes then
-          let innerHTML = Omd_utils.extract_inner_html html in
-          let l_innerHTML = tag_setext main_loop (L.lex innerHTML) in
-          let parsed_innerHTML = make_paragraphs(main_loop [] [] l_innerHTML) in
-          let s_attributes =
-            List.fold_left
-              (fun r -> function
-                 | "media:type","text/omd"
-                 | "media:end", _ -> r
-                 | n, v ->
-                   if String.contains v '"' then
-                     Printf.sprintf "%s %s='%s'" r n v
-                   else
-                     Printf.sprintf "%s %s=\"%s\"" r n v
-              )
-              ""
-              attributes
-          in
-          (* Here we have to delay the conversion to HTML because
-             the inner markdown might use some references that are
-             defined further in the document, hence the use of
-             the extension constructor [X]. *)
-          let x = object
-            val f = fun convert ->
-              sprintf "<%s%s>%s</%s>"
-                tagname
-                s_attributes
-                (convert parsed_innerHTML)
-                tagname
-            method name = "Html_block"
-            method to_html ?indent to_html _t = Some(f to_html)
-            method to_sexpr to_sexpr _t = Some(f to_sexpr)
-            method to_t _t = Some([Raw_block(f Omd_backend.html_of_md)])
-          end
-          in
-          main_loop_rev (X(x) :: r) [Greaterthan] tl
-        else
-        if try ignore(List.assoc "media:end" attributes); true
-          with Not_found -> false
-        then
-          let innerHTML = Omd_utils.extract_inner_html html in
-          let s_attributes =
-            List.fold_left
-              (fun r -> function
-                 | "media:type","text/omd"
-                 | "media:end", _ -> r
-                 | n, v ->
-                   if String.contains v '"' then
-                     sprintf "%s %s='%s'" r n v
-                   else
-                     sprintf "%s %s=\"%s\"" r n v
-              )
-              ""
-              attributes
-          in
-          let html =
-            sprintf "<%s%s>%s</%s>"
-              tagname
-              s_attributes
-              innerHTML
-              tagname
-          in
-          main_loop_rev (Raw_block html :: r) [Greaterthan] tl
-        else
-          main_loop_rev (Raw_block html :: r) [Greaterthan] tl
-    (* / end of old block HTML. *)
-
+    (* awaited orphan html closing tag *)
     | _, Lessthan::Slash::Word(w)::(Greaterthan|Greaterthans _ as g)::tl
       when !mediatypetextomd <> [] ->
       raise (Orphan_closing(w,
@@ -3548,7 +3344,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 2\n%!" tagname;
                   if !mediatypetextomd <> [] then
                     raise
-                      (Orphan_closing(t, lexemes,
+                      (Orphan_closing(t,
+                                      lexemes,
                                       (match g with
                                        | Greaterthans 0 ->
                                          Greaterthan::tokens
@@ -3627,10 +3424,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                 end
                               | e::tl ->
                                 if tl == delimiter || tl = delimiter then
-                                  List.rev r
+                                  List.rev (e::r)
                                 else
                                   f (e::r) tl
-                              | [] -> r
+                              | [] -> List.rev r
                             in
                             f [] tokens
                           in
@@ -3642,15 +3439,22 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                               (L.destring_of_tokens after)
                               (L.destring_of_tokens before);
                           if tagname = t then
-                            Some([T.HTML
-                                    (t,
-                                     List.filter
-                                       (function
-                                         | ("media:type", "text/omd") -> false
-                                         | _ -> true)
-                                       attrs,
-                                     [T.MD (main_loop_rev [] [] before)])],
-                                 after)
+                            begin
+                              (match !mediatypetextomd with
+                               | _ :: tl -> mediatypetextomd := tl
+                               | [] -> assert false);
+                              Some([T.HTML
+                                      (t,
+                                       List.filter
+                                         (function
+                                           | ("media:type", "text/omd") -> false
+                                           | _ -> true)
+                                         attrs,
+                                       [T.MD
+                                          (main_loop_rev [] []
+                                             (before))])],
+                                   after)
+                            end
                           else
                             match !mediatypetextomd with
                             | _ :: tl -> mediatypetextomd := tl; None
