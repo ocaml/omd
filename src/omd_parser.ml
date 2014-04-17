@@ -3524,6 +3524,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   | T.Awaiting _ :: _ -> true
                   | _ -> false) ->
               begin match tokens with
+                | (Space|Spaces _) :: tokens ->
+                  (* attribute with no explicit value *)
+                  loop body ((attributename,"")::attrs) tagstatus tokens
+                | (Greaterthan::_) as tokens ->
+                  loop body ((attributename,"")::attrs) tagstatus tokens
                 | Equal :: Quotes 0 :: tokens ->
                   if debug then
                     eprintf "(OMD) empty attribute 1 %S\n%!"
@@ -3815,6 +3820,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   | _ -> false) ->
               begin match tokens with
                 | Newlines _ :: _ -> None
+                | (Space|Spaces _) :: tokens ->
+                  (* attribute with no explicit value *)
+                  loop body ((attributename,"")::attrs) tagstatus tokens
+                | (Greaterthan::_) as tokens ->
+                  loop body ((attributename,"")::attrs) tagstatus tokens
                 | Equal :: Quotes 0 :: tokens ->
                   if debug then
                     eprintf "(OMD) empty attribute 1 %S\n%!"
