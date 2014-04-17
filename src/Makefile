@@ -1,6 +1,6 @@
 OCAMLC = ocamlc.opt
 OCAMLCG = $(OCAMLC) -g
-OCAMLOPT = ocamlopt.opt
+OCAMLOPT = ocamlopt.opt -g
 
 all:
 	make cmis
