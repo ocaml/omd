@@ -1,7 +1,5 @@
-OMD: a Markdown parser in OCaml
-=================================
-
-OMD implements a Markdown parser in OCaml.
+OMD: extensible Markdown library and tool in OCaml
+==================================================
 
 OMD provides two things:
 
@@ -14,7 +12,7 @@ OMD provides two things:
    - the module `Omd` contains most functions a user will need for basic
      Markdown manipulation.
    - the modules `Omd_parser`, `Omd_lexer`, `Omd_backend`, `Omd_representation` and `Omd_utils` basically implement what their names say:
-     * `Omd_parser` implements the parser (the hardest part).
+     * `Omd_parser` implements the parser (the most complex part).
      * `Omd_lexer` implements a (basic) lexer.
      * `Omd_backend` implements 3 backends:
         1. HTML: default backend.
@@ -32,7 +30,7 @@ specs"](http://daringfireball.net/projects/markdown/syntax) with a few
 Github Flavour Markdown characteristics. OMD is also meant to be more
 "sane" than other Markdown parsers from the semantics point of view: if 
 something bothers you from the semantics point of view, please [open an
-issue](https://github.com/pw374/omd/issues).
+issue on Github](https://github.com/pw374/omd/issues).
 
 
 Encoding
@@ -48,6 +46,16 @@ OCaml 4.00.1 and then 4.01.0 have been used. OMD should be compatible
 with 3.12.0 as well, if it's not then please [open an
 issue](https://github.com/pw374/omd/issues).
 
+
+The opam package for OMD depends on ocamlfind, which is only
+used to compile and install OMD.
+
+The root Makefile uses oasis, ocamlbuild and oasis2opam.
+The Makefile in src/ only use the compilers from the standard
+distribution of OCaml.
+
+OMD, compiled as a library and/or a tool, doesn't depend on
+anything other than the OCaml standard library and runtime.
 
 ----------------
 
