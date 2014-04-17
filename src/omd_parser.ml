@@ -3317,7 +3317,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* self-closing tags *)
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
-                | T.Awaiting("br"|"hr" as tagname)::tagstatus ->
+                | T.Awaiting("br"|"hr"|"img"|"input" as tagname)::tagstatus ->
                   loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
                   loop (T.TOKENS[Greaterthan;Slash]::body)
@@ -3659,7 +3659,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* self-closing tags *)
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
-                | T.Awaiting("br"|"hr" as tagname)::tagstatus ->
+                | T.Awaiting("br"|"hr"|"img"|"input" as tagname)::tagstatus ->
                   loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
                   loop (T.TOKENS[Greaterthan;Slash]::body)
