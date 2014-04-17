@@ -88,6 +88,7 @@ being recommended.
 Also, tags 1.0.0.x will not be released in OPAM, next release will be 1.0.0.
 And 1.0.0.x may not be compatible with each other.
 
+- tag 1.0.0.c: rewrite parser of block HTML to use the updated Omd.t
 
 - tag 1.0.0.b: rewrite parser of inline HTML to use the updated Omd.t
 
