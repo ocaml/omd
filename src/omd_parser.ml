@@ -3451,8 +3451,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                            | _ -> true)
                                          attrs,
                                        [T.MD
-                                          (main_loop_rev [] []
-                                             (before))])],
+                                          (main_loop [] []
+                                             (tag_setext main_loop before))])],
                                    after)
                             end
                           else
