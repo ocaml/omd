@@ -101,12 +101,66 @@ if you find something that seems wrong.**
 which is the HTML title of the page located at 
 <http://daringfireball.net/projects/markdown/syntax>.
 
+Extension mechanisms
+--------------------
+
+The parser  is implemented using  a big (very big)  recursive function
+(`Omd_parser.Make(Env).main_loop_rev`), with  a set of  some auxiliary
+functions.  Some  parts  are  easy   to  understand,  some  parts  are
+not. However, overall, it should be easy enough.
+
+
+The parser has a double extension mechanism.
+
+1. To use the  first mechanism, you may define a  set of functions in
+the module  `Env` given to instanciate  the functor `Omd_parser.Make`.
+  * The   value  `Env.extensions`   is  a   list  of   elements  of
+    type `Omd_representation.extension` which is equal to 
+    `r -> p -> l -> (r * p * l) option` where
+    * `r = Omd_representation.t`
+       and represents the result of the parsing process,
+    * `p = Omd_representation.tok list`
+       and represents the tokens preceding `l`,  
+    * and `l = tok list` and is the list of tokens to parse.
+    * The result, of type `(r * p * l) option`, is `None` if
+      the extension has no effect (and the parser will continue
+      doing its job with its state it had before using the
+      extension), and is `Some(r,p,l)` when it gives a new set of
+      data to the parser.
+  * Each element of the list `Env.extensions` is applied in a fold left
+    manner. (The first element of that list is applied first.)
+  * And they are applied when a standard parsing rule fails.
+
+2. The second extension stands in the representation of the lexemes
+   (`Tag of string * extension`).
+   It allows to insert extensions directly into the lexeme list. 
+
+The  Markdown representation  also  provides  an extension  mechanism,
+which is  useful if you want  to insert “smart objects”  (which are as
+“smart” as smartphones). Those objects have four methods, 2 of them
+are particularly useful: `to_html` and `to_t`, and implementing one
+of them is necessary. They both return a `string option`, and a default
+dummy such smart object can be defined as follows:
+
+```ocaml
+let dummy =
+  X (object
+    method name = "dummy"
+    method to_html ?(indent=0) _ _ = None
+    method to_sexpr _ _ = None
+    method to_t _ = None
+  end)
+```
+
+
 
 History
 -------
 
 OMD has been developed by [Philippe Wang](https://github.com/pw374/)
-at [OCaml Labs](http://ocaml.io/) in [Cambridge](http://www.cl.cam.ac.uk).
+at [OCaml Labs](http://ocaml.io/) in [Cambridge](http://www.cl.cam.ac.uk),
+with precious feedbacks and [pull requests](https://github.com/pw374/omd/pulls)
+(cf. next section).
 
 Its development was motivated by at least these facts:
 
