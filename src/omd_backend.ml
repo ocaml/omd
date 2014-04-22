@@ -1035,19 +1035,27 @@ let rec markdown_of_md md =
       Buffer.add_string b s;
       Buffer.add_char b '\n';
       loop list_indent tl
-    | (Html(tagname, attrs, body) as e) :: tl ->
-      Buffer.add_string b (html_of_md [e]);
+    | (Html(tagname, attrs, body)) :: tl ->
+      Printf.bprintf b "<%s" tagname;
+      Buffer.add_string b (string_of_attrs attrs);
+      Buffer.add_string b ">";
+      loop list_indent body;
+      Printf.bprintf b "</%s>" tagname;
       loop list_indent tl
-    | (Html_block _ as e)::NL::((Html_block _:: _) as tl)
-    | (Html_block _ as e)::NL::NL::((Html_block _:: _) as tl)
-    | (Html_block _ as e)::((Html_block _:: _) as tl) ->
+    | (Html_block(tagname, attrs, body))::NL::((Html_block _:: _) as tl)
+    | (Html_block(tagname, attrs, body))::NL::NL::((Html_block _:: _) as tl)
+    | (Html_block(tagname, attrs, body))::((Html_block _:: _) as tl) ->
       if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
         Buffer.add_string b "\n\n"
       else if Buffer.length b = 0 then
         ()
       else
         Buffer.add_string b "\n";
-      Buffer.add_string b (html_of_md [e]);
+      Printf.bprintf b "<%s" tagname;
+      Buffer.add_string b (string_of_attrs attrs);
+      Buffer.add_string b ">";
+      loop list_indent body;
+      Printf.bprintf b "</%s>" tagname;
       Buffer.add_string b "\n";
       loop list_indent tl
     | (Html_block _ as e) :: tl ->
