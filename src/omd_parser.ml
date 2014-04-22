@@ -3310,12 +3310,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                      a,
                      md_of_interm_list
                        ~html:(not(List.mem ("media:type","text/omd") a))
-                       c)
+                       (List.rev c))
                   :: md_of_interm_list tl
                 | MD md::tl ->
                   md@md_of_interm_list tl
                 | TOKENS t1::TOKENS t2::tl ->
-                  md_of_interm_list (TOKENS(t2@t1)::tl)
+                  md_of_interm_list (TOKENS(t1@t2)::tl)
                 | TOKENS t :: tl ->
                   main_loop_rev ~html:html [] [Word ""] (List.rev t)
                   @ md_of_interm_list tl
@@ -3436,7 +3436,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                             (T.string_of_tagstatus tagstatus)
                             (L.string_of_tokens tokens)
                         end;
-                        Some(body@b, tokens)
+                        Some(b@body, tokens)
                     end
               end
             (* end of opening tag *)
