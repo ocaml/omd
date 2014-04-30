@@ -44,3 +44,9 @@ include .depend
 
 .depend:omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli Makefile
 	ocamldep omd_utils.ml omd_representation.ml omd_backend.ml omd_lexer.ml omd_parser.ml omd.ml omd_main.ml omd_utils.mli omd_representation.mli omd_backend.mli omd_lexer.mli omd_parser.mli omd.mli omd_main.mli > .depend
+
+
+test:
+	make clean
+	cd .. && make test
+	make
