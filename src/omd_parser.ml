@@ -2003,21 +2003,25 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           loop (Hash::Backslash::accu) tl
         | Backslashs(n)::Hash::tl when n mod 2 = 1 ->
           loop (Hash::Backslashs(n-1)::accu) tl
-        | Backslash::Hashs(0)::tl ->
+        | Backslash::Hashs(h)::tl ->
           begin match tl with
+            | []
             | (Space|Spaces _)::(Newline|Newlines _)::_
             | (Newline|Newlines _)::_ ->
-              loop (Hash::Backslash::accu) (Hash::tl)
+              loop (Hash::Backslash::accu)
+                ((if h = 0 then Hash else Hashs(h-1))::tl)
             | _ ->
-              loop (Hashs(0)::Backslash::accu) tl
+              loop (Hashs(h)::Backslash::accu) tl
           end
-        | Backslashs(n)::Hashs(0)::tl when n mod 2 = 1 ->
+        | Backslashs(n)::Hashs(h)::tl when n mod 2 = 1 ->
           begin match tl with
+            | []
             | (Space|Spaces _)::(Newline|Newlines _)::_
             | (Newline|Newlines _)::_ ->
-              loop (Hash::Backslashs(n)::accu) (Hash::tl)
+              loop (Hash::Backslashs(n)::accu)
+                ((if h = 0 then Hash else Hashs(h-1))::tl)
             | _ ->
-              loop (Hashs(0)::Backslashs(n)::accu) tl
+              loop (Hashs(h)::Backslashs(n)::accu) tl
           end
         | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
         | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
