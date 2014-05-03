@@ -3538,79 +3538,99 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     eprintf "(OMD) (3542) tagstatus=[]\n%!";
                   None
               end
+
             (* maybe attribute *)
-            | (Space|Spaces _)::Word(attributename)::tokens
-            | Word(attributename)::tokens
+            | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
+            | (Space|Spaces _)::(Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
               when (match tagstatus with
                   | T.Awaiting _ :: _ -> true
                   | _ -> false) ->
-              begin match tokens with
-                | (Space|Spaces _) :: tokens ->
+              begin
+                let module Attribute_value = struct
+                  type t = Empty of name | Named of name | Void
+                  and name = string
+                end in
+                let open Attribute_value in
+                let rec extract_attribute accu = function
+                  | (Space | Spaces _ | Newline) :: tokens->
+                    Empty(L.string_of_tokens(List.rev accu)), tokens
+                  | (Greaterthan|Greaterthans _) :: _ as tokens->
+                    Empty(L.string_of_tokens(List.rev accu)), tokens
+                  | Equal :: tokens ->
+                    Named(L.string_of_tokens(List.rev accu)), tokens
+                  | Colon | Colons _ | Underscore | Underscores _ | Word _
+                  | Number _ | Minus | Minuss _ | Dot | Dots _ as t :: tokens ->
+                    extract_attribute (t::accu) tokens
+                  | tokens -> Void, tokens
+                in
+                match extract_attribute [t] tokens with
+                | Empty attributename, tokens ->
                   (* attribute with no explicit value *)
                   loop body ((attributename,"")::attrs) tagstatus tokens
-                | (Greaterthan::_) as tokens ->
-                  loop body ((attributename,"")::attrs) tagstatus tokens
-                | Equal :: Quotes 0 :: tokens ->
-                  if debug then
-                    eprintf "(OMD) empty attribute 1 %S\n%!"
-                      (L.string_of_tokens tokens);
-                  loop body ((attributename, "")::attrs) tagstatus tokens
-                | Equal :: Quote :: tokens ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) non empty attribute 1 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    match
-                      fsplit
-                        ~excl:(function
-                            | Quotes _ :: _ -> true
-                            | _ -> false)
-                        ~f:(function
-                            | Quote::tl -> Split([], tl)
-                            | _ -> Continue)
-                        tokens
-                    with
-                    | None -> None
-                    | Some(at_val, tokens) ->
-                      loop body ((attributename,
-                                  L.string_of_tokens at_val)
-                                 ::attrs) tagstatus tokens
-                  end
-                | Equal :: Doublequotes 0 :: tokens ->
-                  begin
-                    if debug then
-                      Printf.printf "empty attribute 2 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    loop body ((attributename, "")::attrs) tagstatus tokens
-                  end
-                | Equal :: Doublequote :: tokens ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) non empty attribute 2 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    match fsplit
+                | Named attributename, tokens ->
+                  begin match tokens with
+                    | Quotes 0 :: tokens ->
+                      if debug then
+                        eprintf "(OMD) (block html) empty attribute 1 %S\n%!"
+                          (L.string_of_tokens tokens);
+                      loop body ((attributename, "")::attrs) tagstatus tokens
+                    | Quote :: tokens ->
+                      begin
+                        if debug then
+                          eprintf "(OMD) (block html) non empty attribute 1 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        match
+                          fsplit
                             ~excl:(function
-                                | Doublequotes _ :: _ -> true
+                                | Quotes _ :: _ -> true
                                 | _ -> false)
                             ~f:(function
-                                | Doublequote::tl -> Split([], tl)
+                                | Quote::tl -> Split([], tl)
                                 | _ -> Continue)
                             tokens
-                    with
-                    | None -> None
-                    | Some(at_val, tokens) ->
-                      if debug then
-                        eprintf "(OMD) (3632) %s=%S %s\n%!" attributename
-                          (L.string_of_tokens at_val)
-                          (L.destring_of_tokens tokens);
-                      loop body ((attributename,
-                                  L.string_of_tokens at_val)
-                                 ::attrs) tagstatus tokens
+                        with
+                        | None -> None
+                        | Some(at_val, tokens) ->
+                          loop body ((attributename,
+                                      L.string_of_tokens at_val)
+                                     ::attrs) tagstatus tokens
+                      end
+                    | Doublequotes 0 :: tokens ->
+                      begin
+                        if debug then
+                          Printf.printf "(OMD) (block html) empty attribute 2 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        loop body ((attributename, "")::attrs) tagstatus tokens
+                      end
+                    | Doublequote :: tokens ->
+                      begin
+                        if debug then
+                          eprintf "(OMD) (block html) non empty attribute 2 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        match fsplit
+                                ~excl:(function
+                                    | Doublequotes _ :: _ -> true
+                                    | _ -> false)
+                                ~f:(function
+                                    | Doublequote::tl -> Split([], tl)
+                                    | _ -> Continue)
+                                tokens
+                        with
+                        | None -> None
+                        | Some(at_val, tokens) ->
+                          if debug then
+                            eprintf "(OMD) (block html) (3622) %s=%S %s\n%!" attributename
+                              (L.string_of_tokens at_val)
+                              (L.destring_of_tokens tokens);
+                          loop body ((attributename,
+                                      L.string_of_tokens at_val)
+                                     ::attrs) tagstatus tokens
+                      end
+                    | _ -> None
                   end
-                | Colon::Word(w)::tokens ->
-                  loop body attrs tagstatus (Word(attributename^":"^w)::tokens)
-                | _ -> None
+                | Void, _ -> None
               end
+
             | x::tokens
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
@@ -3853,78 +3873,99 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     eprintf "(OMD) (4202) tagstatus=[]\n%!";
                   None
               end
+
             (* maybe attribute *)
-            | (Space|Spaces _)::Word(attributename)::tokens
-            | Word(attributename)::tokens
+            | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
+            | (Space|Spaces _)::(Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
               when (match tagstatus with
                   | T.Awaiting _ :: _ -> true
                   | _ -> false) ->
-              begin match tokens with
-                | Newlines _ :: _ -> None
-                | (Space|Spaces _) :: tokens ->
+              begin
+                let module Attribute_value = struct
+                  type t = Empty of name | Named of name | Void
+                  and name = string
+                end in
+                let open Attribute_value in
+                let rec extract_attribute accu = function
+                  | (Space | Spaces _ | Newline) :: tokens->
+                    Empty(L.string_of_tokens(List.rev accu)), tokens
+                  | (Greaterthan|Greaterthans _) :: _ as tokens->
+                    Empty(L.string_of_tokens(List.rev accu)), tokens
+                  | Equal :: tokens ->
+                    Named(L.string_of_tokens(List.rev accu)), tokens
+                  | Colon | Colons _ | Underscore | Underscores _ | Word _
+                  | Number _ | Minus | Minuss _ | Dot | Dots _ as t :: tokens ->
+                    extract_attribute (t::accu) tokens
+                  | tokens -> Void, tokens
+                in
+                match extract_attribute [t] tokens with
+                | Empty attributename, tokens ->
                   (* attribute with no explicit value *)
                   loop body ((attributename,"")::attrs) tagstatus tokens
-                | (Greaterthan::_) as tokens ->
-                  loop body ((attributename,"")::attrs) tagstatus tokens
-                | Equal :: Quotes 0 :: tokens ->
-                  if debug then
-                    eprintf "(OMD) (4220) empty attribute 1 %S\n%!"
-                      (L.string_of_tokens tokens);
-                  loop body ((attributename, "")::attrs) tagstatus tokens
-                | Equal :: Quote :: tokens ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) (4226) non empty attribute 1 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    match
-                      fsplit
-                        ~excl:(function
-                            | Quotes _ :: _ -> true
-                            | _ -> false)
-                        ~f:(function
-                            | Quote::tl -> Split([], tl)
-                            | _ -> Continue)
-                        tokens
-                    with
-                    | None -> None
-                    | Some(at_val, tokens) ->
-                      loop body ((attributename,
-                                  L.string_of_tokens at_val)
-                                 ::attrs) tagstatus tokens
-                  end
-                | Equal :: Doublequotes 0 :: tokens ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) (4247) empty attribute 2 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    loop body ((attributename, "")::attrs) tagstatus tokens
-                  end
-                | Equal :: Doublequote :: tokens ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) (4254) non empty attribute 2 %S\n%!"
-                        (L.string_of_tokens tokens);
-                    match fsplit
+                | Named attributename, tokens ->
+                  begin match tokens with
+                    | Quotes 0 :: tokens ->
+                      if debug then
+                        eprintf "(OMD) (inline html) empty attribute 1 %S\n%!"
+                          (L.string_of_tokens tokens);
+                      loop body ((attributename, "")::attrs) tagstatus tokens
+                    | Quote :: tokens ->
+                      begin
+                        if debug then
+                          eprintf "(OMD) (inline html) non empty attribute 1 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        match
+                          fsplit
                             ~excl:(function
-                                | Doublequotes _ :: _ -> true
+                                | Quotes _ :: _ -> true
                                 | _ -> false)
                             ~f:(function
-                                | Doublequote::tl -> Split([], tl)
+                                | Quote::tl -> Split([], tl)
                                 | _ -> Continue)
                             tokens
-                    with
-                    | None -> None
-                    | Some(at_val, tokens) ->
-                      if debug then
-                        eprintf "(OMD) %s=%S %S\n%!" attributename
-                          (L.string_of_tokens at_val)
-                          (L.string_of_tokens tokens);
-                      loop body ((attributename,
-                                  L.string_of_tokens at_val)
-                                 ::attrs) tagstatus tokens
+                        with
+                        | None -> None
+                        | Some(at_val, tokens) ->
+                          loop body ((attributename,
+                                      L.string_of_tokens at_val)
+                                     ::attrs) tagstatus tokens
+                      end
+                    | Doublequotes 0 :: tokens ->
+                      begin
+                        if debug then
+                          Printf.printf "(OMD) (inline html) empty attribute 2 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        loop body ((attributename, "")::attrs) tagstatus tokens
+                      end
+                    | Doublequote :: tokens ->
+                      begin
+                        if debug then
+                          eprintf "(OMD) (inline html) non empty attribute 2 %S\n%!"
+                            (L.string_of_tokens tokens);
+                        match fsplit
+                                ~excl:(function
+                                    | Doublequotes _ :: _ -> true
+                                    | _ -> false)
+                                ~f:(function
+                                    | Doublequote::tl -> Split([], tl)
+                                    | _ -> Continue)
+                                tokens
+                        with
+                        | None -> None
+                        | Some(at_val, tokens) ->
+                          if debug then
+                            eprintf "(OMD) (3957) %s=%S %s\n%!" attributename
+                              (L.string_of_tokens at_val)
+                              (L.destring_of_tokens tokens);
+                          loop body ((attributename,
+                                      L.string_of_tokens at_val)
+                                     ::attrs) tagstatus tokens
+                      end
+                    | _ -> None
                   end
-                | _ -> None
+                | Void, _ -> None
               end
+
             | x::tokens
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
