@@ -3346,7 +3346,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               else
                 begin
                   if debug then
-                    eprintf "(OMD) (BHTML) Not enough to read for block HTML\n%!";
+                    eprintf "(OMD) Not enough to read for block HTML\n%!";
                   None
                 end
             | Lessthans n::tokens ->
@@ -3372,7 +3372,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin match tagstatus with
                 | T.Open t :: _ when t = tagname ->
                   if debug then
-                    eprintf "(OMD) (3371) properly closing %S\n%!" t;
+                    eprintf "(OMD) (3375) properly closing %S\n%!" t;
                   Some(body,
                        (match g with
                         | Greaterthans 0 -> Greaterthan :: tokens
@@ -3515,8 +3515,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     begin match loop body [] (T.Open t::tagstatus) tokens with
                       | None ->
                         if debug then
-                          eprintf
-                            "(OMD) (3493) Couldn't find an closing tag for %S\n%!"
+                          eprintf "(OMD) (3519) \
+                                   Couldn't find an closing tag for %S\n%!"
                             t;
                         None
                       | Some(body, l) ->
@@ -3541,7 +3541,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
             (* maybe attribute *)
             | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
-            | (Space|Spaces _)::(Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
+            | (Space|Spaces _)
+              ::(Colon|Colons _|Underscore|Underscores _|Word _ as t)
+              ::tokens
               when (match tagstatus with
                   | T.Awaiting _ :: _ -> true
                   | _ -> false) ->
@@ -3571,13 +3573,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   begin match tokens with
                     | Quotes 0 :: tokens ->
                       if debug then
-                        eprintf "(OMD) (block html) empty attribute 1 %S\n%!"
+                        eprintf "(OMD) (BHTML) empty attribute 1 %S\n%!"
                           (L.string_of_tokens tokens);
                       loop body ((attributename, "")::attrs) tagstatus tokens
                     | Quote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (block html) non empty attribute 1 %S\n%!"
+                          eprintf "(OMD) (BHTML) non empty attribute 1 %S\n%!"
                             (L.string_of_tokens tokens);
                         match
                           fsplit
@@ -3598,14 +3600,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Doublequotes 0 :: tokens ->
                       begin
                         if debug then
-                          Printf.printf "(OMD) (block html) empty attribute 2 %S\n%!"
+                          Printf.printf "(OMD) (BHTML) empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         loop body ((attributename, "")::attrs) tagstatus tokens
                       end
                     | Doublequote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (block html) non empty attribute 2 %S\n%!"
+                          eprintf "(OMD) (BHTML) non empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         match fsplit
                                 ~excl:(function
@@ -3619,7 +3621,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | None -> None
                         | Some(at_val, tokens) ->
                           if debug then
-                            eprintf "(OMD) (block html) (3622) %s=%S %s\n%!" attributename
+                            eprintf "(OMD) (BHTML) (3622) %s=%S %s\n%!"
+                              attributename
                               (L.string_of_tokens at_val)
                               (L.destring_of_tokens tokens);
                           loop body ((attributename,
@@ -3876,7 +3879,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
             (* maybe attribute *)
             | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
-            | (Space|Spaces _)::(Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
+            | (Space|Spaces _)
+              ::(Colon|Colons _|Underscore|Underscores _|Word _ as t)
+              ::tokens
               when (match tagstatus with
                   | T.Awaiting _ :: _ -> true
                   | _ -> false) ->
@@ -3906,13 +3911,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   begin match tokens with
                     | Quotes 0 :: tokens ->
                       if debug then
-                        eprintf "(OMD) (inline html) empty attribute 1 %S\n%!"
+                        eprintf "(OMD) (IHTML) empty attribute 1 %S\n%!"
                           (L.string_of_tokens tokens);
                       loop body ((attributename, "")::attrs) tagstatus tokens
                     | Quote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (inline html) non empty attribute 1 %S\n%!"
+                          eprintf "(OMD) (IHTML) non empty attribute 1 %S\n%!"
                             (L.string_of_tokens tokens);
                         match
                           fsplit
@@ -3933,14 +3938,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Doublequotes 0 :: tokens ->
                       begin
                         if debug then
-                          Printf.printf "(OMD) (inline html) empty attribute 2 %S\n%!"
+                          Printf.printf "(OMD) (IHTML) empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         loop body ((attributename, "")::attrs) tagstatus tokens
                       end
                     | Doublequote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (inline html) non empty attribute 2 %S\n%!"
+                          eprintf "(OMD) (IHTML) non empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         match fsplit
                                 ~excl:(function
