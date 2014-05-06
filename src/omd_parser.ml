@@ -3314,17 +3314,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                       (t,
                        a,
                        make_paragraphs
-                         (md_of_interm_list
-                            ~html:(not(List.mem ("media:type","text/omd") a))
-                            (List.rev c)))
+                         (md_of_interm_list ~html:false (List.rev c)))
                     :: md_of_interm_list tl
                   else
                     Html_block
-                      (t,
-                       a,
-                       md_of_interm_list
-                         ~html:(not(List.mem ("media:type","text/omd") a))
-                         (List.rev c))
+                      (t, a, md_of_interm_list ~html:true (List.rev c))
                     :: md_of_interm_list tl
                 | MD md::tl ->
                   md@md_of_interm_list tl
