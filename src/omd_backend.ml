@@ -404,7 +404,7 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | Html_block(tagname, attrs, body) as e :: tl ->
-      let attrs = List.filter ((<>) ("media:type", "text/omd")) attrs in
+      let attrs = List.filter ((<>) ("media:type", Some "text/omd")) attrs in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -570,13 +570,20 @@ let rec html_and_headers_of_md
 and string_of_attrs attrs =
   let b = Buffer.create 42 in
   List.iter
-    (fun (a,v) ->
-       if String.contains v '"' then
-         Printf.bprintf b " %s='%s'" a v
-       else if String.contains v '\'' then
-         Printf.bprintf b " %s=\"%s\"" a v
-       else
-         Printf.bprintf b " %s=\"%s\"" a v)
+    (function
+      | (a, Some v) ->
+        if String.contains v '"' then
+          Printf.bprintf b " %s='%s'" a v
+        else if String.contains v '\'' then
+          Printf.bprintf b " %s=\"%s\"" a v
+        else
+          Printf.bprintf b " %s=\"%s\"" a v
+      | a, None ->
+        (* if html4 then *)
+        (*   Printf.bprintf b " %s='%s'" a a *)
+        (* else *)
+        Printf.bprintf b " %s=''" a (* HTML5 *)
+    )
     attrs;
   Buffer.contents b
 

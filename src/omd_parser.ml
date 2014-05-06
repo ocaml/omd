@@ -3299,7 +3299,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | Awaiting of string
               | Open of string
             type interm =
-              | HTML of string * (string * string) list * interm list
+              | HTML of string * (string * string option) list * interm list
               | TOKENS of L.t
               | MD of Omd_representation.t
               let rec md_of_interm_list html l =
@@ -3309,7 +3309,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match l with
                 | [] -> []
                 | HTML(t, a, c)::tl ->
-                  if List.mem ("media:type", "text/omd") a then
+                  if List.mem ("media:type", Some "text/omd") a then
                     Html_block
                       (t,
                        a,
@@ -3451,7 +3451,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | Greaterthan::tokens ->
               begin match tagstatus with
                 | T.Awaiting t :: tagstatus ->
-                  if List.mem ("media:type","text/omd") attrs then
+                  if List.mem ("media:type", Some "text/omd") attrs then
                     begin
                       mediatypetextomd := t :: !mediatypetextomd;
                       begin
@@ -3572,14 +3572,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match extract_attribute [t] tokens with
                 | Empty attributename, tokens ->
                   (* attribute with no explicit value *)
-                  loop body ((attributename,"")::attrs) tagstatus tokens
+                  loop body ((attributename, None)::attrs) tagstatus tokens
                 | Named attributename, tokens ->
                   begin match tokens with
                     | Quotes 0 :: tokens ->
                       if debug then
                         eprintf "(OMD) (BHTML) empty attribute 1 %S\n%!"
                           (L.string_of_tokens tokens);
-                      loop body ((attributename, "")::attrs) tagstatus tokens
+                      loop body ((attributename, Some "")::attrs) tagstatus tokens
                     | Quote :: tokens ->
                       begin
                         if debug then
@@ -3598,7 +3598,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | None -> None
                         | Some(at_val, tokens) ->
                           loop body ((attributename,
-                                      L.string_of_tokens at_val)
+                                      Some(L.string_of_tokens at_val))
                                      ::attrs) tagstatus tokens
                       end
                     | Doublequotes 0 :: tokens ->
@@ -3606,7 +3606,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         if debug then
                           Printf.printf "(OMD) (BHTML) empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
-                        loop body ((attributename, "")::attrs) tagstatus tokens
+                        loop body ((attributename, Some "")::attrs) tagstatus tokens
                       end
                     | Doublequote :: tokens ->
                       begin
@@ -3630,7 +3630,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                               (L.string_of_tokens at_val)
                               (L.destring_of_tokens tokens);
                           loop body ((attributename,
-                                      L.string_of_tokens at_val)
+                                      Some(L.string_of_tokens at_val))
                                      ::attrs) tagstatus tokens
                       end
                     | _ -> None
@@ -3698,7 +3698,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | Awaiting of string
               | Open of string
             type interm =
-              | HTML of string * (string * string) list * interm list
+              | HTML of string * (string * string option) list * interm list
               | TOKENS of L.t
               | MD of Omd_representation.t
             let rec md_of_interm_list = function
@@ -3910,14 +3910,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match extract_attribute [t] tokens with
                 | Empty attributename, tokens ->
                   (* attribute with no explicit value *)
-                  loop body ((attributename,"")::attrs) tagstatus tokens
+                  loop body ((attributename, None)::attrs) tagstatus tokens
                 | Named attributename, tokens ->
                   begin match tokens with
                     | Quotes 0 :: tokens ->
                       if debug then
                         eprintf "(OMD) (IHTML) empty attribute 1 %S\n%!"
                           (L.string_of_tokens tokens);
-                      loop body ((attributename, "")::attrs) tagstatus tokens
+                      loop body ((attributename, Some "")::attrs) tagstatus tokens
                     | Quote :: tokens ->
                       begin
                         if debug then
@@ -3936,7 +3936,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | None -> None
                         | Some(at_val, tokens) ->
                           loop body ((attributename,
-                                      L.string_of_tokens at_val)
+                                      Some(L.string_of_tokens at_val))
                                      ::attrs) tagstatus tokens
                       end
                     | Doublequotes 0 :: tokens ->
@@ -3944,7 +3944,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         if debug then
                           Printf.printf "(OMD) (IHTML) empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
-                        loop body ((attributename, "")::attrs) tagstatus tokens
+                        loop body ((attributename, Some "")::attrs) tagstatus tokens
                       end
                     | Doublequote :: tokens ->
                       begin
@@ -3967,7 +3967,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                               (L.string_of_tokens at_val)
                               (L.destring_of_tokens tokens);
                           loop body ((attributename,
-                                      L.string_of_tokens at_val)
+                                      Some(L.string_of_tokens at_val))
                                      ::attrs) tagstatus tokens
                       end
                     | _ -> None
