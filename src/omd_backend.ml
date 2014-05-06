@@ -404,6 +404,7 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | Html_block(tagname, attrs, body) as e :: tl ->
+      let attrs = List.filter ((<>) ("media:type", "text/omd")) attrs in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;

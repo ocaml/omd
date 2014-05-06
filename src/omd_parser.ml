@@ -628,7 +628,7 @@ struct
          | [] | [NL] | [Br] -> loop cp (e::accu) tl
          | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
       | Text "\n" :: _ | Paragraph _ :: _ ->
-        invalid_arg "Omd_backend.make_paragraphs"
+        invalid_arg "Omd_parser.make_paragraphs"
       | (NL|Br) :: (NL|Br) :: tl ->
         let tl = remove_initial_newlines tl in
         begin match cp with
@@ -3309,13 +3309,23 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match l with
                 | [] -> []
                 | HTML(t, a, c)::tl ->
-                  Html_block
-                    (t,
-                     a,
-                     md_of_interm_list
-                       ~html:(not(List.mem ("media:type","text/omd") a))
-                       (List.rev c))
-                  :: md_of_interm_list tl
+                  if List.mem ("media:type", "text/omd") a then
+                    Html_block
+                      (t,
+                       a,
+                       make_paragraphs
+                         (md_of_interm_list
+                            ~html:(not(List.mem ("media:type","text/omd") a))
+                            (List.rev c)))
+                    :: md_of_interm_list tl
+                  else
+                    Html_block
+                      (t,
+                       a,
+                       md_of_interm_list
+                         ~html:(not(List.mem ("media:type","text/omd") a))
+                         (List.rev c))
+                    :: md_of_interm_list tl
                 | MD md::tl ->
                   md@md_of_interm_list tl
                 | TOKENS t1::TOKENS t2::tl ->
