@@ -3280,7 +3280,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                              | _ -> tl)))
 
     (* block html *)
-    | ([] | [Newline|Newlines _]),
+    | ([] | [Newline|Newlines _|Tag("HTMLBLOCK", _)]),
       (Lessthan as t)
       ::((Word(tagnametop) as w)
          ::((Space|Spaces _|Greaterthan|Greaterthans _)
@@ -3670,7 +3670,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         in
         begin match read_html() with
           | Some(html, rest) ->
-            main_loop_rev (html@r) [Greaterthan] rest
+            main_loop_rev (html@r) [Tag("HTMLBLOCK", fun _ _ _ -> None)] rest
           | None ->
             let text = L.string_of_token t in
             main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff

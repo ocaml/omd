@@ -96,6 +96,8 @@ being recommended.
 Also, tags 1.0.0.x will not be released in OPAM, next release will be 1.0.0.
 And 1.0.0.x may not be compatible with each other.
 
+- tag 1.0.0.g: accept HTML blocks which directly follow each other
+
 - tag 1.0.0.f: fix: accept all XML-compatible attribute names for HTML attributes
 
 - tag 1.0.0.e: fix backslash-escaping for hash-ending ATX-titles + fix Markdown output for Html_block
