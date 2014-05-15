@@ -8,7 +8,7 @@
 include Omd_representation
 include Omd_backend
 
-let of_string ?extensions:e ?default_lang:d s =
+let of_input lex ?extensions:e ?default_lang:d s =
   let module E = Omd_parser.Default_env(struct end) in
   let module Parser = Omd_parser.Make(
     struct
@@ -18,10 +18,12 @@ let of_string ?extensions:e ?default_lang:d s =
     end
   ) in
   let md =
-    Parser.parse (Omd_lexer.lex s)
+    Parser.parse (lex s)
   in
   Parser.make_paragraphs md
 
+let of_string = of_input Omd_lexer.lex
+let of_bigarray = of_input Omd_lexer.lex_bigarray
 
 let to_html :
   ?override:(Omd_representation.element -> string option) ->

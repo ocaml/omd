@@ -179,130 +179,172 @@ let split_first = function
   | Tilde | Underscore | Tag _ | Word _ ->
      invalid_arg "Omd_lexer.split_first"
 
-let lex s =
-  let result = ref [] in
-  let i = ref 0 in
-  let l = String.length s in
-  let rcount c =
-    (* [rcount c] returns the number of immediate consecutive
-       occurrences of [c].  By side-effect, it increases the reference
-       counter [i]. *)
-    let rec loop r =
-      if !i = l then r
-      else if s.[!i] = c then (incr i; loop (r+1))
-      else r
-    in
-    loop 1
-  in
-  let word () =
-    let start = !i in
-    let rec loop () =
-      begin
-        if !i = l then
-          Word(String.sub s start (!i-start))
-        else
-          match s.[!i] with
-          | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\''
-          | '"' | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':'
-          | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
-          | '$' | '%' | '!' | '?' | '=' ->
-              Word(String.sub s start (!i-start))
-          | c -> incr i; loop()
-      end
-    in
-    loop()
-  in
-  let maybe_number () =
-    let start = !i in
-    while
-      !i < l &&
-      match s.[!i] with
-      | '0' .. '9' -> true
-      | _ -> false
-    do
-      incr i
-    done;
-    if !i = l then
-      Number(String.sub s start (!i-start))
-    else
-      begin match s.[!i] with
-        | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
-        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
-        | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
-        | '?' | '=' ->
-            Number(String.sub s start (!i-start))
-        | _ ->
-            i := start;
-            word()
-      end
-  in
+module type Input =
+sig
+  type t
+  val length : t -> int
+  val get : t -> int -> char
+  val sub : t -> pos:int -> len:int -> string
+end
 
-  let n_occ c = incr i; rcount c in
+module Lex(I : Input) :
+sig
+  val lex : I.t -> t
+end =
+struct
+  let lex (s : I.t) =
+    let result = ref [] in
+    let i = ref 0 in
+    let l = I.length s in
+    let rcount c =
+      (* [rcount c] returns the number of immediate consecutive
+         occurrences of [c].  By side-effect, it increases the reference
+         counter [i]. *)
+      let rec loop r =
+        if !i = l then r
+        else if I.get s !i = c then (incr i; loop (r+1))
+        else r
+      in
+      loop 1
+    in
+    let word () =
+      let start = !i in
+      let rec loop () =
+        begin
+          if !i = l then
+            Word(I.sub s ~pos:start ~len:(!i-start))
+          else
+            match I.get s !i with
+            | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\''
+            | '"' | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':'
+            | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
+            | '$' | '%' | '!' | '?' | '=' ->
+                Word(I.sub s ~pos:start ~len:(!i-start))
+            | c -> incr i; loop()
+        end
+      in
+      loop()
+    in
+    let maybe_number () =
+      let start = !i in
+      while
+        !i < l &&
+        match I.get s !i with
+        | '0' .. '9' -> true
+        | _ -> false
+      do
+        incr i
+      done;
+      if !i = l then
+        Number(I.sub s ~pos:start ~len:(!i-start))
+      else
+        begin match I.get s !i with
+          | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
+          | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
+          | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
+          | '?' | '=' ->
+              Number(I.sub s ~pos:start ~len:(!i-start))
+          | _ ->
+              i := start;
+              word()
+        end
+    in
 
-  while !i < l do
-    let c = s.[!i] in
-    let w = match c with
-      | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
-(*       | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2) *)
-      | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
-      | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
-      | '\r' -> (* eliminating \r by converting all styles to unix style *)
-          let n = n_occ c in
-            if n = 1 then
-              if !i = l then
-                Newline
-              else
-                if s.[!i] = '\n' then
-                  (incr i; Newline)
-                else
+    let n_occ c = incr i; rcount c in
+
+    while !i < l do
+      let c = I.get s !i in
+      let w = match c with
+        | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
+  (*       | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2) *)
+        | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
+        | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
+        | '\r' -> (* eliminating \r by converting all styles to unix style *)
+            let n = n_occ c in
+              if n = 1 then
+                if !i = l then
                   Newline
-            else
-              Newlines (n-2)
-      | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
-      | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
-      | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
-      | '+'  -> let n = n_occ c in if n = 1 then Plus else Pluss (n-2)
-      | '`'  -> let n = n_occ c in if n = 1 then Backquote else Backquotes (n-2)
-      | '\'' -> let n = n_occ c in if n = 1 then Quote else Quotes (n-2)
-      | '"'  -> let n = n_occ c in if n = 1 then Doublequote
-                                  else Doublequotes (n-2)
-      | '\\' -> let n = n_occ c in if n = 1 then Backslash
-                                  else Backslashs (n-2)
-      | '_'  -> let n = n_occ c in if n = 1 then Underscore
-                                  else Underscores (n-2)
-      | '['  -> let n = n_occ c in if n = 1 then Obracket
-                                  else Obrackets (n-2)
-      | ']'  -> let n = n_occ c in if n = 1 then Cbracket else Cbrackets (n-2)
-      | '{'  -> let n = n_occ c in if n = 1 then Obrace else Obraces (n-2)
-      | '}'  -> let n = n_occ c in if n = 1 then Cbrace else Cbraces (n-2)
-      | '('  -> let n = n_occ c in if n = 1 then Oparenthesis
-                                  else Oparenthesiss (n-2)
-      | ')'  -> let n = n_occ c in if n = 1 then Cparenthesis
-                                  else Cparenthesiss (n-2)
-      | ':'  -> let n = n_occ c in if n = 1 then Colon else Colons (n-2)
-      | ';'  -> let n = n_occ c in if n = 1 then Semicolon else Semicolons (n-2)
-      | '>'  -> let n = n_occ c in if n = 1 then Greaterthan
-                                  else Greaterthans (n-2)
-      | '~'  -> let n = n_occ c in if n = 1 then Tilde else Tildes (n-2)
-      | '<'  -> let n = n_occ c in if n = 1 then Lessthan else Lessthans (n-2)
-      | '@'  -> let n = n_occ c in if n = 1 then At else Ats (n-2)
-      | '&'  -> let n = n_occ c in if n = 1 then Ampersand else Ampersands (n-2)
-      | '|'  -> let n = n_occ c in if n = 1 then Bar else Bars (n-2)
-      | '^'  -> let n = n_occ c in if n = 1 then Caret else Carets (n-2)
-      | ','  -> let n = n_occ c in if n = 1 then Comma else Commas (n-2)
-      | '.'  -> let n = n_occ c in if n = 1 then Dot else Dots (n-2)
-      | '/'  -> let n = n_occ c in if n = 1 then Slash else Slashs (n-2)
-      | '$'  -> let n = n_occ c in if n = 1 then Dollar else Dollars (n-2)
-      | '%'  -> let n = n_occ c in if n = 1 then Percent else Percents (n-2)
-      | '='  -> let n = n_occ c in if n = 1 then Equal else Equals (n-2)
-      | '!'  -> let n = n_occ c in if n = 1 then Exclamation
-                                  else Exclamations (n-2)
-      | '?'  -> let n = n_occ c in if n = 1 then Question else Questions (n-2)
-      | '0' .. '9' -> maybe_number()
-      | c -> word() in
-    result := w :: !result
-  done;
-  List.rev !result
+                else
+                  if I.get s !i = '\n' then
+                    (incr i; Newline)
+                  else
+                    Newline
+              else
+                Newlines (n-2)
+        | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
+        | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
+        | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
+        | '+'  -> let n = n_occ c in if n = 1 then Plus else Pluss (n-2)
+        | '`'  -> let n = n_occ c in if n = 1 then Backquote else Backquotes (n-2)
+        | '\'' -> let n = n_occ c in if n = 1 then Quote else Quotes (n-2)
+        | '"'  -> let n = n_occ c in if n = 1 then Doublequote
+                                    else Doublequotes (n-2)
+        | '\\' -> let n = n_occ c in if n = 1 then Backslash
+                                    else Backslashs (n-2)
+        | '_'  -> let n = n_occ c in if n = 1 then Underscore
+                                    else Underscores (n-2)
+        | '['  -> let n = n_occ c in if n = 1 then Obracket
+                                    else Obrackets (n-2)
+        | ']'  -> let n = n_occ c in if n = 1 then Cbracket else Cbrackets (n-2)
+        | '{'  -> let n = n_occ c in if n = 1 then Obrace else Obraces (n-2)
+        | '}'  -> let n = n_occ c in if n = 1 then Cbrace else Cbraces (n-2)
+        | '('  -> let n = n_occ c in if n = 1 then Oparenthesis
+                                    else Oparenthesiss (n-2)
+        | ')'  -> let n = n_occ c in if n = 1 then Cparenthesis
+                                    else Cparenthesiss (n-2)
+        | ':'  -> let n = n_occ c in if n = 1 then Colon else Colons (n-2)
+        | ';'  -> let n = n_occ c in if n = 1 then Semicolon else Semicolons (n-2)
+        | '>'  -> let n = n_occ c in if n = 1 then Greaterthan
+                                    else Greaterthans (n-2)
+        | '~'  -> let n = n_occ c in if n = 1 then Tilde else Tildes (n-2)
+        | '<'  -> let n = n_occ c in if n = 1 then Lessthan else Lessthans (n-2)
+        | '@'  -> let n = n_occ c in if n = 1 then At else Ats (n-2)
+        | '&'  -> let n = n_occ c in if n = 1 then Ampersand else Ampersands (n-2)
+        | '|'  -> let n = n_occ c in if n = 1 then Bar else Bars (n-2)
+        | '^'  -> let n = n_occ c in if n = 1 then Caret else Carets (n-2)
+        | ','  -> let n = n_occ c in if n = 1 then Comma else Commas (n-2)
+        | '.'  -> let n = n_occ c in if n = 1 then Dot else Dots (n-2)
+        | '/'  -> let n = n_occ c in if n = 1 then Slash else Slashs (n-2)
+        | '$'  -> let n = n_occ c in if n = 1 then Dollar else Dollars (n-2)
+        | '%'  -> let n = n_occ c in if n = 1 then Percent else Percents (n-2)
+        | '='  -> let n = n_occ c in if n = 1 then Equal else Equals (n-2)
+        | '!'  -> let n = n_occ c in if n = 1 then Exclamation
+                                    else Exclamations (n-2)
+        | '?'  -> let n = n_occ c in if n = 1 then Question else Questions (n-2)
+        | '0' .. '9' -> maybe_number()
+        | c -> word() in
+      result := w :: !result
+    done;
+    List.rev !result
+end
+
+module Lex_string = Lex(StringLabels)
+let lex = Lex_string.lex
+
+type bigstring = (char,
+                  Bigarray.int8_unsigned_elt,
+                  Bigarray.c_layout) Bigarray.Array1.t
+
+module Bigarray_input : Input with type t = bigstring =
+struct
+  module BA = Bigarray
+
+  type t = bigstring
+  let get = BA.Array1.get
+  let length = BA.Array1.dim
+  let sub arr ~pos ~len =
+    if len < 0 || pos < 0 || pos + len > BA.Array1.dim arr
+    then invalid_arg "Bigarray_input.sub";
+    let s = String.create len in
+    begin
+      for i = 0 to len - 1 do
+        String.unsafe_set s i (BA.Array1.unsafe_get arr (i + pos))
+      done;
+      s
+    end
+end
+module Lex_bigarray = Lex(Bigarray_input)
+let lex_bigarray = Lex_bigarray.lex
 
 let make_space = function
   | 0 -> invalid_arg "Omd_lexer.make_space"
