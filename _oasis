@@ -18,6 +18,7 @@ Plugins:     META (0.3), StdFiles (0.3)
 Library "omd"
   Path:         src
   BuildTools:   ocamlbuild
+  BuildDepends: bigarray
   Modules:      Omd_utils, Omd_representation, Omd_backend, Omd_lexer, Omd_parser, Omd
 
 Executable "omd"
