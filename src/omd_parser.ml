@@ -3128,9 +3128,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       main_loop_rev (Text ("\\") :: r) [t] tl
     | _, (Backslashs n as t) :: tl -> (* \\\\... *)
       if n mod 2 = 0 then
-        main_loop_rev (Text(String.make ((n-2)/2) '\\') :: r) [t] tl
+        main_loop_rev (Text(String.make ((n+2)/2) '\\') :: r) [t] tl
       else
-        main_loop_rev (Text(String.make ((n-2)/2) '\\') :: r) [t] (Backslash :: tl)
+        main_loop_rev (Text(String.make ((n+2)/2) '\\') :: r) [t] (Backslash :: tl)
     | _, Backslash::[] ->
       main_loop_rev (Text "\\" :: r) [] []
     | _, Backslash::tl ->
@@ -3146,10 +3146,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           None
         | Greaterthan::tl ->
           let url =
-            (match t with Lessthans 0 -> "<"
-                        | Lessthans n -> String.make (n-2) '<' | _ -> "")
-            ^ (L.string_of_token w) ^ "://"
-            ^ (if n = 0 then "" else String.make (n-2) '/')
+            (L.string_of_token w) ^ "://"
+            ^ (if n = 0 then "" else String.make (n-1) '/')
             ^ L.string_of_tokens (List.rev accu)
           in Some(url, tl)
         | x::tl ->
@@ -3159,6 +3157,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       in
       begin match read_url [] tl with
         | Some(url, new_tl) ->
+          let r = 
+            match t with
+            | Lessthans 0 -> Text "<" :: r
+            | Lessthans n -> Text(String.make (n+1) '<') :: r
+            | _ -> r
+          in
           main_loop_rev (Url(url,[Text url],"")::r) [] new_tl
         | None ->
           begin match maybe_extension extensions r previous lexemes with
