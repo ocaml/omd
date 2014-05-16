@@ -1,6 +1,6 @@
-OCAMLC = ocamlc.opt
+OCAMLC = ocamlc.opt bigarray.cma
 OCAMLCG = $(OCAMLC) -g
-OCAMLOPT = ocamlopt.opt -g
+OCAMLOPT = ocamlopt.opt -g bigarray.cmxa
 
 all:
 	make cmis
