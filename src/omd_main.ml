@@ -236,6 +236,61 @@ let list_html_tags ~inline =
       (fun e -> print_string e; print_char '\n')
       Parser.htmltags_set
 
+let verbatim_start = ref ""
+let verbatim_end = ref ""
+let lex_with_verb_extension s =
+  if !verbatim_start = "" || !verbatim_end = "" then
+    Omd_lexer.lex s
+  else
+    begin
+      let module M = struct
+        type t = Verb of string | To_lex of string
+      end in
+      let open M in
+      let sl = String.length s
+      and stl = String.length !verbatim_start
+      and enl = String.length !verbatim_end in
+      let rec seek_start accu from i =
+        if i + stl + enl > sl then
+          To_lex(String.sub s from (sl - from))::accu
+        else if String.sub s i stl = !verbatim_start then
+          seek_end
+            (To_lex(String.sub s from (i - from))::accu)
+            (i+stl)
+            (i+stl)
+        else seek_start accu from (i+1)
+      and seek_end accu from i =
+        if i + enl > sl then
+          To_lex(String.sub s from (sl - from))::accu
+        else if String.sub s i enl = !verbatim_end then
+          seek_start
+            (Verb(String.sub s from (i - from))::accu)
+            (i+enl)
+            (i+enl)
+        else seek_end accu from (i+1)
+      in
+      let first_pass () = seek_start [] 0 0 in
+      let second_pass l =
+        List.rev_map
+          (function
+            | To_lex x ->
+              Omd_lexer.lex x 
+            | Verb x ->
+              [Omd_representation.Tag(
+                  "raw",
+                  fun r p l -> match p with
+                    | [] | [Omd_representation.Newlines _] ->
+                      Some(Raw_block x :: r, [Omd_representation.Space], l)
+                    | _ ->
+                      Some(Raw x :: r, [Omd_representation.Space], l)
+                )]
+          )
+          l        
+      in
+      List.flatten(second_pass(first_pass()))
+    end
+
+
 let main () =
   let input = ref []
   and output = ref ""
@@ -284,6 +339,12 @@ let main () =
         " List all known inline HTML tags";
         "-version", Unit(fun () -> print_endline "This is version VERSION.";
                                 exit 0), "Print version.";
+        "-VS", Set_string(verbatim_start),
+        "start Set the start token to use to declare a verbatim section. \
+        If you use -VE, you must use -VS, and both must be non-empty.";
+        "-VE", Set_string(verbatim_end),
+        "end Set the end token to use to declare a verbatim section. \
+        If you use -VE, you must use -VS, and both must be non-empty.";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
@@ -306,7 +367,7 @@ let main () =
         Buffer.add_char b (input_char ic)
       done; assert false
     with End_of_file ->
-      let lexed = Omd_lexer.lex (Buffer.contents b) in
+      let lexed = lex_with_verb_extension(Buffer.contents b) in
       let preprocessed = preprocess (if !toc then tag_toc lexed else lexed) in
       let module E = Omd_parser.Default_env(struct end) in
       let module Parser = Omd_parser.Make(
