@@ -188,8 +188,13 @@ let tag_toc l =
       Word "Table"::Space::
       Word "of"::Space::
       Word "contents"::Star::tl ->
-      Tag("tag_toc", fun r p l ->
-          Some(X(x)::r,p,l)) :: loop tl
+      Tag("tag_toc",
+          object
+            method parser_extension r p l =
+              Some(X(x)::r,p,l)
+            method to_string = ""
+          end
+         ) :: loop tl
     | e::tl -> e::loop tl
     | [] -> []
   in loop l
@@ -278,11 +283,15 @@ let lex_with_verb_extension s =
             | Verb x ->
               [Omd_representation.Tag(
                   "raw",
-                  fun r p l -> match p with
-                    | [] | [Omd_representation.Newlines _] ->
-                      Some(Raw_block x :: r, [Omd_representation.Space], l)
-                    | _ ->
-                      Some(Raw x :: r, [Omd_representation.Space], l)
+                  object
+                    method parser_extension r p l =
+                      match p with
+                      | [] | [Omd_representation.Newlines _] ->
+                        Some(Raw_block x :: r, [Omd_representation.Space], l)
+                      | _ ->
+                        Some(Raw x :: r, [Omd_representation.Space], l)
+                    method to_string = x
+                  end
                 )]
           )
           l        

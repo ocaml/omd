@@ -193,6 +193,7 @@ and loose_compare_lists l1 l2 =
     | _, [] -> 1
     | _ -> -1
 
+
 type tok = (* Cs(n) means (n+2) times C *)
 | Ampersand
 | Ampersands of int
@@ -268,9 +269,18 @@ type tok = (* Cs(n) means (n+2) times C *)
 | Word of string
 | Tag of name * extension
 
-and extension = (t -> tok list -> tok list -> ((t * tok list * tok list) option))
+and extension = <
+  parser_extension :
+    t -> tok list -> tok list -> ((t * tok list * tok list) option);
+  to_string : string
+>
 
 type extensions = extension list
+
+let empty_extension = object
+  method parser_extension r p l = None
+  method to_string = ""
+end
 
 let rec normalise_md l =
   let rec loop = function

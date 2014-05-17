@@ -1066,45 +1066,58 @@ struct
       result
 
   let tag__maybe_h1 (main_loop:main_loop) =
-    Tag("tag__maybe_h1", fun r p l ->
-        match p with
-        | ([]|[Newline|Newlines _]) ->
-          begin match setext_title main_loop l with
-            | None ->
+    Tag("tag__maybe_h1",
+        object
+          method parser_extension r p l =
+            match p with
+            | ([]|[Newline|Newlines _]) ->
+              begin match setext_title main_loop l with
+                | None ->
+                  None
+                | Some(title, tl) ->
+                  let title = H1(main_loop [] [] title) in
+                  Some((title::r), [Newline], tl)
+              end
+            | _ ->
+              if debug then
+                eprintf "(OMD) Warning: Omd_parser.tag__maybe_h1 is wrongly \
+                         used (p=%S)!\n"
+                  (L.string_of_tokens p);
               None
-            | Some(title, tl) ->
-              let title = H1(main_loop [] [] title) in
-              Some((title::r), [Newline], tl)
-          end
-        | _ ->
-           if debug then
-            eprintf "(OMD) Warning: Omd_parser.tag__maybe_h1 is wrongly used \
-                     (p=%S)!\n"
-              (L.string_of_tokens p);
-          None
+          method to_string = ""
+        end
       )
 
   let tag__maybe_h2 (main_loop:main_loop) =
-    Tag("tag__maybe_h2", fun r p l ->
-        match p with
-        | ([]|[Newline|Newlines _]) ->
-          begin match setext_title main_loop l with
-            | None ->
+    Tag("tag__maybe_h2",
+        object
+          method parser_extension r p l =
+            match p with
+            | ([]|[Newline|Newlines _]) ->
+              begin match setext_title main_loop l with
+                | None ->
+                  None
+                | Some(title, tl) ->
+                  let title = H2(main_loop [] [] title) in
+                  Some((title::r), [Newline], tl)
+              end
+            | _ ->
+              if debug then
+                eprintf "(OMD) Warning: Omd_parser.tag__maybe_h2 is wrongly \
+                         used (p=%S)!\n"
+                  (L.string_of_tokens p);
               None
-            | Some(title, tl) ->
-              let title = H2(main_loop [] [] title) in
-              Some((title::r), [Newline], tl)
-          end
-        | _ ->
-          if debug then
-            eprintf "(OMD) Warning: Omd_parser.tag__maybe_h2 is wrongly used \
-                     (p=%S)!\n"
-              (L.string_of_tokens p);
-          None
+          method to_string = ""
+        end
       )
 
   let tag__md md = (* [md] should be in reverse *)
-    Tag("tag__md", fun r p l -> Some(md@r, [], l))
+    Tag("tag__md",
+        object
+          method parser_extension r p l = Some(md@r, [], l)
+          method to_string = ""
+        end
+       )
 
   (* Let's tag the lines that *might* be titles using setext-style.
      "might" because if they are, for instance, in a code section,
@@ -1220,7 +1233,7 @@ struct
             Some(List.rev accu, tl)
         else
           code_block (b::accu) tl
-      | Tag _::tl ->
+      | Tag(_, _)::tl ->
         code_block accu tl
       | e::tl ->
         code_block (e::accu) tl
@@ -1246,7 +1259,7 @@ struct
           let code = L.string_of_tokens (Newlines(n-1)::tl) in
           Some(Code_block(lang, code) :: r, [Backquote], l)
         | Newline :: tl ->
-          let code = L.string_of_tokens  tl in
+          let code = L.string_of_tokens tl in
           Some(Code_block(default_lang, code) :: r, [Backquote], l)
         | _ ->
           let code = L.string_of_tokens cb in
@@ -2058,9 +2071,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       List.fold_left
         (function
           | None ->
-            (fun f -> f r p l)
+            (fun f -> f#parser_extension r p l)
           | Some(nr, np, nl) as e ->
-            (fun f -> match f nr np nl with None -> e | Some _ as k -> k)
+            (fun f -> match f#parser_extension nr np nl with
+               | None -> e
+               | Some _ as k -> k)
         )
         None
         extensions
@@ -2352,17 +2367,25 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | Newline :: (Spaces _ as s) :: tl ->
         Continue_with
           ([s;
-            Tag("parse_list/remember spaces", fun r p ->
-                function Spaces _::tl -> Some(r,p,Space::tl)
-                       | _ -> None);
+            Tag("parse_list/remember spaces",
+                object
+                  method parser_extension r p =
+                    function Spaces _::tl -> Some(r,p,Space::tl)
+                           | _ -> None
+                  method to_string = ""
+                end);
             Newline],
            tl)
       | Newline :: (Space as s) :: tl ->
         Continue_with
           ([s;
-            Tag("parse_list/remember space", fun r p ->
-                function (Space|Spaces _)::tl -> Some(r,p,Space::tl)
-                       | _ -> None);
+            Tag("parse_list/remember space",
+                object
+                  method parser_extension r p =
+                    function (Space|Spaces _)::tl -> Some(r,p,Space::tl)
+                       | _ -> None
+                  method to_string = ""
+                end);
             Newline],
            tl)
       | _::_ ->
@@ -2587,7 +2610,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     assert_well_formed l;
     (* indented code: returns (r,p,l) where r is the result, p is the
        last thing read, l is the remains *)
-    let dummy_tag = Tag("dummy_tag", fun r p l -> None) in
+    let dummy_tag = Tag("dummy_tag",
+                        object
+                          method to_string = ""
+                          method parser_extension = fun r p l -> None
+                        end) in
     let accu = Buffer.create 42 in
     let rec loop s tl = match s, tl with
       | (Newline|Newlines _ as p), (Space|Spaces(0|1))::_ ->
@@ -2753,7 +2780,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
     (* Tag: tag system $\cup$ high-priority extension mechanism *)
     | _, Tag(_name, e) :: tl ->
-      begin match e r previous tl with
+      begin match e#parser_extension r previous tl with
         | Some(r, p, l) ->
           main_loop_rev r p l
         | None ->
@@ -3674,7 +3701,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         in
         begin match read_html() with
           | Some(html, rest) ->
-            main_loop_rev (html@r) [Tag("HTMLBLOCK", fun _ _ _ -> None)] rest
+            main_loop_rev (html@r) [Tag("HTMLBLOCK", empty_extension)] rest
           | None ->
             let text = L.string_of_token t in
             main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
