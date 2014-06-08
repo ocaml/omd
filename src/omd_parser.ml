@@ -763,7 +763,15 @@ struct
         if r == remains then
           L.string_of_tokens (List.rev accu)
         else
-          loop (e::accu) tl
+          match e, remains with
+          | Cbrackets 0, Cbracket::r when tl = r ->
+            let accu = Cbracket :: accu in
+            L.string_of_tokens (List.rev accu)
+          | Cbrackets n, Cbrackets m::r when m + 1 = n && tl = r ->
+            let accu = Cbracket :: accu in
+            L.string_of_tokens (List.rev accu)
+          | _ ->
+            loop (e::accu) tl
     in loop [] l
 
 
