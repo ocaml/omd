@@ -30,7 +30,7 @@ specs"](http://daringfireball.net/projects/markdown/syntax) with a few
 Github Flavour Markdown characteristics. OMD is also meant to be more
 "sane" than other Markdown parsers from the semantics point of view: if 
 something bothers you from the semantics point of view, please [open an
-issue on Github](https://github.com/pw374/omd/issues).
+issue on Github](https://github.com/ocaml/omd/issues).
 
 
 Encoding
@@ -44,7 +44,7 @@ Dependencies
 OMD is implemented in OCaml, therefore it needs it to be compiled.
 OCaml 4.00.1 and then 4.01.0 have been used. OMD should be compatible
 with 3.12.0 as well, if it's not then please [open an
-issue](https://github.com/pw374/omd/issues).
+issue](https://github.com/ocaml/omd/issues).
 
 
 The opam package for OMD depends on ocamlfind, which is only
@@ -68,7 +68,7 @@ Usage
 
 - to get the development version of omd
 
-  `git clone git://github.com/pw374/omd.git`
+  `git clone git://github.com/ocaml/omd.git`
 
 - to compile `omd`
   - without `oasis` nor `ocamlbuild`
@@ -128,4 +128,4 @@ And 1.0.0.x may not be compatible with each other.
 
 - 0.9.2: not released...
 
-- older versions: cf. [commit log](https://github.com/pw374/omd/commits/master)
+- older versions: cf. [commit log](https://github.com/ocaml/omd/commits/master)
