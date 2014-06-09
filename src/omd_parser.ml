@@ -756,23 +756,29 @@ struct
       ()
 
   (** Generate fallback for references. *)
-  let extract_fallback remains l =
+  let extract_fallback main_loop remains l =
+    if debug then eprintf "(OMD) Omd_parser.extract_fallback\n%!";
     let rec loop accu = function
-      | [] -> L.string_of_tokens (List.rev accu)
+      | [] -> List.rev accu
       | e::tl as r ->
         if r == remains then
-          L.string_of_tokens (List.rev accu)
+          List.rev accu
         else
           match e, remains with
           | Cbrackets 0, Cbracket::r when tl = r ->
-            let accu = Cbracket :: accu in
-            L.string_of_tokens (List.rev accu)
+            let accu = Word "]" :: accu in
+            List.rev accu
           | Cbrackets n, Cbrackets m::r when m + 1 = n && tl = r ->
-            let accu = Cbracket :: accu in
-            L.string_of_tokens (List.rev accu)
+            let accu = Word "]" :: accu in
+            List.rev accu
           | _ ->
             loop (e::accu) tl
-    in loop [] l
+    in
+    let a = loop [] l in
+    object
+      method to_string = L.string_of_tokens a
+      method to_t = main_loop [] [Obracket] a
+    end
 
 
   let unindent_rev n lexemes =
@@ -2123,7 +2129,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
 
   (* maybe a reference *)
-  let maybe_reference rc r _p l =
+  let maybe_reference (main_loop:main_loop) rc r _p l =
     assert_well_formed l;
     (* this function is called when we know it's not a link although
        it started with a '[' *)
@@ -2145,11 +2151,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       else
         match read_until_cbracket ~bq:true remains with
         | [], remains ->
-          let fallback = extract_fallback remains (Obracket::l) in
+          let fallback = extract_fallback main_loop remains (Obracket::l) in
           let id = L.string_of_tokens text in (* implicit anchor *)
           Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
         | id, remains ->
-          let fallback = extract_fallback remains (Obracket::l) in
+          let fallback = extract_fallback main_loop remains (Obracket::l) in
           Some(((Ref(rc, L.string_of_tokens id,
                      L.string_of_tokens text, fallback))::r),
                [Cbracket], remains)
@@ -2160,7 +2166,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if (try ignore(read_until_obracket ~bq:true text); true
           with Premature_ending -> false) then
         raise Premature_ending; (* <-- ill-placed open bracket *)
-      let fallback = extract_fallback remains (Obracket::l) in
+      let fallback = extract_fallback main_loop remains (Obracket::l) in
       let id = L.string_of_tokens text in (* implicit anchor *)
       Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
     in
@@ -4074,7 +4080,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       begin match maybe_link main_loop r previous tl with
         | Some(r, p, l) -> main_loop_rev r p l
         | None ->
-          match maybe_reference rc r previous tl with
+          match maybe_reference main_loop rc r previous tl with
           | Some(r, p, l) -> main_loop_rev r p l
           | None ->
             begin match maybe_extension extensions r previous lexemes with
@@ -4125,7 +4131,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (* ![][ref] *)
       (try
          let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
-         let fallback = extract_fallback tl lexemes in
+         let fallback = extract_fallback main_loop tl lexemes in
          let id = L.string_of_tokens id in
          main_loop_rev (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
        with NL_exception ->
@@ -4181,7 +4187,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          | alt, Obracket::(Space|Spaces _)::Word(id)::(Space|Spaces _)
                 ::Cbracket::ntl
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
-           let fallback = extract_fallback ntl lexemes in
+           let fallback = extract_fallback main_loop ntl lexemes in
            let alt = L.string_of_tokens alt in
            main_loop_rev (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
@@ -4190,7 +4196,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               match read_until_cbracket ~bq:true ~no_nl:false ntl with
               | [], rest -> raise Premature_ending
               | id, rest ->
-                let fallback = extract_fallback rest lexemes in
+                let fallback = extract_fallback main_loop rest lexemes in
                 let id = L.string_of_tokens id in
                 let alt = L.string_of_tokens alt in
                 main_loop_rev (Img_ref(rc, id, alt, fallback)::r)

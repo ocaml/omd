@@ -188,7 +188,9 @@ let rec html_and_headers_of_md
                      [Text(text)],
                      htmlentities ~md:true title)
                  ::tl)
-            | None -> loop indent (Text(fallback)::tl)
+            | None ->
+              loop indent (fallback#to_t);
+              loop indent tl
           end
       end
     | Img_ref(rc, name, alt, fallback) as e :: tl ->
@@ -203,7 +205,9 @@ let rec html_and_headers_of_md
                 (Img(htmlentities ~md:true alt,
                      htmlentities ~md:true src,
                      htmlentities ~md:true title)::tl)
-            | None -> loop indent (Text(fallback)::tl)
+            | None ->
+              loop indent (fallback#to_t);
+              loop indent tl
           end
       end
     | Paragraph md as e :: tl ->
@@ -627,10 +631,10 @@ let rec sexpr_of_md md =
         loop q;
         Buffer.add_string b ")";
         loop tl
-    | Ref(rc, name, text, fallback) :: tl ->
+    | Ref(rc, name, text, _) :: tl ->
         bprintf b "(Ref %S %S)" name text;
         loop tl
-    | Img_ref(rc, name, alt, fallback) :: tl ->
+    | Img_ref(rc, name, alt, _) :: tl ->
         bprintf b "(Img_ref %S %S)" name alt;
         loop tl
     | Paragraph md :: tl ->
@@ -862,10 +866,10 @@ let rec markdown_of_md md =
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
         if !references = None then references := Some rc;
-        loop list_indent (Raw(fallback)::tl)
+        loop list_indent (Raw(fallback#to_string)::tl)
     | Img_ref(rc, name, alt, fallback) :: tl ->
         if !references = None then references := Some rc;
-        loop list_indent (Raw(fallback)::tl)
+        loop list_indent (Raw(fallback#to_string)::tl)
     | (Paragraph _ as p) :: NL :: tl ->
       loop list_indent (p::tl)
     | Paragraph md :: tl ->

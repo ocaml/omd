@@ -81,7 +81,7 @@ and element = Omd_representation.element =
            to_sexpr: (t -> string) -> t -> string option;
            to_t: t -> t option >)
 
-and fallback = string
+and fallback = < to_string : string ; to_t : t >
 (** Fallback for references in case they refer to non-existant references *)
 
 and name = string

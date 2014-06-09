@@ -70,7 +70,7 @@ type element =
         to_html : ?indent:int -> (t -> string) -> t -> string option;
         to_sexpr : (t -> string) -> t -> string option;
         to_t : t -> t option >
-and fallback = string
+and fallback = < to_string : string ; to_t : t >
 and name = string
 and alt = string
 and src = string
@@ -168,20 +168,29 @@ type tok =
     property and which haven't).
 *)
 
-and extension = t -> tok list -> tok list -> (t * tok list * tok list) option
-(** A function that takes the current state of the parser's data and
-    returns None if nothing has been changed, otherwise it returns
-    the new state.  The current state of the parser's data is [(r,
-    p, l)] where [r] is the result so far, [p] is the list of the
-    previous tokens (it's typically empty or contains information on
-    how many newlines we've just seen), and [l] is the remaining
-    tokens to parse. *)
+and extension = <
+  parser_extension : t -> tok list -> tok list -> ((t * tok list * tok list) option);
+  to_string : string
+>
+(** - [parser_extension] is a method that takes the current state of the
+    parser's data and returns None if nothing has been changed,
+    otherwise it returns the new state.  The current state of the
+    parser's data is [(r, p, l)] where [r] is the result so far, [p]
+    is the list of the previous tokens (it's typically empty or
+    contains information on how many newlines we've just seen), and
+    [l] is the remaining tokens to parse.
+    - and [to_string] is a method that returns directly a string
+    representation of the object (it's normal if it returns the
+    empty string). *)
 
 type extensions = extension list
 (** One must use this type to extend the parser. It's a list of
     functions of type [extension]. They are processed in order (the
     head is applied first), so be careful about it. If you use it
     wrong, it will behave wrong. *)
+
+val empty_extension : extension
+(** An empty extension *)
 
 val loose_compare : t -> t -> int
 (** [loose_compare t1 t2] returns [0] if [t1] and [t2]

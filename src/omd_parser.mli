@@ -307,7 +307,7 @@ sig
   *)
 
   val maybe_extension :
-    (r -> p -> l -> (r * p * l) option) list ->
+    Omd_representation.extensions ->
     r -> p -> l -> (r * p * l) option
   (** [maybe_extension e r p l] returns [None] if there is no extension or
       if extensions haven't had  any effect, returns [Some(nr, np, nl)] if
@@ -322,6 +322,7 @@ sig
       real problem. *)
 
   val maybe_reference :
+    main_loop ->
     Omd_representation.ref_container -> r -> p -> l -> (r * p * l) option
   (** [maybe_reference] tries to parse a reference, a reference definition or
       a github-style short reference (e.g., [foo] as a shortcut for [foo][]),

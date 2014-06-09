@@ -69,7 +69,7 @@ type element =
         to_html : ?indent:int -> (t -> string) -> t -> string option;
         to_sexpr : (t -> string) -> t -> string option;
         to_t : t -> t option >
-and fallback = string
+and fallback = < to_string : string ; to_t : t >
 and name = string
 and alt = string
 and src = string
@@ -155,13 +155,10 @@ let rec loose_compare t1 t2 = match t1,t2 with
       (match compare (name1, x1) (name2, x2) with
          | 0 ->
              let cff =
-               match compare fallback1 fallback2 with
-                | 0 -> 0
-                | i ->
-                    match String.length fallback2 - String.length fallback1 with
-                      | 2 -> compare (fallback1 ^ "[]") fallback2
-                      | -2 -> compare fallback1 (fallback2 ^ "[]")
-                      | _ -> i
+               if fallback1#to_string = fallback2#to_string then
+                 0
+               else
+                 loose_compare (fallback1#to_t) (fallback2#to_t)
              in
                if cff = 0 then
                  match
