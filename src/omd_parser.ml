@@ -777,7 +777,7 @@ struct
     let a = loop [] l in
     object
       method to_string = L.string_of_tokens a
-      method to_t = main_loop [] [Obracket] a
+      method to_t = [Text(L.string_of_tokens a)]
     end
 
 
