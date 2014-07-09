@@ -257,21 +257,26 @@ struct
       let c = I.get s !i in
       let w = match c with
         | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
-  (*       | '\t' -> let n = n_occ c in if n = 1 then Tab else Tabs (n-2) *)
         | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
         | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
         | '\r' -> (* eliminating \r by converting all styles to unix style *)
-            let n = n_occ c in
-              if n = 1 then
-                if !i = l then
-                  Newline
-                else
-                  if I.get s !i = '\n' then
-                    (incr i; Newline)
-                  else
-                    Newline
+          incr i;
+          let rec count_rn x =
+            if !i < l && I.get s (!i) = '\n' then
+              if !i + 1 < l && I.get s (!i+1) = '\r' then
+                (i := !i + 2; count_rn (x+1))
               else
-                Newlines (n-2)
+                x
+            else
+              x
+          in
+          let rn = 1 + count_rn 0 in
+          if rn = 1 then
+            match n_occ c with
+            | 1 -> Newline
+            | x -> assert(x>=2); Newlines(x-2)
+          else
+            (assert(rn>=2);Newlines(rn-2))
         | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
         | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
         | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
