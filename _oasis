@@ -1,7 +1,7 @@
 #								-*-conf-*-
 OASISFormat: 0.3
 Name:        omd
-Version:     0.9.7
+Version:     1.0.0
 Synopsis:    A Markdown frontend in pure OCaml.
 Description: This Markdown library is implemented using only pure OCaml 
   (including I/O operations provided by the standard OCaml compiler distribution).
@@ -9,6 +9,7 @@ Description: This Markdown library is implemented using only pure OCaml
   Additionally, Omd implements a few Github markdown features, an extension mechanism,
   and a few other features.
   Note that the opam package installs both the Omd library and the command line tool `omd`.
+  Note that The library interface of 1.0.0 is not compatible with 0.9.x.
 Authors:     Philippe Wang <philippe.wang@gmail.com>
 Maintainers: Philippe Wang <philippe.wang@gmail.com>
 License:     ISC
