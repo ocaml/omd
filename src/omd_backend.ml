@@ -1058,7 +1058,12 @@ let rec markdown_of_md md =
       Buffer.add_string b s;
       Buffer.add_char b '\n';
       loop list_indent tl
-    | (Html(tagname, attrs, body)) :: tl ->
+    | Html("hr"|"br"|"img" as tagname, attrs, []) :: tl ->
+      Printf.bprintf b "<%s" tagname;
+      Buffer.add_string b (string_of_attrs attrs);
+      Buffer.add_string b " />";
+      loop list_indent tl
+    | Html(tagname, attrs, body) :: tl ->
       Printf.bprintf b "<%s" tagname;
       Buffer.add_string b (string_of_attrs attrs);
       Buffer.add_string b ">";
