@@ -347,7 +347,7 @@ let main () =
         "-LHTMLi", Unit(fun () -> list_html_tags ~inline:true; exit 0),
         " List all known inline HTML tags";
         "-version", Unit(fun () -> print_endline "This is version VERSION.";
-                                exit 0), "Print version.";
+                                exit 0), " Print version.";
         "-VS", Set_string(verbatim_start),
         "start Set the start token to use to declare a verbatim section. \
         If you use -VE, you must use -VS, and both must be non-empty.";
