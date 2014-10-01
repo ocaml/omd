@@ -83,7 +83,7 @@ if you find something that seems wrong.**
     backslashe-escape them anyways.
 
 - HTML is somewhat a part of Markdown. OMD will partially parse HTML tags
-  and if you have a tag that isn't a knowned HTML tag, then it's possible
+  and if you have a tag that isn't a known HTML tag, then it's possible
   that OMD will not consider it as HTML. For instance, a document
   containing just `<foo></foo>` will be converted to 
   `<p>&lt;foo&gt;&lt;/foo&gt;</p>`.
