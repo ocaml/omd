@@ -394,6 +394,17 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent ~nl:true tl
       end
+    | Html("img"|"br"|"hr" as tagname, attrs, []) as e :: tl ->
+      begin match override e with
+        | Some s ->
+          Buffer.add_string b s;
+          loop indent tl
+        | None ->
+          Printf.bprintf b "<%s" tagname;
+          Buffer.add_string b (string_of_attrs attrs);
+          Printf.bprintf b " />";
+          loop indent tl
+      end
     | Html(tagname, attrs, body) as e :: tl ->
       begin match override e with
         | Some s ->
