@@ -3398,7 +3398,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              eprintf "(OMD) (3333) loop body=%S tagstatus=%S %S\n%!"
+              eprintf "(OMD) 3333 BHTML loop body=%S tagstatus=%S %S\n%!"
                 (Omd_backend.sexpr_of_md(T.md_of_interm_list body))
                 (T.string_of_tagstatus tagstatus)
                 (L.destring_of_tokens tokens);
@@ -3410,14 +3410,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               else
                 begin
                   if debug then
-                    eprintf "(OMD) (3401) BHTML Not enough to read\n%!";
+                    eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
                   None
                 end
             | Lessthans n::tokens ->
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
                 | _ ->
-                  if debug then eprintf "(OMD) (3408) loop\n%!";
+                  if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
                   loop
                     (add_token_to_body
                        (if n = 0 then Lessthan else Lessthans(n-1))
@@ -3428,9 +3428,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
                 | T.Awaiting("br"|"hr"|"img"|"input" as tagname)::tagstatus ->
-                  Some([T.HTML(tagname, attrs, [])], tokens)
+                  loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
-                  if debug then eprintf "(OMD) (3419) loop\n%!";
+                  if debug then eprintf "(OMD) 3419 BHTML loop\n%!";
                   loop
                     (add_token_to_body
                       Slash
@@ -3445,7 +3445,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin match tagstatus with
                 | T.Open t :: _ when t = tagname ->
                   if debug then
-                    eprintf "(OMD) (3375) properly closing %S\n%!" t;
+                    eprintf "(OMD) 3375 BHTML properly closing %S\n%!" t;
                   Some(body,
                        (match g with
                         | Greaterthans 0 -> Greaterthan :: tokens
@@ -3453,13 +3453,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | _ -> tokens))
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "(OMD) (3379) wrongly closing %S with %S 1\n%!"
+                    eprintf "(OMD) 3379 BHTML wrongly closing %S with %S 1\n%!"
                       t tagname;
                   loop (T.RTOKENS[g;w;Slash;Lessthan]::body)
                     [] tagstatus tokens
                 | T.Awaiting t :: _ ->
                   if debug then
-                    eprintf "(OMD) (3383) wrongly closing %S with %S 2\n%!"
+                    eprintf "(OMD) 3383 BHTML wrongly closing %S with %S 2\n%!"
                       t tagname;
                   if !mediatypetextomd <> [] then
                     raise
@@ -3475,7 +3475,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     None
                 | [] ->
                   if debug then
-                    eprintf "(OMD) ~~~~~~~~~~ wrongly closing %S 3\n%!" tagname;
+                    eprintf "(OMD) BHTML wrongly closing %S 3\n%!" tagname;
                   None
               end
             (* tag *)
@@ -3485,20 +3485,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 || StringSet.mem tagname htmltags_set
               ->
               if debug then
-                eprintf "(OMD) (BHTML) <Word(%s)...\n%!" tagname;
+                eprintf "(OMD) 3489 BHTML <Word(%s)...\n%!" tagname;
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                   if attrs <> [] then
                     begin
                       if debug then
-                        eprintf "(OMD) tag %S but attrs <> []\n%!" tagname;
+                        eprintf "(OMD) 3496 BHTML tag %S but attrs <> []\n%!" tagname;
                       None
                     end
                   else
                     begin
                       if debug then
-                        eprintf "(OMD) (3421) tag %S, tagstatus=%S, attrs=[], \
+                        eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, attrs=[], \
                                  tokens=%S\n%!"
                           tagname (L.destring_of_tokens tokens)
                           (T.string_of_tagstatus tagstatus);
@@ -3506,7 +3506,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         loop [] [] (T.Awaiting tagname::tagstatus) tokens
                       with
                       | None ->
-                        if debug then eprintf "(OMD) (3489) loop\n%!";
+                        if debug then eprintf "(OMD) 3489 BHTML loop\n%!";
                         loop
                           (add_token_to_body
                             word
@@ -3516,7 +3516,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                           attrs tagstatus tokens
                       | Some(b, tokens) ->
                         if debug then begin
-                          eprintf "(OMD) (3433) tagstatus=%S tokens=%S\n%!" 
+                          eprintf "(OMD) 3433 BHTML tagstatus=%S tokens=%S\n%!" 
                             (T.string_of_tagstatus tagstatus)
                             (L.string_of_tokens tokens)
                         end;
@@ -3534,7 +3534,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         try
                           ignore(main_loop_rev [] [] tokens);
                           if debug then
-                            eprintf "(OMD) (3524) closing tag not found\n%!";
+                            eprintf "(OMD) 3524 BHTML closing tag not found\n%!";
                           None
                         with Orphan_closing(tagname, delimiter, after) ->
                           let before =
@@ -3566,7 +3566,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                             f [] tokens
                           in
                           if debug then
-                            eprintf "(OMD) (3552) tokens=%s delimiter=%s \
+                            eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
                                      after=%s before=%s\n%!"
                               (L.destring_of_tokens tokens)
                               (L.destring_of_tokens delimiter)
@@ -3593,17 +3593,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     end
                   else
                     begin
-                      if debug then eprintf "(OMD) (3571) loop\n%!";
+                      if debug then eprintf "(OMD) 3571 BHTML loop\n%!";
                       match loop body [] (T.Open t::tagstatus) tokens with
                       | None ->
                         if debug then
-                          eprintf "(OMD) (3519) \
+                          eprintf "(OMD) 3519 BHTML \
                                    Couldn't find an closing tag for %S\n%!"
                             t;
                         None
                       | Some(body, l) ->
                         if debug then
-                          eprintf "(OMD) (3498) Found a closing tag %s\n%!" t;
+                          eprintf "(OMD) 3498 BHTML Found a closing tag %s\n%!" t;
                         match tagstatus with
                         | _ :: _ ->
                           loop [T.HTML(t, attrs, body)] [] tagstatus l
@@ -3613,12 +3613,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | T.Open t :: _ ->
                   if debug then
                     eprintf
-                      "(OMD) (3591) Some `>` isn't for an opening tag\n%!";
+                      "(OMD) 3591 BHTML Some `>` isn't for an opening tag\n%!";
                   loop (add_token_to_body Greaterthan body)
                     attrs tagstatus tokens
                 | [] ->
                   if debug then
-                    eprintf "(OMD) (3542) tagstatus=[]\n%!";
+                    eprintf "(OMD) 3542 BHTML tagstatus=[]\n%!";
                   None
               end
 
@@ -3651,20 +3651,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 match extract_attribute [t] tokens with
                 | Empty attributename, tokens ->
                   (* attribute with no explicit value *)
-                  if debug then eprintf "(OMD) (3628) loop\n%!";
+                  if debug then eprintf "(OMD) 3628 BHTML loop\n%!";
                   loop body ((attributename, None)::attrs) tagstatus tokens
                 | Named attributename, tokens ->
                   begin match tokens with
                     | Quotes 0 :: tokens ->
                       if debug then
-                        eprintf "(OMD) (BHTML) empty attribute 1 %S\n%!"
+                        eprintf "(OMD) 3661 BHTML empty attribute 1 %S\n%!"
                           (L.string_of_tokens tokens);
                       loop body ((attributename, Some "")::attrs)
                         tagstatus tokens
                     | Quote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (BHTML) non empty attribute 1 %S\n%!"
+                          eprintf "(OMD) 3668 BHTML non empty attribute 1 %S\n%!"
                             (L.string_of_tokens tokens);
                         match
                           fsplit
@@ -3678,7 +3678,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         with
                         | None -> None
                         | Some(at_val, tokens) ->
-                          if debug then eprintf "(OMD) (3654) loop\n%!";
+                          if debug then eprintf "(OMD) 3654 BHTML loop\n%!";
                           loop body ((attributename,
                                       Some(L.string_of_tokens at_val))
                                      ::attrs) tagstatus tokens
@@ -3686,7 +3686,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Doublequotes 0 :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (BHTML) empty attribute 2 %S\n%!"
+                          eprintf "(OMD) 3690 BHTML empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         loop body ((attributename, Some "")::attrs)
                           tagstatus tokens
@@ -3694,7 +3694,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     | Doublequote :: tokens ->
                       begin
                         if debug then
-                          eprintf "(OMD) (BHTML) non empty attribute 2 %S\n%!"
+                          eprintf "(OMD) 3698 BHTML non empty attribute 2 %S\n%!"
                             (L.string_of_tokens tokens);
                         match fsplit
                                 ~excl:(function
@@ -3708,7 +3708,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | None -> None
                         | Some(at_val, tokens) ->
                           if debug then
-                            eprintf "(OMD) (BHTML) (3622) %s=%S %s\n%!"
+                            eprintf "(OMD) 3622 BHTML %s=%S %s\n%!"
                               attributename
                               (L.string_of_tokens at_val)
                               (L.destring_of_tokens tokens);
@@ -3725,7 +3725,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
                 if debug then
-                  eprintf "(OMD) (3620) general %S\n%!"
+                  eprintf "(OMD) 3620 BHTML general %S\n%!"
                     (L.string_of_tokens (x::tokens));
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
@@ -3733,12 +3733,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               when
                 (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
               begin
-                if debug then eprintf "(OMD) spaces\n%!";
+                if debug then eprintf "(OMD) 3737 BHTML spaces\n%!";
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
             | _ ->
               if debug then
-                eprintf "(OMD) (Block HTML) fallback with \
+                eprintf "(OMD) 3742 BHTML fallback with \
                          tokens=%s and tagstatus=%s\n%!"
                   (L.destring_of_tokens tokens)
                   (match tagstatus with
@@ -3747,7 +3747,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                    | T.Open _ :: _ -> "Open (can't be)");
               None
           in
-          if debug then eprintf "(OMD) (3408) loop\n%!";
+          if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
           match loop [] [] [] lexemes with
           | Some(html, rest) ->
             Some(T.md_of_interm_list html, rest)
@@ -3809,7 +3809,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              eprintf "(OMD) (3718) loop tagstatus=(%s) body=(%s) %s\n%!"
+              eprintf "(OMD) 3718 loop tagstatus=(%s) body=(%s) %s\n%!"
                 (T.string_of_tagstatus tagstatus)
                 ""(* (Omd_backend.sexpr_of_md(T.md_of_interm_list body)) *)
                 (L.destring_of_tokens tokens);
@@ -3877,7 +3877,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin match tagstatus with
                 | T.Open t :: _ when t = tagname ->
                   if debug then
-                    eprintf "(OMD) (4136) properly closing %S tokens=%s\n%!"
+                    eprintf "(OMD) 4136 properly closing %S tokens=%s\n%!"
                       t (L.string_of_tokens tokens);
                   Some(body,
                        (match g with
@@ -3886,17 +3886,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         | _ -> tokens))
                 | T.Open t :: _ ->
                   if debug then
-                    eprintf "(OMD) (4144) \
+                    eprintf "(OMD) 4144 \
                              wrongly closing %S with %S 1\n%!" t tagname;
                   loop (T.TOKENS[g;w;Slash;Lessthan]::body) [] tagstatus tokens
                 | T.Awaiting t :: _ ->
                   if debug then
-                    eprintf "(OMD) (4149) \
+                    eprintf "(OMD) 4149 \
                              wrongly closing %S with %S 2\n%!" t tagname;
                   None
                 | [] ->
                   if debug then
-                    eprintf "(OMD) (4154) \
+                    eprintf "(OMD) 4154 \
                              wrongly closing nothing with %S 3\n%!"
                       tagname;
                   None
@@ -3914,7 +3914,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | _ ->
                     begin
                       if debug then
-                        eprintf "(OMD) (3796) tag %s, attrs=[]\n%!" tagname;
+                        eprintf "(OMD) 3796 tag %s, attrs=[]\n%!" tagname;
                       match loop [] [] (T.Awaiting tagname::tagstatus) tokens
                       with
                       | None ->
@@ -3927,7 +3927,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* end of opening tag *)
             | Greaterthan::tokens ->
               if debug then
-                eprintf "(OMD) (4185) end of opening tag tokens=%s \
+                eprintf "(OMD) 4185 end of opening tag tokens=%s \
                          tagstatus=%s\n%!"
                   (L.string_of_tokens tokens)
                   (T.string_of_tagstatus tagstatus);
@@ -3936,14 +3936,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   begin match loop body [] (T.Open t::tagstatus) tokens with
                     | None ->
                       if debug then
-                        eprintf "(OMD) (4186) \
+                        eprintf "(OMD) 4186 \
                                  Couldn't find an closing tag for %S\n%!"
                           t;
                       None
                     | Some(b, tokens) ->
                       if debug then
                         eprintf
-                          "(OMD) (4192) Found a closing tag %s ts=%s \
+                          "(OMD) 4192 Found a closing tag %s ts=%s \
                            tokens=%s\n%!"
                           t 
                           (T.string_of_tagstatus ts)
@@ -3967,7 +3967,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
                 | [] ->
                   if debug then
-                    eprintf "(OMD) (4202) tagstatus=[]\n%!";
+                    eprintf "(OMD) 4202 tagstatus=[]\n%!";
                   None
               end
 
