@@ -3350,39 +3350,42 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | FTOKENS of L.t
               | RTOKENS of L.t
               | MD of Omd_representation.t
-              let rec md_of_interm_list html l =
-                let md_of_interm_list ?(html=html) l =
-                  md_of_interm_list html l
-                in
-                match l with
-                | [] -> []
-                | HTML(t, a, c)::tl ->
-                  if List.mem ("media:type", Some "text/omd") a then
-                    Html_block
-                      (t,
-                       a,
-                       make_paragraphs
-                         (md_of_interm_list ~html:false (List.rev c)))
-                    :: md_of_interm_list tl
-                  else
-                    Html_block
-                      (t, a, md_of_interm_list ~html:true (List.rev c))
-                    :: md_of_interm_list tl
-                | MD md::tl ->
-                  md@md_of_interm_list tl
-                | RTOKENS t1::FTOKENS t2::tl ->
-                  md_of_interm_list (FTOKENS(List.rev_append t1 t2)::tl)
-                | RTOKENS t1::RTOKENS t2::tl ->
-                  md_of_interm_list
-                    (FTOKENS(List.rev_append t1 (List.rev t2))::tl)
-                | FTOKENS t1::FTOKENS t2::tl ->
-                  md_of_interm_list (FTOKENS(t1@t2)::tl)
-                | FTOKENS t :: tl ->
+            let rec md_of_interm_list html l =
+              let md_of_interm_list ?(html=html) l =
+                md_of_interm_list html l
+              in
+              match l with
+              | [] -> []
+              | HTML(t, a, c)::tl ->
+                if List.mem ("media:type", Some "text/omd") a then
+                  Html_block
+                    (t,
+                     a,
+                     make_paragraphs
+                       (md_of_interm_list ~html:false (List.rev c)))
+                  :: md_of_interm_list tl
+                else
+                  Html_block
+                    (t, a, md_of_interm_list ~html:true (List.rev c))
+                  :: md_of_interm_list tl
+              | MD md::tl ->
+                md@md_of_interm_list tl
+              | RTOKENS t1::FTOKENS t2::tl ->
+                md_of_interm_list (FTOKENS(List.rev_append t1 t2)::tl)
+              | RTOKENS t1::RTOKENS t2::tl ->
+                md_of_interm_list
+                  (FTOKENS(List.rev_append t1 (List.rev t2))::tl)
+              | FTOKENS t1::FTOKENS t2::tl ->
+                md_of_interm_list (FTOKENS(t1@t2)::tl)
+              | FTOKENS t :: tl ->
+                if html then
+                  Raw(L.string_of_tokens t) :: md_of_interm_list tl
+                else
                   main_loop ~html:html [] [Word ""] t
                   @ md_of_interm_list tl
-                | RTOKENS t :: tl ->
-                  md_of_interm_list (FTOKENS(List.rev t) :: tl)
-              let md_of_interm_list l = md_of_interm_list false l
+              | RTOKENS t :: tl ->
+                md_of_interm_list (FTOKENS(List.rev t) :: tl)
+            let md_of_interm_list l = md_of_interm_list true l
             let string_of_tagstatus tagstatus =
               let b = Buffer.create 42 in
               List.iter (function
@@ -3721,12 +3724,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Void, _ -> None
               end
 
-            | x::tokens
+            | x::tokens as dgts
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
                 if debug then
                   eprintf "(OMD) 3620 BHTML general %S\n%!"
-                    (L.string_of_tokens (x::tokens));
+                    (L.string_of_tokens dgts);
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
             | (Newlines _ | Newline | Space | Spaces _ as x) :: tokens
