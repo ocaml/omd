@@ -89,8 +89,9 @@ The recommended version numbers are typefaced in **bold**.
 As new releases come out and bugs are discovered, a version can stop
 being recommended.
 
-- 1.0.0: this release won't be/isn't compatible with previous versions.
-  Hopefully it won't break too many things when it gets released.
+- **1.0.1**: fixes some parsing issues, improves output. (2014-10-02)
+
+- 1.0.0: this release is only partially compatible with previous versions.
 
 - tags 1.0.0.x precede 1.0.0.
 Also, tags 1.0.0.x will not be released in OPAM, next release will be 1.0.0.
