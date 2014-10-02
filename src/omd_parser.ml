@@ -3378,7 +3378,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | FTOKENS t1::FTOKENS t2::tl ->
                   md_of_interm_list (FTOKENS(t1@t2)::tl)
                 | FTOKENS t :: tl ->
-                  main_loop_rev ~html:html [] [Word ""] t
+                  main_loop ~html:html [] [Word ""] t
                   @ md_of_interm_list tl
                 | RTOKENS t :: tl ->
                   md_of_interm_list (FTOKENS(List.rev t) :: tl)
@@ -3763,7 +3763,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     (* / end of block HTML. *)
 
 
-    (* inline html *)
+    (* inline HTML *)
     | _,
       (Lessthan as t)
       ::((Word(tagnametop) as w)
