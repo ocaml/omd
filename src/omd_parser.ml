@@ -109,28 +109,40 @@ struct
       So there will be inline tags, non-inline tags, and unknown
       tags.*)
 
+  (** set of HTML tags that may appear out of a body *)
+  let notinbodytags = StringSet.of_list
+      [
+        "title";
+        "link";
+        "meta";
+        "style";
+        "html";
+        "head";
+        "body";
+      ]
+
   (** All known HTML tags *)
   let htmltags_set =
-    (* some impossible HTML tags: body; head; html; link; meta; title *)
-    StringSet.union inline_htmltags_set
-      (StringSet.of_list
-         [
-           "a";"abbr";"acronym";"address";"applet";"area";"article";"aside"
-           ;"audio";"b";"base";"basefont";"bdi";"bdo";"big";"blockquote"
-           ;"br";"button";"canvas";"caption";"center";"cite";"code";"col"
-           ;"colgroup";"command";"datalist";"dd";"del";"details";"dfn"
-           ;"dialog";"dir";"div";"dl";"dt";"em";"embed";"fieldset"
-           ;"figcaption";"figure";"font";"footer";"form";"frame";"frameset"
-           ;"h2";"h3";"h4";"h5";"h6"
-           ;"h1";"header";"hr";"i";"iframe";"img";"input";"ins";"kbd"
-           ;"keygen";"label";"legend";"li";"map";"mark";"menu";"meter";"nav"
-           ;"noframes";"noscript";"object";"ol";"optgroup";"option";"output"
-           ;"p";"param";"pre";"progress";"q";"rp";"rt";"ruby";"s";"samp"
-           ;"script";"section";"select";"small";"source";"span";"strike"
-           ;"strong";"style";"sub";"summary";"sup";"table";"tbody";"td"
-           ;"textarea";"tfoot";"th";"thead";"time";"tr";"track";"tt";"u"
-           ;"ul";"var";"video";"wbr"
-         ])
+    StringSet.union notinbodytags
+      (StringSet.union inline_htmltags_set
+         (StringSet.of_list
+            [
+              "a";"abbr";"acronym";"address";"applet";"area";"article";"aside"
+              ;"audio";"b";"base";"basefont";"bdi";"bdo";"big";"blockquote"
+              ;"br";"button";"canvas";"caption";"center";"cite";"code";"col"
+              ;"colgroup";"command";"datalist";"dd";"del";"details";"dfn"
+              ;"dialog";"dir";"div";"dl";"dt";"em";"embed";"fieldset"
+              ;"figcaption";"figure";"font";"footer";"form";"frame";"frameset"
+              ;"h2";"h3";"h4";"h5";"h6"
+              ;"h1";"header";"hr";"i";"iframe";"img";"input";"ins";"kbd"
+              ;"keygen";"label";"legend";"li";"map";"mark";"menu";"meter";"nav"
+              ;"noframes";"noscript";"object";"ol";"optgroup";"option";"output"
+              ;"p";"param";"pre";"progress";"q";"rp";"rt";"ruby";"s";"samp"
+              ;"script";"section";"select";"small";"source";"span";"strike"
+              ;"strong";"style";"sub";"summary";"sup";"table";"tbody";"td"
+              ;"textarea";"tfoot";"th";"thead";"time";"tr";"track";"tt";"u"
+              ;"ul";"var";"video";"wbr"
+            ]))
 
 
   (** This functions fixes bad lexing trees, which may be built when
@@ -3430,7 +3442,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* self-closing tags *)
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
-                | T.Awaiting("br"|"hr"|"img"|"input" as tagname)::tagstatus ->
+                | T.Awaiting("hr"|"br"|"img"|"meta"|"link"|"input" as tagname)
+                  :: tagstatus ->
                   loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
                   if debug then eprintf "(OMD) 3419 BHTML loop\n%!";
@@ -3490,19 +3503,22 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               if debug then
                 eprintf "(OMD) 3489 BHTML <Word(%s)...\n%!" tagname;
               begin match tagstatus with
+                | T.Open("hr"|"br"|"img"|"meta"|"link"|"input" as t) :: _
+                  when t <> tagname -> None
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                   if attrs <> [] then
                     begin
                       if debug then
-                        eprintf "(OMD) 3496 BHTML tag %S but attrs <> []\n%!" tagname;
+                        eprintf "(OMD) 3496 BHTML tag %S but attrs <> []\n%!"
+                          tagname;
                       None
                     end
                   else
                     begin
                       if debug then
-                        eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, attrs=[], \
-                                 tokens=%S\n%!"
+                        eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, \
+                                 attrs=[], tokens=%S\n%!"
                           tagname (L.destring_of_tokens tokens)
                           (T.string_of_tagstatus tagstatus);
                       match
@@ -3913,6 +3929,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               ->
               if debug then eprintf "(OMD) <%s...\n%!" tagname;
               begin match tagstatus with
+                | T.Open("hr"|"br"|"img"|"meta"|"link"|"input" as t) :: _
+                  when t <> tagname -> None
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                     begin
