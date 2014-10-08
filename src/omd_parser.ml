@@ -1,6 +1,6 @@
 (***********************************************************************)
 (* omd: Markdown frontend in OCaml                                     *)
-(* (c) 2013 by Philippe Wang <philippe.wang@cl.cam.ac.uk>              *)
+(* (c) 2013-2014 by Philippe Wang <philippe.wang@cl.cam.ac.uk>         *)
 (* Licence : ISC                                                       *)
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
@@ -3332,10 +3332,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       raise (Orphan_closing(w,
                             lexemes,
                             (match g with
-                             | Greaterthans 0 ->
-                               Greaterthan::tl
-                             | Greaterthans n ->
-                               Greaterthans(n-1)::tl
+                             | Greaterthans 0 -> Greaterthan::tl
+                             | Greaterthans n -> Greaterthans(n-1)::tl
                              | _ -> tl)))
 
     (* block html *)
@@ -3442,9 +3440,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* self-closing tags *)
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
-                | T.Awaiting("hr"|"br"|"img"|"meta"|"link"|"input"|"style"
-                             as tagname)
-                  :: tagstatus ->
+                | T.Awaiting(tagname) :: tagstatus
+                  when StringSet.mem tagname html_void_elements ->
                   loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
                   if debug then eprintf "(OMD) 3419 BHTML loop\n%!";
@@ -3504,8 +3501,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               if debug then
                 eprintf "(OMD) 3489 BHTML <Word(%s)...\n%!" tagname;
               begin match tagstatus with
-                | T.Open("hr"|"br"|"img"|"meta"|"link"|"input" as t) :: _
-                  when t <> tagname -> None
+                | T.Open(t) :: _
+                  when t <> tagname && StringSet.mem t html_void_elements ->
+                  None
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                   if attrs <> [] then
@@ -3852,8 +3850,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* self-closing tags *)
             | Slash::Greaterthan::tokens ->
               begin match tagstatus with
-                | T.Awaiting("hr"|"br"|"img"|"meta"|"link"|"input"|"style"
-                             as tagname)::tagstatus ->
+                | T.Awaiting(tagname)::tagstatus
+                  when StringSet.mem tagname html_void_elements ->
                   loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
                 | _ ->
                   loop (T.TOKENS[Greaterthan;Slash]::body)
@@ -3928,8 +3926,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               ->
               if debug then eprintf "(OMD) <%s...\n%!" tagname;
               begin match tagstatus with
-                | T.Open("hr"|"br"|"img"|"meta"|"link"|"input" as t) :: _
-                  when t <> tagname -> None
+                | T.Open(t) :: _
+                  when t <> tagname && StringSet.mem t html_void_elements ->
+                  None
                 | T.Awaiting _ :: _ -> None
                 | _ ->
                     begin

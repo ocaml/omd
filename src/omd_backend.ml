@@ -394,9 +394,8 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent ~nl:true tl
       end
-    | Html("img"|"br"|"hr"|"link"|"style"|"meta"|"input"
-           as tagname, attrs, [])
-      as e :: tl ->
+    | Html(tagname, attrs, []) as e :: tl
+      when StringSet.mem tagname html_void_elements ->
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -428,19 +427,22 @@ let rec html_and_headers_of_md
           loop indent tl
         | None ->
           if nl then Buffer.add_string b "\n";
-          match tagname, body with
-          | ("hr"|"br"|"img"|"link"|"style"|"meta"|"input"), [] ->
-            Printf.bprintf b "<%s" tagname;
-            Buffer.add_string b (string_of_attrs attrs);
-            Buffer.add_string b " />";
-            loop indent ~nl:true tl
-          | _ ->
-            Printf.bprintf b "<%s" tagname;
-            Buffer.add_string b (string_of_attrs attrs);
-            Buffer.add_string b ">";
-            loop indent body;
-            Printf.bprintf b "</%s>" tagname;
-            loop indent ~nl:true tl
+          if body = [] && StringSet.mem tagname html_void_elements then
+            (
+              Printf.bprintf b "<%s" tagname;
+              Buffer.add_string b (string_of_attrs attrs);
+              Buffer.add_string b " />";
+              loop indent ~nl:true tl
+            )
+          else
+            (
+              Printf.bprintf b "<%s" tagname;
+              Buffer.add_string b (string_of_attrs attrs);
+              Buffer.add_string b ">";
+              loop indent body;
+              Printf.bprintf b "</%s>" tagname;
+              loop indent ~nl:true tl
+            )
       end
     | Html_comment s as e :: tl ->
       begin match override e with
@@ -1067,8 +1069,8 @@ let rec markdown_of_md md =
       Buffer.add_string b s;
       Buffer.add_char b '\n';
       loop list_indent tl
-    | Html("hr"|"br"|"img"|"link"|"style"|"meta"|"input"
-           as tagname, attrs, []) :: tl ->
+    | Html(tagname, attrs, []) :: tl
+      when StringSet.mem tagname html_void_elements ->
       Printf.bprintf b "<%s" tagname;
       Buffer.add_string b (string_of_attrs attrs);
       Buffer.add_string b " />";
@@ -1084,14 +1086,16 @@ let rec markdown_of_md md =
     | (Html_block(tagname, attrs, body))::NL::NL::((Html_block _:: _) as tl)
     | (Html_block(tagname, attrs, body))::((Html_block _:: _) as tl)
     | (Html_block(tagname, attrs, body))::NL::tl ->
-      begin match tagname, body with
-        | ("hr"|"br"|"img"|"link"|"style"|"meta"|"input"), [] ->
+      if body = [] && StringSet.mem tagname html_void_elements then
+        (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b " />";
           Buffer.add_string b "\n";
           loop list_indent tl
-        | _ ->
+        )
+      else
+        (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b ">";
@@ -1099,23 +1103,25 @@ let rec markdown_of_md md =
           Printf.bprintf b "</%s>" tagname;
           Buffer.add_string b "\n";
           loop list_indent tl
-      end
+        )
     | (Html_block(tagname, attrs, body))::tl ->
-      begin match tagname, body with
-        | ("hr"|"br"|"img"|"link"|"style"|"meta"|"input"), [] ->
+      if body = [] && StringSet.mem tagname html_void_elements then
+        (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b " />";
           Buffer.add_string b "\n";
           loop list_indent tl
-        | _ ->
+        )
+      else
+        (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b ">";
           loop list_indent body;
           Printf.bprintf b "</%s>" tagname;
           loop list_indent tl
-      end
+        )
     | Html_comment s :: tl ->
       Buffer.add_string b s;
       loop list_indent tl
