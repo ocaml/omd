@@ -3548,69 +3548,66 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               begin match tagstatus with
                 | T.Awaiting t :: tagstatus ->
                   if List.mem ("media:type", Some "text/omd") attrs then
-                    begin
+                    (
                       mediatypetextomd := t :: !mediatypetextomd;
-                      begin
-                        try
-                          ignore(main_loop_rev [] [] tokens);
-                          if debug then
-                            eprintf "(OMD) 3524 BHTML closing tag not found\n%!";
-                          None
-                        with Orphan_closing(tagname, delimiter, after) ->
-                          let before =
-                            let rec f r = function
-                              | Lessthans n as e :: tl ->
-                                begin match delimiter with
-                                  | Lessthan::_ ->
-                                    if Lessthan::tl = delimiter then
-                                      List.rev
-                                        (if n = 0 then
-                                           Lessthan::r
-                                         else
-                                           Lessthans(n-1)::r)
-                                    else
-                                      f (e::r) tl
-                                  | _ ->
-                                    if tl == delimiter || tl = delimiter then
-                                      List.rev r
-                                    else
-                                      f (e::r) tl
-                                end
-                              | e::tl ->
-                                if tl == delimiter || tl = delimiter then
-                                  List.rev (e::r)
-                                else
-                                  f (e::r) tl
-                              | [] -> List.rev r
-                            in
-                            f [] tokens
+                      try
+                        ignore(main_loop_rev [] [] tokens);
+                        if debug then
+                          eprintf "(OMD) 3524 BHTML closing tag not found\n%!";
+                        None
+                      with Orphan_closing(tagname, delimiter, after) ->
+                        let before =
+                          let rec f r = function
+                            | Lessthans n as e :: tl ->
+                              begin match delimiter with
+                                | Lessthan::_ ->
+                                  if Lessthan::tl = delimiter then
+                                    List.rev
+                                      (if n = 0 then
+                                         Lessthan::r
+                                       else
+                                         Lessthans(n-1)::r)
+                                  else
+                                    f (e::r) tl
+                                | _ ->
+                                  if tl == delimiter || tl = delimiter then
+                                    List.rev r
+                                  else
+                                    f (e::r) tl
+                              end
+                            | e::tl ->
+                              if tl == delimiter || tl = delimiter then
+                                List.rev (e::r)
+                              else
+                                f (e::r) tl
+                            | [] -> List.rev r
                           in
-                          if debug then
-                            eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
-                                     after=%s before=%s\n%!"
+                          f [] tokens
+                        in
+                        if debug then
+                          eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
+                                   after=%s before=%s\n%!"
                               (L.destring_of_tokens tokens)
                               (L.destring_of_tokens delimiter)
                               (L.destring_of_tokens after)
                               (L.destring_of_tokens before);
-                          if tagname = t then
-                            begin
-                              (match !mediatypetextomd with
-                               | _ :: tl -> mediatypetextomd := tl
-                               | [] -> assert false);
-                              Some([T.HTML
-                                      (t,
-                                       attrs,
-                                       [T.MD
-                                          (main_loop [] []
-                                             (tag_setext main_loop before))])],
-                                   after)
-                            end
-                          else
-                            match !mediatypetextomd with
-                            | _ :: tl -> mediatypetextomd := tl; None
-                            | [] -> assert false
-                      end
-                    end
+                        (match !mediatypetextomd with
+                         | _ :: tl -> mediatypetextomd := tl
+                         | [] -> assert false);
+                        if tagname = t then
+                          loop
+                            [T.HTML
+                               (t,
+                                attrs,
+                                [T.MD
+                                   (main_loop [] []
+                                      (tag_setext main_loop before))])]
+                            []
+                            tagstatus
+                            after
+                        else
+                          None
+                    )
                   else
                     begin
                       if debug then eprintf "(OMD) 3571 BHTML loop\n%!";
