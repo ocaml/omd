@@ -111,3 +111,6 @@ val extract_inner_html : string -> string
 (** Takes an HTML node and returns the contents of the node.
     If it's not given a node, it returns something rubbish.
 *)
+
+val html_void_elements : StringSet.t
+(** HTML void elements *)

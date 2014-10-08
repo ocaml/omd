@@ -281,3 +281,22 @@ let rec extract_inner_html (html:string) =
   let r, _ = rcut_on_char_from p (String.length p - 1) '<' in
   r
 
+
+let html_void_elements = StringSet.of_list [
+  "img";
+  "input";
+  "link";
+  "meta";
+  "br";
+  "hr";
+  "source";
+  "wbr";
+  "param";
+  "embed";
+  "base";
+  "area";
+  "col";
+  "track";
+  "keygen";
+]
+
