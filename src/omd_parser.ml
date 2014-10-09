@@ -95,12 +95,13 @@ struct
 
 
   (** set of known inline HTML tags *)
-  let inline_htmltags_set = StringSet.of_list
-      (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
-      [ "b";"big";"i";"small";"tt";
-        "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
-        "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
-        "button";"input";"label";"select";"textarea";]
+  let inline_htmltags_set =
+      (StringSet.of_list
+         (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
+         [ "b";"big";"i";"small";"tt";
+           "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
+           "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
+           "button";"input";"label";"select";"textarea";])
 
   (** N.B. it seems that there is no clear distinction between inline
       tags and block-level tags: in HTML4 it was not clear, in HTML5
@@ -3416,16 +3417,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 (T.string_of_tagstatus tagstatus)
                 (L.destring_of_tokens tokens);
             match tokens with
-            (* not enough to read means failure to read HTML *)
             | [] ->
-              if tagstatus = [] then
-                Some(body, tokens)
-              else
-                begin
+              begin
+                match tagstatus with
+                | [] -> Some(body, tokens)
+                | T.Open t :: _ when StringSet.mem t html_void_elements ->
+                  Some(body, tokens)
+                | _ ->
                   if debug then
                     eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
                   None
-                end
+              end
             | Lessthans n::tokens ->
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
@@ -3824,19 +3826,23 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           in
           let rec loop (body:T.interm list) attrs tagstatus tokens =
             if debug then
-              eprintf "(OMD) 3718 loop tagstatus=(%s) body=(%s) %s\n%!"
+              eprintf "(OMD) 3718 loop tagstatus=(%s) %s\n%!"
+                (* eprintf "(OMD) 3718 loop tagstatus=(%s) body=(%s) %s\n%!" *)
                 (T.string_of_tagstatus tagstatus)
-                ""(* (Omd_backend.sexpr_of_md(T.md_of_interm_list body)) *)
+                (* (Omd_backend.sexpr_of_md(T.md_of_interm_list body)) *)
                 (L.destring_of_tokens tokens);
             match tokens with
-            (* not enough to read means failure to read HTML *)
             | [] ->
-              if debug then
-                eprintf "(OMD) Not enough to read for inline HTML\n%!";
-              if tagstatus = [] then
-                Some(body, tokens)
-              else
-                None
+              begin
+                match tagstatus with
+                | [] -> Some(body, tokens)
+                | T.Open(t)::_ when StringSet.mem t html_void_elements ->
+                  Some(body, tokens)
+                | _ ->
+                  if debug then
+                    eprintf "(OMD) Not enough to read for inline HTML\n%!";
+                  None
+              end
             | Lessthans n::tokens ->
               begin match tagstatus with
                 | T.Awaiting _ :: _ -> None
