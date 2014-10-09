@@ -594,13 +594,13 @@ let rec html_and_headers_of_md
   Buffer.contents b, List.rev !headers
 
 and string_of_attrs attrs =
-  let b = Buffer.create 42 in
+  let b = Buffer.create 1024 in
   List.iter
     (function
       | (a, Some v) ->
-        if String.contains v '"' then
+        if not(String.contains v '\'') then
           Printf.bprintf b " %s='%s'" a v
-        else if String.contains v '\'' then
+        else if not(String.contains v '"') then
           Printf.bprintf b " %s=\"%s\"" a v
         else
           Printf.bprintf b " %s=\"%s\"" a v
