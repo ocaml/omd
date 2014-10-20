@@ -3575,8 +3575,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                   else
                                     f (e::r) tl
                               end
-                            | e::tl ->
-                              if tl == delimiter || tl = delimiter then
+                            | e::tl as l ->
+                              if l == delimiter || l = delimiter then
+                                List.rev r
+                              else if tl == delimiter || tl = delimiter then
                                 List.rev (e::r)
                               else
                                 f (e::r) tl
