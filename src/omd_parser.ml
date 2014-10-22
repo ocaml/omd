@@ -2330,6 +2330,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         match read_until_cbracket ~bq:true l with
         | name, (Oparenthesis::tl) ->
           read_url (main_loop [] [Obracket] name) (eat_blank tl)
+        | name, (Oparenthesiss 0::tl) ->
+          read_url (main_loop [] [Obracket] name) (Oparenthesis::tl)
+        | name, (Oparenthesiss n::tl) ->
+          read_url (main_loop [] [Obracket] name) (Oparenthesiss(n-1)::tl)
         | _ ->
           None
       with Premature_ending | NL_exception -> None
