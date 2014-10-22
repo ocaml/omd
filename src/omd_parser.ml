@@ -1372,8 +1372,17 @@ struct
           List.rev accu, "^b^"::tl
         else
           loop ("^b^"::accu) (n-1) ("^b^"::tl)
-      | "^b^"s n :: tl ->
-        List.rev accu, "^b^"s(n-1)::tl
+      | "^b^"s x :: tl ->
+        if n = 0 then
+          List.rev accu, "^b^"s(x-1)::tl
+        else
+          loop
+            (match accu with
+             | "^b^"::accu -> "^b^"s(0)::accu
+             | "^b^"s x::accu -> "^b^"s(x+1)::accu
+             | _ -> "^b^"::accu)
+            (n-1)
+            ("^b^"s(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1390,7 +1399,7 @@ struct
      if debug then
        eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b => %S\\n%!\" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
-     "))
+"))
 
      [ "gt", "Greaterthan", "Lessthan";
      "lt", "Lessthan", "";
@@ -1405,7 +1414,8 @@ struct
   *)
 
   (* begin generated part *)
-  let read_until_gt ?(bq=false) ?(no_nl=false) l =
+
+let read_until_gt ?(bq=false) ?(no_nl=false) l =
      assert_well_formed l;
      let rec loop accu n = function
       | Backslash :: (Greaterthan as b) :: tl ->
@@ -1452,8 +1462,17 @@ struct
           List.rev accu, Greaterthan::tl
         else
           loop (Greaterthan::accu) (n-1) (Greaterthan::tl)
-      | Greaterthans n :: tl ->
-        List.rev accu, Greaterthans(n-1)::tl
+      | Greaterthans x :: tl ->
+        if n = 0 then
+          List.rev accu, Greaterthans(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Greaterthan::accu -> Greaterthans(0)::accu
+             | Greaterthans x::accu -> Greaterthans(x+1)::accu
+             | _ -> Greaterthan::accu)
+            (n-1)
+            (Greaterthans(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1465,17 +1484,10 @@ struct
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_lt ?(bq=false) ?(no_nl=false) l =
@@ -1516,8 +1528,17 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Lessthan::tl
         else
           loop (Lessthan::accu) (n-1) (Lessthan::tl)
-      | Lessthans n :: tl ->
-        List.rev accu, Lessthans(n-1)::tl
+      | Lessthans x :: tl ->
+        if n = 0 then
+          List.rev accu, Lessthans(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Lessthan::accu -> Lessthans(0)::accu
+             | Lessthans x::accu -> Lessthans(x+1)::accu
+             | _ -> Lessthan::accu)
+            (n-1)
+            (Lessthans(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1529,17 +1550,10 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
@@ -1589,8 +1603,17 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Cparenthesis::tl
         else
           loop (Cparenthesis::accu) (n-1) (Cparenthesis::tl)
-      | Cparenthesiss n :: tl ->
-        List.rev accu, Cparenthesiss(n-1)::tl
+      | Cparenthesiss x :: tl ->
+        if n = 0 then
+          List.rev accu, Cparenthesiss(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Cparenthesis::accu -> Cparenthesiss(0)::accu
+             | Cparenthesiss x::accu -> Cparenthesiss(x+1)::accu
+             | _ -> Cparenthesis::accu)
+            (n-1)
+            (Cparenthesiss(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1602,18 +1625,10 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => \
-                %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
@@ -1654,8 +1669,17 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Oparenthesis::tl
         else
           loop (Oparenthesis::accu) (n-1) (Oparenthesis::tl)
-      | Oparenthesiss n :: tl ->
-        List.rev accu, Oparenthesiss(n-1)::tl
+      | Oparenthesiss x :: tl ->
+        if n = 0 then
+          List.rev accu, Oparenthesiss(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Oparenthesis::accu -> Oparenthesiss(0)::accu
+             | Oparenthesiss x::accu -> Oparenthesiss(x+1)::accu
+             | _ -> Oparenthesis::accu)
+            (n-1)
+            (Oparenthesiss(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1667,18 +1691,10 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_oparenth \
-                %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_dq ?(bq=false) ?(no_nl=false) l =
@@ -1719,8 +1735,17 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Doublequote::tl
         else
           loop (Doublequote::accu) (n-1) (Doublequote::tl)
-      | Doublequotes n :: tl ->
-        List.rev accu, Doublequotes(n-1)::tl
+      | Doublequotes x :: tl ->
+        if n = 0 then
+          List.rev accu, Doublequotes(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Doublequote::accu -> Doublequotes(0)::accu
+             | Doublequotes x::accu -> Doublequotes(x+1)::accu
+             | _ -> Doublequote::accu)
+            (n-1)
+            (Doublequotes(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1732,17 +1757,10 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_q ?(bq=false) ?(no_nl=false) l =
@@ -1783,8 +1801,17 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Quote::tl
         else
           loop (Quote::accu) (n-1) (Quote::tl)
-      | Quotes n :: tl ->
-        List.rev accu, Quotes(n-1)::tl
+      | Quotes x :: tl ->
+        if n = 0 then
+          List.rev accu, Quotes(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Quote::accu -> Quotes(0)::accu
+             | Quotes x::accu -> Quotes(x+1)::accu
+             | _ -> Quote::accu)
+            (n-1)
+            (Quotes(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1796,17 +1823,10 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_obracket ?(bq=false) ?(no_nl=false) l =
@@ -1847,8 +1867,17 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Obracket::tl
         else
           loop (Obracket::accu) (n-1) (Obracket::tl)
-      | Obrackets n :: tl ->
-        List.rev accu, Obrackets(n-1)::tl
+      | Obrackets x :: tl ->
+        if n = 0 then
+          List.rev accu, Obrackets(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Obracket::accu -> Obrackets(0)::accu
+             | Obrackets x::accu -> Obrackets(x+1)::accu
+             | _ -> Obracket::accu)
+            (n-1)
+            (Obrackets(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1860,18 +1889,10 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_obracket \
-                %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
@@ -1921,8 +1942,17 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Cbracket::tl
         else
           loop (Cbracket::accu) (n-1) (Cbracket::tl)
-      | Cbrackets n :: tl ->
-        List.rev accu, Cbrackets(n-1)::tl
+      | Cbrackets x :: tl ->
+        if n = 0 then
+          List.rev accu, Cbrackets(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Cbracket::accu -> Cbrackets(0)::accu
+             | Cbrackets x::accu -> Cbrackets(x+1)::accu
+             | _ -> Cbracket::accu)
+            (n-1)
+            (Cbrackets(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1934,18 +1964,10 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_cbracket \
-                %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
 
 let read_until_space ?(bq=false) ?(no_nl=false) l =
@@ -1986,8 +2008,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           List.rev accu, Space::tl
         else
           loop (Space::accu) (n-1) (Space::tl)
-      | Spaces n :: tl ->
-        List.rev accu, Spaces(n-1)::tl
+      | Spaces x :: tl ->
+        if n = 0 then
+          List.rev accu, Spaces(x-1)::tl
+        else
+          loop
+            (match accu with
+             | Space::accu -> Spaces(0)::accu
+             | Spaces x::accu -> Spaces(x+1)::accu
+             | _ -> Space::accu)
+            (n-1)
+            (Spaces(x-1)::tl)
       | (Newline|Newlines _ as e)::tl ->
         if no_nl then
           raise NL_exception
@@ -1999,17 +2030,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         raise Premature_ending
      in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl;
+       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
      let res = loop [] 0 l in
      if debug then
-       eprintf "(OMD) Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!"
-         (L.string_of_tokens l)
-         bq
-         no_nl
-         (L.string_of_tokens (fst res));
+       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
   (* /end generated part *)
 
@@ -2244,10 +2268,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
   (** maybe a link *)
   let maybe_link (main_loop:main_loop) r _p l =
+    let debug = true in
     if debug then eprintf "(OMD) # maybe_link\n";
     assert_well_formed l;
     let read_url name l =
-      if debug then eprintf "(OMD) # maybe_link>read_url\n";
+      if debug then
+        eprintf "(OMD) # maybe_link>read_url %S\n" (L.string_of_tokens l);
       try
         let l_cp, r_cp =
           read_until_cparenth ~no_nl:true ~bq:false l
@@ -2783,6 +2809,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         in loop 1)
 
   let mediatypetextomd : string list ref = ref []
+
+  let filter_text_omd_rev l =
+    let rec loop b r = function
+      | [] -> if b then r else l
+      | ("media:type", Some "text/omd")::tl ->
+        loop true r tl
+      | e::tl ->
+        loop b (e::r) tl
+    in
+    loop false [] l
 
   exception Orphan_closing of string * l * l
 
@@ -3368,17 +3404,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               match l with
               | [] -> []
               | HTML(t, a, c)::tl ->
-                if List.mem ("media:type", Some "text/omd") a then
-                  Html_block
-                    (t,
-                     a,
-                     make_paragraphs
-                       (md_of_interm_list ~html:false (List.rev c)))
-                  :: md_of_interm_list tl
-                else
-                  Html_block
-                    (t, a, md_of_interm_list ~html:true (List.rev c))
-                  :: md_of_interm_list tl
+                (
+                  let f_a = filter_text_omd_rev a in
+                  if f_a != a then
+                    Html_block
+                      (t,
+                       f_a,
+                       make_paragraphs
+                         (md_of_interm_list ~html:false (List.rev c)))
+                    :: md_of_interm_list tl
+                  else
+                    Html_block
+                      (t, f_a, md_of_interm_list ~html:true (List.rev c))
+                    :: md_of_interm_list tl
+                )
               | MD md::tl ->
                 md@md_of_interm_list tl
               | RTOKENS t1::FTOKENS t2::tl ->
