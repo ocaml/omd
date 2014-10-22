@@ -2268,7 +2268,6 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
   (** maybe a link *)
   let maybe_link (main_loop:main_loop) r _p l =
-    let debug = true in
     if debug then eprintf "(OMD) # maybe_link\n";
     assert_well_formed l;
     let read_url name l =
