@@ -98,6 +98,17 @@ let text_of_md md =
 
 let default_code_stylist ~lang code = code
 
+let filter_text_omd_rev l =
+  let rec loop b r = function
+    | [] -> if b then r else l
+    | ("media:type", Some "text/omd")::tl ->
+      loop true r tl
+    | e::tl ->
+      loop b (e::r) tl
+  in
+  loop false [] l
+
+
 let rec html_and_headers_of_md
     ?(override=(fun (e:element) -> (None:string option)))
     ?(pindent=true)
@@ -396,6 +407,7 @@ let rec html_and_headers_of_md
       end
     | Html(tagname, attrs, []) as e :: tl
       when StringSet.mem tagname html_void_elements ->
+      let attrs = filter_text_omd_rev attrs in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -407,6 +419,7 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | Html(tagname, attrs, body) as e :: tl ->
+      let attrs = filter_text_omd_rev attrs in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -420,7 +433,7 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | Html_block(tagname, attrs, body) as e :: tl ->
-      let attrs = List.filter ((<>) ("media:type", Some "text/omd")) attrs in
+      let attrs = filter_text_omd_rev attrs in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -1076,10 +1089,14 @@ let rec markdown_of_md md =
       Buffer.add_string b " />";
       loop list_indent tl
     | Html(tagname, attrs, body) :: tl ->
+      let a = filter_text_omd_rev attrs in
       Printf.bprintf b "<%s" tagname;
-      Buffer.add_string b (string_of_attrs attrs);
+      Buffer.add_string b (string_of_attrs a);
       Buffer.add_string b ">";
-      loop list_indent body;
+      if a == attrs then
+        loop list_indent body
+      else
+        Buffer.add_string b (html_of_md body);
       Printf.bprintf b "</%s>" tagname;
       loop list_indent tl
     | (Html_block(tagname, attrs, body))::NL::((Html_block _:: _) as tl)
@@ -1096,10 +1113,14 @@ let rec markdown_of_md md =
         )
       else
         (
+          let a = filter_text_omd_rev attrs in
           Printf.bprintf b "<%s" tagname;
-          Buffer.add_string b (string_of_attrs attrs);
+          Buffer.add_string b (string_of_attrs a);
           Buffer.add_string b ">";
-          loop list_indent body;
+          if a == attrs then
+            loop list_indent body
+          else
+            Buffer.add_string b (html_of_md body);
           Printf.bprintf b "</%s>" tagname;
           Buffer.add_string b "\n";
           loop list_indent tl
@@ -1115,10 +1136,14 @@ let rec markdown_of_md md =
         )
       else
         (
+          let a = filter_text_omd_rev attrs in
           Printf.bprintf b "<%s" tagname;
-          Buffer.add_string b (string_of_attrs attrs);
+          Buffer.add_string b (string_of_attrs a);
           Buffer.add_string b ">";
-          loop list_indent body;
+          if a == attrs then
+            loop list_indent body
+          else
+            Buffer.add_string b (html_of_md body);
           Printf.bprintf b "</%s>" tagname;
           loop list_indent tl
         )
