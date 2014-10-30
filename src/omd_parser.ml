@@ -3855,7 +3855,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | TOKENS t1::TOKENS t2::tl ->
                 md_of_interm_list (TOKENS(t1@t2)::tl)
               | TOKENS t :: tl ->
-                main_loop_rev [] [Word ""] (List.rev t)
+                main_loop [] [Word ""] (t)
                 @ md_of_interm_list tl
             let string_of_tagstatus tagstatus =
               let b = Buffer.create 42 in
@@ -4138,7 +4138,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
                 if debug then
-                  eprintf "(OMD) (4281) general %S\n%!"
+                  eprintf "(OMD) (4161) general %S\n%!"
                     (L.string_of_tokens (x::tokens));
                 loop (T.TOKENS[x]::body) attrs tagstatus tokens
               end
