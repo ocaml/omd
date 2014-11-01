@@ -428,7 +428,7 @@ let rec html_and_headers_of_md
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b ">";
-          loop indent body;
+          loop indent ~nl:false body;
           Printf.bprintf b "</%s>" tagname;
           loop indent tl
       end
@@ -445,16 +445,16 @@ let rec html_and_headers_of_md
               Printf.bprintf b "<%s" tagname;
               Buffer.add_string b (string_of_attrs attrs);
               Buffer.add_string b " />";
-              loop indent ~nl:true tl
+              loop indent tl
             )
           else
             (
               Printf.bprintf b "<%s" tagname;
               Buffer.add_string b (string_of_attrs attrs);
               Buffer.add_string b ">";
-              loop indent body;
+              loop indent ~nl:false body;
               Printf.bprintf b "</%s>" tagname;
-              loop indent ~nl:true tl
+              loop indent tl
             )
       end
     | Html_comment s as e :: tl ->
@@ -465,7 +465,7 @@ let rec html_and_headers_of_md
         | None ->
           if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
-          loop indent ~nl:nl tl
+          loop indent tl
       end
     | Url (href,s,title) as e :: tl ->
       begin match override e with
