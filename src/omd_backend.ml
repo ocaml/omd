@@ -111,7 +111,7 @@ let filter_text_omd_rev l =
 
 let rec html_and_headers_of_md
     ?(override=(fun (e:element) -> (None:string option)))
-    ?(pindent=true)
+    ?(pindent=false)
     ?(nl2br=false)
     ?cs:(code_style=default_code_stylist)
     md
@@ -159,7 +159,7 @@ let rec html_and_headers_of_md
   in
   let b = Buffer.create 42 in
   let headers = ref [] in
-  let rec loop indent ?(nl=false) = function
+  let rec loop indent = function
     | X x as e :: tl ->
       begin match override e with
         | Some s ->
@@ -180,11 +180,10 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           Buffer.add_string b "<blockquote>";
           loop indent q;
           Buffer.add_string b "</blockquote>";
-          loop indent ~nl:true tl
+          loop indent tl
       end
     | Ref(rc, name, text, fallback) as e :: tl ->
       begin match override e with
@@ -232,12 +231,11 @@ let rec html_and_headers_of_md
              ()
            else
              begin
-               if nl then Buffer.add_string b "\n";
                Buffer.add_string b "<p>";
                Buffer.add_string b (remove_trailing_blanks s);
                Buffer.add_string b "</p>";
              end);
-          loop indent ~nl:true tl
+          loop indent tl
       end
     | Img(alt, src, title) as e :: tl ->
       begin match override e with
@@ -295,33 +293,20 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
-          (* if pindent then Buffer.add_char b '\n'; *)
-          if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
           Buffer.add_string b (match e with
               | Ol _|Olp _ -> "<ol>"
               | _ -> "<ul>");
-          if pindent then Buffer.add_char b '\n';
           List.iter
-            (fun li ->
-               if pindent then for i = 1 to indent + 1 do
-                   Buffer.add_char b ' '
-                 done;
-               Buffer.add_string b "<li>";
-               loop (indent+2) li;
-               if (try Buffer.nth b (Buffer.length b - 1) = '\n' with _ -> false)
-               then
-                 if pindent then for i = 1 to indent + 1 do
-                     Buffer.add_char b ' '
-                   done;
-               Buffer.add_string b "</li>";
-               if pindent then Buffer.add_char b '\n')
+            (
+              fun li ->
+                Buffer.add_string b "<li>";
+                loop (indent+2) li;
+                Buffer.add_string b "</li>"
+            )
             l;
-          if pindent then for i = 1 to indent do Buffer.add_char b ' ' done;
           Buffer.add_string b (match e with
               | Ol _|Olp _ -> "</ol>"
               | _ -> "</ul>");
-          if pindent then Buffer.add_char b '\n';
           loop indent tl
       end
     | Code_block(lang, c) as e :: tl ->
@@ -330,7 +315,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           if lang = "" && !default_language = "" then
             Buffer.add_string b "<pre><code>"
           else if lang = "" then
@@ -344,7 +328,7 @@ let rec html_and_headers_of_md
           else
             Buffer.add_string b new_c;
           Buffer.add_string b "</code></pre>";
-          loop indent ~nl:true tl
+          loop indent tl
       end
     | Code(lang, c) as e :: tl ->
       begin match override e with
@@ -372,8 +356,7 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
-          Buffer.add_string b "<br/>\n";
+          Buffer.add_string b "<br/>";
           loop indent tl
       end
     | Hr as e :: tl ->
@@ -382,8 +365,7 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
-          Buffer.add_string b "<hr/>\n";
+          Buffer.add_string b "<hr/>";
           loop indent tl
       end
     | Raw s as e :: tl ->
@@ -401,9 +383,8 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
-          loop indent ~nl:true tl
+          loop indent tl
       end
     | Html(tagname, attrs, []) as e :: tl
       when StringSet.mem tagname html_void_elements ->
@@ -428,7 +409,7 @@ let rec html_and_headers_of_md
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b ">";
-          loop indent ~nl:false body;
+          loop indent body;
           Printf.bprintf b "</%s>" tagname;
           loop indent tl
       end
@@ -439,7 +420,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           if body = [] && StringSet.mem tagname html_void_elements then
             (
               Printf.bprintf b "<%s" tagname;
@@ -452,7 +432,7 @@ let rec html_and_headers_of_md
               Printf.bprintf b "<%s" tagname;
               Buffer.add_string b (string_of_attrs attrs);
               Buffer.add_string b ">";
-              loop indent ~nl:false body;
+              loop indent body;
               Printf.bprintf b "</%s>" tagname;
               loop indent tl
             )
@@ -463,7 +443,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           Buffer.add_string b s;
           loop indent tl
       end
@@ -494,7 +473,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -511,7 +489,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -528,7 +505,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -545,7 +521,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -562,7 +537,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -579,7 +553,6 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl then Buffer.add_string b "\n";
           let ih = html_of_md md in
           let id = id_of_string ids (text_of_md md) in
           headers := (e, id, ih) :: !headers;
@@ -597,11 +570,10 @@ let rec html_and_headers_of_md
           loop indent tl
         | None ->
           if nl2br then Buffer.add_string b "<br />";
-          Buffer.add_char b '\n';
           loop indent tl
       end
     | [] ->
-      if nl then Buffer.add_string b "\n"
+      ()
   in
   loop 0 md;
   Buffer.contents b, List.rev !headers
@@ -628,12 +600,12 @@ and string_of_attrs attrs =
 
 and html_of_md
     ?(override=(fun (e:element) -> (None:string option)))
-    ?(pindent=true)
+    ?(pindent=false)
     ?(nl2br=false)
     ?cs
     md
   =
-  fst (html_and_headers_of_md ~override ~pindent ~nl2br ?cs md)
+  fst (html_and_headers_of_md ~override ~nl2br ?cs md)
 and headers_of_md md =
   snd (html_and_headers_of_md md)
 
