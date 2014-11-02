@@ -18,17 +18,10 @@ val raise : exn -> 'a
 
 module StringSet :
   sig
-    type elt = string
-    type t
-    val empty : t
-    val add : elt -> t -> t
-    val mem : elt -> t -> bool
-    val union : t -> t -> t
+    include Set.S with type elt = string
     val of_list : elt list -> t
-    val iter : (elt -> unit) -> t -> unit
-    val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
   end
-(** Set of [string]. Cf. documentation of Map.Make(String) *)
+(** Set of [string]. Cf. documentation of {!Set.S} *)
 
 type 'a split = 'a list -> 'a split_action
 (** Type of a split function *)
