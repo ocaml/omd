@@ -61,15 +61,8 @@ let raise =
     Pervasives.raise
 
 module StringSet : sig
-  type elt = string
-  type t
-  val empty : t
-  val add : elt -> t -> t
-  val mem : elt -> t -> bool
-  val union : t -> t -> t
+  include Set.S with type elt = string
   val of_list : elt list -> t
-  val iter : (elt -> unit) -> t -> unit
-  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 end = struct
   include Set.Make(String)
   let of_list l = List.fold_left (fun r e -> add e r) empty l
