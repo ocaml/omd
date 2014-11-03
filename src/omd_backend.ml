@@ -1072,9 +1072,7 @@ let rec markdown_of_md md =
       Printf.bprintf b "</%s>" tagname;
       loop list_indent tl
     | (Html_block(tagname, attrs, body))::NL::((Html_block _:: _) as tl)
-    | (Html_block(tagname, attrs, body))::NL::NL::((Html_block _:: _) as tl)
-    | (Html_block(tagname, attrs, body))::((Html_block _:: _) as tl)
-    | (Html_block(tagname, attrs, body))::NL::tl ->
+    | (Html_block(tagname, attrs, body))::NL::NL::((Html_block _:: _) as tl) ->
       if body = [] && StringSet.mem tagname html_void_elements then
         (
           Printf.bprintf b "<%s" tagname;
@@ -1098,12 +1096,18 @@ let rec markdown_of_md md =
           loop list_indent tl
         )
     | (Html_block(tagname, attrs, body))::tl ->
+      let is_p =
+        match tl with
+        | NL :: Paragraph _ :: _
+        | Paragraph _ :: _ -> true
+        | _ -> false
+      in
       if body = [] && StringSet.mem tagname html_void_elements then
         (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b " />";
-          Buffer.add_string b "\n";
+          if is_p then Buffer.add_string b "\n\n";
           loop list_indent tl
         )
       else
@@ -1117,6 +1121,7 @@ let rec markdown_of_md md =
           else
             Buffer.add_string b (html_of_md body);
           Printf.bprintf b "</%s>" tagname;
+          if is_p then Buffer.add_string b "\n\n";
           loop list_indent tl
         )
     | Html_comment s :: tl ->
