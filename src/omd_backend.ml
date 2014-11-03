@@ -886,7 +886,7 @@ let rec markdown_of_md md =
         else
           add_spaces list_indent;
       loop ~fst_p_in_li:false list_indent md;
-      Printf.bprintf b "\n\n";
+      if tl <> [] then Printf.bprintf b "\n\n";
       loop ~fst_p_in_li:false list_indent tl
     | Img(alt, src, title) :: tl ->
       Printf.bprintf b "![%s](%s \"%s\")" alt src title;
@@ -1026,7 +1026,7 @@ let rec markdown_of_md md =
             (* case where we can't use backquotes *)
             Buffer.add_char b '\n';
             output_indented_block (4+list_indent) c;
-            Buffer.add_string b "\n\n"
+            if tl <> [] then Buffer.add_string b "\n\n"
           end
         else
           begin
