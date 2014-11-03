@@ -424,6 +424,8 @@ let main () =
             o1
       in
         output_string output o2;
+        if o2 <> "" && o2.[String.length o2 - 1] <> '\n' then
+          output_char output '\n';
         flush output;
         if false && Omd_utils.debug then
           print_endline
