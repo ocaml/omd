@@ -218,18 +218,18 @@ let split_comma_int_list s =
       List.rev !l
   )
 
+module E = Omd_parser.Default_env(struct end)
+
 let omd_gh_uemph_or_bold_style =
-  let module E = Omd_parser.Default_env(struct end) in
   ref E.gh_uemph_or_bold_style
 let omd_blind_html =
-  let module E = Omd_parser.Default_env(struct end) in
   ref E.blind_html
 let omd_strict_html = 
-  let module E = Omd_parser.Default_env(struct end) in
   ref E.strict_html
+let omd_warning = ref E.warning
+let omd_warn_error = ref E.warn_error
 
 let list_html_tags ~inline =
-  let module E = Omd_parser.Default_env(struct end) in
   let module Parser = Omd_parser.Make(E)
   in
   if inline then
@@ -354,6 +354,10 @@ let main () =
         "-VE", Set_string(verbatim_end),
         "end Set the end token to use to declare a verbatim section. \
         If you use -VE, you must use -VS, and both must be non-empty.";
+        "-w", Set(omd_warning),
+        " Activate warnings (beta).";
+        "-W", Set(omd_warn_error),
+        " Convert warnings to errors, implies -w (beta).";
       ])
       (fun s -> input := s :: !input)
       "omd [options] [inputfile1 .. inputfileN] [options]"
@@ -382,6 +386,8 @@ let main () =
       let module Parser = Omd_parser.Make(
         struct
           include E
+          let warning = !omd_warning || !omd_warn_error
+          let warn_error = !omd_warn_error
           let gh_uemph_or_bold_style = !omd_gh_uemph_or_bold_style
           let blind_html = !omd_blind_html
           let strict_html = !omd_strict_html
@@ -432,6 +438,10 @@ let main () =
 let () =
   try
     main ()
-  with Sys_error msg ->
+  with
+  | Omd_utils.Error msg when not Omd_utils.debug ->
+    Printf.eprintf "(OMD) Error: %s\n" msg;
+    exit 1
+  | Sys_error msg ->
     Printf.eprintf "Error: %s\n" msg;
     exit 1

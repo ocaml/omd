@@ -56,6 +56,10 @@ sig
       exists in HTML. *)
   val strict_html : bool
   (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
+  val warning : bool
+  (** flag: if true, will output warnings *)
+  val warn_error : bool
+  (** flag: if true, will convert warnings to errors *)
 end
 
 module Default_env : functor (Unit: sig end) -> Env

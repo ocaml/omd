@@ -32,6 +32,15 @@ let debug =
               to a value that isn't the string \"false\".\n%!";
      true
 
+exception Error of string
+
+let warn ?(we=false) msg =
+  if we then
+    raise (Error msg)
+  else
+    eprintf "(OMD) Warning: %s\n" msg
+
+
 let trackfix =
   try
     ignore(Sys.getenv "OMD_FIX");

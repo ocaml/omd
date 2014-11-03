@@ -39,6 +39,8 @@ module type Env = sig
   val gh_uemph_or_bold_style : bool
   val blind_html : bool
   val strict_html : bool
+  val warning : bool
+  val warn_error : bool
 end
 
 module Unit = struct end
@@ -50,11 +52,15 @@ module Default_env (Unit:sig end) : Env = struct
   let gh_uemph_or_bold_style = true
   let blind_html = false
   let strict_html = false
+  let warning = false
+  let warn_error = false
 end
 
 module Make (Env:Env) =
 struct
   include Env
+
+  let warn = Omd_utils.warn ~we:warn_error
 
   (** set of known HTML codes *)
   let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
@@ -3595,7 +3601,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                       try
                         ignore(main_loop_rev [] [] tokens);
                         if debug then
-                          eprintf "(OMD) 3524 BHTML closing tag not found\n%!";
+                          eprintf "(OMD) 3524 BHTML closing tag not found \
+                                   in %S\n%!" (L.destring_of_tokens tokens);
+                        warn
+                          (sprintf
+                             "Closing tag `%s' not found for text/omd zone."
+                             t);
+                        mediatypetextomd := List.tl !mediatypetextomd;
                         None
                       with Orphan_closing(tagname, delimiter, after) ->
                         let before =

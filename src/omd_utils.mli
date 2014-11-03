@@ -12,9 +12,15 @@ val debug : bool
 
 val trackfix : bool
 
+exception Error of string
+
 val raise : exn -> 'a
 (** Same as [Pervasives.raise] except if [debug] equals true,
     in which case it prints a trace on stderr before raising the exception. *)
+
+val warn : ?we:bool -> string -> unit
+(** [warn we x] prints a warning with the message [x] if [we] is true,
+    else raises [Omd_utils.Error x]. *)
 
 module StringSet :
   sig
