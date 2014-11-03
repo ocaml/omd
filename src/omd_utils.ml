@@ -38,7 +38,7 @@ let warn ?(we=false) msg =
   if we then
     raise (Error msg)
   else
-    eprintf "(OMD) Warning: %s\n" msg
+    eprintf "(OMD) Warning: %s\n%!" msg
 
 
 let trackfix =
