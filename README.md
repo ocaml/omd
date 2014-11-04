@@ -94,10 +94,13 @@ Version numbers are trying to follow this scheme:
 algorithm, interface or editorial policy changes, 
 and `x` is for deeper changes.
 
-- 1.2.x might stop checking validity of HTML tag *names*
+- 1.3.x might stop checking validity of HTML tag *names*
   and accept any XML-parsable tag name.
 
-- **1.1.2**: fix: some URL-related parsing issues.
+- **1.2.0** introduces options `-w` and `-W`. Fixes mostly concern subtle
+  uses of `\n`s in HTML and Markdown outputs.
+
+- 1.1.2: fix: some URL-related parsing issues.
 
 - 1.1.0 and 1.1.1: fix: some HTML-related issues.
 
