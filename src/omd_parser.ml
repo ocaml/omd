@@ -3652,11 +3652,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         in
                         if debug then
                           eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
-                                   after=%s before=%s\n%!"
+                                   after=%s before=%s (tagname=t)=%b\n%!"
                               (L.destring_of_tokens tokens)
                               (L.destring_of_tokens delimiter)
                               (L.destring_of_tokens after)
-                              (L.destring_of_tokens before);
+                              (L.destring_of_tokens before)
+                              (tagname = t);
                         (match !mediatypetextomd with
                          | _ :: tl -> mediatypetextomd := tl
                          | [] -> assert false);
@@ -3828,7 +3829,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                    | [] -> "None"
                    | T.Awaiting _ :: _ -> "Awaiting"
                    | T.Open _ :: _ -> "Open (can't be)");
-              None
+              begin
+                match tagstatus with
+                | [] -> Some(body, tokens)
+                | T.Open t :: _ when StringSet.mem t html_void_elements ->
+                  failwith "OMD: error P3836, please file a bug report!"
+                | _ ->
+                  if debug then
+                    eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
+                  None
+              end
           in
           if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
           match loop [] [] [] lexemes with
