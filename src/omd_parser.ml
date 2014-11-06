@@ -2890,7 +2890,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           end
         | Some (comments, new_tl) ->
           let r = Html_comment(L.string_of_tokens comments) :: r in
-          main_loop_rev r [Greaterthan] new_tl
+          main_loop_rev r [Newline] new_tl
       end
 
     (* email-style quoting / blockquote *)
@@ -3813,11 +3813,19 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     (L.string_of_tokens dgts);
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
-            | (Newlines _ | Newline | Space | Spaces _ as x) :: tokens
+            | (Newline | Space | Spaces _ as x) :: tokens
               when
                 (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
               begin
                 if debug then eprintf "(OMD) 3737 BHTML spaces\n%!";
+                loop (add_token_to_body x body) attrs tagstatus tokens
+              end
+            | (Newlines _ as x) :: tokens
+              when
+                (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+              begin
+                if debug then eprintf "(OMD) 3827 BHTML newlines\n%!";
+                warn "there are empty lines in what may be an HTML block";
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
             | _ ->
@@ -3829,16 +3837,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                    | [] -> "None"
                    | T.Awaiting _ :: _ -> "Awaiting"
                    | T.Open _ :: _ -> "Open (can't be)");
-              begin
-                match tagstatus with
-                | [] -> Some(body, tokens)
-                | T.Open t :: _ when StringSet.mem t html_void_elements ->
-                  failwith "OMD: error P3836, please file a bug report!"
-                | _ ->
-                  if debug then
-                    eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
-                  None
-              end
+              (match tagstatus with
+               | [] -> Some(body, tokens)
+               | T.Awaiting tag :: _ ->
+                 warn (sprintf "expected to read an open HTML tag (%s), \
+                                but found nothing" tag);
+                 None
+               | T.Open tag :: _ ->
+                 warn (sprintf "expected to find the closing HTML tag for %s, \
+                                but found nothing" tag);
+                 None)
           in
           if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
           match loop [] [] [] lexemes with
@@ -3942,7 +3950,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             (* multiple newlines are not to be seen in inline HTML *)
             | Newlines _ :: _ ->
               if debug then eprintf "(OMD) Multiple lines in inline HTML\n%!";
-              None
+              (match tagstatus with
+               | [] -> Some(body, tokens)
+               | _ -> warn "multiple newlines in inline HTML"; None)
             (* maybe code *)
             | (Backquote | Backquotes _ as b)::tl ->
               begin match tagstatus with
@@ -4187,7 +4197,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                          fallback with tokens=%s and tagstatus=%s\n%!"
                   (L.destring_of_tokens tokens)
                   (T.string_of_tagstatus tagstatus);
-              None
+              (match tagstatus with
+               | [] -> Some(body, tokens)
+               | T.Awaiting tag :: _ ->
+                 warn (sprintf "expected to read an open HTML tag (%s), \
+                                but found nothing" tag);
+                 None
+               | T.Open tag :: _ ->
+                 warn (sprintf "expected to find the closing HTML tag for %s, \
+                                but found nothing" tag);
+                 None)
           in match loop [] [] [] lexemes with
           | Some(html, rest) ->
             Some(T.md_of_interm_list html, rest)
