@@ -280,6 +280,8 @@ let empty_extension = object
 end
 
 let rec normalise_md l =
+  if debug then
+    eprintf "(OMD) normalise_md\n%!";
   let rec loop = function
     | [NL;NL;NL;NL;NL;NL;NL;]
     | [NL;NL;NL;NL;NL;NL;]
@@ -291,7 +293,7 @@ let rec normalise_md l =
     | [] -> []
     | NL::NL::NL::tl -> loop (NL::NL::tl)
     | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
-    | NL::(((Paragraph _|Html_block _|Raw_block _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _
+    | NL::(((Paragraph _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _
             |Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
     | Paragraph[Text " "]::tl -> loop tl
     | Paragraph[]::tl -> loop tl
