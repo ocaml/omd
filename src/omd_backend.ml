@@ -1137,7 +1137,10 @@ let rec markdown_of_md md =
       Buffer.add_string b "\n";
       loop list_indent tl
     | NL :: tl ->
-      (* if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then *)
+      if Buffer.length b > 1 &&
+         not(Buffer.nth b (Buffer.length b - 1) = '\n'
+              && Buffer.nth b (Buffer.length b - 2) = '\n')
+      then
       Buffer.add_string b "\n";
       loop list_indent tl
     | [] -> ()
