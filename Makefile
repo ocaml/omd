@@ -34,8 +34,8 @@ dist tar: $(DISTFILES)
 	cp --parents -r $(DISTFILES) $(PKGNAME)-$(PKGVERSION)/
 #	setup.ml independent of oasis:
 #	and remove test_cow!
-	test "$(wc -l < _oasis)" == 42 ; echo $?
-	head -n 34 _oasis > $(PKGNAME)-$(PKGVERSION)/_oasis
+	test "$(wc -l < _oasis)" == 59 ; echo $?
+	head -n 36 _oasis > $(PKGNAME)-$(PKGVERSION)/_oasis
 	sed -e "s/VERSION/$(PKGVERSION) of $$(date -u)/" src/omd_main.ml > $(PKGNAME)-$(PKGVERSION)/src/omd_main.ml
 	cd $(PKGNAME)-$(PKGVERSION) && oasis setup
 	tar -zcvf $(PKG_TARBALL) $(PKGNAME)-$(PKGVERSION)
@@ -51,9 +51,9 @@ distclean dist-clean:: clean
 	$(RM) $(wildcard *.ba[0-9] *.bak *~ *.odocl)
 
 opam:
-	test "$(wc -l < _oasis)" == 42 || (echo $?; exit $?)
+	test "$(wc -l < _oasis)" == 59 || (echo $?; exit $?)
 	cp _oasis _oasis_orig
-	head -n 31 _oasis_orig > _oasis
+	head -n 36 _oasis_orig > _oasis
 	oasis2opam http://pw374.github.io/distrib/omd/$(PKGNAME)-$(PKGVERSION).tar.gz
 	mv _oasis_orig _oasis
 	printf 'tags: [\n  "org:ocamllabs"\n  "org:mirage"\n]\n' >> $(PKGNAME).$(PKGVERSION)/opam
