@@ -642,9 +642,12 @@ struct
          | [] -> loop [] (e::accu) tl
          | [NL] | [Br] -> loop [] (e::NL::accu) tl
          | _ -> loop (e::cp) accu tl)
-      | (Raw_block _ | Code_block _
-        | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _
-        | Html_block _) as e :: tl ->
+      | (Raw_block _ | Html_block _) as e :: tl ->
+        (match cp with
+         | [] | [NL] | [Br] -> loop cp (e::cp@accu) tl
+         | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+      | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
+        | Ol _ | Ul _) as e :: tl ->
         (match cp with
          | [] | [NL] | [Br] -> loop cp (e::accu) tl
          | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
@@ -653,7 +656,7 @@ struct
       | (NL|Br) :: (NL|Br) :: tl ->
         let tl = remove_initial_newlines tl in
         begin match cp with
-          | [] | [NL] | [Br] -> loop [] (NL::accu) tl
+          | [] | [NL] | [Br] -> loop [] (NL::NL::accu) tl
           | _ -> loop [] (Paragraph(List.rev cp)::accu) tl
         end
       | X(x) as e :: tl ->
@@ -707,7 +710,9 @@ struct
       in
       List.rev (loop (List.rev l))
     in
-    let rec clean_paragraphs = function
+    let rec clean_paragraphs =
+      if debug then eprintf "(OMD) clean_paragraphs\n";
+      function
       | [] -> []
       | Paragraph[]::tl -> tl
       | Paragraph(p) :: tl ->
@@ -759,7 +764,12 @@ struct
       | Img _
       | X _ as v :: tl -> v :: clean_paragraphs tl
     in
-    clean_paragraphs(loop [] [] md)
+    let r = clean_paragraphs(loop [] [] md)
+    in
+    if debug then eprintf "(OMD) clean_paragraphs %S --> %S\n%!"
+        (Omd_backend.sexpr_of_md md)
+        (Omd_backend.sexpr_of_md r);
+    r
 
 
   (** [assert_well_formed] is a developer's function that helps to
