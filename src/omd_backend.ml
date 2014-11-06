@@ -90,6 +90,7 @@ let text_of_md md =
         loop md;
         loop tl
     | NL :: tl ->
+        Buffer.add_string b "\n";
         loop tl
     | [] -> ()
   in
@@ -569,7 +570,10 @@ let rec html_and_headers_of_md
           Buffer.add_string b s;
           loop indent tl
         | None ->
-          if nl2br then Buffer.add_string b "<br />";
+          if nl2br then
+            Buffer.add_string b "<br />"
+          else
+            Buffer.add_string b "\n";
           loop indent tl
       end
     | [] ->
@@ -819,7 +823,7 @@ let escape_markdown_characters s =
     Buffer.contents b
 
 let rec markdown_of_md md =
-  if debug then eprintf "markdown_of_md(%S)\n%!" (sexpr_of_md md);
+  if debug then eprintf "(OMD) markdown_of_md(%S)\n%!" (sexpr_of_md md);
   let quote ?(indent=0) s =
     let b = Buffer.create (String.length s) in
     let l = String.length s in
@@ -862,14 +866,9 @@ let rec markdown_of_md md =
              | Some s -> Buffer.add_string b s
              | None -> ());
         loop list_indent tl
-    | (Blockquote _ as b) :: NL :: tl ->
-      loop list_indent (b::tl)
-    | Blockquote q :: (Blockquote _ :: _ as tl) ->
-      Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
-      Buffer.add_string b "\n";
-      loop list_indent tl
     | Blockquote q :: tl ->
       Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
+      if tl <> [] then Buffer.add_string b "\n";
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
         if !references = None then references := Some rc;
@@ -877,8 +876,6 @@ let rec markdown_of_md md =
     | Img_ref(rc, name, alt, fallback) :: tl ->
         if !references = None then references := Some rc;
         loop list_indent (Raw(fallback#to_string)::tl)
-    | (Paragraph _ as p) :: NL :: tl ->
-      loop list_indent (p::tl)
     | Paragraph md :: tl ->
       if is_in_list then
         if fst_p_in_li then
@@ -951,8 +948,8 @@ let rec markdown_of_md md =
                ) l;
       begin match tl with
       | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
-      | NL::(H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
-        -> Buffer.add_char b '\n'
+      | NL::(H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_ ->
+        Buffer.add_char b '\n'
       | _ -> ()
       end;
       loop list_indent tl
@@ -1071,30 +1068,6 @@ let rec markdown_of_md md =
         Buffer.add_string b (html_of_md body);
       Printf.bprintf b "</%s>" tagname;
       loop list_indent tl
-    | (Html_block(tagname, attrs, body))::NL::((Html_block _:: _) as tl)
-    | (Html_block(tagname, attrs, body))::NL::NL::((Html_block _:: _) as tl) ->
-      if body = [] && StringSet.mem tagname html_void_elements then
-        (
-          Printf.bprintf b "<%s" tagname;
-          Buffer.add_string b (string_of_attrs attrs);
-          Buffer.add_string b " />";
-          Buffer.add_string b "\n";
-          loop list_indent tl
-        )
-      else
-        (
-          let a = filter_text_omd_rev attrs in
-          Printf.bprintf b "<%s" tagname;
-          Buffer.add_string b (string_of_attrs a);
-          Buffer.add_string b ">";
-          if a == attrs then
-            loop list_indent body
-          else
-            Buffer.add_string b (html_of_md body);
-          Printf.bprintf b "</%s>" tagname;
-          Buffer.add_string b "\n";
-          loop list_indent tl
-        )
     | (Html_block(tagname, attrs, body))::tl ->
       let is_p =
         match tl with
@@ -1164,9 +1137,9 @@ let rec markdown_of_md md =
       Buffer.add_string b "\n";
       loop list_indent tl
     | NL :: tl ->
-      if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
-        Buffer.add_string b "\n";
-        loop list_indent tl
+      (* if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then *)
+      Buffer.add_string b "\n";
+      loop list_indent tl
     | [] -> ()
   in
     loop 0 md;
@@ -1184,5 +1157,7 @@ let rec markdown_of_md md =
             r#get_all
     end;
     let res = Buffer.contents b in
-    if debug then eprintf "markdown_of_md(%S) => %S\n%!" (sexpr_of_md md) res;
+    if debug then
+      eprintf "(OMD) markdown_of_md(%S) => %S\n%!"
+        (sexpr_of_md md) res;
     res
