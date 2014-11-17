@@ -4176,6 +4176,14 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | Void, _ -> None
               end
 
+            | Backslash::x::tokens
+              when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
+              loop (T.TOKENS[Backslash;x]::body) attrs tagstatus tokens
+            | Backslashs(n)::x::tokens
+              when (match tagstatus with T.Open _ :: _ -> true | _ -> false)
+                && n mod 2 = 1 ->
+              loop (T.TOKENS[Backslashs(n);x]::body) attrs tagstatus tokens
+
             | x::tokens
               when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
               begin
