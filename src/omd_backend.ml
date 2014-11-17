@@ -221,6 +221,7 @@ let rec html_and_headers_of_md
               loop indent tl
           end
       end
+    | Paragraph [] :: tl -> loop indent tl
     | Paragraph md as e :: tl ->
       begin match override e with
         | Some s ->
@@ -234,7 +235,7 @@ let rec html_and_headers_of_md
              begin
                Buffer.add_string b "<p>";
                Buffer.add_string b (remove_trailing_blanks s);
-               Buffer.add_string b "</p>";
+               Buffer.add_string b "</p>\n";
              end);
           loop indent tl
       end
@@ -876,6 +877,7 @@ let rec markdown_of_md md =
     | Img_ref(rc, name, alt, fallback) :: tl ->
         if !references = None then references := Some rc;
         loop list_indent (Raw(fallback#to_string)::tl)
+    | Paragraph [] :: tl -> loop list_indent tl
     | Paragraph md :: tl ->
       if is_in_list then
         if fst_p_in_li then
@@ -883,7 +885,7 @@ let rec markdown_of_md md =
         else
           add_spaces list_indent;
       loop ~fst_p_in_li:false list_indent md;
-      if tl <> [] then Printf.bprintf b "\n\n";
+      Printf.bprintf b "\n\n";
       loop ~fst_p_in_li:false list_indent tl
     | Img(alt, src, title) :: tl ->
       Printf.bprintf b "![%s](%s \"%s\")" alt src title;
@@ -1071,8 +1073,8 @@ let rec markdown_of_md md =
     | (Html_block(tagname, attrs, body))::tl ->
       let is_p =
         match tl with
-        | NL :: Paragraph _ :: _
-        | Paragraph _ :: _ -> true
+        | NL :: Paragraph p :: _
+        | Paragraph p :: _ -> p <> []
         | _ -> false
       in
       if body = [] && StringSet.mem tagname html_void_elements then
@@ -1137,9 +1139,10 @@ let rec markdown_of_md md =
       Buffer.add_string b "\n";
       loop list_indent tl
     | NL :: tl ->
-      if Buffer.length b > 1 &&
-         not(Buffer.nth b (Buffer.length b - 1) = '\n'
-              && Buffer.nth b (Buffer.length b - 2) = '\n')
+      if Buffer.length b = 1
+      || (Buffer.length b > 1 &&
+          not(Buffer.nth b (Buffer.length b - 1) = '\n'
+              && Buffer.nth b (Buffer.length b - 2) = '\n'))
       then
       Buffer.add_string b "\n";
       loop list_indent tl

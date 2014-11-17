@@ -620,8 +620,6 @@ struct
         List.rev accu
       | Blockquote b1 :: Blockquote b2 :: tl ->
         loop cp accu (Blockquote(b1@b2):: tl)
-      | Blockquote b1 :: (NL|Br as x) :: Blockquote b2 :: tl ->
-        loop cp accu (Blockquote(b1@(x::b2)):: tl)
       | Blockquote b :: tl ->
         let e = Blockquote(loop [] [] b) in
         (match cp with
@@ -2163,6 +2161,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | Newline::Greaterthan::Spaces n::tl ->
         assert(n>0);
         loop (Newline::cl@block) [Spaces(n-1)] tl
+
+      (* multi paragraph blockquotes with empty lines *)
       | Newlines 0::Greaterthan::Space::tl ->
         loop (Newlines 0::cl@block) [] tl
       | Newlines 0::Greaterthan::Spaces 0::tl ->
@@ -2170,6 +2170,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       | Newlines 0::Greaterthan::Spaces n::tl ->
         assert(n>0);
         loop (Newlines 0::cl@block) [Spaces(n-1)] tl
+
       | (Newlines _::_ as l) | ([] as l) -> fix(List.rev(cl@block)), l
       | e::tl -> loop block (e::cl) tl
     in
