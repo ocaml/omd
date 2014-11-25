@@ -1071,18 +1071,28 @@ let rec markdown_of_md md =
       Printf.bprintf b "</%s>" tagname;
       loop list_indent tl
     | (Html_block(tagname, attrs, body))::tl ->
-      let is_p =
+      let needs_newlines =
         match tl with
         | NL :: Paragraph p :: _
         | Paragraph p :: _ -> p <> []
-        | _ -> false
+        | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
+          | Ul _ | Ol _ | Ulp _ | Olp _ | Code (_, _) | Code_block (_, _)
+          | Text _ | Emph _ | Bold _ | Br |Hr | Url (_, _, _)
+          | Ref (_, _, _, _) | Img_ref (_, _, _, _)
+          | Html (_, _, _)
+          | Blockquote _ | Img (_, _, _)) :: _ -> true
+        | ( Html_block (_, _, _) | Html_comment _
+          | Raw _|Raw_block _) :: _-> false
+        | X _ :: _ -> false
+        | NL :: _ -> false
+        | [] -> false
       in
       if body = [] && StringSet.mem tagname html_void_elements then
         (
           Printf.bprintf b "<%s" tagname;
           Buffer.add_string b (string_of_attrs attrs);
           Buffer.add_string b " />";
-          if is_p then Buffer.add_string b "\n\n";
+          if needs_newlines then Buffer.add_string b "\n\n";
           loop list_indent tl
         )
       else
@@ -1096,7 +1106,7 @@ let rec markdown_of_md md =
           else
             Buffer.add_string b (html_of_md body);
           Printf.bprintf b "</%s>" tagname;
-          if is_p then Buffer.add_string b "\n\n";
+          if needs_newlines then Buffer.add_string b "\n\n";
           loop list_indent tl
         )
     | Html_comment s :: tl ->
