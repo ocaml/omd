@@ -3579,8 +3579,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                       if debug then
                         eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, \
                                  attrs=[], tokens=%S\n%!"
-                          tagname (L.destring_of_tokens tokens)
-                          (T.string_of_tagstatus tagstatus);
+                          tagname (T.string_of_tagstatus tagstatus)
+                          (L.destring_of_tokens tokens);
                       match
                         loop [] [] (T.Awaiting tagname::tagstatus) tokens
                       with
@@ -3814,12 +3814,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     (L.string_of_tokens dgts);
                 loop (add_token_to_body x body) attrs tagstatus tokens
               end
-            | (Newline | Space | Spaces _ as x) :: tokens
+            | (Newline | Space | Spaces _) :: tokens
               when
                 (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
               begin
                 if debug then eprintf "(OMD) 3737 BHTML spaces\n%!";
-                loop (add_token_to_body x body) attrs tagstatus tokens
+                loop body attrs tagstatus tokens
               end
             | (Newlines _ as x) :: tokens
               when
