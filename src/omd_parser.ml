@@ -2478,7 +2478,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       match items with
       | [] -> assert false
       | (O,indents,item)::tl ->
-        (U,indents,(item@[sublist]))::tl
+        (O,indents,(item@[sublist]))::tl
       | (U,indents,item)::tl ->
         (U,indents,(item@[sublist]))::tl
     in
