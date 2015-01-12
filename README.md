@@ -97,7 +97,13 @@ and `x` is for deeper changes.
 - 1.3.x might stop checking validity of HTML tag *names*
   and accept any XML-parsable tag name.
 
-- **1.2.1** mainly fixes issues with HTML parsing.
+- **1.2.5** only fixes a single bug (an ordered list could be transformed into an unordered list)
+
+- 1.2.4 only fixes a single bug (some spaces were wrongly handled in the HTML parsing)
+
+- 1.2.2 and 1.2.3 fix a few issues with HTML parsing.
+
+- 1.2.1 mainly fixes issues with HTML parsing.
 
 - 1.2.0 introduces options `-w` and `-W`. Fixes mostly concern subtle
   uses of `\n`s in HTML and Markdown outputs.
