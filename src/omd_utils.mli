@@ -113,3 +113,6 @@ val extract_inner_html : string -> string
 
 val html_void_elements : StringSet.t
 (** HTML void elements *)
+
+val ( @ ) : 'a list -> 'a list -> 'a list
+(**  Tail-recursive version of [Pervasives.(@)]. *)

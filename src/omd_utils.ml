@@ -302,3 +302,5 @@ let html_void_elements = StringSet.of_list [
   "keygen";
 ]
 
+let ( @ ) l1 l2 =
+  List.rev_append (List.rev l1) l2
