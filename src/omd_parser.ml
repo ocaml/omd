@@ -2690,7 +2690,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                           method to_string = ""
                           method parser_extension = fun r p l -> None
                         end) in
-    let accu = Buffer.create 42 in
+    let accu = Buffer.create 64 in
     let rec loop s tl = match s, tl with
       | (Newline|Newlines _ as p), (Space|Spaces(0|1))::_ ->
         (* 1, 2 or 3 spaces. *)
@@ -3457,7 +3457,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 md_of_interm_list (FTOKENS(List.rev t) :: tl)
             let md_of_interm_list l = md_of_interm_list true l
             let string_of_tagstatus tagstatus =
-              let b = Buffer.create 42 in
+              let b = Buffer.create 64 in
               List.iter (function
                   | Open t -> bprintf b "{B/Open %s}" t
                   | Awaiting t -> bprintf b "{B/Awaiting %s}" t
@@ -3899,7 +3899,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 main_loop [] [Word ""] (t)
                 @ md_of_interm_list tl
             let string_of_tagstatus tagstatus =
-              let b = Buffer.create 42 in
+              let b = Buffer.create 64 in
               List.iter (function
                   | Open t -> bprintf b "{I/Open %s}" t
                   | Awaiting t -> bprintf b "{I/Awaiting %s}" t

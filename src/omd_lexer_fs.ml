@@ -14,7 +14,7 @@ include Omd_lexer
 let lex_from_inchannel ic =
   (* Maintenance-easiness-driven implementation. *)
   let ic_content =
-    let b = Buffer.create 42 in
+    let b = Buffer.create 64 in
     try while true do
           Buffer.add_char b (input_char ic)
         done;

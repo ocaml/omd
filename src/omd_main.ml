@@ -97,7 +97,7 @@ let code_stylist_of_program p =
     | 0 ->
       let cat f =
         let ic = open_in f in
-        let b = Buffer.create 42 in
+        let b = Buffer.create 64 in
         try
           while true do
             Buffer.add_char b (input_char ic)
@@ -375,7 +375,7 @@ let main () =
       open_out_bin !output
   in
   List.iter (fun ic ->
-    let b = Buffer.create 42 in
+    let b = Buffer.create 64 in
     try while true do
         Buffer.add_char b (input_char ic)
       done; assert false

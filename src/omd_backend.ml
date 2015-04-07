@@ -158,7 +158,7 @@ let rec html_and_headers_of_md
             String.sub s 0 (i+1)
     in loop (String.length s - 1)
   in
-  let b = Buffer.create 42 in
+  let b = Buffer.create 64 in
   let headers = ref [] in
   let rec loop indent = function
     | X x as e :: tl ->
@@ -616,7 +616,7 @@ and headers_of_md md =
 
 
 let rec sexpr_of_md md =
-  let b = Buffer.create 42 in
+  let b = Buffer.create 64 in
   let rec loop = function
     | X x :: tl ->
         (match x#to_t md with
@@ -848,7 +848,7 @@ let rec markdown_of_md md =
         Buffer.contents b
     in loop true 0
   in
-  let b = Buffer.create 42 in
+  let b = Buffer.create 64 in
   let add_spaces n = for i = 1 to n do Buffer.add_char b ' ' done in
   let references = ref None in
   let rec loop ?(fst_p_in_li=true) ?(is_in_list=false) list_indent l =

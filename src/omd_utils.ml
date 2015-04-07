@@ -132,7 +132,7 @@ let id_of_string ids s =
 (* only convert when "necessary" *)
 let htmlentities ?(md=false) s =
   let module Break = struct exception Break end in
-  let b = Buffer.create 42 in
+  let b = Buffer.create 64 in
   let rec loop i =
     if i = String.length s then
       ()
