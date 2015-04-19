@@ -2842,17 +2842,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
   exception Orphan_closing of string * l * l
 
-  let rec main_loop_rev ?(html=false) (r:r) (previous:p) (lexemes:l) =
-    let main_loop_rev ?(html=html) r p l =
-      if debug then eprintf "(OMD) main_loop_rev html=%b\n%!" html;
-      main_loop_rev ~html r p l
-    and main_loop ?(html=html) r p l =
-      if debug then eprintf "(OMD) main_loop html=%b\n%!" html;
-      main_loop ~html r p l
-    in
+  let rec main_impl_rev ~html (r:r) (previous:p) (lexemes:l) =
+    (* if debug then eprintf "(OMD) main_impl_rev html=%b\n%!" html; *)
     assert_well_formed lexemes;
     if debug then
-      eprintf "(OMD) main_loop_rev html=%b r=%s p=(%s) l=(%s)\n%!"
+      eprintf "(OMD) main_impl_rev html=%b r=%s p=(%s) l=(%s)\n%!"
         html
         (Omd_backend.sexpr_of_md (List.rev r))
         (L.destring_of_tokens previous)
@@ -2867,9 +2861,9 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     | _, Tag(_name, e) :: tl ->
       begin match e#parser_extension r previous tl with
         | Some(r, p, l) ->
-          main_loop_rev r p l
+          main_impl_rev ~html r p l
         | None ->
-          main_loop_rev r previous tl
+          main_impl_rev ~html r previous tl
       end
 
     (* HTML comments *)
@@ -2885,13 +2879,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None ->
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+              main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
-              main_loop_rev r p l
+              main_impl_rev ~html r p l
           end
         | Some (comments, new_tl) ->
           let r = Html_comment(L.string_of_tokens comments) :: r in
-          main_loop_rev r [Newline] new_tl
+          main_impl_rev ~html r [Newline] new_tl
       end
 
     (* email-style quoting / blockquote *)
@@ -2900,7 +2894,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         match
           emailstyle_quoting main_loop r previous (Newline::lexemes)
         with
-        | Some(r,p,l) -> main_loop_rev r p l
+        | Some(r,p,l) -> main_impl_rev ~html r p l
         | None ->
           if debug then
             eprintf "(OMD) Omd_parser.emailstyle_quoting or \
@@ -2930,7 +2924,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                        Omd_parser.main_loop is broken\n%!";
             assert false
         in
-        main_loop_rev (new_r@r) [Newline] rest
+        main_impl_rev ~html (new_r@r) [Newline] rest
       end
 
     (* minus *)
@@ -2944,17 +2938,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               let md, new_p, new_l =
                 parse_list main_loop r [] lexemes
               in
-              main_loop_rev md new_p new_l
+              main_impl_rev ~html md new_p new_l
             | _ -> (* not a list *)
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+                  main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
                 | Some(r, p, l) ->
-                  main_loop_rev r p l
+                  main_impl_rev ~html r p l
               end
           end
         | Some l -> (* hr *)
-          main_loop_rev (Hr::r) [Newline] l
+          main_impl_rev ~html (Hr::r) [Newline] l
       end
     | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
       begin match hr_m lexemes with
@@ -2962,12 +2956,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                      because it's not followed by spaces *)
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+              main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
-              main_loop_rev r p l
+              main_impl_rev ~html r p l
           end
         | Some l -> (* hr *)
-          main_loop_rev (Hr::r) [Newline] l
+          main_impl_rev ~html (Hr::r) [Newline] l
       end
 
     (* hashes *)
@@ -2977,7 +2971,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (Hashs n as t) :: (ttl as tl) -> (* hash titles *)
       if n <= 4 then
         match read_title main_loop (n+2) r previous ttl with
-        | Some(r, p, l) -> main_loop_rev r p l
+        | Some(r, p, l) -> main_impl_rev ~html r p l
         | None ->
           if debug then
             eprintf "(OMD) Omd_parser.read_title or \
@@ -2985,13 +2979,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           assert false
       else
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-          | Some(r, p, l) -> main_loop_rev r p l
+          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+          | Some(r, p, l) -> main_impl_rev ~html r p l
         end
     | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
     | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
       begin match read_title main_loop 1 r previous tl with
-        | Some(r, p, l) -> main_loop_rev r p l
+        | Some(r, p, l) -> main_impl_rev ~html r p l
         | None ->
           if debug then
             eprintf "(OMD) Omd_parser.read_title or \
@@ -3000,8 +2994,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       end
     | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_loop_rev r p l
+        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+        | Some(r, p, l) -> main_impl_rev ~html r p l
       end
 
     (* spaces after a newline: could lead to hr *)
@@ -3010,44 +3004,44 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None ->
           (* No [Hr], but maybe [Ul], [Ol], code,... *)
           let n = L.length sp in
-          let r, p, l = spaces_at_beginning_of_line
-              main_loop default_lang n r previous tl in
-          main_loop_rev r p l
+          let r, p, l =
+           spaces_at_beginning_of_line main_loop default_lang n r previous tl in
+          main_impl_rev ~html r p l
         | Some tl ->
-          main_loop_rev (Hr::r) [Newline] tl
+          main_impl_rev ~html (Hr::r) [Newline] tl
       end
 
     (* spaces anywhere *)
     | _, ((Space|Spaces _) as t) :: tl ->
       (* too many cases to be handled here *)
       let n = L.length t in
-      let r, p, l = spaces_not_at_beginning_of_line ~html:html n r tl in
-      main_loop_rev r p l
+      let r, p, l = spaces_not_at_beginning_of_line ~html n r tl in
+      main_impl_rev ~html r p l
 
     (* underscores *)
     | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
       (match uemph_or_bold 1 tl with
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
        | Some(x, new_tl) ->
-         main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
+         main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
       )
     | _, (Underscores((0|1) as n) as t) :: tl ->
       (* 2 or 3 "orphan" underscores, or emph/bold *)
       (match uemph_or_bold (n+2) tl with
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
        | Some(x, new_tl) ->
          if n = 0 then (* 1 underscore *)
-           main_loop_rev (Bold(main_loop [] [t] x) :: r) [t] new_tl
+           main_impl_rev ~html (Bold(main_impl ~html [] [t] x) :: r) [t] new_tl
          else (* 2 underscores *)
-           main_loop_rev (Emph([Bold(main_loop [] [t] x)]) :: r) [t] new_tl
+           main_impl_rev ~html (Emph([Bold(main_impl ~html [] [t] x)]) :: r) [t] new_tl
       )
 
     (* enumerated lists *)
@@ -3055,58 +3049,58 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       let md, new_p, new_l =
         parse_list main_loop r [] lexemes
       in
-      main_loop_rev md new_p new_l
+      main_impl_rev ~html md new_p new_l
 
     (* plus *)
     | ([]|[(Newline|Newlines _)]), Plus :: (Space|Spaces _) :: _ ->
       let md, new_p, new_l =
         parse_list main_loop r [] lexemes
       in
-      main_loop_rev md new_p new_l
+      main_impl_rev ~html md new_p new_l
 
     (* stars *)
     | ([]|[(Newline|Newlines _)]), Star :: (Space|Spaces _) :: _ ->
       (* maybe hr or new list *)
       begin match hr_s lexemes with
         | Some l ->
-          main_loop_rev (Hr::r) [Newline] l
+          main_impl_rev ~html (Hr::r) [Newline] l
         | None ->
           let md, new_p, new_l =
             parse_list main_loop r [] lexemes
           in
-          main_loop_rev md new_p new_l
+          main_impl_rev ~html md new_p new_l
       end
     | ([]|[(Newline|Newlines _)]), Stars _ :: _ when hr_s lexemes <> None ->
       (* hr *)
       (match hr_s lexemes with
-       | Some l -> main_loop_rev (Hr::r) [Newline] l
+       | Some l -> main_impl_rev ~html (Hr::r) [Newline] l
        | None -> assert false
       )
     | ([]|[(Newline|Newlines _)]), (Star as t) :: tl -> (* maybe hr *)
       begin match hr_s lexemes with
         | Some l ->
-          main_loop_rev (Hr::r) [Newline] l
+          main_impl_rev ~html (Hr::r) [Newline] l
         | None ->
           (match semph_or_bold 1 tl with
            | Some(x, new_tl) ->
-             main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
+             main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
            | None ->
              begin match maybe_extension extensions r previous lexemes with
                | None ->
-                 main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+                 main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
                | Some(r, p, l) ->
-                 main_loop_rev r p l
+                 main_impl_rev ~html r p l
              end
           )
       end
     | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
       (match semph_or_bold 1 tl with
        | Some(x, new_tl) ->
-         main_loop_rev (Emph(main_loop [] [t] x) :: r) [t] new_tl
+         main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
       )
     | _, (Stars((0|1) as n) as t) :: tl ->
@@ -3114,139 +3108,139 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       (match semph_or_bold (n+2) tl with
        | Some(x, new_tl) ->
          if n = 0 then
-           main_loop_rev (Bold(main_loop [] [t] x) :: r) [t] new_tl
+           main_impl_rev ~html (Bold(main_impl ~html [] [t] x) :: r) [t] new_tl
          else
-           main_loop_rev (Emph([Bold(main_loop [] [t] x)]) :: r) [t] new_tl
+           main_impl_rev ~html (Emph([Bold(main_impl ~html [] [t] x)]) :: r) [t] new_tl
        | None ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
       )
 
     (* backslashes *)
     | _, Backslash :: (Newline as t) :: tl -> (* \\n *)
-      main_loop_rev (Br :: r) [t] tl
+      main_impl_rev ~html (Br :: r) [t] tl
     | _, Backslash :: Newlines 0 :: tl -> (* \\n\n\n\n... *)
-      main_loop_rev (Br :: r) [Backslash; Newline] (Newline :: tl)
+      main_impl_rev ~html (Br :: r) [Backslash; Newline] (Newline :: tl)
     | _, Backslash :: Newlines n :: tl -> assert (n >= 0); (* \\n\n\n\n... *)
-      main_loop_rev (Br :: r) [Backslash; Newline]
+      main_impl_rev ~html (Br :: r) [Backslash; Newline]
         (Newlines (n-1) :: tl)
     | _, Backslash :: (Backquote as t) :: tl -> (* \` *)
-      main_loop_rev (Text ("`") :: r) [t] tl
+      main_impl_rev ~html (Text ("`") :: r) [t] tl
     | _, Backslash :: Backquotes 0 :: tl -> (* \````... *)
-      main_loop_rev (Text ("`") :: r) [Backslash; Backquote] (Backquote :: tl)
+      main_impl_rev ~html (Text ("`") :: r) [Backslash; Backquote] (Backquote :: tl)
     | _, Backslash :: Backquotes n :: tl -> assert (n >= 0); (* \````... *)
-      main_loop_rev (Text ("`") :: r) [Backslash; Backquote]
+      main_impl_rev ~html (Text ("`") :: r) [Backslash; Backquote]
         (Backquotes (n-1) :: tl)
     | _, Backslash :: (Star as t) :: tl -> (* \* *)
-      main_loop_rev (Text ("*") :: r) [t] tl
+      main_impl_rev ~html (Text ("*") :: r) [t] tl
     | _, Backslash :: Stars 0 :: tl -> (* \****... *)
-      main_loop_rev (Text ("*") :: r) [Backslash; Star] (Star :: tl)
+      main_impl_rev ~html (Text ("*") :: r) [Backslash; Star] (Star :: tl)
     | _, Backslash :: Stars n :: tl -> assert (n >= 0); (* \****... *)
-      main_loop_rev (Text ("*") :: r) [Backslash; Star] (Stars (n-1) :: tl)
+      main_impl_rev ~html (Text ("*") :: r) [Backslash; Star] (Stars (n-1) :: tl)
     | _, Backslash :: (Underscore as t) :: tl -> (* \_ *)
-      main_loop_rev (Text ("_") :: r) [t] tl
+      main_impl_rev ~html (Text ("_") :: r) [t] tl
     | _, Backslash :: Underscores 0 :: tl -> (* \___... *)
-      main_loop_rev (Text ("_") :: r) [Backslash; Underscore] (Underscore :: tl)
+      main_impl_rev ~html (Text ("_") :: r) [Backslash; Underscore] (Underscore :: tl)
     | _, Backslash :: Underscores n :: tl -> assert (n >= 0); (* \___... *)
-      main_loop_rev (Text ("_") :: r) [Backslash; Underscore]
+      main_impl_rev ~html (Text ("_") :: r) [Backslash; Underscore]
         (Underscores (n-1) :: tl)
     | _, Backslash :: (Obrace as t) :: tl -> (* \{ *)
-      main_loop_rev (Text ("{") :: r) [t] tl
+      main_impl_rev ~html (Text ("{") :: r) [t] tl
     | _, Backslash :: Obraces 0 :: tl -> (* \{{{... *)
-      main_loop_rev (Text ("{") :: r) [Backslash; Obrace] (Obrace :: tl)
+      main_impl_rev ~html (Text ("{") :: r) [Backslash; Obrace] (Obrace :: tl)
     | _, Backslash :: Obraces n :: tl -> assert (n >= 0); (* \{{{... *)
-      main_loop_rev (Text ("{") :: r) [Backslash; Obrace] (Obraces (n-1) :: tl)
+      main_impl_rev ~html (Text ("{") :: r) [Backslash; Obrace] (Obraces (n-1) :: tl)
     | _, Backslash :: (Cbrace as t) :: tl -> (* \} *)
-      main_loop_rev (Text ("}") :: r) [t] tl
+      main_impl_rev ~html (Text ("}") :: r) [t] tl
     | _, Backslash :: Cbraces 0 :: tl -> (* \}}}... *)
-      main_loop_rev (Text ("}") :: r) [Backslash; Cbrace] (Cbrace :: tl)
+      main_impl_rev ~html (Text ("}") :: r) [Backslash; Cbrace] (Cbrace :: tl)
     | _, Backslash :: Cbraces n :: tl -> assert (n >= 0); (* \}}}... *)
-      main_loop_rev (Text ("}") :: r) [Backslash; Cbrace] (Cbraces (n-1) :: tl)
+      main_impl_rev ~html (Text ("}") :: r) [Backslash; Cbrace] (Cbraces (n-1) :: tl)
     | _, Backslash :: (Obracket as t) :: tl -> (* \[ *)
-      main_loop_rev (Text ("[") :: r) [t] tl
+      main_impl_rev ~html (Text ("[") :: r) [t] tl
     | _, Backslash :: Obrackets 0 :: tl -> (* \[[[... *)
-      main_loop_rev (Text ("[") :: r) [Backslash; Obracket] (Obracket :: tl)
+      main_impl_rev ~html (Text ("[") :: r) [Backslash; Obracket] (Obracket :: tl)
     | _, Backslash :: Obrackets n :: tl -> assert (n >= 0); (* \[[[... *)
-      main_loop_rev (Text ("[") :: r) [Backslash; Obracket] (Obrackets (n-1) :: tl)
+      main_impl_rev ~html (Text ("[") :: r) [Backslash; Obracket] (Obrackets (n-1) :: tl)
     | _, Backslash :: (Cbracket as t) :: tl -> (* \} *)
-      main_loop_rev (Text ("]") :: r) [t] tl
+      main_impl_rev ~html (Text ("]") :: r) [t] tl
     | _, Backslash :: Cbrackets 0 :: tl -> (* \}}}... *)
-      main_loop_rev (Text ("]") :: r) [Backslash; Cbracket] (Cbracket :: tl)
+      main_impl_rev ~html (Text ("]") :: r) [Backslash; Cbracket] (Cbracket :: tl)
     | _, Backslash :: Cbrackets n :: tl -> assert (n >= 0); (* \}}}... *)
-      main_loop_rev (Text ("]") :: r) [Backslash; Cbracket] (Cbrackets (n-1) :: tl)
+      main_impl_rev ~html (Text ("]") :: r) [Backslash; Cbracket] (Cbrackets (n-1) :: tl)
     | _, Backslash :: (Oparenthesis as t) :: tl -> (* \( *)
-      main_loop_rev (Text ("(") :: r) [t] tl
+      main_impl_rev ~html (Text ("(") :: r) [t] tl
     | _, Backslash :: Oparenthesiss 0 :: tl -> (* \(((... *)
-      main_loop_rev (Text ("(") :: r) [Backslash; Oparenthesis] (Oparenthesis :: tl)
+      main_impl_rev ~html (Text ("(") :: r) [Backslash; Oparenthesis] (Oparenthesis :: tl)
     | _, Backslash :: Oparenthesiss n :: tl -> assert (n >= 0); (* \(((... *)
-      main_loop_rev (Text ("(") :: r) [Backslash; Oparenthesis]
+      main_impl_rev ~html (Text ("(") :: r) [Backslash; Oparenthesis]
         (Oparenthesiss (n-1) :: tl)
     | _, Backslash :: (Cparenthesis as t) :: tl -> (* \) *)
-      main_loop_rev (Text (")") :: r) [t] tl
+      main_impl_rev ~html (Text (")") :: r) [t] tl
     | _, Backslash :: Cparenthesiss 0 :: tl -> (* \)))... *)
-      main_loop_rev (Text (")") :: r) [Backslash; Cparenthesis]
+      main_impl_rev ~html (Text (")") :: r) [Backslash; Cparenthesis]
         (Cparenthesis :: tl)
     | _, Backslash :: Cparenthesiss n :: tl -> assert (n >= 0); (* \)))... *)
-      main_loop_rev (Text (")") :: r) [Backslash; Cparenthesis]
+      main_impl_rev ~html (Text (")") :: r) [Backslash; Cparenthesis]
         (Cparenthesiss (n-1) :: tl)
     | _, Backslash :: (Plus as t) :: tl -> (* \+ *)
-      main_loop_rev (Text ("+") :: r) [t] tl
+      main_impl_rev ~html (Text ("+") :: r) [t] tl
     | _, Backslash :: Pluss 0 :: tl -> (* \+++... *)
-      main_loop_rev (Text ("+") :: r) [Backslash; Plus] (Plus :: tl)
+      main_impl_rev ~html (Text ("+") :: r) [Backslash; Plus] (Plus :: tl)
     | _, Backslash :: Pluss n :: tl -> assert (n >= 0); (* \+++... *)
-      main_loop_rev (Text ("+") :: r) [Backslash; Plus] (Pluss (n-1) :: tl)
+      main_impl_rev ~html (Text ("+") :: r) [Backslash; Plus] (Pluss (n-1) :: tl)
     | _, Backslash :: (Minus as t) :: tl -> (* \- *)
-      main_loop_rev (Text ("-") :: r) [t] tl
+      main_impl_rev ~html (Text ("-") :: r) [t] tl
     | _, Backslash :: Minuss 0 :: tl -> (* \---... *)
-      main_loop_rev (Text ("-") :: r) [Backslash; Minus] (Minus :: tl)
+      main_impl_rev ~html (Text ("-") :: r) [Backslash; Minus] (Minus :: tl)
     | _, Backslash :: Minuss n :: tl -> assert (n >= 0); (* \---... *)
-      main_loop_rev (Text ("-") :: r) [Backslash; Minus] (Minuss (n-1) :: tl)
+      main_impl_rev ~html (Text ("-") :: r) [Backslash; Minus] (Minuss (n-1) :: tl)
     | _, Backslash :: (Dot as t) :: tl -> (* \. *)
-      main_loop_rev (Text (".") :: r) [t] tl
+      main_impl_rev ~html (Text (".") :: r) [t] tl
     | _, Backslash :: Dots 0 :: tl -> (* \....... *)
-      main_loop_rev (Text (".") :: r) [Backslash; Dot] (Dot :: tl)
+      main_impl_rev ~html (Text (".") :: r) [Backslash; Dot] (Dot :: tl)
     | _, Backslash :: Dots n :: tl -> assert (n >= 0); (* \....... *)
-      main_loop_rev (Text (".") :: r) [Backslash; Dot] (Dots (n-1) :: tl)
+      main_impl_rev ~html (Text (".") :: r) [Backslash; Dot] (Dots (n-1) :: tl)
     | _, Backslash :: (Exclamation as t) :: tl -> (* \! *)
-      main_loop_rev (Text ("!") :: r) [t] tl
+      main_impl_rev ~html (Text ("!") :: r) [t] tl
     | _, Backslash :: Exclamations 0 :: tl -> (* \!!!... *)
-      main_loop_rev (Text ("!") :: r) [Backslash; Exclamation] (Exclamation :: tl)
+      main_impl_rev ~html (Text ("!") :: r) [Backslash; Exclamation] (Exclamation :: tl)
     | _, Backslash :: Exclamations n :: tl -> assert (n >= 0); (* \!!!... *)
-      main_loop_rev (Text ("!") :: r) [Backslash; Exclamation]
+      main_impl_rev ~html (Text ("!") :: r) [Backslash; Exclamation]
         (Exclamations (n-1) :: tl)
     | _, Backslash :: (Hash as t) :: tl -> (* \# *)
-      main_loop_rev (Text ("#") :: r) [t] tl
+      main_impl_rev ~html (Text ("#") :: r) [t] tl
     | _, Backslash :: Hashs 0 :: tl -> (* \###... *)
-      main_loop_rev (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
+      main_impl_rev ~html (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
     | _, Backslash :: Hashs n :: tl -> assert (n >= 0); (* \###... *)
-      main_loop_rev (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
+      main_impl_rev ~html (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
     | _, Backslash :: (Greaterthan as t) :: tl -> (* \> *)
-      main_loop_rev (Text (">") :: r) [t] tl
+      main_impl_rev ~html (Text (">") :: r) [t] tl
     | _, Backslash :: Greaterthans 0 :: tl -> (* \>>>... *)
-      main_loop_rev (Text (">") :: r) [Backslash; Greaterthan] (Greaterthan :: tl)
+      main_impl_rev ~html (Text (">") :: r) [Backslash; Greaterthan] (Greaterthan :: tl)
     | _, Backslash :: Greaterthans n :: tl -> assert (n >= 0); (* \>>>... *)
-      main_loop_rev (Text (">") :: r) [Backslash; Greaterthan]
+      main_impl_rev ~html (Text (">") :: r) [Backslash; Greaterthan]
         (Greaterthans (n-1) :: tl)
     | _, Backslash :: (Lessthan as t) :: tl -> (* \< *)
-      main_loop_rev (Text ("<") :: r) [t] tl
+      main_impl_rev ~html (Text ("<") :: r) [t] tl
     | _, Backslash :: Lessthans 0 :: tl -> (* \<<<... *)
-      main_loop_rev (Text ("<") :: r) [Backslash; Lessthan] (Lessthan :: tl)
+      main_impl_rev ~html (Text ("<") :: r) [Backslash; Lessthan] (Lessthan :: tl)
     | _, Backslash :: Lessthans n :: tl -> assert (n >= 0); (* \<<<... *)
-      main_loop_rev (Text ("<") :: r) [Backslash; Lessthan]
+      main_impl_rev ~html (Text ("<") :: r) [Backslash; Lessthan]
         (Lessthans (n-1) :: tl)
     | _, (Backslashs 0 as t) :: tl -> (* \\\\... *)
-      main_loop_rev (Text ("\\") :: r) [t] tl
+      main_impl_rev ~html (Text ("\\") :: r) [t] tl
     | _, (Backslashs n as t) :: tl -> (* \\\\... *)
       if n mod 2 = 0 then
-        main_loop_rev (Text(String.make ((n+2)/2) '\\') :: r) [t] tl
+        main_impl_rev ~html (Text(String.make ((n+2)/2) '\\') :: r) [t] tl
       else
-        main_loop_rev (Text(String.make ((n+2)/2) '\\') :: r) [t] (Backslash :: tl)
+        main_impl_rev ~html (Text(String.make ((n+2)/2) '\\') :: r) [t] (Backslash :: tl)
     | _, Backslash::[] ->
-      main_loop_rev (Text "\\" :: r) [] []
+      main_impl_rev ~html (Text "\\" :: r) [] []
     | _, Backslash::tl ->
-      main_loop_rev (Text "\\" :: r) [Backslash] tl
+      main_impl_rev ~html (Text "\\" :: r) [Backslash] tl
 
     (* < *)
     | _, (Lessthan|Lessthans _ as t)
@@ -3275,20 +3269,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | Lessthans n -> Text(String.make (n+1) '<') :: r
             | _ -> r
           in
-          main_loop_rev (Url(url,[Text url],"")::r) [] new_tl
+          main_impl_rev ~html (Url(url,[Text url],"")::r) [] new_tl
         | None ->
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+              main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
-              main_loop_rev r p l
+              main_impl_rev ~html r p l
           end
       end
 
 
     (* Word(w) *)
     | _, Word w::tl ->
-      main_loop_rev (Text w :: r) [Word w] tl
+       main_impl_rev ~html (Text w :: r) [Word w] tl
 
     (* newline at the end *)
     | _, [Newline] ->
@@ -3299,15 +3293,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if StringSet.mem w htmlcodes_set then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Raw("&"^w^";")::r) [s] tl
+            main_impl_rev ~html (Raw("&"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Raw("&"^w^";")::r) [s] (Semicolon::tl)
+            main_impl_rev ~html (Raw("&"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Raw("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_impl_rev ~html (Raw("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Raw("&amp;")::r) [] tl2
+        main_impl_rev ~html (Raw("&amp;")::r) [] tl2
 
     (* digit-coded html entity *)
     | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl)
@@ -3315,15 +3309,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if String.length w <= 4 then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] tl
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Raw("&amp;")::r) [] tl2
+        main_impl_rev ~html (Raw("&amp;")::r) [] tl2
 
     (* maybe hex digit-coded html entity *)
     | _, Ampersand::((Hash::Word w::((Semicolon|Semicolons _) as s)::tl)
@@ -3331,39 +3325,39 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       if String.length w <= 4 then
         begin match s with
           | Semicolon ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] tl
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] tl
           | Semicolons 0 ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
           | Semicolons n ->
-            main_loop_rev (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
+            main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
           | _ -> assert false
         end
       else
-        main_loop_rev (Raw("&amp;")::r) [] tl2
+        main_impl_rev ~html (Raw("&amp;")::r) [] tl2
 
 
     (* Ampersand *)
     | _, Ampersand::tl ->
-      main_loop_rev (Raw("&amp;")::r) [Ampersand] tl
+      main_impl_rev ~html (Raw("&amp;")::r) [Ampersand] tl
 
     (* 2 Ampersands *)
     | _, Ampersands(0)::tl ->
-      main_loop_rev (Raw("&amp;")::r) [] (Ampersand::tl)
+      main_impl_rev ~html (Raw("&amp;")::r) [] (Ampersand::tl)
 
     (* Several Ampersands (more than 2) *)
     | _, Ampersands(n)::tl ->
-      main_loop_rev (Raw("&amp;")::r) [] (Ampersands(n-1)::tl)
+      main_impl_rev ~html (Raw("&amp;")::r) [] (Ampersands(n-1)::tl)
 
     (* backquotes *)
     | _, (Backquote|Backquotes _ as t)::tl ->
       begin match bcode ~default_lang r previous lexemes with
-        | Some(r, p, l) -> main_loop_rev r p l
+        | Some(r, p, l) -> main_impl_rev ~html r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+              main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
-              main_loop_rev r p l
+              main_impl_rev ~html r p l
           end
       end
 
@@ -3375,12 +3369,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           ::(Greaterthan|Greaterthans _ as g)::tl) ->
       begin match g with
         | Greaterthans 0 ->
-          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
+          main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
         | Greaterthans n ->
-          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan]
+          main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan]
             (Greaterthans(n-1)::tl)
         | _ ->
-          main_loop_rev (Raw("<"^w^" />")::r) [Greaterthan] tl
+          main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan] tl
       end
 
     (* awaited orphan html closing tag *)
@@ -3400,11 +3394,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          ::((Space|Spaces _|Greaterthan|Greaterthans _)
             ::_ as html_stuff) as tlx) ->
       if StringSet.mem tagnametop inline_htmltags_set then
-        main_loop_rev r [Word ""] lexemes
+        main_impl_rev ~html r [Word ""] lexemes
       else if not (blind_html || StringSet.mem tagnametop htmltags_set) then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_loop_rev r p l
+          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tlx
+          | Some(r, p, l) -> main_impl_rev ~html r p l
         end
       else
         let read_html() =
@@ -3451,7 +3445,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 if html then
                   Raw(L.string_of_tokens t) :: md_of_interm_list tl
                 else
-                  main_loop ~html:html [] [Word ""] t
+                  main_loop ~html [] [Word ""] t
                   @ md_of_interm_list tl
               | RTOKENS t :: tl ->
                 md_of_interm_list (FTOKENS(List.rev t) :: tl)
@@ -3610,7 +3604,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                     (
                       mediatypetextomd := t :: !mediatypetextomd;
                       try
-                        ignore(main_loop_rev [] [] tokens);
+                        ignore(main_impl_rev ~html [] [] tokens);
                         if debug then
                           eprintf "(OMD) 3524 BHTML closing tag not found \
                                    in %S\n%!" (L.destring_of_tokens tokens);
@@ -3668,7 +3662,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                                (t,
                                 attrs,
                                 [T.MD
-                                   (main_loop [] []
+                                   (main_impl ~html [] []
                                       (tag_setext main_loop before))])]
                             []
                             tagstatus
@@ -3851,16 +3845,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           in
           if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
           match loop [] [] [] lexemes with
-          | Some(html, rest) ->
-            Some(T.md_of_interm_list html, rest)
+          | Some(h, rest) ->
+            Some(T.md_of_interm_list h, rest)
           | None -> None
         in
         begin match read_html() with
-          | Some(html, rest) ->
-            main_loop_rev (html@r) [Tag("HTMLBLOCK", empty_extension)] rest
+          | Some(h, rest) ->
+            main_impl_rev ~html (h@r) [Tag("HTMLBLOCK", empty_extension)] rest
           | None ->
             let text = L.string_of_token t in
-            main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
+            main_impl_rev ~html (Text(text ^ tagnametop)::r) [w] html_stuff
         end
     (* / end of block HTML. *)
 
@@ -3875,8 +3869,8 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       || not(blind_html || StringSet.mem tagnametop htmltags_set)
       then
         begin match maybe_extension extensions r previous lexemes with
-          | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_loop_rev r p l
+          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tlx
+          | Some(r, p, l) -> main_impl_rev ~html r p l
         end
       else
         let read_html() =
@@ -3896,7 +3890,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               | TOKENS t1::TOKENS t2::tl ->
                 md_of_interm_list (TOKENS(t1@t2)::tl)
               | TOKENS t :: tl ->
-                main_loop [] [Word ""] (t)
+                main_impl ~html [] [Word ""] (t)
                 @ md_of_interm_list tl
             let string_of_tagstatus tagstatus =
               let b = Buffer.create 64 in
@@ -4222,44 +4216,44 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           | None -> None
         in
         begin match read_html() with
-          | Some(html, rest) ->
-            main_loop_rev (html@r) [Greaterthan] rest
+          | Some(h, rest) ->
+            main_impl_rev ~html (h@r) [Greaterthan] rest
           | None ->
             let text = L.string_of_token t in
-            main_loop_rev (Text(text ^ tagnametop)::r) [w] html_stuff
+            main_impl_rev ~html (Text(text ^ tagnametop)::r) [w] html_stuff
         end
     (* / end of inline HTML. *)
 
     (* < : emails *)
     | _, (Lessthan as t)::tl ->
       begin match maybe_autoemail r previous lexemes with
-        | Some(r,p,l) -> main_loop_rev r p l
+        | Some(r,p,l) -> main_impl_rev ~html r p l
         | None ->
           begin match maybe_extension extensions r previous lexemes with
             | None ->
-              main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+              main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
-              main_loop_rev r p l
+              main_impl_rev ~html r p l
           end
       end
 
     (* line breaks *)
     | _, Newline::tl ->
-      main_loop_rev (NL::r) [Newline] tl
+      main_impl_rev ~html (NL::r) [Newline] tl
     | _, Newlines _::tl ->
-      main_loop_rev (NL::NL::r) [Newline] tl
+      main_impl_rev ~html (NL::NL::r) [Newline] tl
 
     (* [ *)
     | _, (Obracket as t)::tl ->
       begin match maybe_link main_loop r previous tl with
-        | Some(r, p, l) -> main_loop_rev r p l
+        | Some(r, p, l) -> main_impl_rev ~html r p l
         | None ->
           match maybe_reference main_loop rc r previous tl with
-          | Some(r, p, l) -> main_loop_rev r p l
+          | Some(r, p, l) -> main_impl_rev ~html r p l
           | None ->
             begin match maybe_extension extensions r previous lexemes with
-              | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-              | Some(r, p, l) -> main_loop_rev r p l
+              | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+              | Some(r, p, l) -> main_impl_rev ~html r p l
             end
       end
 
@@ -4285,16 +4279,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
              let url = L.string_of_tokens url in
              let title = L.string_of_tokens title in
-             main_loop_rev (Img("", url, title) :: r) [Cparenthesis] tl
+             main_impl_rev ~html (Img("", url, title) :: r) [Cparenthesis] tl
            | None ->
              let url = L.string_of_tokens b in
-             main_loop_rev (Img("", url, "") :: r) [Cparenthesis] tl
+             main_impl_rev ~html (Img("", url, "") :: r) [Cparenthesis] tl
          end
        with
        | NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
       )
 
@@ -4307,11 +4301,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
          let fallback = extract_fallback main_loop tl lexemes in
          let id = L.string_of_tokens id in
-         main_loop_rev (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
+         main_impl_rev ~html (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
        with NL_exception ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
       )
 
@@ -4344,16 +4338,16 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 | _ -> r in
               let path = L.string_of_tokens path in
               let title = L.string_of_tokens title in
-              main_loop_rev (Img(alt, path, title) :: r) [Cparenthesis] rest
+              main_impl_rev ~html (Img(alt, path, title) :: r) [Cparenthesis] rest
             with
             | NL_exception
             (* if NL_exception was raised, then fall back to "text" *)
             | Premature_ending ->
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
+                  main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
                 | Some(r, p, l) ->
-                  main_loop_rev r p l
+                  main_impl_rev ~html r p l
               end
            )
          | alt, Obracket::Word(id)::Cbracket::ntl
@@ -4363,7 +4357,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
          | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
            let fallback = extract_fallback main_loop ntl lexemes in
            let alt = L.string_of_tokens alt in
-           main_loop_rev (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
+           main_impl_rev ~html (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
          | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
                            as ntl) ->
            (try
@@ -4373,7 +4367,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 let fallback = extract_fallback main_loop rest lexemes in
                 let id = L.string_of_tokens id in
                 let alt = L.string_of_tokens alt in
-                main_loop_rev (Img_ref(rc, id, alt, fallback)::r)
+                main_impl_rev ~html (Img_ref(rc, id, alt, fallback)::r)
                   [Cbracket]
                   rest
             with
@@ -4381,20 +4375,20 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | NL_exception ->
               begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                  main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-                | Some(r, p, l) -> main_loop_rev r p l
+                  main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+                | Some(r, p, l) -> main_impl_rev ~html r p l
               end
            )
          | _ ->
            begin match maybe_extension extensions r previous lexemes with
-             | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_loop_rev r p l
+             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+             | Some(r, p, l) -> main_impl_rev ~html r p l
            end
        with
        | Premature_ending ->
          begin match maybe_extension extensions r previous lexemes with
-           | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_loop_rev r p l
+           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+           | Some(r, p, l) -> main_impl_rev ~html r p l
          end
       )
 
@@ -4405,13 +4399,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
       |Greaterthan as t)::tl
       ->
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_loop_rev r p l
+        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+        | Some(r, p, l) -> main_impl_rev ~html r p l
       end
     | _, (Number _  as t):: tl ->
       begin match maybe_extension extensions r previous lexemes with
-        | None -> main_loop_rev (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_loop_rev r p l
+        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+        | Some(r, p, l) -> main_impl_rev ~html r p l
       end
 
     | _, (Ats _ | Bars _ | Carets _ | Cbraces _ | Cbrackets _ | Colons _
@@ -4425,15 +4419,23 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         | None ->
           let tk0, tks = L.split_first tk in
           let text = L.string_of_token tk0 in
-          main_loop_rev (Text text :: r) [tk0] (tks :: tl)
+          main_impl_rev ~html (Text text :: r) [tk0] (tks :: tl)
         | Some(r, p, l) ->
-          main_loop_rev r p l
+          main_impl_rev ~html r p l
       end
 
 
-  and main_loop ?(html=false) (r:r) (previous:p) (lexemes:l) =
+  and main_impl ~html (r:r) (previous:p) (lexemes:l) =
+    (* if debug then eprintf "(OMD) main_impl html=%b\n%!" html; *)
     assert_well_formed lexemes;
-    List.rev (main_loop_rev ~html:html r previous lexemes)
+    List.rev (main_loop_rev ~html r previous lexemes)
+
+  and main_loop ?(html=false) (r:r) (previous:p) (lexemes:l) =
+      main_impl ~html r previous lexemes
+
+  and main_loop_rev ?(html=false) (r:r) (previous:p) (lexemes:l) =
+      main_impl_rev ~html r previous lexemes
+
 
   let main_parse lexemes =
     main_loop [] [] (tag_setext main_loop lexemes)
@@ -4454,25 +4456,4 @@ let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
     end)
   in
   M.main_parse lexemes
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
