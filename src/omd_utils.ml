@@ -100,34 +100,38 @@ let fsplit ?(excl=(fun _ -> false)) ~f l =
     | None -> None
     | Some(rev, l) -> Some(List.rev rev, l)
 
-
 let id_of_string ids s =
-  let l = String.length s in
-  let gen_id s =
-    let b = Buffer.create l in
-    let rec loop i flag flag2 =
-      (* [flag] prevents trailing dashes;
-         [flag2] prevents IDs from starting with dashes *)
-      if i = l then
-        ()
-      else
-        match s.[i] with
-        | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
-          (if not (flag2 || flag) then Buffer.add_char b '-');
-          Buffer.add_char b c;
-          loop (i+1) true true
-        | _ ->
-          if flag2 || flag then
-            loop (i+1) false flag2
-          else
-            (Buffer.add_char b '-';
-             loop (i+1) true flag2)
-    in
-    loop 0 true true;
-    Buffer.contents b
+  let n = String.length s in
+  let out = Buffer.create 0 in
+  (* Put [s] into [b], replacing non-alphanumeric characters with dashes. *)
+  let rec loop started i =
+    if i = n then ()
+    else
+      match s.[i] with
+      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
+        Buffer.add_char out c ;
+        loop true (i + 1)
+      (* Don't want to start with dashes. *)
+      | _ when not started ->
+        loop false (i + 1)
+      | _ ->
+        Buffer.add_char out '-' ;
+        loop false (i + 1)
   in
-  let id = gen_id s in
-  ids#mangle id
+  loop false 0 ;
+  let s' = Buffer.contents out in
+  if s' = "" then ""
+  else
+    (* Find out the index of the last character in [s'] that isn't a dash. *)
+    let last_trailing = 
+      let rec loop i =
+        if i < 0 || s'.[i] <> '-' then i
+        else loop (i - 1)
+      in
+      loop (String.length s' - 1)
+    in
+    (* Trim trailing dashes. *)
+    ids#mangle @@ String.sub s' 0 (last_trailing + 1)
 
 (* only convert when "necessary" *)
 let htmlentities ?(md=false) s =
