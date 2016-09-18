@@ -118,7 +118,7 @@ and deal_with_header h_level headers tl level number subsections =
 (* Assume we are at the start of the headers we are interested in.
    Return the list of TOC entries for [min_level] and the [headers]
    not used for the TOC entries. *)
-let rec make_toc headers ~min_level ~max_level =
+let rec make_toc (headers:(element*string*string)list) ~min_level ~max_level =
   if min_level > max_level then [], headers
   else (
     match headers with
@@ -144,15 +144,14 @@ and toc_entry headers h_level t id tl ~min_level ~max_level =
       | _ -> [Url("#" ^ id, t, ""); NL; Ul sub_toc; NL] in
     let toc, tl = make_toc tl ~min_level ~max_level in
     toc_entry :: toc, tl
-  )
-  else (* h_level > min_level *)
+  ) else (* h_level > min_level *)
     let sub_toc, tl = make_toc headers ~min_level:(min_level + 1) ~max_level in
     let toc, tl = make_toc tl ~min_level ~max_level in
     [Ul sub_toc] :: toc, tl
 
 let toc ?(start=[]) ?(depth=2) md =
   if depth < 1 then invalid_arg "Omd.toc: ~depth must be >= 1";
-  let headers = Omd_backend.headers_of_md md in
+  let headers = Omd_backend.headers_of_md ~remove_header_links:true md in
   let headers = match start with
     | [] -> headers
     | number :: subsections ->

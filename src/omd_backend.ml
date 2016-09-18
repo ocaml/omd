@@ -109,8 +109,17 @@ let filter_text_omd_rev l =
   in
   loop false [] l
 
+let remove_links : t -> t =
+  Omd_representation.visit
+    (fun e ->
+     prerr_endline "remove_links";
+     match e with
+      | Url(_, t, _) -> Some t
+      | _ -> None
+    )
 
 let rec html_and_headers_of_md
+    ?(remove_header_links=false)
     ?(override=(fun (e:element) -> (None:string option)))
     ?(pindent=false)
     ?(nl2br=false)
@@ -166,7 +175,7 @@ let rec html_and_headers_of_md
         | Some s ->
           Buffer.add_string b s;
           loop indent tl
-        | None -> 
+        | None ->
           (match x#to_t md with
            | Some t -> loop indent t
            | None ->
@@ -472,6 +481,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H1 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H1 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -488,6 +503,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H2 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H2 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -504,6 +525,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H3 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H3 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -520,6 +547,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H4 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H4 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -536,6 +569,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H5 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H5 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -552,6 +591,12 @@ let rec html_and_headers_of_md
           loop indent tl
       end
     | (H6 md as e) :: tl ->
+      let e, md =
+        if not remove_header_links then
+          e, md
+        else
+          let md = remove_links md in
+          H6 md, md in
       begin match override e with
         | Some s ->
           Buffer.add_string b s;
@@ -613,8 +658,8 @@ and html_of_md
     md
   =
   fst (html_and_headers_of_md ~override ~pindent ~nl2br ?cs md)
-and headers_of_md md =
-  snd (html_and_headers_of_md md)
+and headers_of_md ?remove_header_links md =
+  snd (html_and_headers_of_md ?remove_header_links md)
 
 
 let rec sexpr_of_md md =

@@ -42,6 +42,7 @@ let customized_to_html =
  *)
 
 val headers_of_md :
+  ?remove_header_links:bool ->
   Omd_representation.t ->
   (Omd_representation.element * string * string) list
 (** [headers_of_md md] returns a list of 3-tuples; in each of them the
@@ -50,9 +51,13 @@ val headers_of_md :
     the HTML version of [foo].  The third elements of those 3-tuples
     exist because if you use [html_and_headers_of_md], then you have
     the guarantee that the HTML version of [foo] is the same for
-    both the headers and the HTML version of [md]. *)
+    both the headers and the HTML version of [md].
+    If [remove_header_links], then remove links inside headers (h1, h2, ...).
+    Default value of [remove_header_links]: cf. [html_and_headers_of_md].
+ *)
 
 val html_and_headers_of_md :
+  ?remove_header_links:bool ->
   ?override:(Omd_representation.element -> string option) ->
   ?pindent:bool ->
   ?nl2br:bool ->
@@ -64,6 +69,8 @@ val html_and_headers_of_md :
     headers_of_md md)] except that it's two times faster.
     If you need both headers and html, don't use [html_of_md]
     and [headers_of_md] but this function instead.
+    If [remove_header_links], then remove links inside headers (h1, h2, ...).
+    Default value of [remove_header_links]: false.
 *)
 
 val escape_markdown_characters : string -> string
