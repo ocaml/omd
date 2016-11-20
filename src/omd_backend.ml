@@ -112,7 +112,6 @@ let filter_text_omd_rev l =
 let remove_links : t -> t =
   Omd_representation.visit
     (fun e ->
-     prerr_endline "remove_links";
      match e with
       | Url(_, t, _) -> Some t
       | _ -> None
