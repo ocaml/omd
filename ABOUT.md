@@ -113,7 +113,7 @@ not. However, overall, it should be easy enough.
 The parser has a double extension mechanism.
 
 1. To use the  first mechanism, you may define a  set of functions in
-the module  `Env` given to instanciate  the functor `Omd_parser.Make`.
+the module  `Env` given to instantiate  the functor `Omd_parser.Make`.
   * The   value  `Env.extensions`   is  a   list  of   elements  of
     type `Omd_representation.extension` which is equal to 
     `r -> p -> l -> (r * p * l) option` where
