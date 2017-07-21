@@ -190,87 +190,54 @@ and loose_compare_lists l1 l2 =
   | _, [] -> 1
   | _ -> -1
 
-
-type tok = (* Cs(n) means (n+2) times C *)
+type delim =
   | Ampersand
-  | Ampersands of int
   | At
-  | Ats of int
   | Backquote
-  | Backquotes of int
   | Backslash
-  | Backslashs of int
   | Bar
-  | Bars of int
   | Caret
-  | Carets of int
   | Cbrace
-  | Cbraces of int
   | Colon
-  | Colons of int
   | Comma
-  | Commas of int
   | Cparenthesis
-  | Cparenthesiss of int
   | Cbracket
-  | Cbrackets of int
   | Dollar
-  | Dollars of int
   | Dot
-  | Dots of int
   | Doublequote
-  | Doublequotes of int
   | Exclamation
-  | Exclamations of int
   | Equal
-  | Equals of int
   | Greaterthan
-  | Greaterthans of int
   | Hash
-  | Hashs of int
   | Lessthan
-  | Lessthans of int
   | Minus
-  | Minuss of int
   | Newline
-  | Newlines of int
-  | Number of string
   | Obrace
-  | Obraces of int
   | Oparenthesis
-  | Oparenthesiss of int
   | Obracket
-  | Obrackets of int
   | Percent
-  | Percents of int
   | Plus
-  | Pluss of int
   | Question
-  | Questions of int
   | Quote
-  | Quotes of int
   | Semicolon
-  | Semicolons of int
   | Slash
-  | Slashs of int
   | Space
-  | Spaces of int
   | Star
-  | Stars of int
   | Tab
-  | Tabs of int
   | Tilde
-  | Tildes of int
   | Underscore
-  | Underscores of int
-  | Word of string
-  | Tag of name * extension
 
-and extension = <
-  parser_extension :
-    t -> tok list -> tok list -> ((t * tok list * tok list) option);
-  to_string : string
->
+and tok =
+  | Tag of name * extension
+  | Word of string
+  | Number of string
+  | Delim of int * delim
+
+and extension =
+  <
+    parser_extension : t -> tok list -> tok list -> (t * tok list * tok list) option;
+    to_string : string;
+  >
 
 type extensions = extension list
 

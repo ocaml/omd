@@ -51,80 +51,48 @@ and href = string
 and title = string
 and t = element list
 
+type delim =
+  | Ampersand
+  | At
+  | Backquote
+  | Backslash
+  | Bar
+  | Caret
+  | Cbrace
+  | Colon
+  | Comma
+  | Cparenthesis
+  | Cbracket
+  | Dollar
+  | Dot
+  | Doublequote
+  | Exclamation
+  | Equal
+  | Greaterthan
+  | Hash
+  | Lessthan
+  | Minus
+  | Newline
+  | Obrace
+  | Oparenthesis
+  | Obracket
+  | Percent
+  | Plus
+  | Question
+  | Quote
+  | Semicolon
+  | Slash
+  | Space
+  | Star
+  | Tab
+  | Tilde
+  | Underscore
+
 type tok =
-    Ampersand (* one & *)
-  | Ampersands of int (* [Ampersands(n)] is (n+2) consecutive occurrences of & *)
-  | At (* @ *)
-  | Ats of int (* @@.. *)
-  | Backquote (* ` *)
-  | Backquotes of int (* ``.. *)
-  | Backslash (* \\ *)
-  | Backslashs of int (* \\\\.. *)
-  | Bar (* | *)
-  | Bars of int (* ||.. *)
-  | Caret (* ^ *)
-  | Carets of int (* ^^.. *)
-  | Cbrace (* } *)
-  | Cbraces of int (* }}.. *)
-  | Colon (* : *)
-  | Colons of int (* ::.. *)
-  | Comma (* , *)
-  | Commas of int (* ,,.. *)
-  | Cparenthesis (* ) *)
-  | Cparenthesiss of int (* )).. *)
-  | Cbracket (* ] *)
-  | Cbrackets of int (* ]].. *)
-  | Dollar (* $ *)
-  | Dollars of int (* $$.. *)
-  | Dot (* . *)
-  | Dots of int (* .... *)
-  | Doublequote (* \034 *)
-  | Doublequotes of int (* \034\034.. *)
-  | Exclamation (* ! *)
-  | Exclamations of int (* !!.. *)
-  | Equal (* = *)
-  | Equals of int (* ==.. *)
-  | Greaterthan (* > *)
-  | Greaterthans of int (* >>.. *)
-  | Hash (* # *)
-  | Hashs of int (* ##.. *)
-  | Lessthan (* < *)
-  | Lessthans of int (* <<.. *)
-  | Minus (* - *)
-  | Minuss of int (* --.. *)
-  | Newline (* \n *)
-  | Newlines of int (* \n\n.. *)
-  | Number of string
-  | Obrace (* { *)
-  | Obraces of int (* {{.. *)
-  | Oparenthesis (* ( *)
-  | Oparenthesiss of int (* ((.. *)
-  | Obracket (* [ *)
-  | Obrackets of int (* [[.. *)
-  | Percent (* % *)
-  | Percents of int (* %%.. *)
-  | Plus (* + *)
-  | Pluss of int (* ++.. *)
-  | Question (* ? *)
-  | Questions of int (* ??.. *)
-  | Quote (* ' *)
-  | Quotes of int (* ''.. *)
-  | Semicolon (* ; *)
-  | Semicolons of int (* ;;.. *)
-  | Slash (* / *)
-  | Slashs of int (* //.. *)
-  | Space (*  *)
-  | Spaces of int (* .. *)
-  | Star (* * *)
-  | Stars of int (* **.. *)
-  | Tab (* \t *)
-  | Tabs of int (* \t\t.. *)
-  | Tilde (* ~ *)
-  | Tildes of int (* ~~.. *)
-  | Underscore (* _ *)
-  | Underscores of int (* __.. *)
-  | Word of string
   | Tag of name * extension
+  | Word of string
+  | Number of string
+  | Delim of int * delim
   (** Lexer's tokens. If you want to use the parser with an extended
       lexer, you may use the constructor [Tag] to implement
       the parser's extension. In the parser, [Tag] is used (at least)
@@ -141,10 +109,11 @@ type tok =
       property and which haven't).
   *)
 
-and extension = <
-  parser_extension : t -> tok list -> tok list -> ((t * tok list * tok list) option);
-  to_string : string
->
+and extension =
+  <
+    parser_extension : t -> tok list -> tok list -> (t * tok list * tok list) option;
+    to_string : string;
+  >
 (** - [parser_extension] is a method that takes the current state of the
     parser's data and returns None if nothing has been changed,
     otherwise it returns the new state.  The current state of the
