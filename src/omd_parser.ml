@@ -920,7 +920,7 @@ struct
           loop (Delim (1, b) :: accu) n (delim (x-1) b tl)
       | Delim (x, b) as e :: tl when Some b = rdelim ->
           loop (e :: accu) (n+x) tl
-      | Delim (x, b) as e :: tl when b = ldelim ->
+      | Delim (x, b) :: tl when b = ldelim ->
           if n = 0 then
             List.rev accu, delim (x-1) b tl
           else
@@ -977,7 +977,7 @@ struct
           loop (Delim (1, Newline) :: Delim (1, Backslash) :: accu) n (delim (x-1) Newline tl)
       | Delim (2, Backslash) as e :: tl ->
           loop (e :: accu) n tl
-      | Delim (x, Backslash) as e :: tl ->
+      | Delim (x, Backslash) :: tl ->
           loop (delim (x-x mod 2) Backslash accu) n (delim (x mod 2) Backslash tl)
       | Delim ((1|2) as x, Newline) :: tl ->
           if n = 0 then
@@ -1717,547 +1717,372 @@ struct
         r
 
     (* Tag: tag system $\cup$ high-priority extension mechanism *)
-    | _, Tag(_name, e) :: tl ->
+    | _, Tag (_name, e) :: tl ->
         begin match e#parser_extension r previous tl with
-        | Some(r, p, l) ->
+        | Some (r, p, l) ->
             main_impl_rev ~html r p l
         | None ->
             main_impl_rev ~html r previous tl
         end
 
     (* HTML comments *)
-    | _, (Lessthan as t)::(Exclamation::Minuss 0::c as tl) ->
-        begin
-          let f = function
-            | (Minuss _ as m)::(Greaterthan|Greaterthans _ as g)::tl ->
-                Split([g;m], tl)
-            | _ ->
-                Continue
-          in
-          match fsplit ~f:f lexemes with
-          | None ->
-              begin match maybe_extension extensions r previous lexemes with
-              | None ->
-                  main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-              | Some(r, p, l) ->
-                  main_impl_rev ~html r p l
-              end
-          | Some (comments, new_tl) ->
-              let r = Html_comment(L.string_of_tokens comments) :: r in
-              main_impl_rev ~html r [Newline] new_tl
+    | _, (Delim (1, Lessthan) as t) :: (Delim (1, Exclamation) :: Delim (2, Minus) :: c as tl) ->
+        let f = function
+          | Delim (x, Minus) as m :: (Delim (_, Greaterthan) as g) :: tl when x >= 2 ->
+              Split ([g; m], tl)
+          | _ ->
+              Continue
+        in
+        begin match fsplit ~f lexemes with
+        | None ->
+            begin match maybe_extension extensions r previous lexemes with
+            | None ->
+                main_impl_rev ~html (Text (L.string_of_token t)::r) [t] tl
+            | Some (r, p, l) ->
+                main_impl_rev ~html r p l
+            end
+        | Some (comments, new_tl) ->
+            let r = Html_comment (L.string_of_tokens comments) :: r in
+            main_impl_rev ~html r [Delim (1, Newline)] new_tl
         end
 
     (* email-style quoting / blockquote *)
-    | ([]|[Newline|Newlines _]), Greaterthan::(Space|Spaces _)::_ ->
-        begin
-          match
-            emailstyle_quoting main_loop r previous (Newline::lexemes)
-          with
-          | Some(r,p,l) -> main_impl_rev ~html r p l
-          | None ->
-              if debug then
-                eprintf "(OMD) Omd_parser.emailstyle_quoting or \
-                         Omd_parser.main_loop is broken\n%!";
-              assert false
+    | ([] | [Delim (_, Newline)]), Delim (1, Greaterthan) :: Delim (_, Space) :: _ ->
+        begin match emailstyle_quoting main_loop r previous (Delim (1, Newline) :: lexemes) with
+        | Some (r,p,l) ->
+            main_impl_rev ~html r p l
+        | None ->
+            if debug then
+              eprintf "(OMD) Omd_parser.emailstyle_quoting or Omd_parser.main_loop is broken\n%!";
+            assert false
         end
 
     (* email-style quoting, with lines starting with spaces! *)
-    | ([]|[Newline|Newlines _]), (Space|Spaces(0|1) as s)
-                                 :: Greaterthan :: (Space|Spaces _)::_ ->
+    | ([] | [Delim (_, Newline)]), (Delim ((1|2|3), Space) as s) :: Delim (1, Greaterthan) :: Delim (_, Space) :: _ ->
         (* It's 1, 2 or 3 spaces, not more because it wouldn't mean
            quoting anymore but code. *)
-        begin
-          let new_r, p, rest =
-            let foo, rest =
-              match unindent (L.length s) (Newline::lexemes) with
-              | (Newline|Newlines _)::foo, rest -> foo, rest
-              | res -> res
-            in
-            match
-              emailstyle_quoting main_loop [] previous (Newline::foo)
-            with
-            | Some(new_r, p, []) -> new_r, p, rest
-            | _ ->
-                if debug then
-                  eprintf "(OMD) Omd_parser.emailstyle_quoting or \
-                           Omd_parser.main_loop is broken\n%!";
-                assert false
+        let new_r, p, rest =
+          let foo, rest =
+            match unindent (L.length s) (Delim (1, Newline) :: lexemes) with
+            | Delim (_, Newline) :: foo, rest ->
+                foo, rest
+            | res ->
+                res
           in
-          main_impl_rev ~html (new_r@r) [Newline] rest
-        end
+          match emailstyle_quoting main_loop [] previous (Delim (1, Newline) :: foo) with
+          | Some (new_r, p, []) ->
+              new_r, p, rest
+          | _ ->
+              if debug then
+                eprintf "(OMD) Omd_parser.emailstyle_quoting or Omd_parser.main_loop is broken\n%!";
+              assert false
+        in
+        main_impl_rev ~html (new_r@r) [Delim (1, Newline)] rest
 
     (* minus *)
-    | ([]|[Newline|Newlines _]),
-      (Minus|Minuss _ as t) :: ((Space|Spaces _)::_ as tl) ->
+    | ([] | [Delim (_, Newline)]), (Delim (_, Minus) as t) :: (Delim (_, Space) :: _ as tl) ->
         (* maybe hr *)
         begin match hr_m lexemes with
         | None -> (* no hr, so it could be a list *)
             begin match t with
-            | Minus -> (* it's a list *)
-                let md, new_p, new_l =
-                  parse_list main_loop r [] lexemes
-                in
+            | Delim (1, Minus) -> (* it's a list *)
+                let md, new_p, new_l = parse_list main_loop r [] lexemes in
                 main_impl_rev ~html md new_p new_l
             | _ -> (* not a list *)
                 begin match maybe_extension extensions r previous lexemes with
                 | None ->
-                    main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-                | Some(r, p, l) ->
+                    main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+                | Some (r, p, l) ->
                     main_impl_rev ~html r p l
                 end
             end
         | Some l -> (* hr *)
-            main_impl_rev ~html (Hr::r) [Newline] l
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] l
         end
-    | ([]|[Newline|Newlines _]), (Minus|Minuss _ as t)::tl ->
+    | ([] | [Delim (_, Newline)]), (Delim (_, Minus) as t) :: tl ->
         begin match hr_m lexemes with
         | None -> (* no hr, and it's not a list either
                      because it's not followed by spaces *)
             begin match maybe_extension extensions r previous lexemes with
             | None ->
-                main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+                main_impl_rev ~html (Text (L.string_of_token t)::r) [t] tl
             | Some(r, p, l) ->
                 main_impl_rev ~html r p l
             end
         | Some l -> (* hr *)
-            main_impl_rev ~html (Hr::r) [Newline] l
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] l
         end
 
     (* hashes *)
-    | ([]|[(Newline|Newlines _)]),
-      (Hashs n as t) :: ((Space|Spaces _) :: ttl as tl)
-    | ([]|[(Newline|Newlines _)]),
-      (Hashs n as t) :: (ttl as tl) -> (* hash titles *)
-        if n <= 4 then
-          match read_title main_loop (n+2) r previous ttl with
-          | Some(r, p, l) -> main_impl_rev ~html r p l
+    | ([]| [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (Delim (_, Space) :: ttl as tl)
+    | ([]| [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (ttl as tl) when n >= 2 -> (* hash titles *)
+        if n <= 6 then
+          match read_title main_loop n r previous ttl with
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
           | None ->
               if debug then
-                eprintf "(OMD) Omd_parser.read_title or \
-                         Omd_parser.main_loop is broken\n%!";
+                eprintf "(OMD) Omd_parser.read_title or Omd_parser.main_loop is broken\n%!";
               assert false
-        else
-          begin match maybe_extension extensions r previous lexemes with
-          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-          | Some(r, p, l) -> main_impl_rev ~html r p l
-          end
-    | ([]|[(Newline|Newlines _)]), Hash :: (Space|Spaces _) :: tl
-    | ([]|[(Newline|Newlines _)]), Hash :: tl -> (* hash titles *)
-        begin match read_title main_loop 1 r previous tl with
-        | Some(r, p, l) -> main_impl_rev ~html r p l
-        | None ->
-            if debug then
-              eprintf "(OMD) Omd_parser.read_title or \
-                       Omd_parser.main_loop is broken\n%!";
-            assert false
+        else begin
+          match maybe_extension extensions r previous lexemes with
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
         end
-    | _, (Hash|Hashs _ as t) :: tl -> (* hash -- no title *)
+    | _, (Delim (_, Hash) as t) :: tl -> (* hash -- no title *)
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_impl_rev ~html r p l
+        | None ->
+            main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+        | Some (r, p, l) ->
+            main_impl_rev ~html r p l
         end
 
     (* spaces after a newline: could lead to hr *)
-    | ([]|[Newline|Newlines _]), ((Space|Spaces _) as sp) :: tl ->
+    | ([] | [Delim (_, Newline)]), (Delim (_, Space) as sp) :: tl ->
         begin match hr tl with
         | None ->
             (* No [Hr], but maybe [Ul], [Ol], code,... *)
             let n = L.length sp in
             let r, p, l =
-              spaces_at_beginning_of_line main_loop default_lang n r previous tl in
+              spaces_at_beginning_of_line main_loop default_lang n r previous tl
+            in
             main_impl_rev ~html r p l
         | Some tl ->
-            main_impl_rev ~html (Hr::r) [Newline] tl
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] tl
         end
 
     (* spaces anywhere *)
-    | _, ((Space|Spaces _) as t) :: tl ->
+    | _, (Delim (_, Space) as t) :: tl ->
         (* too many cases to be handled here *)
         let n = L.length t in
         let r, p, l = spaces_not_at_beginning_of_line ~html n r tl in
         main_impl_rev ~html r p l
 
     (* underscores *)
-    | _, (Underscore as t) :: tl -> (* one "orphan" underscore, or emph *)
-        (match uemph_or_bold 1 tl with
-         | None ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-         | Some(x, new_tl) ->
-             main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
-        )
-    | _, (Underscores((0|1) as n) as t) :: tl ->
+    | _, (Delim (1, Underscore) as t) :: tl -> (* one "orphan" underscore, or emph *)
+        begin match uemph_or_bold 1 tl with
+        | None ->
+            begin match maybe_extension extensions r previous lexemes with
+            | None ->
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+            | Some (r, p, l) ->
+                main_impl_rev ~html r p l
+            end
+        | Some (x, new_tl) ->
+            main_impl_rev ~html (Emph (main_impl ~html [] [t] x) :: r) [t] new_tl
+        end
+    | _, (Delim ((2|3) as n, Underscore) as t) :: tl ->
         (* 2 or 3 "orphan" underscores, or emph/bold *)
-        (match uemph_or_bold (n+2) tl with
-         | None ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-         | Some(x, new_tl) ->
-             if n = 0 then (* 1 underscore *)
-               main_impl_rev ~html (Bold(main_impl ~html [] [t] x) :: r) [t] new_tl
-             else (* 2 underscores *)
-               main_impl_rev ~html (Emph([Bold(main_impl ~html [] [t] x)]) :: r) [t] new_tl
-        )
+        begin match uemph_or_bold n tl with
+        | None ->
+            begin match maybe_extension extensions r previous lexemes with
+            | None ->
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+            | Some (r, p, l) ->
+                main_impl_rev ~html r p l
+            end
+        | Some (x, new_tl) ->
+            if n = 2 then (* 1 underscore *)
+              main_impl_rev ~html (Bold (main_impl ~html [] [t] x) :: r) [t] new_tl
+            else (* 2 underscores *)
+              main_impl_rev ~html (Emph ([Bold (main_impl ~html [] [t] x)]) :: r) [t] new_tl
+        end
 
     (* enumerated lists *)
-    | ([]|[Newline|Newlines _]), (Number _) :: Dot :: (Space|Spaces _) :: tl ->
-        let md, new_p, new_l =
-          parse_list main_loop r [] lexemes
-        in
+    | ([] | [Delim (_, Newline)]), Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
+        let md, new_p, new_l = parse_list main_loop r [] lexemes in
         main_impl_rev ~html md new_p new_l
 
     (* plus *)
-    | ([]|[(Newline|Newlines _)]), Plus :: (Space|Spaces _) :: _ ->
-        let md, new_p, new_l =
-          parse_list main_loop r [] lexemes
-        in
+    | ([] | [Delim (_, Newline)]), Delim (1, Plus) :: Delim (_, Space) :: _ ->
+        let md, new_p, new_l = parse_list main_loop r [] lexemes in
         main_impl_rev ~html md new_p new_l
 
     (* stars *)
-    | ([]|[(Newline|Newlines _)]), Star :: (Space|Spaces _) :: _ ->
+    | ([] | [Delim (_, Newline)]), Delim (1, Star) :: Delim (_, Space) :: _ ->
         (* maybe hr or new list *)
         begin match hr_s lexemes with
         | Some l ->
-            main_impl_rev ~html (Hr::r) [Newline] l
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] l
         | None ->
-            let md, new_p, new_l =
-              parse_list main_loop r [] lexemes
-            in
+            let md, new_p, new_l = parse_list main_loop r [] lexemes in
             main_impl_rev ~html md new_p new_l
         end
-    | ([]|[(Newline|Newlines _)]), Stars _ :: _ when hr_s lexemes <> None ->
+    | ([] | [Delim (_, Newline)]), Delim (n, Star) :: _ when hr_s lexemes <> None && n >= 2 ->
         (* hr *)
-        (match hr_s lexemes with
-         | Some l -> main_impl_rev ~html (Hr::r) [Newline] l
-         | None -> assert false
-        )
-    | ([]|[(Newline|Newlines _)]), (Star as t) :: tl -> (* maybe hr *)
         begin match hr_s lexemes with
         | Some l ->
-            main_impl_rev ~html (Hr::r) [Newline] l
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] l
         | None ->
-            (match semph_or_bold 1 tl with
-             | Some(x, new_tl) ->
-                 main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
-             | None ->
-                 begin match maybe_extension extensions r previous lexemes with
-                 | None ->
-                     main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-                 | Some(r, p, l) ->
-                     main_impl_rev ~html r p l
-                 end
-            )
+            assert false
         end
-    | _, (Star as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
-        (match semph_or_bold 1 tl with
-         | Some(x, new_tl) ->
-             main_impl_rev ~html (Emph(main_impl ~html [] [t] x) :: r) [t] new_tl
-         | None ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-        )
-    | _, (Stars((0|1) as n) as t) :: tl ->
+    | ([] | [Delim (_, Newline)]), (Delim (1, Star) as t) :: tl -> (* maybe hr *)
+        begin match hr_s lexemes with
+        | Some l ->
+            main_impl_rev ~html (Hr :: r) [Delim (1, Newline)] l
+        | None ->
+            begin match semph_or_bold 1 tl with
+            | Some(x, new_tl) ->
+                main_impl_rev ~html (Emph (main_impl ~html [] [t] x) :: r) [t] new_tl
+            | None ->
+                begin match maybe_extension extensions r previous lexemes with
+                | None ->
+                    main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+                | Some (r, p, l) ->
+                    main_impl_rev ~html r p l
+                end
+            end
+        end
+    | _, (Delim (1, Star) as t) :: tl -> (* one "orphan" star, or emph // can't be hr *)
+        begin match semph_or_bold 1 tl with
+        | Some(x, new_tl) ->
+            main_impl_rev ~html (Emph (main_impl ~html [] [t] x) :: r) [t] new_tl
+        | None ->
+            begin match maybe_extension extensions r previous lexemes with
+            | None ->
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+            | Some (r, p, l) ->
+                main_impl_rev ~html r p l
+            end
+        end
+    | _, (Delim ((2|3) as n, Star) as t) :: tl ->
         (* 2 or 3 "orphan" stars, or emph/bold *)
-        (match semph_or_bold (n+2) tl with
-         | Some(x, new_tl) ->
-             if n = 0 then
-               main_impl_rev ~html (Bold(main_impl ~html [] [t] x) :: r) [t] new_tl
-             else
-               main_impl_rev ~html (Emph([Bold(main_impl ~html [] [t] x)]) :: r) [t] new_tl
-         | None ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-        )
+        begin match semph_or_bold n tl with
+        | Some (x, new_tl) ->
+            if n = 2 then
+              main_impl_rev ~html (Bold (main_impl ~html [] [t] x) :: r) [t] new_tl
+            else
+              main_impl_rev ~html (Emph ([Bold (main_impl ~html [] [t] x)]) :: r) [t] new_tl
+        | None ->
+            begin match maybe_extension extensions r previous lexemes with
+            | None ->
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+            | Some (r, p, l) ->
+                main_impl_rev ~html r p l
+            end
+        end
 
     (* backslashes *)
-    | _, Backslash :: (Newline as t) :: tl -> (* \\n *)
-        main_impl_rev ~html (Br :: r) [t] tl
-    | _, Backslash :: Newlines 0 :: tl -> (* \\n\n\n\n... *)
-        main_impl_rev ~html (Br :: r) [Backslash; Newline] (Newline :: tl)
-    | _, Backslash :: Newlines n :: tl -> assert (n >= 0); (* \\n\n\n\n... *)
-        main_impl_rev ~html (Br :: r) [Backslash; Newline]
-          (Newlines (n-1) :: tl)
-    | _, Backslash :: (Backquote as t) :: tl -> (* \` *)
-        main_impl_rev ~html (Text ("`") :: r) [t] tl
-    | _, Backslash :: Backquotes 0 :: tl -> (* \````... *)
-        main_impl_rev ~html (Text ("`") :: r) [Backslash; Backquote] (Backquote :: tl)
-    | _, Backslash :: Backquotes n :: tl -> assert (n >= 0); (* \````... *)
-        main_impl_rev ~html (Text ("`") :: r) [Backslash; Backquote]
-          (Backquotes (n-1) :: tl)
-    | _, Backslash :: (Star as t) :: tl -> (* \* *)
-        main_impl_rev ~html (Text ("*") :: r) [t] tl
-    | _, Backslash :: Stars 0 :: tl -> (* \****... *)
-        main_impl_rev ~html (Text ("*") :: r) [Backslash; Star] (Star :: tl)
-    | _, Backslash :: Stars n :: tl -> assert (n >= 0); (* \****... *)
-        main_impl_rev ~html (Text ("*") :: r) [Backslash; Star] (Stars (n-1) :: tl)
-    | _, Backslash :: (Underscore as t) :: tl -> (* \_ *)
-        main_impl_rev ~html (Text ("_") :: r) [t] tl
-    | _, Backslash :: Underscores 0 :: tl -> (* \___... *)
-        main_impl_rev ~html (Text ("_") :: r) [Backslash; Underscore] (Underscore :: tl)
-    | _, Backslash :: Underscores n :: tl -> assert (n >= 0); (* \___... *)
-        main_impl_rev ~html (Text ("_") :: r) [Backslash; Underscore]
-          (Underscores (n-1) :: tl)
-    | _, Backslash :: (Obrace as t) :: tl -> (* \{ *)
-        main_impl_rev ~html (Text ("{") :: r) [t] tl
-    | _, Backslash :: Obraces 0 :: tl -> (* \{{{... *)
-        main_impl_rev ~html (Text ("{") :: r) [Backslash; Obrace] (Obrace :: tl)
-    | _, Backslash :: Obraces n :: tl -> assert (n >= 0); (* \{{{... *)
-        main_impl_rev ~html (Text ("{") :: r) [Backslash; Obrace] (Obraces (n-1) :: tl)
-    | _, Backslash :: (Cbrace as t) :: tl -> (* \} *)
-        main_impl_rev ~html (Text ("}") :: r) [t] tl
-    | _, Backslash :: Cbraces 0 :: tl -> (* \}}}... *)
-        main_impl_rev ~html (Text ("}") :: r) [Backslash; Cbrace] (Cbrace :: tl)
-    | _, Backslash :: Cbraces n :: tl -> assert (n >= 0); (* \}}}... *)
-        main_impl_rev ~html (Text ("}") :: r) [Backslash; Cbrace] (Cbraces (n-1) :: tl)
-    | _, Backslash :: (Obracket as t) :: tl -> (* \[ *)
-        main_impl_rev ~html (Text ("[") :: r) [t] tl
-    | _, Backslash :: Obrackets 0 :: tl -> (* \[[[... *)
-        main_impl_rev ~html (Text ("[") :: r) [Backslash; Obracket] (Obracket :: tl)
-    | _, Backslash :: Obrackets n :: tl -> assert (n >= 0); (* \[[[... *)
-        main_impl_rev ~html (Text ("[") :: r) [Backslash; Obracket] (Obrackets (n-1) :: tl)
-    | _, Backslash :: (Cbracket as t) :: tl -> (* \} *)
-        main_impl_rev ~html (Text ("]") :: r) [t] tl
-    | _, Backslash :: Cbrackets 0 :: tl -> (* \}}}... *)
-        main_impl_rev ~html (Text ("]") :: r) [Backslash; Cbracket] (Cbracket :: tl)
-    | _, Backslash :: Cbrackets n :: tl -> assert (n >= 0); (* \}}}... *)
-        main_impl_rev ~html (Text ("]") :: r) [Backslash; Cbracket] (Cbrackets (n-1) :: tl)
-    | _, Backslash :: (Oparenthesis as t) :: tl -> (* \( *)
-        main_impl_rev ~html (Text ("(") :: r) [t] tl
-    | _, Backslash :: Oparenthesiss 0 :: tl -> (* \(((... *)
-        main_impl_rev ~html (Text ("(") :: r) [Backslash; Oparenthesis] (Oparenthesis :: tl)
-    | _, Backslash :: Oparenthesiss n :: tl -> assert (n >= 0); (* \(((... *)
-        main_impl_rev ~html (Text ("(") :: r) [Backslash; Oparenthesis]
-          (Oparenthesiss (n-1) :: tl)
-    | _, Backslash :: (Cparenthesis as t) :: tl -> (* \) *)
-        main_impl_rev ~html (Text (")") :: r) [t] tl
-    | _, Backslash :: Cparenthesiss 0 :: tl -> (* \)))... *)
-        main_impl_rev ~html (Text (")") :: r) [Backslash; Cparenthesis]
-          (Cparenthesis :: tl)
-    | _, Backslash :: Cparenthesiss n :: tl -> assert (n >= 0); (* \)))... *)
-        main_impl_rev ~html (Text (")") :: r) [Backslash; Cparenthesis]
-          (Cparenthesiss (n-1) :: tl)
-    | _, Backslash :: (Plus as t) :: tl -> (* \+ *)
-        main_impl_rev ~html (Text ("+") :: r) [t] tl
-    | _, Backslash :: Pluss 0 :: tl -> (* \+++... *)
-        main_impl_rev ~html (Text ("+") :: r) [Backslash; Plus] (Plus :: tl)
-    | _, Backslash :: Pluss n :: tl -> assert (n >= 0); (* \+++... *)
-        main_impl_rev ~html (Text ("+") :: r) [Backslash; Plus] (Pluss (n-1) :: tl)
-    | _, Backslash :: (Minus as t) :: tl -> (* \- *)
-        main_impl_rev ~html (Text ("-") :: r) [t] tl
-    | _, Backslash :: Minuss 0 :: tl -> (* \---... *)
-        main_impl_rev ~html (Text ("-") :: r) [Backslash; Minus] (Minus :: tl)
-    | _, Backslash :: Minuss n :: tl -> assert (n >= 0); (* \---... *)
-        main_impl_rev ~html (Text ("-") :: r) [Backslash; Minus] (Minuss (n-1) :: tl)
-    | _, Backslash :: (Dot as t) :: tl -> (* \. *)
-        main_impl_rev ~html (Text (".") :: r) [t] tl
-    | _, Backslash :: Dots 0 :: tl -> (* \....... *)
-        main_impl_rev ~html (Text (".") :: r) [Backslash; Dot] (Dot :: tl)
-    | _, Backslash :: Dots n :: tl -> assert (n >= 0); (* \....... *)
-        main_impl_rev ~html (Text (".") :: r) [Backslash; Dot] (Dots (n-1) :: tl)
-    | _, Backslash :: (Exclamation as t) :: tl -> (* \! *)
-        main_impl_rev ~html (Text ("!") :: r) [t] tl
-    | _, Backslash :: Exclamations 0 :: tl -> (* \!!!... *)
-        main_impl_rev ~html (Text ("!") :: r) [Backslash; Exclamation] (Exclamation :: tl)
-    | _, Backslash :: Exclamations n :: tl -> assert (n >= 0); (* \!!!... *)
-        main_impl_rev ~html (Text ("!") :: r) [Backslash; Exclamation]
-          (Exclamations (n-1) :: tl)
-    | _, Backslash :: (Hash as t) :: tl -> (* \# *)
-        main_impl_rev ~html (Text ("#") :: r) [t] tl
-    | _, Backslash :: Hashs 0 :: tl -> (* \###... *)
-        main_impl_rev ~html (Text ("#") :: r) [Backslash; Hash] (Hash :: tl)
-    | _, Backslash :: Hashs n :: tl -> assert (n >= 0); (* \###... *)
-        main_impl_rev ~html (Text ("#") :: r) [Backslash; Hash] (Hashs (n-1) :: tl)
-    | _, Backslash :: (Greaterthan as t) :: tl -> (* \> *)
-        main_impl_rev ~html (Text (">") :: r) [t] tl
-    | _, Backslash :: Greaterthans 0 :: tl -> (* \>>>... *)
-        main_impl_rev ~html (Text (">") :: r) [Backslash; Greaterthan] (Greaterthan :: tl)
-    | _, Backslash :: Greaterthans n :: tl -> assert (n >= 0); (* \>>>... *)
-        main_impl_rev ~html (Text (">") :: r) [Backslash; Greaterthan]
-          (Greaterthans (n-1) :: tl)
-    | _, Backslash :: (Lessthan as t) :: tl -> (* \< *)
-        main_impl_rev ~html (Text ("<") :: r) [t] tl
-    | _, Backslash :: Lessthans 0 :: tl -> (* \<<<... *)
-        main_impl_rev ~html (Text ("<") :: r) [Backslash; Lessthan] (Lessthan :: tl)
-    | _, Backslash :: Lessthans n :: tl -> assert (n >= 0); (* \<<<... *)
-        main_impl_rev ~html (Text ("<") :: r) [Backslash; Lessthan]
-          (Lessthans (n-1) :: tl)
-    | _, (Backslashs 0 as t) :: tl -> (* \\\\... *)
-        main_impl_rev ~html (Text ("\\") :: r) [t] tl
-    | _, (Backslashs n as t) :: tl -> (* \\\\... *)
-        if n mod 2 = 0 then
-          main_impl_rev ~html (Text(String.make ((n+2)/2) '\\') :: r) [t] tl
-        else
-          main_impl_rev ~html (Text(String.make ((n+2)/2) '\\') :: r) [t] (Backslash :: tl)
-    | _, Backslash::[] ->
+    | _, Delim (1, Backslash) :: Delim (n, Newline) :: tl ->
+        assert (n >= 0); (* \\n\n\n\n... *)
+        main_impl_rev ~html (Br :: r) [Delim (1, Backslash); Delim (1, Newline)] (delim (n-1) Newline tl)
+    | _, Delim (1, Backslash) :: Delim (n, (Backquote|Star|Underscore|Obrace|Cbrace|Obracket|Cbracket|Oparenthesis|Cparenthesis|Plus|Minus|Dot|Exclamation|Hash|Greaterthan|Lessthan as d)) :: tl ->
+        assert (n >= 0);
+        main_impl_rev ~html (Text (String.make 1 (L.char_of_delim d)) :: r) [Delim (1, Backslash); Delim (1, d)] (delim (n-1) d tl)
+
+    | _, (Delim (n, Backslash) as t) :: tl when n >= 2 -> (* \\\\... *)
+        main_impl_rev ~html (Text (String.make (n/2) '\\') :: r) [t] (delim (n mod 2) Backslash tl)
+    | _, Delim (1, Backslash) :: [] ->
         main_impl_rev ~html (Text "\\" :: r) [] []
-    | _, Backslash::tl ->
-        main_impl_rev ~html (Text "\\" :: r) [Backslash] tl
+    | _, Delim (1, Backslash) :: tl ->
+        main_impl_rev ~html (Text "\\" :: r) [Delim (1, Backslash)] tl
 
     (* < *)
-    | _, (Lessthan|Lessthans _ as t)
-         :: (Word("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w)
-         :: Colon::Slashs(n)::tl ->
+    | _, (Delim (_, Lessthan) as t) :: (Word ("http"|"https"|"ftp"|"ftps"|"ssh"|"afp"|"imap") as w) ::
+         Delim (1, Colon) :: Delim (n, Slash) :: tl when n >= 2 ->
         (* "semi-automatic" URLs *)
         let rec read_url accu = function
-          | (Newline|Newlines _)::tl ->
+          | Delim (_, Newline) :: tl ->
               None
-          | Greaterthan::tl ->
+          | Delim (1, Greaterthan) :: tl ->
               let url =
-                (L.string_of_token w) ^ "://"
-                ^ (if n = 0 then "" else String.make (n-1) '/')
-                ^ L.string_of_tokens (List.rev accu)
-              in Some(url, tl)
-          | x::tl ->
-              read_url (x::accu) tl
+                (L.string_of_token w) ^ "://" ^ (if n = 2 then "" else String.make (n-1) '/') ^ L.string_of_tokens (List.rev accu)
+              in
+              Some (url, tl)
+          | x :: tl ->
+              read_url (x :: accu) tl
           | [] ->
               None
         in
         begin match read_url [] tl with
-        | Some(url, new_tl) ->
+        | Some (url, new_tl) ->
             let r =
               match t with
-              | Lessthans 0 -> Text "<" :: r
-              | Lessthans n -> Text(String.make (n+1) '<') :: r
-              | _ -> r
+              | Delim (n, Lessthan) when n >= 2 ->
+                  Text(String.make (n-1) '<') :: r
+              | _ ->
+                  r
             in
-            main_impl_rev ~html (Url(url,[Text url],"")::r) [] new_tl
+            main_impl_rev ~html (Url (url, [Text url],"") :: r) [] new_tl
         | None ->
             begin match maybe_extension extensions r previous lexemes with
             | None ->
-                main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
             | Some(r, p, l) ->
                 main_impl_rev ~html r p l
             end
         end
 
-
     (* Word(w) *)
-    | _, Word w::tl ->
+    | _, Word w :: tl ->
         main_impl_rev ~html (Text w :: r) [Word w] tl
 
     (* newline at the end *)
-    | _, [Newline] ->
-        NL::r
+    | _, [Delim (1, Newline)] ->
+        NL :: r
 
     (* named html entity *)
-    | _, Ampersand::((Word w::((Semicolon|Semicolons _) as s)::tl) as tl2) ->
+    | _, Delim (1, Ampersand) :: ((Word w :: (Delim (n, Semicolon) as s) :: tl) as tl2) ->
         if StringSet.mem w htmlcodes_set then
-          begin match s with
-          | Semicolon ->
-              main_impl_rev ~html (Raw("&"^w^";")::r) [s] tl
-          | Semicolons 0 ->
-              main_impl_rev ~html (Raw("&"^w^";")::r) [s] (Semicolon::tl)
-          | Semicolons n ->
-              main_impl_rev ~html (Raw("&"^w^";")::r) [s] (Semicolons(n-1)::tl)
-          | _ -> assert false
-          end
+          main_impl_rev ~html (Raw ("&"^w^";") :: r) [s] (delim (n-1) Semicolon tl)
         else
-          main_impl_rev ~html (Raw("&amp;")::r) [] tl2
+          main_impl_rev ~html (Raw ("&amp;") :: r) [] tl2
 
     (* digit-coded html entity *)
-    | _, Ampersand::((Hash::Number w::((Semicolon|Semicolons _) as s)::tl)
-                     as tl2) ->
+    | _, Delim (1, Ampersand) :: ((Delim (1, Hash) :: Number w :: (Delim (n, Semicolon) as s) :: tl) as tl2) ->
         if String.length w <= 4 then
-          begin match s with
-          | Semicolon ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] tl
-          | Semicolons 0 ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
-          | Semicolons n ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
-          | _ -> assert false
-          end
+          main_impl_rev ~html (Raw ("&#"^w^";")::r) [s] (delim (n-1) Semicolon tl)
         else
-          main_impl_rev ~html (Raw("&amp;")::r) [] tl2
+          main_impl_rev ~html (Raw ("&amp;") :: r) [] tl2
 
     (* maybe hex digit-coded html entity *)
-    | _, Ampersand::((Hash::Word w::((Semicolon|Semicolons _) as s)::tl)
-                     as tl2) when is_hex w ->
+    | _, Delim (1, Ampersand) :: ((Delim (1, Hash) :: Word w :: (Delim (n, Semicolon) as s) :: tl) as tl2) when is_hex w ->
         if String.length w <= 4 then
-          begin match s with
-          | Semicolon ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] tl
-          | Semicolons 0 ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolon::tl)
-          | Semicolons n ->
-              main_impl_rev ~html (Raw("&#"^w^";")::r) [s] (Semicolons(n-1)::tl)
-          | _ -> assert false
-          end
+          main_impl_rev ~html (Raw ("&#"^w^";") :: r) [s] (delim (n-1) Semicolon tl)
         else
-          main_impl_rev ~html (Raw("&amp;")::r) [] tl2
-
-
-    (* Ampersand *)
-    | _, Ampersand::tl ->
-        main_impl_rev ~html (Raw("&amp;")::r) [Ampersand] tl
-
-    (* 2 Ampersands *)
-    | _, Ampersands(0)::tl ->
-        main_impl_rev ~html (Raw("&amp;")::r) [] (Ampersand::tl)
+          main_impl_rev ~html (Raw ("&amp;") :: r) [] tl2
 
     (* Several Ampersands (more than 2) *)
-    | _, Ampersands(n)::tl ->
-        main_impl_rev ~html (Raw("&amp;")::r) [] (Ampersands(n-1)::tl)
+    | _, Delim (n, Ampersand) :: tl ->
+        main_impl_rev ~html (Raw ("&amp;") :: r) [] (delim (n-1) Ampersand tl)
 
     (* backquotes *)
-    | _, (Backquote|Backquotes _ as t)::tl ->
+    | _, (Delim (_, Backquote) as t) :: tl ->
         begin match bcode ~default_lang r previous lexemes with
         | Some(r, p, l) -> main_impl_rev ~html r p l
         | None ->
             begin match maybe_extension extensions r previous lexemes with
             | None ->
-                main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-            | Some(r, p, l) ->
+                main_impl_rev ~html (Text (L.string_of_token t)::r) [t] tl
+            | Some (r, p, l) ->
                 main_impl_rev ~html r p l
             end
         end
 
     (* HTML *)
     (* <br/> and <hr/> with or without space(s) *)
-    | _, (Lessthan::Word("br"|"hr" as w)::Slash
-          ::(Greaterthan|Greaterthans _ as g)::tl)
-    | _, (Lessthan::Word("br"|"hr" as w)::(Space|Spaces _)::Slash
-          ::(Greaterthan|Greaterthans _ as g)::tl) ->
-        begin match g with
-        | Greaterthans 0 ->
-            main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan] (Greaterthan::tl)
-        | Greaterthans n ->
-            main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan]
-              (Greaterthans(n-1)::tl)
-        | _ ->
-            main_impl_rev ~html (Raw("<"^w^" />")::r) [Greaterthan] tl
-        end
+    | _, Delim (1, Lessthan) :: Word ("br"|"hr" as w) :: Delim (1, Slash) :: Delim (n, Greaterthan) :: tl
+    | _, Delim (1, Lessthan) :: Word ("br"|"hr" as w) :: Delim (_, Space) :: Delim (1, Slash) :: Delim (n, Greaterthan) :: tl ->
+        main_impl_rev ~html (Raw("<"^w^" />")::r) [Delim (1, Greaterthan)] (delim (n-1) Greaterthan tl)
 
     (* awaited orphan html closing tag *)
-    | _, Lessthan::Slash::Word(w)::(Greaterthan|Greaterthans _ as g)::tl
-      when !mediatypetextomd <> [] ->
-        raise (Orphan_closing(w,
-                              lexemes,
-                              (match g with
-                               | Greaterthans 0 -> Greaterthan::tl
-                               | Greaterthans n -> Greaterthans(n-1)::tl
-                               | _ -> tl)))
+    | _, Delim (1, Lessthan) :: Delim (1, Slash) :: Word w :: Delim (n, Greaterthan) :: tl when !mediatypetextomd <> [] ->
+        raise (Orphan_closing(w, lexemes, delim (n-1) Greaterthan tl))
 
     (* block html *)
-    | ([] | [Newline|Newlines _|Tag("HTMLBLOCK", _)]),
-      (Lessthan as t)
-      ::((Word(tagnametop) as w)
-         ::((Space|Spaces _|Greaterthan|Greaterthans _)
-            ::_ as html_stuff) as tlx) ->
+    | ([] | [Delim (_, Newline) | Tag ("HTMLBLOCK", _)]),
+      (Delim (1, Lessthan) as t) ::
+      ((Word(tagnametop) as w) :: ((Delim (_, Space)|Delim (_, Greaterthan)) :: _ as html_stuff) as tlx) ->
         if StringSet.mem tagnametop inline_htmltags_set then
           main_impl_rev ~html r [Word ""] lexemes
         else if not (blind_html || StringSet.mem tagnametop htmltags_set) then
           begin match maybe_extension extensions r previous lexemes with
-          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_impl_rev ~html r p l
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tlx
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
           end
         else
           let read_html() =
@@ -2265,50 +2090,44 @@ struct
               type t =
                 | Awaiting of string
                 | Open of string
+
               type interm =
                 | HTML of string * (string * string option) list * interm list
                 | FTOKENS of L.t
                 | RTOKENS of L.t
                 | MD of Omd_representation.t
+
               let rec md_of_interm_list html l =
-                let md_of_interm_list ?(html=html) l =
-                  md_of_interm_list html l
-                in
+                let md_of_interm_list ?(html = html) l = md_of_interm_list html l in
                 match l with
-                | [] -> []
-                | HTML(t, a, c)::tl ->
-                    (
-                      let f_a = filter_text_omd_rev a in
-                      if f_a != a then
-                        Html_block
-                          (t,
-                           f_a,
-                           make_paragraphs
-                             (md_of_interm_list ~html:false (List.rev c)))
-                        :: md_of_interm_list tl
-                      else
-                        Html_block
-                          (t, f_a, md_of_interm_list ~html:true (List.rev c))
-                        :: md_of_interm_list tl
-                    )
+                | [] ->
+                    []
+                | HTML (t, a, c) :: tl ->
+                    let f_a = filter_text_omd_rev a in
+                    if f_a != a then
+                      Html_block (t, f_a, make_paragraphs (md_of_interm_list ~html:false (List.rev c))) ::
+                      md_of_interm_list tl
+                    else
+                      Html_block (t, f_a, md_of_interm_list ~html:true (List.rev c)) ::
+                      md_of_interm_list tl
                 | MD md::tl ->
                     md@md_of_interm_list tl
-                | RTOKENS t1::FTOKENS t2::tl ->
-                    md_of_interm_list (FTOKENS(List.rev_append t1 t2)::tl)
-                | RTOKENS t1::RTOKENS t2::tl ->
-                    md_of_interm_list
-                      (FTOKENS(List.rev_append t1 (List.rev t2))::tl)
-                | FTOKENS t1::FTOKENS t2::tl ->
-                    md_of_interm_list (FTOKENS(t1@t2)::tl)
+                | RTOKENS t1 :: FTOKENS t2 :: tl ->
+                    md_of_interm_list (FTOKENS (List.rev_append t1 t2) :: tl)
+                | RTOKENS t1 :: RTOKENS t2 :: tl ->
+                    md_of_interm_list (FTOKENS (List.rev_append t1 (List.rev t2)) :: tl)
+                | FTOKENS t1::FTOKENS t2 :: tl ->
+                    md_of_interm_list (FTOKENS (t1@t2) :: tl)
                 | FTOKENS t :: tl ->
                     if html then
                       Raw(L.string_of_tokens t) :: md_of_interm_list tl
                     else
-                      main_loop ~html [] [Word ""] t
-                      @ md_of_interm_list tl
+                      main_loop ~html [] [Word ""] t @ md_of_interm_list tl
                 | RTOKENS t :: tl ->
-                    md_of_interm_list (FTOKENS(List.rev t) :: tl)
+                    md_of_interm_list (FTOKENS (List.rev t) :: tl)
+
               let md_of_interm_list l = md_of_interm_list true l
+
               let string_of_tagstatus tagstatus =
                 let b = Buffer.create 64 in
                 List.iter (function
@@ -2316,452 +2135,370 @@ struct
                     | Awaiting t -> bprintf b "{B/Awaiting %s}" t
                   ) tagstatus;
                 Buffer.contents b
-            end in
+            end
+            in
             let add_token_to_body x body =
               match body with
-              | T.RTOKENS r :: body -> T.RTOKENS(x::r)::body
-              | _ -> T.RTOKENS[x] :: body
+              | T.RTOKENS r :: body ->
+                  T.RTOKENS(x::r)::body
+              | _ ->
+                  T.RTOKENS [x] :: body
             in
             let rec loop (body:T.interm list) attrs tagstatus tokens =
               if debug then
                 eprintf "(OMD) 3333 BHTML loop body=%S tagstatus=%S %S\n%!"
                   (Omd_backend.sexpr_of_md(T.md_of_interm_list body))
-                  (T.string_of_tagstatus tagstatus)
-                  (L.destring_of_tokens tokens);
+                  (T.string_of_tagstatus tagstatus) (L.destring_of_tokens tokens);
               match tokens with
               | [] ->
-                  begin
-                    match tagstatus with
-                    | [] -> Some(body, tokens)
-                    | T.Open t :: _ when StringSet.mem t html_void_elements ->
-                        Some(body, tokens)
-                    | _ ->
-                        if debug then
-                          eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
-                        None
-                  end
-              | Lessthans n::tokens ->
                   begin match tagstatus with
-                  | T.Awaiting _ :: _ -> None
+                  | [] ->
+                      Some(body, tokens)
+                  | T.Open t :: _ when StringSet.mem t html_void_elements ->
+                      Some(body, tokens)
+                  | _ ->
+                      if debug then eprintf "(OMD) 3401 BHTML Not enough to read\n%!";
+                      None
+                  end
+              | Delim (n, Lessthan) :: tokens when n >= 2 ->
+                  begin match tagstatus with
+                  | T.Awaiting _ :: _ ->
+                      None
                   | _ ->
                       if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
-                      loop
-                        (add_token_to_body
-                           (if n = 0 then Lessthan else Lessthans(n-1))
-                           body)
-                        attrs tagstatus (Lessthan::tokens)
+                      loop (add_token_to_body (Delim (n-1, Lessthan)) body)
+                        attrs tagstatus (Delim (1, Lessthan) :: tokens)
                   end
               (* self-closing tags *)
-              | Slash::Greaterthan::tokens ->
+              | Delim (1, Slash) :: Delim (1, Greaterthan) :: tokens ->
                   begin match tagstatus with
-                  | T.Awaiting(tagname) :: tagstatus
-                    when StringSet.mem tagname html_void_elements ->
-                      loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
+                  | T.Awaiting(tagname) :: tagstatus when StringSet.mem tagname html_void_elements ->
+                      loop [T.HTML (tagname, attrs, [])] [] tagstatus tokens
                   | _ ->
                       if debug then eprintf "(OMD) 3419 BHTML loop\n%!";
-                      loop
-                        (add_token_to_body
-                           Slash
-                           (add_token_to_body
-                              Greaterthan
-                              body))
+                      loop (add_token_to_body (Delim (1, Slash)) (add_token_to_body (Delim (1, Greaterthan)) body))
                         attrs tagstatus tokens
                   end
               (* closing the tag opener *)
-              | Lessthan::Slash::(Word(tagname) as w)
-                ::(Greaterthan|Greaterthans _ as g)::tokens ->
+              | Delim (1, Lessthan) :: Delim (1, Slash) :: (Word tagname as w) :: (Delim (n, Greaterthan) as g) :: tokens ->
                   begin match tagstatus with
                   | T.Open t :: _ when t = tagname ->
-                      if debug then
-                        eprintf "(OMD) 3375 BHTML properly closing %S\n%!" t;
-                      Some(body,
-                           (match g with
-                            | Greaterthans 0 -> Greaterthan :: tokens
-                            | Greaterthans n -> Greaterthans(n-1) :: tokens
-                            | _ -> tokens))
+                      if debug then eprintf "(OMD) 3375 BHTML properly closing %S\n%!" t;
+                      Some (body, delim (n-1) Greaterthan tokens)
                   | T.Open t :: _ ->
-                      if debug then
-                        eprintf "(OMD) 3379 BHTML wrongly closing %S with %S 1\n%!"
-                          t tagname;
-                      loop (T.RTOKENS[g;w;Slash;Lessthan]::body)
-                        [] tagstatus tokens
+                      if debug then eprintf "(OMD) 3379 BHTML wrongly closing %S with %S 1\n%!" t tagname;
+                      loop (T.RTOKENS [g; w; Delim (1, Slash); Delim (1, Lessthan)] :: body) [] tagstatus tokens
                   | T.Awaiting t :: _ ->
-                      if debug then
-                        eprintf "(OMD) 3383 BHTML wrongly closing %S with %S 2\n%!"
-                          t tagname;
+                      if debug then eprintf "(OMD) 3383 BHTML wrongly closing %S with %S 2\n%!" t tagname;
                       if !mediatypetextomd <> [] then
-                        raise
-                          (Orphan_closing(t,
-                                          lexemes,
-                                          (match g with
-                                           | Greaterthans 0 ->
-                                               Greaterthan::tokens
-                                           | Greaterthans n ->
-                                               Greaterthans(n-1)::tokens
-                                           | _ -> tokens)))
+                        raise (Orphan_closing(t, lexemes, delim (n-1) Greaterthan tokens))
                       else
                         None
                   | [] ->
-                      if debug then
-                        eprintf "(OMD) BHTML wrongly closing %S 3\n%!" tagname;
+                      if debug then eprintf "(OMD) BHTML wrongly closing %S 3\n%!" tagname;
                       None
                   end
               (* tag *)
-              | Lessthan::(Word(tagname) as word)::tokens
-                when
-                  blind_html
-                  || StringSet.mem tagname htmltags_set
-                ->
-                  if debug then
-                    eprintf "(OMD) 3489 BHTML <Word(%s)...\n%!" tagname;
+              | Delim (1, Lessthan) :: (Word tagname as word) :: tokens when blind_html || StringSet.mem tagname htmltags_set ->
+                  if debug then eprintf "(OMD) 3489 BHTML <Word(%s)...\n%!" tagname;
                   begin match tagstatus with
-                  | T.Open(t) :: _
-                    when t <> tagname && StringSet.mem t html_void_elements ->
+                  | T.Open t :: _ when t <> tagname && StringSet.mem t html_void_elements ->
                       None
-                  | T.Awaiting _ :: _ -> None
+                  | T.Awaiting _ :: _ ->
+                      None
                   | _ ->
-                      if attrs <> [] then
-                        begin
-                          if debug then
-                            eprintf "(OMD) 3496 BHTML tag %S but attrs <> []\n%!"
-                              tagname;
-                          None
-                        end
-                      else
-                        begin
-                          if debug then
-                            eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, \
-                                     attrs=[], tokens=%S\n%!"
-                              tagname (T.string_of_tagstatus tagstatus)
-                              (L.destring_of_tokens tokens);
-                          match
-                            loop [] [] (T.Awaiting tagname::tagstatus) tokens
-                          with
-                          | None ->
-                              if debug then eprintf "(OMD) 3489 BHTML loop\n%!";
-                              loop
-                                (add_token_to_body
-                                   word
-                                   (add_token_to_body
-                                      Lessthan
-                                      body))
-                                attrs tagstatus tokens
-                          | Some(b, tokens) ->
-                              if debug then begin
-                                eprintf "(OMD) 3433 BHTML tagstatus=%S tokens=%S\n%!"
-                                  (T.string_of_tagstatus tagstatus)
-                                  (L.string_of_tokens tokens)
-                              end;
-                              Some(b@body, tokens)
-                        end
+                      if attrs <> [] then begin
+                        if debug then eprintf "(OMD) 3496 BHTML tag %S but attrs <> []\n%!" tagname;
+                        None
+                      end else begin
+                        if debug then
+                          eprintf "(OMD) 3421 BHTML tag %S, tagstatus=%S, attrs=[], tokens=%S\n%!"
+                            tagname (T.string_of_tagstatus tagstatus) (L.destring_of_tokens tokens);
+                        match loop [] [] (T.Awaiting tagname::tagstatus) tokens with
+                        | None ->
+                            if debug then eprintf "(OMD) 3489 BHTML loop\n%!";
+                            loop (add_token_to_body word (add_token_to_body (Delim (1, Lessthan)) body))
+                              attrs tagstatus tokens
+                        | Some (b, tokens) ->
+                            if debug then
+                              eprintf "(OMD) 3433 BHTML tagstatus=%S tokens=%S\n%!"
+                                (T.string_of_tagstatus tagstatus) (L.string_of_tokens tokens);
+                            Some (b@body, tokens)
+                      end
                   end
               (* end of opening tag *)
-              | Greaterthan::tokens ->
+              | Delim (1, Greaterthan) :: tokens ->
                   begin match tagstatus with
                   | T.Awaiting t :: tagstatus ->
-                      if List.mem ("media:type", Some "text/omd") attrs then
-                        (
-                          mediatypetextomd := t :: !mediatypetextomd;
-                          try
-                            ignore(main_impl_rev ~html [] [] tokens);
-                            if debug then
-                              eprintf "(OMD) 3524 BHTML closing tag not found \
-                                       in %S\n%!" (L.destring_of_tokens tokens);
-                            warn
-                              (sprintf
-                                 "Closing tag `%s' not found for text/omd zone."
-                                 t);
-                            mediatypetextomd := List.tl !mediatypetextomd;
-                            None
-                          with Orphan_closing(tagname, delimiter, after) ->
-                            let before =
-                              let rec f r = function
-                                | Lessthans n as e :: tl ->
-                                    begin match delimiter with
-                                    | Lessthan::_ ->
-                                        if Lessthan::tl = delimiter then
-                                          List.rev
-                                            (if n = 0 then
-                                               Lessthan::r
-                                             else
-                                               Lessthans(n-1)::r)
-                                        else
-                                          f (e::r) tl
-                                    | _ ->
-                                        if tl == delimiter || tl = delimiter then
-                                          List.rev r
-                                        else
-                                          f (e::r) tl
-                                    end
-                                | e::tl as l ->
-                                    if l == delimiter || l = delimiter then
-                                      List.rev r
-                                    else if tl == delimiter || tl = delimiter then
-                                      List.rev (e::r)
-                                    else
-                                      f (e::r) tl
-                                | [] -> List.rev r
-                              in
-                              f [] tokens
-                            in
-                            if debug then
-                              eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
-                                       after=%s before=%s (tagname=t)=%b\n%!"
-                                (L.destring_of_tokens tokens)
-                                (L.destring_of_tokens delimiter)
-                                (L.destring_of_tokens after)
-                                (L.destring_of_tokens before)
-                                (tagname = t);
-                            (match !mediatypetextomd with
-                             | _ :: tl -> mediatypetextomd := tl
-                             | [] -> assert false);
-                            if tagname = t then
-                              loop
-                                [T.HTML
-                                   (t,
-                                    attrs,
-                                    [T.MD
-                                       (main_impl ~html [] []
-                                          (tag_setext main_loop before))])]
-                                []
-                                tagstatus
-                                after
-                            else
-                              None
-                        )
-                      else
-                        begin
-                          if debug then eprintf "(OMD) 3571 BHTML loop\n%!";
-                          match loop body [] (T.Open t::tagstatus) tokens with
-                          | None ->
-                              if debug then
-                                eprintf "(OMD) 3519 BHTML \
-                                         Couldn't find an closing tag for %S\n%!"
-                                  t;
-                              None
-                          | Some(body, l) ->
-                              if debug then
-                                eprintf "(OMD) 3498 BHTML Found a closing tag %s\n%!" t;
-                              match tagstatus with
-                              | _ :: _ ->
-                                  loop [T.HTML(t, attrs, body)] [] tagstatus l
+                      if List.mem ("media:type", Some "text/omd") attrs then begin
+                        mediatypetextomd := t :: !mediatypetextomd;
+                        try
+                          ignore(main_impl_rev ~html [] [] tokens);
+                          if debug then
+                            eprintf "(OMD) 3524 BHTML closing tag not found in %S\n%!" (L.destring_of_tokens tokens);
+                          warn (sprintf "Closing tag `%s' not found for text/omd zone." t);
+                          mediatypetextomd := List.tl !mediatypetextomd;
+                          None
+                        with Orphan_closing (tagname, delimiter, after) ->
+                          let before =
+                            let rec f r = function
+                              | Delim (n, Lessthan) as e :: tl when n >= 2 ->
+                                  begin match delimiter with
+                                  | Delim (1, Lessthan) :: _ ->
+                                      if Delim (1, Lessthan) :: tl = delimiter then
+                                        List.rev (delim (n-1) Lessthan r)
+                                      else
+                                        f (e :: r) tl
+                                  | _ ->
+                                      if tl = delimiter then
+                                        List.rev r
+                                      else
+                                        f (e :: r) tl
+                                  end
+                              | e :: tl as l ->
+                                  if l = delimiter then
+                                    List.rev r
+                                  else if tl = delimiter then
+                                    List.rev (e :: r)
+                                  else
+                                    f (e :: r) tl
                               | [] ->
-                                  Some([T.HTML(t, attrs, body)], l)
-                        end
+                                  List.rev r
+                            in
+                            f [] tokens
+                          in
+                          if debug then
+                            eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
+                                     after=%s before=%s (tagname=t)=%b\n%!"
+                              (L.destring_of_tokens tokens)
+                              (L.destring_of_tokens delimiter)
+                              (L.destring_of_tokens after)
+                              (L.destring_of_tokens before)
+                              (tagname = t);
+                          begin match !mediatypetextomd with
+                          | _ :: tl ->
+                              mediatypetextomd := tl
+                          | [] ->
+                              assert false
+                          end;
+                          if tagname = t then
+                            loop
+                              [T.HTML (t, attrs, [T.MD (main_impl ~html [] [] (tag_setext main_loop before))])]
+                              [] tagstatus after
+                          else
+                            None
+                      end else begin
+                        if debug then eprintf "(OMD) 3571 BHTML loop\n%!";
+                        match loop body [] (T.Open t :: tagstatus) tokens with
+                        | None ->
+                            if debug then
+                              eprintf "(OMD) 3519 BHTML Couldn't find an closing tag for %S\n%!" t;
+                            None
+                        | Some(body, l) ->
+                            if debug then
+                              eprintf "(OMD) 3498 BHTML Found a closing tag %s\n%!" t;
+                            match tagstatus with
+                            | _ :: _ ->
+                                loop [T.HTML (t, attrs, body)] [] tagstatus l
+                            | [] ->
+                                Some([T.HTML (t, attrs, body)], l)
+                      end
                   | T.Open t :: _ ->
-                      if debug then
-                        eprintf
-                          "(OMD) 3591 BHTML Some `>` isn't for an opening tag\n%!";
-                      loop (add_token_to_body Greaterthan body)
-                        attrs tagstatus tokens
+                      if debug then eprintf "(OMD) 3591 BHTML Some `>` isn't for an opening tag\n%!";
+                      loop (add_token_to_body (Delim (1, Greaterthan)) body) attrs tagstatus tokens
                   | [] ->
-                      if debug then
-                        eprintf "(OMD) 3542 BHTML tagstatus=[]\n%!";
+                      if debug then eprintf "(OMD) 3542 BHTML tagstatus=[]\n%!";
                       None
                   end
 
               (* maybe attribute *)
-              | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
-              | (Space|Spaces _)
-                ::(Colon|Colons _|Underscore|Underscores _|Word _ as t)
-                ::tokens
-                when (match tagstatus with
-                    | T.Awaiting _ :: _ -> true
-                    | _ -> false) ->
-                  begin
-                    let module Attribute_value = struct
-                      type t = Empty of name | Named of name | Void
-                      and name = string
-                    end in
-                    let open Attribute_value in
-                    let rec extract_attribute accu = function
-                      | (Space | Spaces _ | Newline) :: tokens->
-                          Empty(L.string_of_tokens(List.rev accu)), tokens
-                      | (Greaterthan|Greaterthans _) :: _ as tokens->
-                          Empty(L.string_of_tokens(List.rev accu)), tokens
-                      | Equal :: tokens ->
-                          Named(L.string_of_tokens(List.rev accu)), tokens
-                      | Colon | Colons _ | Underscore | Underscores _ | Word _
-                      | Number _ | Minus | Minuss _ | Dot | Dots _ as t :: tokens ->
-                          extract_attribute (t::accu) tokens
-                      | tokens -> Void, tokens
-                    in
-                    match extract_attribute [t] tokens with
-                    | Empty attributename, tokens ->
-                        (* attribute with no explicit value *)
-                        if debug then eprintf "(OMD) 3628 BHTML loop\n%!";
-                        loop body ((attributename, None)::attrs) tagstatus tokens
-                    | Named attributename, tokens ->
-                        begin match tokens with
-                        | Quotes 0 :: tokens ->
-                            if debug then
-                              eprintf "(OMD) 3661 BHTML empty attribute 1 %S\n%!"
-                                (L.string_of_tokens tokens);
-                            loop body ((attributename, Some "")::attrs)
-                              tagstatus tokens
-                        | Quote :: tokens ->
-                            begin
+              | (Delim (_, (Colon|Underscore)) | Word _ as t) :: tokens
+              | Delim (_, Space) :: (Delim (_, (Colon|Underscore)) | Word _ as t) :: tokens
+                when (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+                  let module Attribute_value = struct
+                    type t = Empty of name | Named of name | Void
+                    and name = string
+                  end
+                  in
+                  let open Attribute_value in
+                  let rec extract_attribute accu = function
+                    | (Delim (_, Space) | Delim (1, Newline)) :: tokens->
+                        Empty (L.string_of_tokens (List.rev accu)), tokens
+                    | Delim (_, Greaterthan) :: _ as tokens->
+                        Empty (L.string_of_tokens (List.rev accu)), tokens
+                    | Delim (1, Equal) :: tokens ->
+                        Named (L.string_of_tokens (List.rev accu)), tokens
+                    | Word _ | Number _ | Delim (_, (Colon|Underscore|Minus|Dot)) as t :: tokens ->
+                        extract_attribute (t::accu) tokens
+                    | tokens ->
+                        Void, tokens
+                  in
+                  begin match extract_attribute [t] tokens with
+                  | Empty attributename, tokens ->
+                      (* attribute with no explicit value *)
+                      if debug then eprintf "(OMD) 3628 BHTML loop\n%!";
+                      loop body ((attributename, None) :: attrs) tagstatus tokens
+                  | Named attributename, tokens ->
+                      begin match tokens with
+                      | Delim (2, Quote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) 3661 BHTML empty attribute 1 %S\n%!" (L.string_of_tokens tokens);
+                          loop body ((attributename, Some "") :: attrs) tagstatus tokens
+                      | Delim (1, Quote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) 3668 BHTML non empty attribute 1 %S\n%!" (L.string_of_tokens tokens);
+                          begin match
+                            fsplit
+                              ~excl:(function
+                                  | Delim (n, Quote) :: _ when n >= 2 ->
+                                      true
+                                  | _ ->
+                                      false
+                                )
+                              ~f:(function
+                                  | Delim (1, Quote) :: tl ->
+                                      Split ([], tl)
+                                  | _ ->
+                                      Continue
+                                )
+                              tokens
+                          with
+                          | None ->
+                              None
+                          | Some(at_val, tokens) ->
+                              if debug then eprintf "(OMD) 3654 BHTML loop\n%!";
+                              loop body ((attributename, Some (L.string_of_tokens at_val)) :: attrs) tagstatus tokens
+                          end
+                      | Delim (2, Doublequote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) 3690 BHTML empty attribute 2 %S\n%!" (L.string_of_tokens tokens);
+                          loop body ((attributename, Some "") :: attrs) tagstatus tokens
+                      | Delim (1, Doublequote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) 3698 BHTML non empty attribute 2 %S\n%!"
+                              (L.string_of_tokens tokens);
+                          begin match
+                            fsplit
+                              ~excl:(function
+                                  | Delim (n, Doublequote) :: _ when n >= 2 -> true
+                                  | _ -> false
+                                )
+                              ~f:(function
+                                  | Delim (1, Doublequote) :: tl ->
+                                      Split ([], tl)
+                                  | _ ->
+                                      Continue
+                                ) tokens
+                          with
+                          | None ->
+                              None
+                          | Some (at_val, tokens) ->
                               if debug then
-                                eprintf "(OMD) 3668 BHTML non empty attribute 1 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              match
-                                fsplit
-                                  ~excl:(function
-                                      | Quotes _ :: _ -> true
-                                      | _ -> false)
-                                  ~f:(function
-                                      | Quote::tl -> Split([], tl)
-                                      | _ -> Continue)
-                                  tokens
-                              with
-                              | None -> None
-                              | Some(at_val, tokens) ->
-                                  if debug then eprintf "(OMD) 3654 BHTML loop\n%!";
-                                  loop body ((attributename,
-                                              Some(L.string_of_tokens at_val))
-                                             ::attrs) tagstatus tokens
-                            end
-                        | Doublequotes 0 :: tokens ->
-                            begin
-                              if debug then
-                                eprintf "(OMD) 3690 BHTML empty attribute 2 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              loop body ((attributename, Some "")::attrs)
+                                eprintf "(OMD) 3622 BHTML %s=%S %s\n%!" attributename
+                                  (L.string_of_tokens at_val) (L.destring_of_tokens tokens);
+                              loop body ((attributename, Some (L.string_of_tokens at_val)) :: attrs)
                                 tagstatus tokens
-                            end
-                        | Doublequote :: tokens ->
-                            begin
-                              if debug then
-                                eprintf "(OMD) 3698 BHTML non empty attribute 2 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              match fsplit
-                                      ~excl:(function
-                                          | Doublequotes _ :: _ -> true
-                                          | _ -> false)
-                                      ~f:(function
-                                          | Doublequote::tl -> Split([], tl)
-                                          | _ -> Continue)
-                                      tokens
-                              with
-                              | None -> None
-                              | Some(at_val, tokens) ->
-                                  if debug then
-                                    eprintf "(OMD) 3622 BHTML %s=%S %s\n%!"
-                                      attributename
-                                      (L.string_of_tokens at_val)
-                                      (L.destring_of_tokens tokens);
-                                  loop body ((attributename,
-                                              Some(L.string_of_tokens at_val))
-                                             ::attrs) tagstatus tokens
-                            end
-                        | _ -> None
-                        end
-                    | Void, _ -> None
+                          end
+                      | _ ->
+                          None
+                      end
+                  | Void, _ ->
+                      None
                   end
 
-              | x::tokens as dgts
-                when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) 3620 BHTML general %S\n%!"
-                        (L.string_of_tokens dgts);
-                    loop (add_token_to_body x body) attrs tagstatus tokens
-                  end
-              | (Newline | Space | Spaces _) :: tokens
-                when
-                  (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
-                  begin
-                    if debug then eprintf "(OMD) 3737 BHTML spaces\n%!";
-                    loop body attrs tagstatus tokens
-                  end
-              | (Newlines _ as x) :: tokens
-                when
-                  (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
-                  begin
-                    if debug then eprintf "(OMD) 3827 BHTML newlines\n%!";
-                    warn "there are empty lines in what may be an HTML block";
-                    loop (add_token_to_body x body) attrs tagstatus tokens
-                  end
+              | x :: tokens as dgts when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
+                  if debug then
+                    eprintf "(OMD) 3620 BHTML general %S\n%!"
+                      (L.string_of_tokens dgts);
+                  loop (add_token_to_body x body) attrs tagstatus tokens
+              | (Delim (1, Newline) | Delim (_, Space)) :: tokens when (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+                  if debug then eprintf "(OMD) 3737 BHTML spaces\n%!";
+                  loop body attrs tagstatus tokens
+              | (Delim (n, Newline) as x) :: tokens when n >= 2 && (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+                  if debug then eprintf "(OMD) 3827 BHTML newlines\n%!";
+                  warn "there are empty lines in what may be an HTML block";
+                  loop (add_token_to_body x body) attrs tagstatus tokens
               | _ ->
                   if debug then
-                    eprintf "(OMD) 3742 BHTML fallback with \
-                             tokens=%s and tagstatus=%s\n%!"
+                    eprintf "(OMD) 3742 BHTML fallback with tokens=%s and tagstatus=%s\n%!"
                       (L.destring_of_tokens tokens)
                       (match tagstatus with
                        | [] -> "None"
                        | T.Awaiting _ :: _ -> "Awaiting"
                        | T.Open _ :: _ -> "Open (can't be)");
-                  (match tagstatus with
-                   | [] -> Some(body, tokens)
+                  begin match tagstatus with
+                  | [] ->
+                      Some(body, tokens)
                    | T.Awaiting tag :: _ ->
-                       warn (sprintf "expected to read an open HTML tag (%s), \
-                                      but found nothing" tag);
+                       warn (sprintf "expected to read an open HTML tag (%s), but found nothing" tag);
                        None
                    | T.Open tag :: _ ->
-                       warn (sprintf "expected to find the closing HTML tag for %s, \
-                                      but found nothing" tag);
-                       None)
+                       warn (sprintf "expected to find the closing HTML tag for %s, but found nothing" tag);
+                       None
+                  end
             in
             if debug then eprintf "(OMD) 3408 BHTML loop\n%!";
             match loop [] [] [] lexemes with
-            | Some(h, rest) ->
-                Some(T.md_of_interm_list h, rest)
-            | None -> None
+            | Some (h, rest) ->
+                Some (T.md_of_interm_list h, rest)
+            | None ->
+                None
           in
           begin match read_html() with
           | Some(h, rest) ->
-              main_impl_rev ~html (h@r) [Tag("HTMLBLOCK", empty_extension)] rest
+              main_impl_rev ~html (h@r) [Tag ("HTMLBLOCK", empty_extension)] rest
           | None ->
               let text = L.string_of_token t in
-              main_impl_rev ~html (Text(text ^ tagnametop)::r) [w] html_stuff
+              main_impl_rev ~html (Text (text ^ tagnametop)::r) [w] html_stuff
           end
     (* / end of block HTML. *)
 
-
     (* inline HTML *)
-    | _,
-      (Lessthan as t)
-      ::((Word(tagnametop) as w)
-         ::((Space|Spaces _|Greaterthan|Greaterthans _)
-            ::_ as html_stuff) as tlx) ->
-        if (strict_html && not(StringSet.mem tagnametop inline_htmltags_set))
-        || not(blind_html || StringSet.mem tagnametop htmltags_set)
-        then
-          begin match maybe_extension extensions r previous lexemes with
-          | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tlx
-          | Some(r, p, l) -> main_impl_rev ~html r p l
-          end
-        else
+    | _, (Delim (1, Lessthan) as t) :: ((Word tagnametop as w) :: (Delim (_, (Space|Greaterthan)) :: _ as html_stuff) as tlx) ->
+        if (strict_html && not(StringSet.mem tagnametop inline_htmltags_set)) ||
+           not (blind_html || StringSet.mem tagnametop htmltags_set)
+        then begin
+          match maybe_extension extensions r previous lexemes with
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tlx
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
+        end else
           let read_html() =
             let module T = struct
               type t =
                 | Awaiting of string
                 | Open of string
+
               type interm =
                 | HTML of string * (string * string option) list * interm list
                 | TOKENS of L.t
                 | MD of Omd_representation.t
+
               let rec md_of_interm_list = function
-                | [] -> []
-                | HTML(t, a, c)::tl ->
-                    Html(t, a, md_of_interm_list(List.rev c))::md_of_interm_list tl
-                | MD md::tl -> md @ md_of_interm_list tl
-                | TOKENS t1::TOKENS t2::tl ->
-                    md_of_interm_list (TOKENS(t1@t2)::tl)
+                | [] ->
+                    []
+                | HTML (t, a, c) :: tl ->
+                    Html (t, a, md_of_interm_list (List.rev c)) :: md_of_interm_list tl
+                | MD md :: tl ->
+                    md @ md_of_interm_list tl
+                | TOKENS t1 :: TOKENS t2 :: tl ->
+                    md_of_interm_list (TOKENS (t1@t2) :: tl)
                 | TOKENS t :: tl ->
-                    main_impl ~html [] [Word ""] (t)
-                    @ md_of_interm_list tl
+                    main_impl ~html [] [Word ""] (t) @ md_of_interm_list tl
+
               let string_of_tagstatus tagstatus =
                 let b = Buffer.create 64 in
                 List.iter (function
-                    | Open t -> bprintf b "{I/Open %s}" t
-                    | Awaiting t -> bprintf b "{I/Awaiting %s}" t
+                    | Open t ->
+                        bprintf b "{I/Open %s}" t
+                    | Awaiting t ->
+                        bprintf b "{I/Awaiting %s}" t
                   ) tagstatus;
                 Buffer.contents b
-            end in
-            let add_token_to_body x body =
-              T.TOKENS[x]::body
+            end
             in
+            let add_token_to_body x body = T.TOKENS[x]::body in
             let rec loop (body:T.interm list) attrs tagstatus tokens =
               if debug then
                 eprintf "(OMD) 3718 loop tagstatus=(%s) %s\n%!"
@@ -2771,151 +2508,116 @@ struct
                   (L.destring_of_tokens tokens);
               match tokens with
               | [] ->
-                  begin
-                    match tagstatus with
-                    | [] -> Some(body, tokens)
-                    | T.Open(t)::_ when StringSet.mem t html_void_elements ->
-                        Some(body, tokens)
-                    | _ ->
-                        if debug then
-                          eprintf "(OMD) Not enough to read for inline HTML\n%!";
-                        None
-                  end
-              | Lessthans n::tokens ->
                   begin match tagstatus with
-                  | T.Awaiting _ :: _ -> None
+                  | [] ->
+                      Some (body, tokens)
+                  | T.Open(t)::_ when StringSet.mem t html_void_elements ->
+                      Some (body, tokens)
                   | _ ->
-                      loop
-                        (add_token_to_body
-                           (if n = 0 then Lessthan else Lessthans(n-1))
-                           body)
-                        attrs tagstatus (Lessthan::tokens)
+                      if debug then eprintf "(OMD) Not enough to read for inline HTML\n%!";
+                      None
+                  end
+              | Delim (n, Lessthan) :: tokens when n >= 2 ->
+                  begin match tagstatus with
+                  | T.Awaiting _ :: _ ->
+                      None
+                  | _ ->
+                      loop (add_token_to_body (Delim (n-1, Lessthan)) body)
+                        attrs tagstatus (Delim (1, Lessthan) :: tokens)
                   end
               (* self-closing tags *)
-              | Slash::Greaterthan::tokens ->
+              | Delim (1, Slash) :: Delim (1, Greaterthan) :: tokens ->
                   begin match tagstatus with
-                  | T.Awaiting(tagname)::tagstatus
-                    when StringSet.mem tagname html_void_elements ->
-                      loop [T.HTML(tagname, attrs, [])] [] tagstatus tokens
+                  | T.Awaiting tagname :: tagstatus when StringSet.mem tagname html_void_elements ->
+                      loop [T.HTML (tagname, attrs, [])] [] tagstatus tokens
                   | _ ->
-                      loop (T.TOKENS[Greaterthan;Slash]::body)
+                      loop (T.TOKENS [Delim (1, Greaterthan); Delim (1, Slash)]::body)
                         attrs tagstatus tokens
                   end
               (* multiple newlines are not to be seen in inline HTML *)
-              | Newlines _ :: _ ->
+              | Delim (n, Newline) :: _ when n >= 2 ->
                   if debug then eprintf "(OMD) Multiple lines in inline HTML\n%!";
-                  (match tagstatus with
-                   | [] -> Some(body, tokens)
-                   | _ -> warn "multiple newlines in inline HTML"; None)
+                  begin match tagstatus with
+                  | [] ->
+                      Some (body, tokens)
+                  | _ ->
+                      warn "multiple newlines in inline HTML";
+                      None
+                  end
               (* maybe code *)
-              | (Backquote | Backquotes _ as b)::tl ->
+              | Delim (_, Backquote) as b :: tl ->
                   begin match tagstatus with
                   | T.Awaiting _ :: _ ->
-                      if debug then
-                        eprintf "(OMD) maybe code in inline HTML: no code\n%!";
+                      if debug then eprintf "(OMD) maybe code in inline HTML: no code\n%!";
                       None
                   | [] ->
-                      if debug then
-                        eprintf "(OMD) maybe code in inline HTML: none\n%!";
+                      if debug then eprintf "(OMD) maybe code in inline HTML: none\n%!";
                       None
                   | T.Open _ :: _ ->
-                      if debug then
-                        eprintf "(OMD) maybe code in inline HTML: let's try\n%!";
-                      begin match bcode [] [Space] tokens with
-                      | Some (((Code _::_) as c), p, l) ->
-                          if debug then
-                            eprintf "(OMD) maybe code in inline HTML: \
-                                     confirmed\n%!";
-                          loop (T.MD c::body) [] tagstatus l
+                      if debug then eprintf "(OMD) maybe code in inline HTML: let's try\n%!";
+                      begin match bcode [] [Delim (1, Space)] tokens with
+                      | Some ((Code _ :: _) as c, p, l) ->
+                          if debug then eprintf "(OMD) maybe code in inline HTML: confirmed\n%!";
+                          loop (T.MD c :: body) [] tagstatus l
                       | _ ->
-                          if debug then
-                            eprintf "(OMD) maybe code in inline HTML: failed\n%!";
-                          loop (T.TOKENS[b]::body) [] tagstatus tl
+                          if debug then eprintf "(OMD) maybe code in inline HTML: failed\n%!";
+                          loop (T.TOKENS [b] :: body) [] tagstatus tl
                       end
                   end
               (* closing the tag *)
-              | Lessthan::Slash::(Word(tagname) as w)
-                ::(Greaterthan|Greaterthans _ as g)::tokens ->
+              | Delim (1, Lessthan) :: Delim (1, Slash) :: (Word tagname as w) :: (Delim (n, Greaterthan) as g) :: tokens ->
                   begin match tagstatus with
                   | T.Open t :: _ when t = tagname ->
-                      if debug then
-                        eprintf "(OMD) 4136 properly closing %S tokens=%s\n%!"
-                          t (L.string_of_tokens tokens);
-                      Some(body,
-                           (match g with
-                            | Greaterthans 0 -> Greaterthan :: tokens
-                            | Greaterthans n -> Greaterthans(n-1) :: tokens
-                            | _ -> tokens))
+                      if debug then eprintf "(OMD) 4136 properly closing %S tokens=%s\n%!" t (L.string_of_tokens tokens);
+                      Some (body, delim (n-1) Greaterthan tokens)
                   | T.Open t :: _ ->
-                      if debug then
-                        eprintf "(OMD) 4144 \
-                                 wrongly closing %S with %S 1\n%!" t tagname;
-                      loop (T.TOKENS[g;w;Slash;Lessthan]::body) [] tagstatus tokens
+                      if debug then eprintf "(OMD) 4144 wrongly closing %S with %S 1\n%!" t tagname;
+                      loop (T.TOKENS [g; w; Delim (1, Slash); Delim (1, Lessthan)] :: body) [] tagstatus tokens
                   | T.Awaiting t :: _ ->
-                      if debug then
-                        eprintf "(OMD) 4149 \
-                                 wrongly closing %S with %S 2\n%!" t tagname;
+                      if debug then eprintf "(OMD) 4149 wrongly closing %S with %S 2\n%!" t tagname;
                       None
                   | [] ->
-                      if debug then
-                        eprintf "(OMD) 4154 \
-                                 wrongly closing nothing with %S 3\n%!"
-                          tagname;
+                      if debug then eprintf "(OMD) 4154 wrongly closing nothing with %S 3\n%!" tagname;
                       None
                   end
               (* tag *)
-              | Lessthan::(Word(tagname) as word)::tokens
-                when
-                  blind_html
-                  || (strict_html && StringSet.mem tagname inline_htmltags_set)
-                  || (not strict_html && StringSet.mem tagname htmltags_set)
-                ->
+              | Delim (1, Lessthan) :: (Word tagname as word) :: tokens
+                when blind_html ||
+                     (strict_html && StringSet.mem tagname inline_htmltags_set) ||
+                     (not strict_html && StringSet.mem tagname htmltags_set) ->
                   if debug then eprintf "(OMD) <%s...\n%!" tagname;
                   begin match tagstatus with
-                  | T.Open(t) :: _
-                    when t <> tagname && StringSet.mem t html_void_elements ->
+                  | T.Open(t) :: _ when t <> tagname && StringSet.mem t html_void_elements ->
                       None
-                  | T.Awaiting _ :: _ -> None
+                  | T.Awaiting _ :: _ ->
+                      None
                   | _ ->
-                      begin
-                        if debug then
-                          eprintf "(OMD) 3796 tag %s, attrs=[]\n%!" tagname;
-                        match loop [] [] (T.Awaiting tagname::tagstatus) tokens
-                        with
-                        | None ->
-                            loop (T.TOKENS[word;Lessthan]::body)
-                              attrs tagstatus tokens
-                        | Some(b,tokens) ->
-                            Some(b@body, tokens)
+                      if debug then eprintf "(OMD) 3796 tag %s, attrs=[]\n%!" tagname;
+                      begin match loop [] [] (T.Awaiting tagname :: tagstatus) tokens with
+                      | None ->
+                          loop (T.TOKENS [word; Delim (1, Lessthan)] :: body) attrs tagstatus tokens
+                      | Some (b,tokens) ->
+                          Some (b@body, tokens)
                       end
                   end
               (* end of opening tag *)
-              | Greaterthan::tokens ->
+              | Delim (1, Greaterthan) :: tokens ->
                   if debug then
-                    eprintf "(OMD) 4185 end of opening tag tokens=%s \
-                             tagstatus=%s\n%!"
-                      (L.string_of_tokens tokens)
-                      (T.string_of_tagstatus tagstatus);
+                    eprintf "(OMD) 4185 end of opening tag tokens=%s tagstatus=%s\n%!"
+                      (L.string_of_tokens tokens) (T.string_of_tagstatus tagstatus);
                   begin match tagstatus with
                   | T.Awaiting t :: tagstatus as ts ->
-                      begin match loop body [] (T.Open t::tagstatus) tokens with
+                      begin match loop body [] (T.Open t :: tagstatus) tokens with
                       | None ->
-                          if debug then
-                            eprintf "(OMD) 4186 \
-                                     Couldn't find an closing tag for %S\n%!"
-                              t;
+                          if debug then eprintf "(OMD) 4186 Couldn't find an closing tag for %S\n%!" t;
                           None
                       | Some(b, tokens) ->
                           if debug then
-                            eprintf
-                              "(OMD) 4192 Found a closing tag %s ts=%s \
-                               tokens=%s\n%!"
-                              t
-                              (T.string_of_tagstatus ts)
-                              (L.string_of_tokens tokens);
+                            eprintf "(OMD) 4192 Found a closing tag %s ts=%s \ tokens=%s\n%!" t
+                              (T.string_of_tagstatus ts) (L.string_of_tokens tokens);
                           match tagstatus with
                           | [] ->
-                              Some(T.HTML(t, attrs, b)::body, tokens)
+                              Some(T.HTML (t, attrs, b) :: body, tokens)
                           | _ ->
                               (* Note: we don't care about the value of
                                  [attrs] here because in we have a
@@ -2923,395 +2625,375 @@ struct
                                  there's a corresponding filter that will
                                  take care of attrs that will take care of
                                  it. *)
-                              loop (T.HTML(t, attrs, b)::body) [] tagstatus tokens
+                              loop (T.HTML (t, attrs, b) :: body) [] tagstatus tokens
                       end
                   | T.Open t :: _ ->
-                      if debug then
-                        eprintf
-                          "(OMD) Turns out an `>` isn't for an opening tag\n%!";
-                      loop (T.TOKENS[Greaterthan]::body) attrs tagstatus tokens
+                      if debug then eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
+                      loop (T.TOKENS [Delim (1, Greaterthan)] :: body) attrs tagstatus tokens
                   | [] ->
-                      if debug then
-                        eprintf "(OMD) 4202 tagstatus=[]\n%!";
+                      if debug then eprintf "(OMD) 4202 tagstatus=[]\n%!";
                       None
                   end
 
               (* maybe attribute *)
-              | (Colon|Colons _|Underscore|Underscores _|Word _ as t)::tokens
-              | (Space|Spaces _)
-                ::(Colon|Colons _|Underscore|Underscores _|Word _ as t)
-                ::tokens
-                when (match tagstatus with
-                    | T.Awaiting _ :: _ -> true
-                    | _ -> false) ->
-                  begin
-                    let module Attribute_value = struct
-                      type t = Empty of name | Named of name | Void
-                      and name = string
-                    end in
-                    let open Attribute_value in
-                    let rec extract_attribute accu = function
-                      | (Space | Spaces _ | Newline) :: tokens->
-                          Empty(L.string_of_tokens(List.rev accu)), tokens
-                      | (Greaterthan|Greaterthans _) :: _ as tokens->
-                          Empty(L.string_of_tokens(List.rev accu)), tokens
-                      | Equal :: tokens ->
-                          Named(L.string_of_tokens(List.rev accu)), tokens
-                      | Colon | Colons _ | Underscore | Underscores _ | Word _
-                      | Number _ | Minus | Minuss _ | Dot | Dots _ as t :: tokens ->
-                          extract_attribute (t::accu) tokens
-                      | tokens -> Void, tokens
-                    in
-                    match extract_attribute [t] tokens with
-                    | Empty attributename, tokens ->
-                        (* attribute with no explicit value *)
-                        loop body ((attributename, None)::attrs) tagstatus tokens
-                    | Named attributename, tokens ->
-                        begin match tokens with
-                        | Quotes 0 :: tokens ->
-                            if debug then
-                              eprintf "(OMD) (IHTML) empty attribute 1 %S\n%!"
-                                (L.string_of_tokens tokens);
-                            loop body ((attributename, Some "")::attrs) tagstatus tokens
-                        | Quote :: tokens ->
-                            begin
+              | (Delim (_, (Colon|Underscore)) | Word _ as t) :: tokens
+              | Delim (_, Space) :: (Delim (_, (Colon|Underscore)) | Word _ as t) :: tokens
+                when (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+                  let module Attribute_value = struct
+                    type t = Empty of name | Named of name | Void
+                    and name = string
+                  end
+                  in
+                  let open Attribute_value in
+                  let rec extract_attribute accu = function
+                    | (Delim (_, Space) | Delim (1, Newline)) :: tokens->
+                        Empty (L.string_of_tokens (List.rev accu)), tokens
+                    | Delim (_, Greaterthan) :: _ as tokens->
+                        Empty (L.string_of_tokens (List.rev accu)), tokens
+                    | Delim (1, Equal) :: tokens ->
+                        Named (L.string_of_tokens (List.rev accu)), tokens
+                    | Delim (_, (Colon|Underscore|Minus|Dot)) | Word _ | Number _ as t :: tokens ->
+                        extract_attribute (t :: accu) tokens
+                    | tokens ->
+                        Void, tokens
+                  in
+                  begin match extract_attribute [t] tokens with
+                  | Empty attributename, tokens ->
+                      (* attribute with no explicit value *)
+                      loop body ((attributename, None) :: attrs) tagstatus tokens
+                  | Named attributename, tokens ->
+                      begin match tokens with
+                      | Delim (2, Quote) :: tokens ->
+                          if debug then eprintf "(OMD) (IHTML) empty attribute 1 %S\n%!" (L.string_of_tokens tokens);
+                          loop body ((attributename, Some "") :: attrs) tagstatus tokens
+                      | Delim (1, Quote) :: tokens ->
+                          if debug then eprintf "(OMD) (IHTML) non empty attribute 1 %S\n%!" (L.string_of_tokens tokens);
+                          begin match
+                            fsplit
+                              ~excl:(function
+                                  | Delim (n, Quote) :: _ when n >= 2 ->
+                                      true
+                                  | _ ->
+                                      false
+                                )
+                              ~f:(function
+                                  | Delim (1, Quote) :: tl ->
+                                      Split ([], tl)
+                                  | _ ->
+                                      Continue
+                                ) tokens
+                          with
+                          | None -> None
+                          | Some(at_val, tokens) ->
+                              loop body ((attributename, Some (L.string_of_tokens at_val)) :: attrs) tagstatus tokens
+                          end
+                      | Delim (2, Doublequote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) (IHTML) empty attribute 2 %S\n%!"
+                              (L.string_of_tokens tokens);
+                          loop body ((attributename, Some "") :: attrs) tagstatus tokens
+                      | Delim (1, Doublequote) :: tokens ->
+                          if debug then
+                            eprintf "(OMD) (IHTML) non empty attribute 2 %S\n%!"
+                              (L.string_of_tokens tokens);
+                          begin match
+                            fsplit
+                              ~excl:(function
+                                  | Delim (n, Doublequote) :: _ when n >= 2 ->
+                                      true
+                                  | _ ->
+                                      false
+                                )
+                              ~f:(function
+                                  | Delim (1, Doublequote) :: tl ->
+                                      Split ([], tl)
+                                  | _ ->
+                                      Continue
+                                ) tokens
+                          with
+                          | None ->
+                              None
+                          | Some (at_val, tokens) ->
                               if debug then
-                                eprintf "(OMD) (IHTML) non empty attribute 1 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              match
-                                fsplit
-                                  ~excl:(function
-                                      | Quotes _ :: _ -> true
-                                      | _ -> false)
-                                  ~f:(function
-                                      | Quote::tl -> Split([], tl)
-                                      | _ -> Continue)
-                                  tokens
-                              with
-                              | None -> None
-                              | Some(at_val, tokens) ->
-                                  loop body ((attributename,
-                                              Some(L.string_of_tokens at_val))
-                                             ::attrs) tagstatus tokens
-                            end
-                        | Doublequotes 0 :: tokens ->
-                            begin
-                              if debug then
-                                eprintf "(OMD) (IHTML) empty attribute 2 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              loop body ((attributename, Some "")::attrs) tagstatus tokens
-                            end
-                        | Doublequote :: tokens ->
-                            begin
-                              if debug then
-                                eprintf "(OMD) (IHTML) non empty attribute 2 %S\n%!"
-                                  (L.string_of_tokens tokens);
-                              match fsplit
-                                      ~excl:(function
-                                          | Doublequotes _ :: _ -> true
-                                          | _ -> false)
-                                      ~f:(function
-                                          | Doublequote::tl -> Split([], tl)
-                                          | _ -> Continue)
-                                      tokens
-                              with
-                              | None -> None
-                              | Some(at_val, tokens) ->
-                                  if debug then
-                                    eprintf "(OMD) (3957) %s=%S %s\n%!" attributename
-                                      (L.string_of_tokens at_val)
-                                      (L.destring_of_tokens tokens);
-                                  loop body ((attributename,
-                                              Some(L.string_of_tokens at_val))
-                                             ::attrs) tagstatus tokens
-                            end
-                        | _ -> None
-                        end
-                    | Void, _ -> None
+                                eprintf "(OMD) (3957) %s=%S %s\n%!" attributename
+                                  (L.string_of_tokens at_val) (L.destring_of_tokens tokens);
+                              loop body ((attributename, Some (L.string_of_tokens at_val)) :: attrs) tagstatus tokens
+                          end
+                      | _ ->
+                          None
+                      end
+                  | Void, _ ->
+                      None
                   end
 
-              | Backslash::x::tokens
-                when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
-                  loop (T.TOKENS[Backslash;x]::body) attrs tagstatus tokens
-              | Backslashs(n)::x::tokens
-                when (match tagstatus with T.Open _ :: _ -> true | _ -> false)
-                  && n mod 2 = 1 ->
-                  loop (T.TOKENS[Backslashs(n);x]::body) attrs tagstatus tokens
+              | Delim (n, Backslash) :: x :: tokens when (match tagstatus with T.Open _ :: _ -> true | _ -> false) && n mod 2 = 1 ->
+                  loop (T.TOKENS [Delim (n, Backslash); x] :: body) attrs tagstatus tokens
 
-              | x::tokens
-                when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
-                  begin
-                    if debug then
-                      eprintf "(OMD) (4161) general %S\n%!"
-                        (L.string_of_tokens (x::tokens));
-                    loop (T.TOKENS[x]::body) attrs tagstatus tokens
-                  end
-              | (Newline | Space | Spaces _) :: tokens
-                when
-                  (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
-                  begin
-                    if debug then eprintf "(OMD) (4289) spaces\n%!";
-                    loop body attrs tagstatus tokens
-                  end
+              | x :: tokens when (match tagstatus with T.Open _ :: _ -> true | _ -> false) ->
+                  if debug then eprintf "(OMD) (4161) general %S\n%!" (L.string_of_tokens (x::tokens));
+                  loop (T.TOKENS [x] :: body) attrs tagstatus tokens
+              | (Delim (1, Newline) | Delim (_, Space)) :: tokens when (match tagstatus with T.Awaiting _ :: _ -> true | _ -> false) ->
+                  if debug then eprintf "(OMD) (4289) spaces\n%!";
+                  loop body attrs tagstatus tokens
               | _ ->
                   if debug then
-                    eprintf "(OMD) (4294) \
-                             fallback with tokens=%s and tagstatus=%s\n%!"
-                      (L.destring_of_tokens tokens)
-                      (T.string_of_tagstatus tagstatus);
-                  (match tagstatus with
-                   | [] -> Some(body, tokens)
-                   | T.Awaiting tag :: _ ->
-                       warn (sprintf "expected to read an open HTML tag (%s), \
-                                      but found nothing" tag);
-                       None
-                   | T.Open tag :: _ ->
-                       warn (sprintf "expected to find the closing HTML tag for %s, \
-                                      but found nothing" tag);
-                       None)
+                    eprintf "(OMD) (4294) fallback with tokens=%s and tagstatus=%s\n%!"
+                      (L.destring_of_tokens tokens) (T.string_of_tagstatus tagstatus);
+                  begin match tagstatus with
+                  | [] ->
+                      Some (body, tokens)
+                  | T.Awaiting tag :: _ ->
+                      warn (sprintf "expected to read an open HTML tag (%s), but found nothing" tag);
+                      None
+                  | T.Open tag :: _ ->
+                      warn (sprintf "expected to find the closing HTML tag for %s, but found nothing" tag);
+                      None
+                  end
             in match loop [] [] [] lexemes with
-            | Some(html, rest) ->
-                Some(T.md_of_interm_list html, rest)
-            | None -> None
+            | Some (html, rest) ->
+                Some (T.md_of_interm_list html, rest)
+            | None ->
+                None
           in
           begin match read_html() with
           | Some(h, rest) ->
-              main_impl_rev ~html (h@r) [Greaterthan] rest
+              main_impl_rev ~html (h@r) [Delim (1, Greaterthan)] rest
           | None ->
               let text = L.string_of_token t in
-              main_impl_rev ~html (Text(text ^ tagnametop)::r) [w] html_stuff
+              main_impl_rev ~html (Text (text ^ tagnametop) :: r) [w] html_stuff
           end
     (* / end of inline HTML. *)
 
     (* < : emails *)
-    | _, (Lessthan as t)::tl ->
+    | _, (Delim (1, Lessthan) as t) :: tl ->
         begin match maybe_autoemail r previous lexemes with
-        | Some(r,p,l) -> main_impl_rev ~html r p l
+        | Some (r,p,l) ->
+            main_impl_rev ~html r p l
         | None ->
             begin match maybe_extension extensions r previous lexemes with
             | None ->
-                main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-            | Some(r, p, l) ->
+                main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+            | Some (r, p, l) ->
                 main_impl_rev ~html r p l
             end
         end
 
     (* line breaks *)
-    | _, Newline::tl ->
-        main_impl_rev ~html (NL::r) [Newline] tl
-    | _, Newlines _::tl ->
-        main_impl_rev ~html (NL::NL::r) [Newline] tl
+    | _, Delim (1, Newline) :: tl ->
+        main_impl_rev ~html (NL :: r) [Delim (1, Newline)] tl
+    | _, Delim (n, Newline) :: tl (* n >= 2 *) ->
+        main_impl_rev ~html (NL :: NL :: r) [Delim (1, Newline)] tl
 
     (* [ *)
-    | _, (Obracket as t)::tl ->
+    | _, (Delim (1, Obracket) as t) :: tl ->
         begin match maybe_link main_loop r previous tl with
-        | Some(r, p, l) -> main_impl_rev ~html r p l
+        | Some (r, p, l) ->
+            main_impl_rev ~html r p l
         | None ->
-            match maybe_reference main_loop rc r previous tl with
-            | Some(r, p, l) -> main_impl_rev ~html r p l
+            begin match maybe_reference main_loop rc r previous tl with
+            | Some(r, p, l) ->
+                main_impl_rev ~html r p l
             | None ->
                 begin match maybe_extension extensions r previous lexemes with
-                | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-                | Some(r, p, l) -> main_impl_rev ~html r p l
+                | None ->
+                    main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+                | Some (r, p, l) ->
+                    main_impl_rev ~html r p l
                 end
+            end
         end
 
     (* img *)
-    | _, (Exclamation|Exclamations _ as t)
-         ::Obracket::Cbracket::Oparenthesis::tl ->
+    | _, (Delim (n, Exclamation) as t) :: Delim (1, Obracket) :: Delim (1, Cbracket) :: Delim (1, Oparenthesis) :: tl ->
         (* image insertion with no "alt" *)
         (* ![](/path/to/img.jpg) *)
-        (try
-           begin
-             let b, tl = read_until_cparenth ~bq:true ~no_nl:false tl in
-             (* new lines there are allowed *)
-             let r (* updated result *) = match t with
-               | Exclamations 0 -> Text "!" :: r
-               | Exclamations n -> Text(String.make (n+1) '!') :: r
-               | _ -> r in
-             match
-               try Some(read_until_space ~bq:false ~no_nl:true b)
-               with Premature_ending -> None
-             with
-             | Some(url, tls) ->
-                 let title, should_be_empty_list =
-                   read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
-                 let url = L.string_of_tokens url in
-                 let title = L.string_of_tokens title in
-                 main_impl_rev ~html (Img("", url, title) :: r) [Cparenthesis] tl
-             | None ->
-                 let url = L.string_of_tokens b in
-                 main_impl_rev ~html (Img("", url, "") :: r) [Cparenthesis] tl
-           end
-         with
-         | NL_exception ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-        )
+        begin try
+          let b, tl = read_until_cparenth ~bq:true ~no_nl:false tl in
+          (* new lines there are allowed *)
+          let r = (* updated result *)
+            match n with
+            | 1 -> r
+            | n -> Text (String.make (n-1) '!') :: r
+          in
+          match
+            try
+              Some (read_until_space ~bq:false ~no_nl:true b)
+            with Premature_ending ->
+              None
+          with
+          | Some (url, tls) ->
+              let title, should_be_empty_list = read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
+              let url = L.string_of_tokens url in
+              let title = L.string_of_tokens title in
+              main_impl_rev ~html (Img ("", url, title) :: r) [Delim (1, Cparenthesis)] tl
+          | None ->
+              let url = L.string_of_tokens b in
+              main_impl_rev ~html (Img ("", url, "") :: r) [Delim (1, Cparenthesis)] tl
+        with NL_exception ->
+          begin match maybe_extension extensions r previous lexemes with
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
+          end
+        end
 
     (* img ref *)
-    | _, (Exclamation as t)
-         ::Obracket::Cbracket::Obracket::tl ->
+    | _, (Delim (1, Exclamation) as t) :: Delim (1, Obracket) :: Delim (1, Cbracket) :: Delim (1, Obracket) :: tl ->
         (* ref image insertion with no "alt" *)
         (* ![][ref] *)
-        (try
-           let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
-           let fallback = extract_fallback main_loop tl lexemes in
-           let id = L.string_of_tokens id in
-           main_impl_rev ~html (Img_ref(rc, id, "", fallback) :: r) [Cbracket] tl
-         with NL_exception ->
-           begin match maybe_extension extensions r previous lexemes with
-           | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-           | Some(r, p, l) -> main_impl_rev ~html r p l
-           end
-        )
-
+        begin try
+          let id, tl = read_until_cbracket ~bq:true ~no_nl:true tl in
+          let fallback = extract_fallback main_loop tl lexemes in
+          let id = L.string_of_tokens id in
+          main_impl_rev ~html (Img_ref (rc, id, "", fallback) :: r) [Delim (1, Cbracket)] tl
+        with NL_exception ->
+          begin match maybe_extension extensions r previous lexemes with
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
+          end
+        end
 
     (* img *)
-    | _, (Exclamation|Exclamations _ as t)::Obracket::tl ->
+    | _, (Delim (n, Exclamation) as t) :: Delim (1, Obracket) :: tl ->
         (* image insertion with "alt" *)
         (* ![Alt text](/path/to/img.jpg "Optional title") *)
-        (try
-           match read_until_cbracket ~bq:true tl with
-           | alt, Oparenthesis::ntl ->
-               (try
-                  let alt = L.string_of_tokens alt in
-                  let path_title, rest =
-                    read_until_cparenth ~bq:true ~no_nl:false ntl in
-                  let path, title =
-                    try
-                      read_until_space ~bq:true ~no_nl:true path_title
-                    with Premature_ending -> path_title, [] in
-                  let title, nothing =
-                    if title <> [] then
-                      read_until_dq ~bq:true (snd(read_until_dq ~bq:true title))
-                    else [], [] in
-                  if nothing <> [] then
-                    raise NL_exception; (* caught right below *)
-                  let r =
-                    match t with
-                    | Exclamations 0 -> Text "!" :: r
-                    | Exclamations n -> Text(String.make (n+1) '!') :: r
-                    | _ -> r in
-                  let path = L.string_of_tokens path in
-                  let title = L.string_of_tokens title in
-                  main_impl_rev ~html (Img(alt, path, title) :: r) [Cparenthesis] rest
-                with
-                | NL_exception
-                (* if NL_exception was raised, then fall back to "text" *)
-                | Premature_ending ->
-                    begin match maybe_extension extensions r previous lexemes with
-                    | None ->
-                        main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-                    | Some(r, p, l) ->
-                        main_impl_rev ~html r p l
-                    end
-               )
-           | alt, Obracket::Word(id)::Cbracket::ntl
-           | alt, Obracket::(Space|Spaces _)::Word(id)::Cbracket::ntl
-           | alt, Obracket::(Space|Spaces _)::Word(id)::(Space|Spaces _)
-                  ::Cbracket::ntl
-           | alt, Obracket::Word(id)::(Space|Spaces _)::Cbracket::ntl ->
-               let fallback = extract_fallback main_loop ntl lexemes in
-               let alt = L.string_of_tokens alt in
-               main_impl_rev ~html (Img_ref(rc, id, alt, fallback)::r) [Cbracket] ntl
-           | alt, Obracket::((Newline|Space|Spaces _|Word _|Number _)::_
-                             as ntl) ->
-               (try
-                  match read_until_cbracket ~bq:true ~no_nl:false ntl with
-                  | [], rest -> raise Premature_ending
-                  | id, rest ->
-                      let fallback = extract_fallback main_loop rest lexemes in
-                      let id = L.string_of_tokens id in
-                      let alt = L.string_of_tokens alt in
-                      main_impl_rev ~html (Img_ref(rc, id, alt, fallback)::r)
-                        [Cbracket]
-                        rest
-                with
-                | Premature_ending
-                | NL_exception ->
-                    begin match maybe_extension extensions r previous lexemes with
-                    | None ->
-                        main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-                    | Some(r, p, l) -> main_impl_rev ~html r p l
-                    end
-               )
-           | _ ->
-               begin match maybe_extension extensions r previous lexemes with
-               | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-               | Some(r, p, l) -> main_impl_rev ~html r p l
-               end
-         with
-         | Premature_ending ->
-             begin match maybe_extension extensions r previous lexemes with
-             | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-             | Some(r, p, l) -> main_impl_rev ~html r p l
-             end
-        )
+        begin try
+          match read_until_cbracket ~bq:true tl with
+          | alt, Delim (1, Oparenthesis) :: ntl ->
+              begin try
+                let alt = L.string_of_tokens alt in
+                let path_title, rest = read_until_cparenth ~bq:true ~no_nl:false ntl in
+                let path, title =
+                  try
+                    read_until_space ~bq:true ~no_nl:true path_title
+                  with Premature_ending ->
+                    path_title, []
+                in
+                let title, nothing =
+                  if title <> [] then
+                    read_until_dq ~bq:true (snd(read_until_dq ~bq:true title))
+                  else
+                    [], []
+                in
+                if nothing <> [] then raise NL_exception; (* caught right below *)
+                let r =
+                  match n with
+                  | 1 -> r
+                  | n -> Text (String.make (n-1) '!') :: r
+                in
+                let path = L.string_of_tokens path in
+                let title = L.string_of_tokens title in
+                main_impl_rev ~html (Img (alt, path, title) :: r) [Delim (1, Cparenthesis)] rest
+              with NL_exception | Premature_ending -> (* if NL_exception was raised, then fall back to "text" *)
+                begin match maybe_extension extensions r previous lexemes with
+                | None ->
+                    main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+                | Some(r, p, l) ->
+                    main_impl_rev ~html r p l
+                end
+              end
+          | alt, Delim (1, Obracket) :: Word id :: Delim (1, Cbracket) :: ntl
+          | alt, Delim (1, Obracket) :: Delim (_, Space) :: Word id :: Delim (1, Cbracket) :: ntl
+          | alt, Delim (1, Obracket) :: Delim (_, Space) :: Word id :: Delim (_, Space) :: Delim (1, Cbracket) :: ntl
+          | alt, Delim (1, Obracket) :: Word id :: Delim (_, Space) :: Delim (1, Cbracket) :: ntl ->
+              let fallback = extract_fallback main_loop ntl lexemes in
+              let alt = L.string_of_tokens alt in
+              main_impl_rev ~html (Img_ref(rc, id, alt, fallback) :: r) [Delim (1, Cbracket)] ntl
+          | alt, Delim (1, Obracket) :: ((Delim (1, Newline) | Delim (_, Space) | Word _ | Number _) :: _ as ntl) ->
+              begin try
+                match read_until_cbracket ~bq:true ~no_nl:false ntl with
+                | [], rest ->
+                    raise Premature_ending
+                | id, rest ->
+                    let fallback = extract_fallback main_loop rest lexemes in
+                    let id = L.string_of_tokens id in
+                    let alt = L.string_of_tokens alt in
+                    main_impl_rev ~html (Img_ref (rc, id, alt, fallback)::r) [Delim (1, Cbracket)] rest
+              with Premature_ending | NL_exception ->
+                begin match maybe_extension extensions r previous lexemes with
+                | None ->
+                    main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+                | Some (r, p, l) ->
+                    main_impl_rev ~html r p l
+                end
+              end
+          | _ ->
+              begin match maybe_extension extensions r previous lexemes with
+              | None ->
+                  main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+              | Some (r, p, l) ->
+                  main_impl_rev ~html r p l
+              end
+        with Premature_ending ->
+          begin match maybe_extension extensions r previous lexemes with
+          | None ->
+              main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+          | Some (r, p, l) ->
+              main_impl_rev ~html r p l
+          end
+        end
 
     | _,
-      (At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar
-      |Dot|Doublequote|Exclamation|Equal|Minus|Obrace|Oparenthesis
-      |Percent|Plus|Question|Quote|Semicolon|Slash|Tab|Tilde
-      |Greaterthan as t)::tl
-      ->
+      (Delim (1, (At|Bar|Caret|Cbrace|Colon|Comma|Cparenthesis|Cbracket|Dollar
+                 |Dot|Doublequote|Exclamation|Equal|Minus|Obrace|Oparenthesis
+                 |Percent|Plus|Question|Quote|Semicolon|Slash|Tab|Tilde
+                 |Greaterthan)) as t) :: tl ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_impl_rev ~html r p l
+        | None ->
+            main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+        | Some (r, p, l) ->
+            main_impl_rev ~html r p l
         end
     | _, (Number _  as t):: tl ->
         begin match maybe_extension extensions r previous lexemes with
-        | None -> main_impl_rev ~html (Text(L.string_of_token t)::r) [t] tl
-        | Some(r, p, l) -> main_impl_rev ~html r p l
+        | None ->
+            main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
+        | Some (r, p, l) ->
+            main_impl_rev ~html r p l
         end
 
-    | _, (Ats _ | Bars _ | Carets _ | Cbraces _ | Cbrackets _ | Colons _
-         | Commas _ | Cparenthesiss _ | Dollars _ | Dots _ | Doublequotes _
-         | Equals _ | Exclamations _ | Greaterthans _ | Lessthans _
-         | Minuss _ | Obraces _ | Obrackets _ | Oparenthesiss _
-         | Percents _ | Pluss _ | Questions _ | Quotes _ | Semicolons _
-         | Slashs _ | Stars _ | Tabs _ | Tildes _ | Underscores _ as tk)
-         :: tl ->
+    | _, (Delim (_, (At|Bar|Caret|Cbrace|Cbracket|Colon
+                    |Comma|Cparenthesis|Dollar|Dot|Doublequote
+                    |Equal|Exclamation|Greaterthan|Lessthan
+                    |Minus|Obrace|Obracket|Oparenthesis
+                    |Percent|Plus|Question|Quote|Semicolon
+                    |Slash|Star|Tab|Tilde|Underscore)) as tk) :: tl ->
         begin match maybe_extension extensions r previous lexemes with
         | None ->
             let tk0, tks = L.split_first tk in
             let text = L.string_of_token tk0 in
             main_impl_rev ~html (Text text :: r) [tk0] (tks :: tl)
-        | Some(r, p, l) ->
+        | Some (r, p, l) ->
             main_impl_rev ~html r p l
         end
-
 
   and main_impl ~html (r:r) (previous:p) (lexemes:l) =
     (* if debug then eprintf "(OMD) main_impl html=%b\n%!" html; *)
     assert_well_formed lexemes;
     List.rev (main_loop_rev ~html r previous lexemes)
 
-  and main_loop ?(html=false) (r:r) (previous:p) (lexemes:l) =
+  and main_loop ?(html = false) (r:r) (previous:p) (lexemes:l) =
     main_impl ~html r previous lexemes
 
-  and main_loop_rev ?(html=false) (r:r) (previous:p) (lexemes:l) =
+  and main_loop_rev ?(html = false) (r:r) (previous:p) (lexemes:l) =
     main_impl_rev ~html r previous lexemes
-
 
   let main_parse lexemes =
     main_loop [] [] (tag_setext main_loop lexemes)
 
   let parse lexemes =
     main_parse lexemes
-
 end
 
-let default_parse ?(extensions=[]) ?(default_lang="") lexemes =
-  let e = extensions and d = default_lang in
-  let module E = Default_env(Unit) in
-  let module M =
-    Make(struct
-      include E
-      let extensions = e
-      let default_lang = d
-    end)
+let default_parse ?(extensions = []) ?(default_lang = "") lexemes =
+  let module E = struct
+    include Default_env(Unit)
+    let extensions = extensions
+    let default_lang = default_lang
+  end
   in
+  let module M = Make(E) in
   M.main_parse lexemes
