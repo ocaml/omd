@@ -17,7 +17,7 @@ end = object
 
   method add_ref name title url =
     c <- R.add name (url, title) c;
-    let ln = String.lowercase name in
+    let ln = String.lowercase_ascii (String.copy name) in
     if ln <> name then c2 <- R.add ln (url, title) c2
 
   method get_ref name =
@@ -25,7 +25,7 @@ end = object
       let (url, title) as r =
         try R.find name c
         with Not_found ->
-          let ln = String.lowercase name in
+          let ln = String.lowercase_ascii (String.copy name) in
           try R.find ln c
           with Not_found ->
             R.find ln c2
@@ -353,12 +353,12 @@ let rec visit f = function
       | Some(l) -> l@visit f tl
       | None -> Paragraph(visit f v)::visit f tl
     end
-  | H1 v as e::tl -> 
+  | H1 v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H1(visit f v)::visit f tl
     end
-  | H2 v as e::tl -> 
+  | H2 v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H2(visit f v)::visit f tl
@@ -368,27 +368,27 @@ let rec visit f = function
       | Some(l) -> l@visit f tl
       | None -> H3(visit f v)::visit f tl
     end
-  | H4 v as e::tl -> 
+  | H4 v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H4(visit f v)::visit f tl
     end
-  | H5 v as e::tl -> 
+  | H5 v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H5(visit f v)::visit f tl
     end
-  | H6 v as e::tl -> 
+  | H6 v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H6(visit f v)::visit f tl
     end
-  | Emph v as e::tl -> 
+  | Emph v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Emph(visit f v)::visit f tl
     end
-  | Bold v as e::tl -> 
+  | Bold v as e::tl ->
     begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Bold(visit f v)::visit f tl
@@ -498,5 +498,3 @@ let rec visit f = function
       | Some(l) -> l@visit f tl
       | None -> NL::visit f tl
     end
-
-
