@@ -972,27 +972,26 @@ struct
 
   let read_until_newline l =
     assert_well_formed l;
-    let rec loop accu n =
-      function
-      | ((Backslash as a)) :: ((Newline as b)) :: tl ->
-          loop (b :: a :: accu) n tl
-      | Backslash :: Newlines 0 :: tl ->
-          loop (Newline :: Backslash :: accu) n (Newline :: tl)
-      | ((Backslashs 0 as e)) :: tl -> loop (e :: accu) n tl
-      | ((Backslashs x as e)) :: tl ->
-          if (x mod 2) = 0
-          then loop (e :: accu) n tl
-          else loop ((Backslashs (x - 1)) :: accu) n (Backslash :: tl)
-      | ((Newline as e)) :: tl ->
-          if n = 0 then ((List.rev accu), tl) else loop (e :: accu) (n - 1) tl
-      | Newlines 0 :: tl ->
-          if n = 0
-          then ((List.rev accu), (Newline :: tl))
-          else loop (Newline :: accu) (n - 1) (Newline :: tl)
-      | Newlines n :: tl -> ((List.rev accu), ((Newlines (n - 1)) :: tl))
-      | e :: tl -> loop (e :: accu) n tl
-      | [] -> raise Premature_ending
-    in loop [] 0 l
+    let rec loop accu n = function
+      | Delim (1, Backslash) :: Delim (x, Newline) :: tl ->
+          loop (Delim (1, Newline) :: Delim (1, Backslash) :: accu) n (delim (x-1) Newline tl)
+      | Delim (2, Backslash) as e :: tl ->
+          loop (e :: accu) n tl
+      | Delim (x, Backslash) as e :: tl ->
+          loop (delim (x-x mod 2) Backslash accu) n (delim (x mod 2) Backslash tl)
+      | Delim ((1|2) as x, Newline) :: tl ->
+          if n = 0 then
+            List.rev accu, delim (x-1) Newline tl
+          else
+            loop (Delim (1, Newline) :: accu) (n - 1) (delim (x-1) Newline tl) (* FIXME ?? *)
+      | Delim (x, Newline) :: tl ->
+          List.rev accu, delim (x-1) Newline tl
+      | e :: tl ->
+          loop (e :: accu) n tl
+      | [] ->
+          raise Premature_ending
+    in
+    loop [] 0 l
 
   (* H1, H2, H3, ... *)
   let read_title (main_loop:main_loop) n r _previous lexemes =
