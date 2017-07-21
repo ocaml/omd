@@ -8,4 +8,4 @@
 (alias
  ((name runtest)
   (deps (test.exe))
-  (action (run ${<}))))
+  (action (progn (chdir ../../../../tests/cow (run ${<}))))))

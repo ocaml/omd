@@ -11,11 +11,14 @@ let debug =
   let _DEBUG =
     try
       Some(Sys.getenv "DEBUG")
-    with _ -> None
-  and _OMD_DEBUG =
+    with _ ->
+      None
+  in
+  let _OMD_DEBUG =
     try
       Some(Sys.getenv "OMD_DEBUG")
-    with _ -> None
+    with _ ->
+      None
   in
   match _DEBUG, _OMD_DEBUG with
   | _, Some "false" ->
