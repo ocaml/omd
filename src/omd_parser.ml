@@ -1179,51 +1179,46 @@ struct
       if debug then
         eprintf "(OMD) # maybe_link>read_url %S\n" (L.string_of_tokens l);
       try
-        let l_cp, r_cp =
-          read_until_cparenth ~no_nl:true ~bq:false l
-        in
-        if debug then eprintf "(OMD) maybe_link >> l_cp=%S r_cp=%S\n%!"
-            (L.string_of_tokens l_cp)
-            (L.string_of_tokens r_cp);
+        let l_cp, r_cp = read_until_cparenth ~no_nl:true ~bq:false l in
+        if debug then
+          eprintf "(OMD) maybe_link >> l_cp=%S r_cp=%S\n%!"
+            (L.string_of_tokens l_cp) (L.string_of_tokens r_cp);
         try
-          let l_dq, r_dq =
-            read_until_dq ~no_nl:true ~bq:false l
-          in
-          if debug then eprintf "(OMD) maybe_link >> l_dq=%S r_dq=%S\n%!"
-              (L.string_of_tokens l_dq)
-              (L.string_of_tokens r_dq);
+          let l_dq, r_dq = read_until_dq ~no_nl:true ~bq:false l in
+          if debug then
+            eprintf "(OMD) maybe_link >> l_dq=%S r_dq=%S\n%!"
+              (L.string_of_tokens l_dq) (L.string_of_tokens r_dq);
           (* maybe title *)
-          if List.length l_cp > List.length l_dq then (* title *)
-            begin
-              if debug then eprintf "(OMD) maybe_link >> title\n%!";
-              let url =
-                match List.rev l_dq with
-                | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
-                | (Newline|Space|Spaces _)::tl ->
-                    L.string_of_tokens (List.rev tl)
-                | _ ->
-                    L.string_of_tokens l_dq
-              in
-              let title, rest = read_until_dq ~no_nl:false ~bq:false r_dq in
-              let rest = snd(read_until_cparenth rest) in
-              let title = L.string_of_tokens title in
-              Some(Url(url, name, title) :: r, [Cparenthesis], rest)
-            end
-          else (* no title *)
+          if List.length l_cp > List.length l_dq then begin (* title *)
+            if debug then eprintf "(OMD) maybe_link >> title\n%!";
+            let url =
+              match List.rev l_dq with
+              | (Delim (1, Newline) | Delim (_, Space)) :: (Delim (1, Newline) | Delim (_, Space)) :: tl
+              | (Delim (1, Newline) | Delim (_, Space)) :: tl ->
+                  L.string_of_tokens (List.rev tl)
+              | _ ->
+                  L.string_of_tokens l_dq
+            in
+            let title, rest = read_until_dq ~no_nl:false ~bq:false r_dq in
+            let rest = snd(read_until_cparenth rest) in
+            let title = L.string_of_tokens title in
+            Some (Url (url, name, title) :: r, [Delim (1, Cparenthesis)], rest)
+          end else (* no title *)
             raise Premature_ending
         with NL_exception | Premature_ending -> (* no title *)
-          begin
-            if debug then eprintf "(OMD) maybe_link >> no title\n%!";
-            let url = match List.rev l_cp with
-              | (Newline|Space|Spaces _)::(Newline|Space|Spaces _)::tl
-              | (Newline|Space|Spaces _)::tl -> List.rev tl
-              | _ -> l_cp
-            in
-            let title, rest = [], r_cp in
-            let url = L.string_of_tokens url in
-            let title = L.string_of_tokens title in
-            Some(Url(url, name, title) :: r, [Cparenthesis], rest)
-          end
+          if debug then eprintf "(OMD) maybe_link >> no title\n%!";
+          let url =
+            match List.rev l_cp with
+            | (Delim (1, Newline) | Delim (_, Space)) :: (Delim (1, Newline) | Delim (_, Space)) :: tl
+            | (Delim (1, Newline) | Delim (_, Space)) :: tl ->
+                List.rev tl
+            | _ ->
+                l_cp
+          in
+          let title, rest = [], r_cp in
+          let url = L.string_of_tokens url in
+          let title = L.string_of_tokens title in
+          Some (Url(url, name, title) :: r, [Delim (1, Cparenthesis)], rest)
       with NL_exception | Premature_ending ->
         None
     in
@@ -1233,18 +1228,16 @@ struct
       if debug then eprintf "(OMD) # maybe_link> read_name\n";
       try
         match read_until_cbracket ~bq:true l with
-        | name, (Oparenthesis::tl) ->
-            read_url (main_loop [] [Obracket] name) (eat_blank tl)
-        | name, (Oparenthesiss 0::tl) ->
-            read_url (main_loop [] [Obracket] name) (Oparenthesis::tl)
-        | name, (Oparenthesiss n::tl) ->
-            read_url (main_loop [] [Obracket] name) (Oparenthesiss(n-1)::tl)
+        | name, Delim (1, Oparenthesis) :: tl ->
+            read_url (main_loop [] [Delim (1, Obracket)] name) (eat_blank tl)
+        | name, Delim (n, Oparenthesis) :: tl ->
+            read_url (main_loop [] [Delim (1, Obracket)] name) (delim (n-1) Oparenthesis tl)
         | _ ->
             None
-      with Premature_ending | NL_exception -> None
+      with Premature_ending | NL_exception ->
+        None
     in
     read_name l
-
 
   let has_paragraphs l =
     (* Has at least 2 consecutive newlines. *)
