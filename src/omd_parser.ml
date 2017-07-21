@@ -595,13 +595,13 @@ struct
         object
           method parser_extension r p l =
             match p with
-            | ([]|[Newline|Newlines _]) ->
+            | [] | [Delim (_, Newline)] ->
                 begin match setext_title main_loop l with
                 | None ->
                     None
-                | Some(title, tl) ->
-                    let title = H1(main_loop [] [] title) in
-                    Some((title::r), [Newline], tl)
+                | Some (title, tl) ->
+                    let title = H1 (main_loop [] [] title) in
+                    Some (title :: r, [Delim (1, Newline)], tl)
                 end
             | _ ->
                 if debug then
@@ -618,13 +618,13 @@ struct
         object
           method parser_extension r p l =
             match p with
-            | ([]|[Newline|Newlines _]) ->
+            | [] | [Delim (_, Newline)] ->
                 begin match setext_title main_loop l with
                 | None ->
                     None
-                | Some(title, tl) ->
-                    let title = H2(main_loop [] [] title) in
-                    Some((title::r), [Newline], tl)
+                | Some (title, tl) ->
+                    let title = H2 (main_loop [] [] title) in
+                    Some (title :: r, [Delim (1, Newline)], tl)
                 end
             | _ ->
                 if debug then
@@ -650,49 +650,52 @@ struct
   let tag_setext main_loop lexemes =
     assert_well_formed lexemes;
     let rec loop pl res = function
-      | [] | [Newline|Newlines _] ->
+      | [] | [Delim (_, Newline)] ->
           pl@res
-      | (Newline as e1)::(Equal|Equals _ as e2)::tl -> (* might be a H1. *)
-          begin
-            match
-              fsplit_rev
-                ~f:(function
-                    | (Space|Spaces _|Equal|Equals _)::tl -> Continue
-                    | [] -> Split([],[])
-                    | _::_ as l -> Split([], l))
-                tl
-            with
-            | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-                loop [] (rleft@(e2::e1::pl@tag__maybe_h1 main_loop::res)) right
-            | Some(rleft, right) ->
-                loop [] (rleft@(e2::e1::pl@res)) right
-            | None ->
-                loop [] (e2::e1::pl@res) []
+      | Delim (1, Newline) as e1 :: (Delim (_, Equal) as e2) :: tl -> (* might be a H1. *)
+          begin match
+            fsplit_rev
+              ~f:(function
+                  | Delim (_, (Space | Equal)) :: tl ->
+                      Continue
+                  | [] ->
+                      Split ([],[])
+                  | _::_ as l ->
+                      Split ([], l)
+                ) tl
+          with
+          | Some (rleft, (([] | Delim (_, Newline) ::_) as right)) ->
+              loop [] (rleft@(e2::e1::pl@tag__maybe_h1 main_loop::res)) right
+          | Some (rleft, right) ->
+              loop [] (rleft@(e2::e1::pl@res)) right
+          | None ->
+              loop [] (e2::e1::pl@res) []
           end
-      | (Newline as e1)::(Minus|Minuss _ as e2)::tl -> (* might be a H2. *)
-          begin
-            match
-              fsplit_rev
-                ~f:(function
-                    | (Space|Spaces _|Minus|Minuss _)::tl -> Continue
-                    | [] -> Split([],[])
-                    | _::_ as l -> Split([], l))
-                tl
-            with
-            | Some(rleft, (([]|(Newline|Newlines _)::_) as right)) ->
-                loop [] (rleft@(e2::e1::pl@tag__maybe_h2 main_loop::res)) right
-            | Some(rleft, right) ->
-                loop [] (rleft@(e2::e1::pl@res)) right
-            | None ->
-                loop [] (e2::e1::pl@res) []
+      | Delim (1, Newline) as e1 :: (Delim (_, Minus) as e2) :: tl -> (* might be a H2. *)
+          begin match
+            fsplit_rev
+              ~f:(function
+                  | Delim (_, (Space | Minus)) :: tl ->
+                      Continue
+                  | [] ->
+                      Split ([], [])
+                  | _ :: _ as l ->
+                      Split ([], l)
+                ) tl
+          with
+          | Some (rleft, (([] | Delim (_, Newline) :: _) as right)) ->
+              loop [] (rleft@(e2::e1::pl@tag__maybe_h2 main_loop::res)) right
+          | Some(rleft, right) ->
+              loop [] (rleft@(e2::e1::pl@res)) right
+          | None ->
+              loop [] (e2::e1::pl@res) []
           end
-      | (Newline | Newlines _ as e1)::tl ->
+      | Delim (_, Newline) as e1 :: tl ->
           loop [] (e1::pl@res) tl
       | e::tl ->
           loop (e::pl) res tl
     in
     List.rev (loop [] [] lexemes)
-
 
   let hr_m l =
     assert_well_formed l;
