@@ -1812,10 +1812,10 @@ struct
         end
 
     (* hashes *)
-    | ([]| [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (Delim (_, Space) :: ttl as tl)
-    | ([]| [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (ttl as tl) when n >= 2 -> (* hash titles *)
+    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: Delim (_, Space) :: tl
+    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: tl -> (* hash titles *)
         if n <= 6 then
-          match read_title main_loop n r previous ttl with
+          match read_title main_loop n r previous tl with
           | Some (r, p, l) ->
               main_impl_rev ~html r p l
           | None ->
