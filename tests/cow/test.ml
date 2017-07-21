@@ -4,7 +4,7 @@ let dir =
   if Array.length Sys.argv > 1 then
     Sys.argv.(1)
   else
-    Filename.concat (Sys.getcwd ()) "tests/cow"
+    Sys.getcwd ()
 
 let slurp filename =
   let file = open_in filename in

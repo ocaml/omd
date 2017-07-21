@@ -1,59 +1,10 @@
-PKGNAME = $(shell oasis query name)
-PKGVERSION = $(shell oasis query version)
-PKG_TARBALL = $(PKGNAME)-$(PKGVERSION).tar.gz
+.PHONY: all test clean
 
-DISTFILES = README.md _oasis setup.ml Makefile omd.install \
-  $(wildcard $(addprefix src/, *.ml *.mli *.mllib *.mlpack *.ab))
+all:
+	jbuilder build --dev
 
-PREFIX = $(shell opam config var prefix)
-ifneq ($(PREFIX),)
-PREFIX_FLAG = --prefix $(PREFIX)
-endif
+test:
+	jbuilder runtest --dev
 
-.PHONY: all byte native doc install uninstall reinstall test
-
-all byte native setup.log: configure
-	ocaml setup.ml -build
-
-configure: setup.data
-setup.data: setup.ml
-	ocaml $< -configure --enable-tests $(PREFIX_FLAG)
-
-setup.ml: _oasis
-	oasis setup -setup-update dynamic
-	touch $@
-
-doc install uninstall reinstall test: setup.log
-	ocaml setup.ml -$@
-
-
-# Make a tarball
-.PHONY: dist tar
-dist tar: $(DISTFILES)
-	mkdir $(PKGNAME)-$(PKGVERSION)
-	cp --parents -r $(DISTFILES) $(PKGNAME)-$(PKGVERSION)/
-#	setup.ml independent of oasis:
-#	and remove test_cow!
-	test "$(wc -l < _oasis)" == 59 ; echo $?
-	head -n 36 _oasis > $(PKGNAME)-$(PKGVERSION)/_oasis
-	sed -e "s/VERSION/$(PKGVERSION) of $$(date -u)/" src/omd_main.ml > $(PKGNAME)-$(PKGVERSION)/src/omd_main.ml
-	cd $(PKGNAME)-$(PKGVERSION) && oasis setup
-	tar -zcvf $(PKG_TARBALL) $(PKGNAME)-$(PKGVERSION)
-	$(RM) -rf $(PKGNAME)-$(PKGVERSION)
-
-.PHONY: clean distclean dist-clean
 clean:
-	ocaml setup.ml -clean
-	$(RM) $(PKG_TARBALL)
-
-distclean dist-clean:: clean
-	ocaml setup.ml -distclean
-	$(RM) $(wildcard *.ba[0-9] *.bak *~ *.odocl)
-
-opam:
-	test "$(wc -l < _oasis)" == 59 || (echo $?; exit $?)
-	cp _oasis _oasis_orig
-	head -n 36 _oasis_orig > _oasis
-	oasis2opam http://pw374.github.io/distrib/omd/$(PKGNAME)-$(PKGVERSION).tar.gz
-	mv _oasis_orig _oasis
-	printf 'tags: [\n  "org:ocamllabs"\n  "org:mirage"\n]\n' >> $(PKGNAME).$(PKGVERSION)/opam
+	jbuilder clean
