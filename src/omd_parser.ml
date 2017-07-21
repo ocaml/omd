@@ -417,46 +417,32 @@ struct
   let semph_or_bold (n:int) (l:l) =
     (* FIXME: use rpl call/return convention *)
     assert_well_formed l;
-    assert (n>0 && n<4);
+    assert (n > 0 && n < 4);
+    let delim n d l = if n = 0 then l else Delim (n, d) :: l in
     match
       fsplit
-        ~excl:(function Newlines _ :: _ -> true | _ -> false)
+        ~excl:(function Delim (_, Newline) :: _ -> true | _ -> false)
         ~f:(function
-            | Backslash::Star::tl ->
-                Continue_with([Star;Backslash],tl)
-            | Backslash::Stars 0::tl ->
-                Continue_with([Star;Backslash],Star::tl)
-            | Backslash::Stars n::tl ->
-                Continue_with([Star;Backslash],Stars(n-1)::tl)
-            | (Backslashs b as x)::Star::tl ->
+            | (Delim (b, Backslash) as x) :: (Delim (n, Star) as s) :: tl ->
                 if b mod 2 = 0 then
-                  Continue_with([x],Star::tl)
+                  Continue_with ([x], s :: tl)
                 else
-                  Continue_with([Star;x],tl)
-            | (Backslashs b as x)::(Stars 0 as s)::tl ->
-                if b mod 2 = 0 then
-                  Continue_with([x],s::tl)
-                else
-                  Continue_with([Star;x],Star::tl)
-            | (Backslashs b as x)::(Stars n as s)::tl ->
-                if b mod 2 = 0 then
-                  Continue_with([x],s::tl)
-                else
-                  Continue_with([Star;x],Stars(n-1)::tl)
-            | (Space|Spaces _ as x)::(Star|Stars _ as s)::tl ->
-                Continue_with([s;x],tl)
-            | (Star|Stars _ as s)::tl ->
+                  Continue_with ([Delim (1, Star); x], delim (n-1) Star tl)
+            | (Delim (_, Space) as x) :: (Delim (_, Star) as s) :: tl ->
+                Continue_with ([s; x], tl)
+            | (Delim (_, Star) as s) :: tl ->
                 if L.length s = n then
-                  Split([],tl)
+                  Split ([], tl)
                 else
                   Continue
-            | _ -> Continue)
-        l
+            | _ ->
+                Continue
+          ) l
     with
     | None ->
         None
-    | Some(left,right) ->
-        if is_blank left then None else Some(left,right)
+    | Some (left,right) ->
+        if is_blank left then None else Some (left,right)
 
   let sm_uemph_or_bold (n:int) (l:l) =
     assert_well_formed l;
