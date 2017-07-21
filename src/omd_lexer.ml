@@ -163,10 +163,12 @@ struct
 
     while !i < l do
       let c = I.get s !i in
-      let w = match c with
-        | ' '  -> let n = n_occ c in if n = 1 then Space else Spaces (n-2)
-        | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
-        | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
+      let w =
+        let delim d = Delim (n_occ c, d) in
+        match c with
+        | ' '  -> delim Space
+        | '\t' -> Delim (4*(n_occ c), Space) (* let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2) *)
+        | '\n' -> delim Newline
         | '\r' -> (* eliminating \r by converting all styles to unix style *)
             incr i;
             let rec count_rn x =
@@ -180,53 +182,46 @@ struct
             in
             let rn = 1 + count_rn 0 in
             if rn = 1 then
-              match n_occ c with
-              | 1 -> Newline
-              | x -> assert(x>=2); Newlines(x-2)
-            else
-              (assert(rn>=2);Newlines(rn-2))
-        | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
-        | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
-        | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
-        | '+'  -> let n = n_occ c in if n = 1 then Plus else Pluss (n-2)
-        | '`'  -> let n = n_occ c in if n = 1 then Backquote else Backquotes (n-2)
-        | '\'' -> let n = n_occ c in if n = 1 then Quote else Quotes (n-2)
-        | '"'  -> let n = n_occ c in if n = 1 then Doublequote
-            else Doublequotes (n-2)
-        | '\\' -> let n = n_occ c in if n = 1 then Backslash
-            else Backslashs (n-2)
-        | '_'  -> let n = n_occ c in if n = 1 then Underscore
-            else Underscores (n-2)
-        | '['  -> let n = n_occ c in if n = 1 then Obracket
-            else Obrackets (n-2)
-        | ']'  -> let n = n_occ c in if n = 1 then Cbracket else Cbrackets (n-2)
-        | '{'  -> let n = n_occ c in if n = 1 then Obrace else Obraces (n-2)
-        | '}'  -> let n = n_occ c in if n = 1 then Cbrace else Cbraces (n-2)
-        | '('  -> let n = n_occ c in if n = 1 then Oparenthesis
-            else Oparenthesiss (n-2)
-        | ')'  -> let n = n_occ c in if n = 1 then Cparenthesis
-            else Cparenthesiss (n-2)
-        | ':'  -> let n = n_occ c in if n = 1 then Colon else Colons (n-2)
-        | ';'  -> let n = n_occ c in if n = 1 then Semicolon else Semicolons (n-2)
-        | '>'  -> let n = n_occ c in if n = 1 then Greaterthan
-            else Greaterthans (n-2)
-        | '~'  -> let n = n_occ c in if n = 1 then Tilde else Tildes (n-2)
-        | '<'  -> let n = n_occ c in if n = 1 then Lessthan else Lessthans (n-2)
-        | '@'  -> let n = n_occ c in if n = 1 then At else Ats (n-2)
-        | '&'  -> let n = n_occ c in if n = 1 then Ampersand else Ampersands (n-2)
-        | '|'  -> let n = n_occ c in if n = 1 then Bar else Bars (n-2)
-        | '^'  -> let n = n_occ c in if n = 1 then Caret else Carets (n-2)
-        | ','  -> let n = n_occ c in if n = 1 then Comma else Commas (n-2)
-        | '.'  -> let n = n_occ c in if n = 1 then Dot else Dots (n-2)
-        | '/'  -> let n = n_occ c in if n = 1 then Slash else Slashs (n-2)
-        | '$'  -> let n = n_occ c in if n = 1 then Dollar else Dollars (n-2)
-        | '%'  -> let n = n_occ c in if n = 1 then Percent else Percents (n-2)
-        | '='  -> let n = n_occ c in if n = 1 then Equal else Equals (n-2)
-        | '!'  -> let n = n_occ c in if n = 1 then Exclamation
-            else Exclamations (n-2)
-        | '?'  -> let n = n_occ c in if n = 1 then Question else Questions (n-2)
+              delim Newline
+            else begin
+              assert (rn >= 2);
+              Delim (rn, Newline)
+            end
+        | '#'  -> delim Hash
+        | '*'  -> delim Star
+        | '-'  -> delim Minus
+        | '+'  -> delim Plus
+        | '`'  -> delim Backquote
+        | '\'' -> delim Quote
+        | '"'  -> delim Doublequote
+        | '\\' -> delim Backslash
+        | '_'  -> delim Underscore
+        | '['  -> delim Obracket
+        | ']'  -> delim Cbracket
+        | '{'  -> delim Obrace
+        | '}'  -> delim Cbrace
+        | '('  -> delim Oparenthesis
+        | ')'  -> delim Cparenthesis
+        | ':'  -> delim Colon
+        | ';'  -> delim Semicolon
+        | '>'  -> delim Greaterthan
+        | '~'  -> delim Tilde
+        | '<'  -> delim Lessthan
+        | '@'  -> delim At
+        | '&'  -> delim Ampersand
+        | '|'  -> delim Bar
+        | '^'  -> delim Caret
+        | ','  -> delim Comma
+        | '.'  -> delim Dot
+        | '/'  -> delim Slash
+        | '$'  -> delim Dollar
+        | '%'  -> delim Percent
+        | '='  -> delim Equal
+        | '!'  -> delim Exclamation
+        | '?'  -> delim Question
         | '0' .. '9' -> maybe_number()
-        | c -> word() in
+        | c -> word()
+      in
       result := w :: !result
     done;
     List.rev !result
@@ -260,10 +255,9 @@ end
 module Lex_bigarray = Lex(Bigarray_input)
 let lex_bigarray = Lex_bigarray.lex
 
-let make_space = function
-  | 0 -> invalid_arg "Omd_lexer.make_space"
-  | 1 -> Space
-  | n -> if n < 0 then invalid_arg "Omd_lexer.make_space" else Spaces (n-2)
+let make_space n =
+  if n <= 0 then invalid_arg "Omd_lexer.make_space";
+  Delim (n, Space)
 
 (*
 (** [string_of_tl l] returns the string representation of l.
