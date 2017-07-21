@@ -700,17 +700,16 @@ struct
   let hr_m l =
     assert_well_formed l;
     let rec loop n = function
-      | ((Newlines _|Newline)::tl) | ([] as tl) ->
+      | Delim (_, Newline) :: tl | ([] as tl) ->
           if n >= 3 then Some tl else None
-      | (Space|Spaces _)::tl ->
+      | Delim (_, Space) :: tl ->
           loop n tl
-      | Minus::tl ->
-          loop (n+1) tl
-      | Minuss x::tl ->
-          loop (x+2+n) tl
+      | Delim (x, Minus) :: tl ->
+          loop (x+n) tl
       | _::_ ->
           None
-    in loop 0 l
+    in
+    loop 0 l
 
   let hr_s l =
     assert_well_formed l;
