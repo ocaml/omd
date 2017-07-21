@@ -897,71 +897,42 @@ struct
 
   (* begin generated part *)
 
-  let read_until_gt ?(bq=false) ?(no_nl=false) l =
+  let read_until ldelim rdelim ?(bq = false) ?(no_nl = false) l =
     assert_well_formed l;
     let rec loop accu n = function
-      | Backslash :: (Greaterthan as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Greaterthans 0) :: tl ->
-          loop (Greaterthan::accu) n (Greaterthan::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
+      | Delim (1, Backslash) :: Delim (x, b) :: tl when b = ldelim ->
+          loop (Delim (1, b) :: accu) n (delim (x-1) b tl)
+      | Delim (x, Backslash) :: tl ->
+          loop (delim (x/2) Backslash accu) n (delim (x mod 2) Backslash tl)
+      | Delim (_, Backquote) as e :: tl as l ->
           if bq then
             match bcode [] [] l with
-            | None -> loop (e::accu) n tl
+            | None ->
+                loop (e :: accu) n tl
             | Some (r, _, tl) ->
                 loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
+                  (List.rev (L.lex (Omd_backend.markdown_of_md r))@accu)
                   n
                   tl
           else
-            loop (e::accu) n tl
-      | Backslash :: (Lessthan as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Lessthans 0) :: tl ->
-          loop (Lessthan::accu) n (Lessthan::tl)
-      | Lessthan as e :: tl ->
-          loop (e::accu) (n+1) tl
-      | Lessthans x as e :: tl ->
-          loop (e::accu) (n+x+2) tl
-      | Greaterthan as e :: tl ->
+            loop (e :: accu) n tl
+      | Delim (1, Backslash) :: Delim (x, b) :: tl when Some b = rdelim ->
+          loop (Delim (1, b) :: accu) n (delim (x-1) b tl)
+      | Delim (x, b) as e :: tl when Some b = rdelim ->
+          loop (e :: accu) (n+x) tl
+      | Delim (x, b) as e :: tl when b = ldelim ->
           if n = 0 then
-            List.rev accu, tl
+            List.rev accu, delim (x-1) b tl
           else
-            loop (e::accu) (n-1) tl
-      | Greaterthans 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Greaterthan::tl
-          else
-            loop (Greaterthan::accu) (n-1) (Greaterthan::tl)
-      | Greaterthans x :: tl ->
-          if n = 0 then
-            List.rev accu, Greaterthans(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Greaterthan::accu -> Greaterthans(0)::accu
-               | Greaterthans x::accu -> Greaterthans(x+1)::accu
-               | _ -> Greaterthan::accu)
-              (n-1)
-              (Greaterthans(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
+            loop (match accu with Delim (x, b) :: accu when b = ldelim -> Delim (x+1, b) :: accu | _ -> Delim (1, b) :: accu)
+              (n-1) (delim (x-1) b tl)
+      | Delim (_, Newline) as e :: tl ->
           if no_nl then
             raise NL_exception
           else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
+            loop (e :: accu) n tl
+      | e :: tl ->
+          loop (e :: accu) n tl
       | [] ->
           raise Premature_ending
     in
@@ -972,552 +943,32 @@ struct
       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
     res
 
-  let read_until_lt ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Lessthan as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Lessthans 0) :: tl ->
-          loop (Lessthan::accu) n (Lessthan::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Lessthan as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Lessthans 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Lessthan::tl
-          else
-            loop (Lessthan::accu) (n-1) (Lessthan::tl)
-      | Lessthans x :: tl ->
-          if n = 0 then
-            List.rev accu, Lessthans(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Lessthan::accu -> Lessthans(0)::accu
-               | Lessthans x::accu -> Lessthans(x+1)::accu
-               | _ -> Lessthan::accu)
-              (n-1)
-              (Lessthans(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_gt ?bq ?no_nl l =
+    read_until Greaterthan (Some Lessthan) ?bq ?no_nl l
 
-  let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Cparenthesis as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Cparenthesiss 0) :: tl ->
-          loop (Cparenthesis::accu) n (Cparenthesis::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl
-      | Backslash :: (Oparenthesis as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Oparenthesiss 0) :: tl ->
-          loop (Oparenthesis::accu) n (Oparenthesis::tl)
-      | Oparenthesis as e :: tl ->
-          loop (e::accu) (n+1) tl
-      | Oparenthesiss x as e :: tl ->
-          loop (e::accu) (n+x+2) tl
-      | Cparenthesis as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Cparenthesiss 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Cparenthesis::tl
-          else
-            loop (Cparenthesis::accu) (n-1) (Cparenthesis::tl)
-      | Cparenthesiss x :: tl ->
-          if n = 0 then
-            List.rev accu, Cparenthesiss(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Cparenthesis::accu -> Cparenthesiss(0)::accu
-               | Cparenthesiss x::accu -> Cparenthesiss(x+1)::accu
-               | _ -> Cparenthesis::accu)
-              (n-1)
-              (Cparenthesiss(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_lt ?bq ?no_nl l =
+    read_until Lessthan None ?bq ?no_nl l
 
-  let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Oparenthesis as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Oparenthesiss 0) :: tl ->
-          loop (Oparenthesis::accu) n (Oparenthesis::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Oparenthesis as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Oparenthesiss 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Oparenthesis::tl
-          else
-            loop (Oparenthesis::accu) (n-1) (Oparenthesis::tl)
-      | Oparenthesiss x :: tl ->
-          if n = 0 then
-            List.rev accu, Oparenthesiss(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Oparenthesis::accu -> Oparenthesiss(0)::accu
-               | Oparenthesiss x::accu -> Oparenthesiss(x+1)::accu
-               | _ -> Oparenthesis::accu)
-              (n-1)
-              (Oparenthesiss(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_cparenth ?bq ?no_nl l =
+    read_until Cparenthesis (Some Oparenthesis) ?bq ?no_nl
 
-  let read_until_dq ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Doublequote as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Doublequotes 0) :: tl ->
-          loop (Doublequote::accu) n (Doublequote::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Doublequote as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Doublequotes 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Doublequote::tl
-          else
-            loop (Doublequote::accu) (n-1) (Doublequote::tl)
-      | Doublequotes x :: tl ->
-          if n = 0 then
-            List.rev accu, Doublequotes(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Doublequote::accu -> Doublequotes(0)::accu
-               | Doublequotes x::accu -> Doublequotes(x+1)::accu
-               | _ -> Doublequote::accu)
-              (n-1)
-              (Doublequotes(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_oparenth ?bq ?no_nl l =
+    read_until Oparenthesis None ?bq ?no_nl l
 
-  let read_until_q ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Quote as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Quotes 0) :: tl ->
-          loop (Quote::accu) n (Quote::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Quote as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Quotes 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Quote::tl
-          else
-            loop (Quote::accu) (n-1) (Quote::tl)
-      | Quotes x :: tl ->
-          if n = 0 then
-            List.rev accu, Quotes(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Quote::accu -> Quotes(0)::accu
-               | Quotes x::accu -> Quotes(x+1)::accu
-               | _ -> Quote::accu)
-              (n-1)
-              (Quotes(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_dq ?bq ?no_nl l =
+    read_until Doublequote None ?bq ?no_nl l
 
-  let read_until_obracket ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Obracket as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Obrackets 0) :: tl ->
-          loop (Obracket::accu) n (Obracket::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Obracket as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Obrackets 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Obracket::tl
-          else
-            loop (Obracket::accu) (n-1) (Obracket::tl)
-      | Obrackets x :: tl ->
-          if n = 0 then
-            List.rev accu, Obrackets(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Obracket::accu -> Obrackets(0)::accu
-               | Obrackets x::accu -> Obrackets(x+1)::accu
-               | _ -> Obracket::accu)
-              (n-1)
-              (Obrackets(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_q ?bq ?no_nl l =
+    read_until Quote None ?bq ?no_nl l
 
-  let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Cbracket as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Cbrackets 0) :: tl ->
-          loop (Cbracket::accu) n (Cbracket::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl
-      | Backslash :: (Obracket as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Obrackets 0) :: tl ->
-          loop (Obracket::accu) n (Obracket::tl)
-      | Obracket as e :: tl ->
-          loop (e::accu) (n+1) tl
-      | Obrackets x as e :: tl ->
-          loop (e::accu) (n+x+2) tl
-      | Cbracket as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Cbrackets 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Cbracket::tl
-          else
-            loop (Cbracket::accu) (n-1) (Cbracket::tl)
-      | Cbrackets x :: tl ->
-          if n = 0 then
-            List.rev accu, Cbrackets(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Cbracket::accu -> Cbrackets(0)::accu
-               | Cbrackets x::accu -> Cbrackets(x+1)::accu
-               | _ -> Cbracket::accu)
-              (n-1)
-              (Cbrackets(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
+  let read_until_obracket ?bq ?no_nl l =
+    read_until Obracket None ?bq ?no_nl l
 
-  let read_until_space ?(bq=false) ?(no_nl=false) l =
-    assert_well_formed l;
-    let rec loop accu n = function
-      | Backslash :: (Space as b) :: tl ->
-          loop (b::accu) n tl
-      | Backslash :: (Spaces 0) :: tl ->
-          loop (Space::accu) n (Space::tl)
-      | Backslashs 0 :: tl ->
-          loop (Backslash::accu) n tl
-      | Backslashs 1 :: tl ->
-          loop (Backslash::accu) n (Backslash::tl)
-      | Backslashs 2 :: tl ->
-          loop (Backslashs 0::accu) n tl
-      | (Backslashs x) :: tl ->
-          if x mod 2 = 0 then
-            loop (Backslashs(x/2-1)::accu) n tl
-          else
-            loop (Backslashs(x/2-1)::accu) n (Backslash::tl)
-      | (Backquote|Backquotes _ as e)::tl as l ->
-          if bq then
-            match bcode [] [] l with
-            | None -> loop (e::accu) n tl
-            | Some (r, _, tl) ->
-                loop (* not very pretty kind of hack *)
-                  (List.rev(L.lex(Omd_backend.markdown_of_md r))@accu)
-                  n
-                  tl
-          else
-            loop (e::accu) n tl    | Space as e :: tl ->
-          if n = 0 then
-            List.rev accu, tl
-          else
-            loop (e::accu) (n-1) tl
-      | Spaces 0 :: tl ->
-          if n = 0 then
-            List.rev accu, Space::tl
-          else
-            loop (Space::accu) (n-1) (Space::tl)
-      | Spaces x :: tl ->
-          if n = 0 then
-            List.rev accu, Spaces(x-1)::tl
-          else
-            loop
-              (match accu with
-               | Space::accu -> Spaces(0)::accu
-               | Spaces x::accu -> Spaces(x+1)::accu
-               | _ -> Space::accu)
-              (n-1)
-              (Spaces(x-1)::tl)
-      | (Newline|Newlines _ as e)::tl ->
-          if no_nl then
-            raise NL_exception
-          else
-            loop (e::accu) n tl
-      | e::tl ->
-          loop (e::accu) n tl
-      | [] ->
-          raise Premature_ending
-    in
-    if debug then
-      eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-    let res = loop [] 0 l in
-    if debug then
-      eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-    res
-  (* /end generated part *)
+  let read_until_cbracket ?bq ?no_nl l =
+    read_until Cbracket (Some Obracket) ?bq ?no_nl l
+
+  let read_until_space ?bq ?no_nl l =
+    read_until Space None ?bq ?no_nl l
 
   let read_until_newline l =
     assert_well_formed l;
