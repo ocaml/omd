@@ -21,12 +21,12 @@ let remove_comments l =
   let open Omd_representation in
   let rec loop = function
     | true, Exclamations n :: tl when n > 0 ->
-      loop (true,
-            Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
+        loop (true,
+              Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
     | _, (Newline|Newlines _ as e)::tl ->
-      e::loop (true, tl)
+        e::loop (true, tl)
     | _, e::tl ->
-      e::loop (false, tl)
+        e::loop (false, tl)
     | _, [] -> []
   in loop (true, l)
 
@@ -34,13 +34,13 @@ let remove_endline_comments l =
   let open Omd_representation in
   let rec loop = function
     | Backslash :: (Exclamations n as e) :: tl when n > 0 ->
-      e :: loop tl
+        e :: loop tl
     | Backslashs b :: (Exclamations n as e) :: tl when n > 0 && b mod 2 = 1 ->
-      Backslashs(b-1) :: e :: loop tl
+        Backslashs(b-1) :: e :: loop tl
     | Exclamations n :: tl when n > 0 ->
-      loop (Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
+        loop (Omd_utils.eat (function Newline|Newlines _ -> false|_-> true) tl)
     | e::tl ->
-      e::loop tl
+        e::loop tl
     | [] -> []
   in loop l
 
@@ -95,17 +95,17 @@ let code_stylist_of_program p =
     close_out otmp1;
     match Sys.command (Printf.sprintf "( cat %s | %s ) > %s" tmp1 p tmp2) with
     | 0 ->
-      let cat f =
-        let ic = open_in f in
-        let b = Buffer.create 64 in
-        try
-          while true do
-            Buffer.add_char b (input_char ic)
-          done;
-          assert false
-        with End_of_file -> Buffer.contents b
-      in
-      cat tmp2
+        let cat f =
+          let ic = open_in f in
+          let b = Buffer.create 64 in
+          try
+            while true do
+              Buffer.add_char b (input_char ic)
+            done;
+            assert false
+          with End_of_file -> Buffer.contents b
+        in
+        cat tmp2
     | _ -> code
 
 let register_code_stylist_of_program x =
@@ -136,12 +136,12 @@ let patch_html_comments l =
     for i = 4 to String.length s - 4 do
       match s.[i] with
       | '-' as c ->
-        if (i > 4 && s.[i-1] = '-')
-        || (i < String.length s - 5 && s.[i+1] = '-')
-        then
-          Printf.bprintf b "&#%d;" (int_of_char c)
-        else
-          Buffer.add_char b c
+          if (i > 4 && s.[i-1] = '-')
+          || (i < String.length s - 5 && s.[i+1] = '-')
+          then
+            Printf.bprintf b "&#%d;" (int_of_char c)
+          else
+            Buffer.add_char b c
       | c -> Buffer.add_char b c
     done;
     for i = String.length s - 3 to String.length s - 1 do
@@ -151,9 +151,9 @@ let patch_html_comments l =
   in
   let rec loop accu = function
     | Html_comment s :: tl ->
-      loop (Html_comment(htmlcomments s)::accu) tl
+        loop (Html_comment(htmlcomments s)::accu) tl
     | e :: tl ->
-      loop (e :: accu) tl
+        loop (e :: accu) tl
     | [] -> List.rev accu
   in loop [] l
 
@@ -188,13 +188,13 @@ let tag_toc l =
       Word "Table"::Space::
       Word "of"::Space::
       Word "contents"::Star::tl ->
-      Tag("tag_toc",
-          object
-            method parser_extension r p l =
-              Some(X(x)::r,p,l)
-            method to_string = ""
-          end
-         ) :: loop tl
+        Tag("tag_toc",
+            object
+              method parser_extension r p l =
+                Some(X(x)::r,p,l)
+              method to_string = ""
+            end
+           ) :: loop tl
     | e::tl -> e::loop tl
     | [] -> []
   in loop l
@@ -279,20 +279,20 @@ let lex_with_verb_extension s =
         List.rev_map
           (function
             | To_lex x ->
-              Omd_lexer.lex x 
+                Omd_lexer.lex x 
             | Verb x ->
-              [Omd_representation.Tag(
-                  "raw",
-                  object
-                    method parser_extension r p l =
-                      match p with
-                      | [] | [Omd_representation.Newlines _] ->
-                        Some(Raw_block x :: r, [Omd_representation.Space], l)
-                      | _ ->
-                        Some(Raw x :: r, [Omd_representation.Space], l)
-                    method to_string = x
-                  end
-                )]
+                [Omd_representation.Tag(
+                    "raw",
+                    object
+                      method parser_extension r p l =
+                        match p with
+                        | [] | [Omd_representation.Newlines _] ->
+                            Some(Raw_block x :: r, [Omd_representation.Space], l)
+                        | _ ->
+                            Some(Raw x :: r, [Omd_representation.Space], l)
+                      method to_string = x
+                    end
+                  )]
           )
           l        
       in
@@ -442,8 +442,8 @@ let () =
     main ()
   with
   | Omd_utils.Error msg when not Omd_utils.debug ->
-    Printf.eprintf "(OMD) Error: %s\n" msg;
-    exit 1
+      Printf.eprintf "(OMD) Error: %s\n" msg;
+      exit 1
   | Sys_error msg ->
-    Printf.eprintf "Error: %s\n" msg;
-    exit 1
+      Printf.eprintf "Error: %s\n" msg;
+      exit 1

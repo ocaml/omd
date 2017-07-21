@@ -74,7 +74,7 @@ let rec set_default_lang lang = function
   (* Elements that do not contain Markdown. *)
   | (Text _|Code _|Code_block _|Br|Hr|NL|Ref _|Img_ref _|Raw _|Raw_block _
     |Html _|Html_block _|Html_comment _|Img _|X _) as e :: tl ->
-    e :: set_default_lang lang tl
+      e :: set_default_lang lang tl
   | [] -> []
 
 
@@ -155,8 +155,8 @@ let toc ?(start=[]) ?(depth=2) md =
   let headers = match start with
     | [] -> headers
     | number :: subsections ->
-      if number < 0 then invalid_arg("Omd.toc: level 1 start must be >= 0");
-      find_start headers 1 number subsections in
+        if number < 0 then invalid_arg("Omd.toc: level 1 start must be >= 0");
+        find_start headers 1 number subsections in
   let len = List.length start in
   let toc, _ = make_toc headers
       ~min_level:(len + 1) ~max_level:(len + depth) in

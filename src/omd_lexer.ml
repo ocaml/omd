@@ -30,7 +30,7 @@ type t = Omd_representation.tok list
 
 let string_of_token = function
   | Tag (name, o) ->
-    if Omd_utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
+      if Omd_utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
   | Ampersand -> "&"
   | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
   | At -> "@"
@@ -178,7 +178,7 @@ let split_first = function
   | Newline | Number _ | Obrace | Oparenthesis | Obracket | Percent
   | Plus | Question | Quote | Semicolon | Slash | Space | Star | Tab
   | Tilde | Underscore | Tag _ | Word _ ->
-    invalid_arg "Omd_lexer.split_first"
+      invalid_arg "Omd_lexer.split_first"
 
 module type Input =
 sig
@@ -220,7 +220,7 @@ struct
             | '"' | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':'
             | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
             | '$' | '%' | '!' | '?' | '=' ->
-              Word(I.sub s ~pos:start ~len:(!i-start))
+                Word(I.sub s ~pos:start ~len:(!i-start))
             | c -> incr i; loop()
         end
       in
@@ -240,12 +240,12 @@ struct
         Number(I.sub s ~pos:start ~len:(!i-start))
       else
         begin match I.get s !i with
-          | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
-          | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
-          | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
-          | '?' | '=' ->
+        | ' ' | '\t' | '\n' | '\r' | '#' | '*' | '-' | '+' | '`' | '\'' | '"'
+        | '\\' | '_' | '[' | ']' | '{' | '}' | '(' | ')' | ':' | ';' | '>'
+        | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/' | '$' | '%' | '!'
+        | '?' | '=' ->
             Number(I.sub s ~pos:start ~len:(!i-start))
-          | _ ->
+        | _ ->
             i := start;
             word()
         end
@@ -260,23 +260,23 @@ struct
         | '\t' -> let n = n_occ c in if n = 1 then Spaces(2) else Spaces(4*n-2)
         | '\n' -> let n = n_occ c in if n = 1 then Newline else Newlines (n-2)
         | '\r' -> (* eliminating \r by converting all styles to unix style *)
-          incr i;
-          let rec count_rn x =
-            if !i < l && I.get s (!i) = '\n' then
-              if !i + 1 < l && I.get s (!i+1) = '\r' then
-                (i := !i + 2; count_rn (x+1))
+            incr i;
+            let rec count_rn x =
+              if !i < l && I.get s (!i) = '\n' then
+                if !i + 1 < l && I.get s (!i+1) = '\r' then
+                  (i := !i + 2; count_rn (x+1))
+                else
+                  x
               else
                 x
+            in
+            let rn = 1 + count_rn 0 in
+            if rn = 1 then
+              match n_occ c with
+              | 1 -> Newline
+              | x -> assert(x>=2); Newlines(x-2)
             else
-              x
-          in
-          let rn = 1 + count_rn 0 in
-          if rn = 1 then
-            match n_occ c with
-            | 1 -> Newline
-            | x -> assert(x>=2); Newlines(x-2)
-          else
-            (assert(rn>=2);Newlines(rn-2))
+              (assert(rn>=2);Newlines(rn-2))
         | '#'  -> let n = n_occ c in if n = 1 then Hash else Hashs (n-2)
         | '*'  -> let n = n_occ c in if n = 1 then Star else Stars (n-2)
         | '-'  -> let n = n_occ c in if n = 1 then Minus else Minuss (n-2)
@@ -284,24 +284,24 @@ struct
         | '`'  -> let n = n_occ c in if n = 1 then Backquote else Backquotes (n-2)
         | '\'' -> let n = n_occ c in if n = 1 then Quote else Quotes (n-2)
         | '"'  -> let n = n_occ c in if n = 1 then Doublequote
-          else Doublequotes (n-2)
+            else Doublequotes (n-2)
         | '\\' -> let n = n_occ c in if n = 1 then Backslash
-          else Backslashs (n-2)
+            else Backslashs (n-2)
         | '_'  -> let n = n_occ c in if n = 1 then Underscore
-          else Underscores (n-2)
+            else Underscores (n-2)
         | '['  -> let n = n_occ c in if n = 1 then Obracket
-          else Obrackets (n-2)
+            else Obrackets (n-2)
         | ']'  -> let n = n_occ c in if n = 1 then Cbracket else Cbrackets (n-2)
         | '{'  -> let n = n_occ c in if n = 1 then Obrace else Obraces (n-2)
         | '}'  -> let n = n_occ c in if n = 1 then Cbrace else Cbraces (n-2)
         | '('  -> let n = n_occ c in if n = 1 then Oparenthesis
-          else Oparenthesiss (n-2)
+            else Oparenthesiss (n-2)
         | ')'  -> let n = n_occ c in if n = 1 then Cparenthesis
-          else Cparenthesiss (n-2)
+            else Cparenthesiss (n-2)
         | ':'  -> let n = n_occ c in if n = 1 then Colon else Colons (n-2)
         | ';'  -> let n = n_occ c in if n = 1 then Semicolon else Semicolons (n-2)
         | '>'  -> let n = n_occ c in if n = 1 then Greaterthan
-          else Greaterthans (n-2)
+            else Greaterthans (n-2)
         | '~'  -> let n = n_occ c in if n = 1 then Tilde else Tildes (n-2)
         | '<'  -> let n = n_occ c in if n = 1 then Lessthan else Lessthans (n-2)
         | '@'  -> let n = n_occ c in if n = 1 then At else Ats (n-2)
@@ -315,7 +315,7 @@ struct
         | '%'  -> let n = n_occ c in if n = 1 then Percent else Percents (n-2)
         | '='  -> let n = n_occ c in if n = 1 then Equal else Equals (n-2)
         | '!'  -> let n = n_occ c in if n = 1 then Exclamation
-          else Exclamations (n-2)
+            else Exclamations (n-2)
         | '?'  -> let n = n_occ c in if n = 1 then Question else Questions (n-2)
         | '0' .. '9' -> maybe_number()
         | c -> word() in
@@ -386,15 +386,15 @@ let destring_of_tokens ?(limit=max_int) tl =
   let b = Buffer.create 1024 in
   let rec loop (i:int) (tlist:tok list) : unit = match tlist with
     | e::tl ->
-      if limit = i then
-        loop i []
-      else
-        begin
-          Buffer.add_string b (String.escaped (string_of_token e));
-          Buffer.add_string b "::";
-          loop (succ i) tl
-        end
+        if limit = i then
+          loop i []
+        else
+          begin
+            Buffer.add_string b (String.escaped (string_of_token e));
+            Buffer.add_string b "::";
+            loop (succ i) tl
+          end
     | [] ->
-      Buffer.add_string b "[]"
+        Buffer.add_string b "[]"
   in
   Buffer.contents (loop 0 tl; b)

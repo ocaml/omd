@@ -19,18 +19,18 @@ let debug =
   in
   match _DEBUG, _OMD_DEBUG with
   | _, Some "false" ->
-    false
+      false
   | Some _, None ->
-    eprintf "omd: debug mode activated because DEBUG is set, \
-             you can deactivate the mode by unsetting DEBUG \
-             or by setting OMD_DEBUG to the string \"false\".\n%!";
-    true
+      eprintf "omd: debug mode activated because DEBUG is set, \
+               you can deactivate the mode by unsetting DEBUG \
+               or by setting OMD_DEBUG to the string \"false\".\n%!";
+      true
   | None, None ->
-    false
+      false
   | _, Some _ ->
-    eprintf "omd: debug mode activated because OMD_DEBUG is set
+      eprintf "omd: debug mode activated because OMD_DEBUG is set
               to a value that isn't the string \"false\".\n%!";
-    true
+      true
 
 exception Error of string
 
@@ -80,19 +80,19 @@ let fsplit_rev ?(excl=(fun _ -> false)) ~(f:'a split) l
   : ('a list * 'a list) option =
   let rec loop accu = function
     | [] ->
-      begin
-        match f [] with
-        | Split(left, right) ->      Some(left@accu, right)
-        | Continue_with(left, tl) -> loop (left@accu) tl
-        | Continue ->                None
-      end
+        begin
+          match f [] with
+          | Split(left, right) ->      Some(left@accu, right)
+          | Continue_with(left, tl) -> loop (left@accu) tl
+          | Continue ->                None
+        end
     | e::tl as l ->
-      if excl l then
-        None
-      else match f l with
-        | Split(left, right) ->      Some(left@accu, right)
-        | Continue_with(left, tl) -> loop (left@accu) tl
-        | Continue ->                loop (e::accu) tl
+        if excl l then
+          None
+        else match f l with
+          | Split(left, right) ->      Some(left@accu, right)
+          | Continue_with(left, tl) -> loop (left@accu) tl
+          | Continue ->                loop (e::accu) tl
   in loop [] l
 
 let fsplit ?(excl=(fun _ -> false)) ~f l =
@@ -109,14 +109,14 @@ let id_of_string ids s =
     else
       match s.[i] with
       | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
-        Buffer.add_char out c ;
-        loop true (i + 1)
+          Buffer.add_char out c ;
+          loop true (i + 1)
       (* Don't want to start with dashes. *)
       | _ when not started ->
-        loop false (i + 1)
+          loop false (i + 1)
       | _ ->
-        Buffer.add_char out '-' ;
-        loop false (i + 1)
+          Buffer.add_char out '-' ;
+          loop false (i + 1)
   in
   loop false 0 ;
   let s' = Buffer.contents out in
@@ -147,33 +147,33 @@ let htmlentities ?(md=false) s =
         | '"' -> Buffer.add_string b "&quot;"
         | '\'' -> Buffer.add_string b "&#39;"
         | '&' ->
-          if md then
-            begin
-              try
-                let () = match s.[i+1] with
-                  | '#' ->
-                    let rec ff j =
-                      match s.[j] with
-                      | '0' .. '9' -> ff (succ j)
-                      | ';' -> ()
-                      | _ -> raise Break.Break
-                    in
-                    ff (i+2)
-                  | 'A' .. 'Z' | 'a' .. 'z' ->
-                    let rec ff j =
-                      match s.[j] with
-                      | 'A' .. 'Z' | 'a' .. 'z' -> ff (succ j)
-                      | ';' -> ()
-                      | _ -> raise Break.Break
-                    in
-                    ff (i+2)
-                  | _ -> raise Break.Break
-                in
-                Buffer.add_string b "&"
-              with _ -> Buffer.add_string b "&amp;"
-            end
-          else
-            Buffer.add_string b "&amp;"
+            if md then
+              begin
+                try
+                  let () = match s.[i+1] with
+                    | '#' ->
+                        let rec ff j =
+                          match s.[j] with
+                          | '0' .. '9' -> ff (succ j)
+                          | ';' -> ()
+                          | _ -> raise Break.Break
+                        in
+                        ff (i+2)
+                    | 'A' .. 'Z' | 'a' .. 'z' ->
+                        let rec ff j =
+                          match s.[j] with
+                          | 'A' .. 'Z' | 'a' .. 'z' -> ff (succ j)
+                          | ';' -> ()
+                          | _ -> raise Break.Break
+                        in
+                        ff (i+2)
+                    | _ -> raise Break.Break
+                  in
+                  Buffer.add_string b "&"
+                with _ -> Buffer.add_string b "&amp;"
+              end
+            else
+              Buffer.add_string b "&amp;"
         | '<' -> Buffer.add_string b "&lt;"
         | '>' -> Buffer.add_string b "&gt;"
         | c -> Buffer.add_char b c
@@ -192,11 +192,11 @@ let minimalize_blanks s =
     else
       match s.[i] with
       | ' ' | '\t' | '\n' ->
-        loop true (succ i)
+          loop true (succ i)
       | c ->
-        if Buffer.length b > 0 && f then
-          Buffer.add_char b ' ';
-        loop false (succ i)
+          if Buffer.length b > 0 && f then
+            Buffer.add_char b ' ';
+          loop false (succ i)
   in loop false 0
 
 let rec eat f = function
@@ -247,7 +247,7 @@ let rec extract_html_attributes (html:string) =
         with Not_found -> None
       with
       | Some (((_,_) as a), new_s) ->
-        loop new_s (a::res) 0
+          loop new_s (a::res) 0
       | None -> res
   and take_attribute s i =
     let name, after_eq = cut_on_char_from s i '=' in
@@ -264,13 +264,13 @@ let rec extract_html_attributes (html:string) =
   else
     match html.[1] with
     | '<' | ' ' ->
-      extract_html_attributes
-        (remove_prefix_spaces (String.sub html 1 (String.length html - 1)))
+        extract_html_attributes
+          (remove_prefix_spaces (String.sub html 1 (String.length html - 1)))
     | _ ->
-      try
-        let html = snd (cut_on_char_from html 0 ' ') in
-        loop (String.sub html 0 (String.index html '>')) [] 0
-      with Not_found -> []
+        try
+          let html = snd (cut_on_char_from html 0 ' ') in
+          loop (String.sub html 0 (String.index html '>')) [] 0
+        with Not_found -> []
 
 let rec extract_inner_html (html:string) =
   let rec cut_on_char_from s i c =

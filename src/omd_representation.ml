@@ -90,18 +90,18 @@ let rec loose_compare t1 t2 = match t1,t2 with
   | Blockquote e1::tl1, Blockquote e2::tl2
   | Paragraph e1::tl1, Paragraph e2::tl2
     ->
-    (match loose_compare e1 e2 with
-     | 0 -> loose_compare tl1 tl2
-     | i -> i)
+      (match loose_compare e1 e2 with
+       | 0 -> loose_compare tl1 tl2
+       | i -> i)
 
   | Ul e1::tl1, Ul e2::tl2
   | Ol e1::tl1, Ol e2::tl2
   | Ulp e1::tl1, Ulp e2::tl2
   | Olp e1::tl1, Olp e2::tl2
     ->
-    (match loose_compare_lists e1 e2 with
-     | 0 -> loose_compare tl1 tl2
-     | i -> i)
+      (match loose_compare_lists e1 e2 with
+       | 0 -> loose_compare tl1 tl2
+       | i -> i)
 
   | (Code _ as e1)::tl1, (Code _ as e2)::tl2
   | (Br as e1)::tl1, (Br as e2)::tl2
@@ -115,67 +115,67 @@ let rec loose_compare t1 t2 = match t1,t2 with
   | (Img _ as e1)::tl1, (Img _ as e2)::tl2
   | (Text _ as e1)::tl1, (Text _ as e2)::tl2
     ->
-    (match compare e1 e2 with
-     | 0 -> loose_compare tl1 tl2
-     | i -> i)
+      (match compare e1 e2 with
+       | 0 -> loose_compare tl1 tl2
+       | i -> i)
 
   | Code_block(l1,c1)::tl1, Code_block(l2,c2)::tl2
     ->
-    (match compare l1 l2, String.length c1 - String.length c2 with
-     | 0, 0 ->
-       (match compare c1 c2 with
-        | 0 -> loose_compare tl1 tl2
-        | i -> i)
-     | 0, 1 ->
-       (match compare c1 (c2^"\n") with
-        | 0 -> loose_compare tl1 tl2
-        | i -> i)
-     | 0, -1 ->
-       (match compare (c1^"\n") c2 with
-        | 0 -> loose_compare tl1 tl2
-        | i -> i)
-     | i, _ -> i
-    )
+      (match compare l1 l2, String.length c1 - String.length c2 with
+       | 0, 0 ->
+           (match compare c1 c2 with
+            | 0 -> loose_compare tl1 tl2
+            | i -> i)
+       | 0, 1 ->
+           (match compare c1 (c2^"\n") with
+            | 0 -> loose_compare tl1 tl2
+            | i -> i)
+       | 0, -1 ->
+           (match compare (c1^"\n") c2 with
+            | 0 -> loose_compare tl1 tl2
+            | i -> i)
+       | i, _ -> i
+      )
 
   | Url (href1, t1, title1)::tl1, Url (href2, t2, title2)::tl2
     ->
-    (match compare href1 href2 with
-     | 0 -> (match loose_compare t1 t2 with
-         | 0 -> (match compare title1 title2 with
-             | 0 -> loose_compare tl1 tl2
-             | i -> i)
-         | i -> i)
-     | i -> i)
+      (match compare href1 href2 with
+       | 0 -> (match loose_compare t1 t2 with
+           | 0 -> (match compare title1 title2 with
+               | 0 -> loose_compare tl1 tl2
+               | i -> i)
+           | i -> i)
+       | i -> i)
 
   | Ref (ref_container1, name1, x1, fallback1)::tl1,
     Ref (ref_container2, name2, x2, fallback2)::tl2
   | Img_ref (ref_container1, name1, x1, fallback1)::tl1,
     Img_ref (ref_container2, name2, x2, fallback2)::tl2
     ->
-    (match compare (name1, x1) (name2, x2) with
-     | 0 ->
-       let cff =
-         if fallback1#to_string = fallback2#to_string then
-           0
-         else
-           loose_compare (fallback1#to_t) (fallback2#to_t)
-       in
-       if cff = 0 then
-         match
-           compare (ref_container1#get_all) (ref_container2#get_all)
-         with
-         | 0 -> loose_compare tl1 tl2
-         | i -> i
-       else
-         cff
-     | i -> i)
+      (match compare (name1, x1) (name2, x2) with
+       | 0 ->
+           let cff =
+             if fallback1#to_string = fallback2#to_string then
+               0
+             else
+               loose_compare (fallback1#to_t) (fallback2#to_t)
+           in
+           if cff = 0 then
+             match
+               compare (ref_container1#get_all) (ref_container2#get_all)
+             with
+             | 0 -> loose_compare tl1 tl2
+             | i -> i
+           else
+             cff
+       | i -> i)
 
   | X e1::tl1, X e2::tl2 ->
-    (match compare (e1#name) (e2#name) with
-     | 0 -> (match compare (e1#to_t) (e2#to_t) with
-         | 0 -> loose_compare tl1 tl2
-         | i -> i)
-     | i -> i)
+      (match compare (e1#name) (e2#name) with
+       | 0 -> (match compare (e1#to_t) (e2#to_t) with
+           | 0 -> loose_compare tl1 tl2
+           | i -> i)
+       | i -> i)
   | X _::_, _ -> 1
   | _, X _::_ -> -1
   | _ -> compare t1 t2
@@ -184,9 +184,9 @@ and loose_compare_lists l1 l2 =
   match l1, l2 with
   | [], [] -> 0
   | e1::tl1, e2::tl2 ->
-    (match loose_compare e1 e2 with
-     | 0 -> loose_compare_lists tl1 tl2
-     | i -> i)
+      (match loose_compare e1 e2 with
+       | 0 -> loose_compare_lists tl1 tl2
+       | i -> i)
   | _, [] -> 1
   | _ -> -1
 
@@ -349,152 +349,152 @@ let dummy_X =
 let rec visit f = function
   | [] -> []
   | Paragraph v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Paragraph(visit f v)::visit f tl
-    end
+      end
   | H1 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H1(visit f v)::visit f tl
-    end
+      end
   | H2 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H2(visit f v)::visit f tl
-    end
+      end
   | H3 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H3(visit f v)::visit f tl
-    end
+      end
   | H4 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H4(visit f v)::visit f tl
-    end
+      end
   | H5 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H5(visit f v)::visit f tl
-    end
+      end
   | H6 v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> H6(visit f v)::visit f tl
-    end
+      end
   | Emph v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Emph(visit f v)::visit f tl
-    end
+      end
   | Bold v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Bold(visit f v)::visit f tl
-    end
+      end
   | Ul v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Ul(List.map (visit f) v)::visit f tl
-    end
+      end
   | Ol v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Ol(List.map (visit f) v)::visit f tl
-    end
+      end
   | Ulp v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Ulp(List.map (visit f) v)::visit f tl
-    end
+      end
   | Olp v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Olp(List.map (visit f) v)::visit f tl
-    end
+      end
   | Blockquote v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Blockquote(visit f v)::visit f tl
-    end
+      end
   | Url(href,v,title) as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Url(href,visit f v,title)::visit f tl
-    end
+      end
   | Text v as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Code _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Code_block _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Ref _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Img_ref _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Html _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Html_block _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Html_comment _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Raw _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Raw_block _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Img  _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | X  _ as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl
-    end
+      end
   | Br as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Br::visit f tl
-    end
+      end
   | Hr as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> Hr::visit f tl
-    end
+      end
   | NL as e::tl ->
-    begin match f e with
+      begin match f e with
       | Some(l) -> l@visit f tl
       | None -> NL::visit f tl
-    end
+      end
