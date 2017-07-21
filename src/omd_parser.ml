@@ -334,7 +334,6 @@ struct
         (Omd_backend.sexpr_of_md r);
     r
 
-
   (** [assert_well_formed] is a developer's function that helps to
       track badly constructed token lists.  This function has an
       effect only if [trackfix] is [true].  *)
@@ -354,15 +353,15 @@ struct
     if debug then eprintf "(OMD) Omd_parser.extract_fallback\n%!";
     let rec loop accu = function
       | [] -> List.rev accu
-      | e::tl as r ->
+      | e :: tl as r ->
           if r == remains then
             List.rev accu
           else
             match e, remains with
-            | Cbrackets 0, Cbracket::r when tl = r ->
+            | Delim (2, Cbracket), Delim (1, Cbracket) :: r when tl = r ->
                 let accu = Word "]" :: accu in
                 List.rev accu
-            | Cbrackets n, Cbrackets m::r when m + 1 = n && tl = r ->
+            | Delim (n, Cbracket), Delim (m, Cbracket) :: r when m + 1 = n && tl = r ->
                 let accu = Word "]" :: accu in
                 List.rev accu
             | _ ->
@@ -373,7 +372,6 @@ struct
       method to_string = L.string_of_tokens a
       method to_t = [Text(L.string_of_tokens a)]
     end
-
 
   let unindent_rev n lexemes =
     if debug then eprintf "(OMD) CALL: Omd_parser.unindent_rev\n%!";
