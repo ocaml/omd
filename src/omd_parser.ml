@@ -481,46 +481,30 @@ struct
     assert (n>0 && n<4);
     match
       fsplit
-        ~excl:(function Newlines _ :: _ -> true | _ -> false)
+        ~excl:(function Delim (_, Newline) :: _ -> true | _ -> false)
         ~f:(function
-            | Backslash::Underscore::tl ->
-                Continue_with([Underscore;Backslash],tl)
-            | Backslash::Underscores 0::tl ->
-                Continue_with([Underscore;Backslash],Underscore::tl)
-            | Backslash::Underscores n::tl ->
-                Continue_with([Underscore;Backslash],Underscores(n-1)::tl)
-            | (Backslashs b as x)::Underscore::tl ->
+            | (Delim (b, Backslash) as x) :: (Delim (n, Underscore) as s) :: tl ->
                 if b mod 2 = 0 then
-                  Continue_with([x],Underscore::tl)
+                  Continue_with ([x], s :: tl)
                 else
-                  Continue_with([Underscore;x],tl)
-            | (Backslashs b as x)::(Underscores 0 as s)::tl ->
-                if b mod 2 = 0 then
-                  Continue_with([x],s::tl)
-                else
-                  Continue_with([Underscore;x],Underscore::tl)
-            | (Backslashs b as x)::(Underscores n as s)::tl ->
-                if b mod 2 = 0 then
-                  Continue_with([x],s::tl)
-                else
-                  Continue_with([Underscore;x],Underscores(n-1)::tl)
-            | (Space|Spaces _ as x)::(Underscore|Underscores _ as s)::tl ->
-                Continue_with([s;x],tl)
-            | (Underscore|Underscores _ as s)::(Word _|Number _ as w):: tl ->
-                Continue_with([w;s],tl)
-            | (Underscore|Underscores _ as s)::tl ->
+                  Continue_with ([Delim (1, Underscore); x], delim (n-1) Underscore tl)
+            | (Delim (_, Space) as x) :: (Delim (_, Underscore) as s) :: tl ->
+                Continue_with ([s; x], tl)
+            | (Delim (_, Underscore) as s) :: (Word _ | Number _ as w) :: tl ->
+                Continue_with ([w; s], tl)
+            | (Delim (_, Underscore) as s) :: tl ->
                 if L.length s = n then
-                  Split([],tl)
+                  Split ([],tl)
                 else
                   Continue
-            | _ -> Continue)
-        l
+            | _ ->
+                Continue
+          ) l
     with
     | None ->
         None
-    | Some(left,right) ->
-        if is_blank left then None else Some(left,right)
-
+    | Some (left,right) ->
+        if is_blank left then None else Some (left,right)
 
   let uemph_or_bold n l =
     assert_well_formed l;
@@ -531,8 +515,7 @@ struct
       sm_uemph_or_bold n l
 
   let eat_blank =
-    eat (function |Space|Spaces _|Newline|Newlines _ -> true| _ -> false)
-
+    eat (function Delim (_, (Space | Newline)) -> true| _ -> false)
 
   (* used by tag__maybe_h1 and tag__maybe_h2 *)
   let setext_title main_loop (l:l) : (Omd_representation.tok list * l) option =
