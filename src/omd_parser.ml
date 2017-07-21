@@ -1031,56 +1031,46 @@ struct
 
   let maybe_extension extensions r p l =
     match extensions with
-    | [] -> None
+    | [] ->
+        None
     | _ ->
-        List.fold_left
-          (function
+        List.fold_left (function
             | None ->
                 (fun f -> f#parser_extension r p l)
             | Some(nr, np, nl) as e ->
-                (fun f -> match f#parser_extension nr np nl with
+                (fun f ->
+                   match f#parser_extension nr np nl with
                    | None -> e
-                   | Some _ as k -> k)
-          )
-          None
-          extensions
+                   | Some _ as k -> k
+                )
+          ) None extensions
 
   (* blockquotes *)
   let emailstyle_quoting (main_loop:main_loop) r _p lexemes =
     assert_well_formed lexemes;
-    let rec loop block cl =
-      function
-      | Newline::Greaterthan::(Newline::_ as tl) ->
-          loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Space::tl ->
-          loop (Newline::cl@block) [] tl
-      | Newline::Greaterthan::Spaces 0::tl ->
-          loop (Newline::cl@block) [Space] tl
-      | Newline::Greaterthan::Spaces n::tl ->
-          assert(n>0);
-          loop (Newline::cl@block) [Spaces(n-1)] tl
-
+    let rec loop block cl = function
+      | Delim (1, Newline) :: Delim (1, Greaterthan) :: (Delim (1, Newline) :: _ as tl) ->
+          loop (Delim (1, Newline) :: cl@block) [] tl
+      | Delim (1, Newline) :: Delim (1, Greaterthan) :: Delim (n, Space) :: tl ->
+          assert (n > 0);
+          loop (Delim (1, Newline) :: cl@block) (delim (n-1) Space []) tl
       (* multi paragraph blockquotes with empty lines *)
-      | Newlines 0::Greaterthan::Space::tl ->
-          loop (Newlines 0::cl@block) [] tl
-      | Newlines 0::Greaterthan::Spaces 0::tl ->
-          loop (Newlines 0::cl@block) [Space] tl
-      | Newlines 0::Greaterthan::Spaces n::tl ->
+      | Delim (2, Newline) :: Delim (1, Greaterthan) :: Delim (n, Space) :: tl ->
           assert(n>0);
-          loop (Newlines 0::cl@block) [Spaces(n-1)] tl
-
-      | (Newlines _::_ as l) | ([] as l) -> fix(List.rev(cl@block)), l
-      | e::tl -> loop block (e::cl) tl
+          loop (Delim (2, Newline) :: cl@block) (delim (n-1) Space []) tl
+      | (Delim (_, Newline) :: _ as l) | ([] as l) ->
+          fix (List.rev (cl@block)), l
+      | e :: tl ->
+          loop block (e :: cl) tl
     in
     match loop [] [] lexemes with
-    | (Newline|Newlines _)::block, tl ->
+    | Delim (_, Newline) :: block, tl ->
         if debug then
           eprintf "(OMD) Omd_parser.emailstyle_quoting %S\n%!"
             (L.string_of_tokens block);
-        Some((Blockquote(main_loop [] [] block)::r), [Newline], tl)
+        Some (Blockquote (main_loop [] [] block) :: r, [Delim (1, Newline)], tl)
     | _ ->
         None
-
 
   (* maybe a reference *)
   let maybe_reference (main_loop:main_loop) rc r _p l =
