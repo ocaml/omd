@@ -731,65 +731,51 @@ struct
     | Some _ as tl -> tl
 
   (** [bcode] parses code that's delimited by backquote(s) *)
-  let bcode ?(default_lang=default_lang) r p l =
+  let bcode ?(default_lang = default_lang) r p l =
     assert_well_formed l;
     let e, tl =
       match l with
-      | (Backquote|Backquotes _ as e)::tl -> e, tl
-      | _ -> failwith "Omd_parser.bcode is wrongly called"
+      | Delim (_, Backquote) as e :: tl ->
+          e, tl
+      | _ ->
+          failwith "Omd_parser.bcode is wrongly called"
     in
     let rec code_block accu = function
       | [] ->
           None
-      | Backquote::tl ->
-          if e = Backquote then
-            match accu with
-            | Newline::accu ->
-                Some(List.rev accu, tl)
-            | _ ->
-                Some(List.rev accu, tl)
-          else
-            code_block (Backquote::accu) tl
-      | (Backquotes n as b)::tl ->
+      | Delim (n, Backquote) as b :: tl ->
           if e = b then
             match accu with
-            | Newline::accu ->
-                Some(List.rev accu, tl)
+            | Delim (1, Newline) :: accu ->
+                Some (List.rev accu, tl)
             | _ ->
-                Some(List.rev accu, tl)
+                Some (List.rev accu, tl)
           else
             code_block (b::accu) tl
-      | Tag(_, _)::tl ->
+      | Tag (_, _) :: tl ->
           code_block accu tl
-      | e::tl ->
+      | e :: tl ->
           code_block (e::accu) tl
     in
     match code_block [] tl with
-    | None -> None
-    | Some(cb, l) ->
-        if List.exists (function (Newline|Newlines _) -> true | _ -> false) cb
-        && (match p with []|[Newline|Newlines _] -> true | _ -> false)
-        && (match e with Backquotes n when n > 0 -> true | _ -> false)
+    | None ->
+        None
+    | Some (cb, l) ->
+        if List.exists (function Delim (_, Newline) -> true | _ -> false) cb
+        && (match p with [] | [Delim (_, Newline)] -> true | _ -> false)
+        && (match e with Delim (n, Backquote) -> n > 0 | _ -> false)
         then
           match cb with
-          | Word lang :: (Space|Spaces _) :: Newline :: tl
-          | Word lang :: Newline :: tl ->
+          | Word lang :: Delim (_, Space) :: Delim (n, Newline) :: tl
+          | Word lang :: Delim (n, Newline) :: tl ->
+              let code = L.string_of_tokens (delim (n-1) Newline tl) in
+              Some (Code_block (lang, code) :: r, [Delim (1, Backquote)], l)
+          | Delim (1, Newline) :: tl ->
               let code = L.string_of_tokens tl in
-              Some(Code_block(lang, code) :: r, [Backquote], l)
-          | Word lang :: (Space|Spaces _) :: Newlines 0 :: tl
-          | Word lang :: Newlines 0 :: tl ->
-              let code = L.string_of_tokens(Newline::tl) in
-              Some(Code_block(lang, code) :: r, [Backquote], l)
-          | Word lang :: (Space|Spaces _) :: Newlines n :: tl
-          | Word lang :: Newlines n :: tl ->
-              let code = L.string_of_tokens (Newlines(n-1)::tl) in
-              Some(Code_block(lang, code) :: r, [Backquote], l)
-          | Newline :: tl ->
-              let code = L.string_of_tokens tl in
-              Some(Code_block(default_lang, code) :: r, [Backquote], l)
+              Some (Code_block (default_lang, code) :: r, [Delim (1, Backquote)], l)
           | _ ->
               let code = L.string_of_tokens cb in
-              Some(Code_block(default_lang, code) :: r, [Backquote], l)
+              Some (Code_block (default_lang, code) :: r, [Delim (1, Backquote)], l)
         else
           let clean_bcode s =
             let rec loop1 i =
@@ -811,8 +797,7 @@ struct
           let code = L.string_of_tokens cb in
           if debug then
             eprintf "(OMD) clean_bcode %S => %S\n%!" code (clean_bcode code);
-          Some(Code(default_lang, clean_bcode code) :: r, [Backquote], l)
-
+          Some (Code (default_lang, clean_bcode code) :: r, [Delim (1, Backquote)], l)
 
   exception NL_exception
   exception Premature_ending
