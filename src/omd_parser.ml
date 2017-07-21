@@ -358,9 +358,6 @@ struct
             List.rev accu
           else
             match e, remains with
-            | Delim (2, Cbracket), Delim (1, Cbracket) :: r when tl = r ->
-                let accu = Word "]" :: accu in
-                List.rev accu
             | Delim (n, Cbracket), Delim (m, Cbracket) :: r when m + 1 = n && tl = r ->
                 let accu = Word "]" :: accu in
                 List.rev accu
@@ -377,39 +374,30 @@ struct
     if debug then eprintf "(OMD) CALL: Omd_parser.unindent_rev\n%!";
     assert_well_formed lexemes;
     let rec loop accu cl = function
-      | Newlines x::(Space|Spaces _)::Newlines y::tl ->
-          loop accu cl (Newlines(x+y+2)::tl)
-      | Newline::(Space|Spaces _)::Newlines x::tl ->
-          loop accu cl (Newlines(1+x)::tl)
-      | Newlines x::(Space|Spaces _)::Newline::tl ->
-          loop accu cl (Newlines(1+x)::tl)
-      | Newline::(Space|Spaces _)::Newline::tl ->
-          loop accu cl (Newlines(0)::tl)
-
-      | (Newline|Newlines 0 as nl)::(Space|Spaces _ as s)::(
-          (Number _::Dot::(Space|Spaces _)::_)
-        | ((Star|Plus|Minus)::(Space|Spaces _)::_)
-          as tl) as l ->
+      | Delim (x, Newline) :: Delim (_, Space) :: Delim (y, Newline) :: tl ->
+          loop accu cl (Delim (x+y, Newline) :: tl)
+      | (Delim ((1 | 2), Newline) as nl) :: (Delim (_, Space) as s) ::
+        ((Number _ :: Delim (1, Dot) :: Delim (_, Space) :: _) |
+         (Delim (1, (Star | Plus | Minus)) :: Delim (_, Space) :: _) as tl) as l ->
           if n = L.length s then
             loop (nl::cl@accu) [] tl
           else
             (cl@accu), l
-      | (Newline|Newlines 0 as nl)::(Space|Spaces _ as s)::tl ->
+      | (Delim ((1 | 2), Newline) as nl) :: (Delim (_, Space) as s) :: tl ->
           let x = L.length s - n in
           loop (nl::cl@accu)
             (if x > 0 then [L.make_space x] else [])
             tl
-      | Newlines(_)::_ as l ->
+      | Delim (_, Newline) :: _ as l ->
           (cl@accu), l
-      | Newline::_ as l ->
-          (cl@accu), l
-      | e::tl ->
-          loop accu (e::cl) tl
+      | e :: tl ->
+          loop accu (e :: cl) tl
       | [] as l ->
           (cl@accu), l
     in
     match loop [] [] lexemes with
-    | [], right -> [], right
+    | [], right ->
+        [], right
     | l, right ->
         assert_well_formed l;
         l, right
