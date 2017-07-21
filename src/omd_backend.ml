@@ -19,83 +19,83 @@ let text_of_md md =
   let b = Buffer.create 128 in
   let rec loop = function
     | X _ :: tl ->
-        loop tl
+      loop tl
     | Blockquote q :: tl ->
-        loop q;
-        loop tl
+      loop q;
+      loop tl
     | Ref(rc, name, text, fallback) :: tl ->
-        Buffer.add_string b (htmlentities ~md:true name);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:true name);
+      loop tl
     | Img_ref(rc, name, alt, fallback) :: tl ->
-        Buffer.add_string b (htmlentities ~md:true name);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:true name);
+      loop tl
     | Paragraph md :: tl ->
-        loop md;
-        Buffer.add_char b '\n';
-        Buffer.add_char b '\n';
-        loop tl
+      loop md;
+      Buffer.add_char b '\n';
+      Buffer.add_char b '\n';
+      loop tl
     | Img(alt, src, title) :: tl ->
-        Buffer.add_string b (htmlentities ~md:true alt);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:true alt);
+      loop tl
     | Text t :: tl ->
-        Buffer.add_string b (htmlentities ~md:true t);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:true t);
+      loop tl
     | Raw t :: tl ->
-        Buffer.add_string b t;
-        loop tl
+      Buffer.add_string b t;
+      loop tl
     | Raw_block t :: tl ->
-        Buffer.add_char b '\n';
-        Buffer.add_string b t;
-        Buffer.add_char b '\n';
-        loop tl
+      Buffer.add_char b '\n';
+      Buffer.add_string b t;
+      Buffer.add_char b '\n';
+      loop tl
     | Emph md :: tl ->
-        loop md;
-        loop tl
+      loop md;
+      loop tl
     | Bold md :: tl ->
-        loop md;
-        loop tl
+      loop md;
+      loop tl
     | (Ul l | Ol l) :: tl ->
-        List.iter (fun item -> loop item; Buffer.add_char b '\n') l;
-        loop tl
+      List.iter (fun item -> loop item; Buffer.add_char b '\n') l;
+      loop tl
     | (Ulp l | Olp l) :: tl ->
-        List.iter loop l;
-        loop tl
+      List.iter loop l;
+      loop tl
     | Code_block(lang, c) :: tl ->
-        Buffer.add_string b (htmlentities ~md:false c);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:false c);
+      loop tl
     | Code(lang, c) :: tl ->
-        Buffer.add_string b (htmlentities ~md:false c);
-        loop tl
+      Buffer.add_string b (htmlentities ~md:false c);
+      loop tl
     | Br :: tl ->
-        loop tl
+      loop tl
     | Hr :: tl ->
-        loop tl
+      loop tl
     | Html(tagname, attrs, body) :: tl ->
-        loop body;
-        loop tl
+      loop body;
+      loop tl
     | Html_block(tagname, attrs, body) :: tl ->
-        loop body;
-        loop tl
+      loop body;
+      loop tl
     | Html_comment s :: tl ->
-        loop tl
+      loop tl
     | Url (href,s,title) :: tl ->
-        loop s;
-        loop tl
+      loop s;
+      loop tl
     | H1 md :: tl
     | H2 md :: tl
     | H3 md :: tl
     | H4 md :: tl
     | H5 md :: tl
     | H6 md :: tl ->
-        loop md;
-        loop tl
+      loop md;
+      loop tl
     | NL :: tl ->
-        Buffer.add_string b "\n";
-        loop tl
+      Buffer.add_string b "\n";
+      loop tl
     | [] -> ()
   in
-    loop md;
-    Buffer.contents b
+  loop md;
+  Buffer.contents b
 
 let default_code_stylist ~lang code = code
 
@@ -112,9 +112,9 @@ let filter_text_omd_rev l =
 let remove_links : t -> t =
   Omd_representation.visit
     (fun e ->
-     match e with
-      | Url(_, t, _) -> Some t
-      | _ -> None
+       match e with
+       | Url(_, t, _) -> Some t
+       | _ -> None
     )
 
 let rec html_and_headers_of_md
@@ -179,7 +179,7 @@ let rec html_and_headers_of_md
            | Some t -> loop indent t
            | None ->
              match x#to_html ~indent:indent
-               (html_of_md ~override ~pindent ~nl2br ~cs:code_style) md
+                     (html_of_md ~override ~pindent ~nl2br ~cs:code_style) md
              with
              | Some s -> Buffer.add_string b s
              | None -> ());
@@ -665,209 +665,209 @@ let rec sexpr_of_md md =
   let b = Buffer.create 64 in
   let rec loop = function
     | X x :: tl ->
-        (match x#to_t md with
-           | Some t ->
+      (match x#to_t md with
+       | Some t ->
+         Buffer.add_string b "(X";
+         loop t;
+         Buffer.add_string b ")"
+       | None ->
+         match x#to_sexpr sexpr_of_md md with
+         | Some s ->
+           Buffer.add_string b "(X";
+           Buffer.add_string b s;
+           Buffer.add_string b ")"
+         | None ->
+           match x#to_html ~indent:0 html_of_md md with
+           | Some s ->
              Buffer.add_string b "(X";
-             loop t;
+             Buffer.add_string b s;
              Buffer.add_string b ")"
-           | None ->
-               match x#to_sexpr sexpr_of_md md with
-                 | Some s ->
-                   Buffer.add_string b "(X";
-                   Buffer.add_string b s;
-                   Buffer.add_string b ")"
-                 | None ->
-                     match x#to_html ~indent:0 html_of_md md with
-                       | Some s ->
-                         Buffer.add_string b "(X";
-                         Buffer.add_string b s;
-                         Buffer.add_string b ")"
-                       | None -> ());
-        loop tl
+           | None -> ());
+      loop tl
     | Blockquote q :: tl ->
-        Buffer.add_string b "(Blockquote";
-        loop q;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(Blockquote";
+      loop q;
+      Buffer.add_string b ")";
+      loop tl
     | Ref(rc, name, text, _) :: tl ->
-        bprintf b "(Ref %S %S)" name text;
-        loop tl
+      bprintf b "(Ref %S %S)" name text;
+      loop tl
     | Img_ref(rc, name, alt, _) :: tl ->
-        bprintf b "(Img_ref %S %S)" name alt;
-        loop tl
+      bprintf b "(Img_ref %S %S)" name alt;
+      loop tl
     | Paragraph md :: tl ->
-        Buffer.add_string b "(Paragraph";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(Paragraph";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | Img(alt, src, title) :: tl ->
-        bprintf b "(Img %S %S %S)" alt src title;
-        loop tl
+      bprintf b "(Img %S %S %S)" alt src title;
+      loop tl
     | Text t :: tl ->
-        bprintf b "(Text %S" t;
-        let rec f = function
-          | Text t :: tl ->
-            bprintf b " %S" t;
-            f tl
-          | x -> x
-        in
-        let tl = f tl in
-        bprintf b ")";
-        loop tl
+      bprintf b "(Text %S" t;
+      let rec f = function
+        | Text t :: tl ->
+          bprintf b " %S" t;
+          f tl
+        | x -> x
+      in
+      let tl = f tl in
+      bprintf b ")";
+      loop tl
     | Emph md :: tl ->
-        Buffer.add_string b "(Emph";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(Emph";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | Bold md :: tl ->
-        Buffer.add_string b "(Bold";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(Bold";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | Ol l :: tl ->
-        bprintf b "(Ol";
-        List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Ol";
+      List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
+      bprintf b ")";
+      loop tl
     | Ul l :: tl ->
-        bprintf b "(Ul";
-        List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Ul";
+      List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
+      bprintf b ")";
+      loop tl
     | Olp l :: tl ->
-        bprintf b "(Olp";
-        List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Olp";
+      List.iter(fun li -> bprintf b "(Li "; loop li; bprintf b ")") l;
+      bprintf b ")";
+      loop tl
     | Ulp l :: tl ->
-        bprintf b "(Ulp";
-        List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Ulp";
+      List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
+      bprintf b ")";
+      loop tl
     | Code(lang, c) :: tl ->
-        bprintf b "(Code %S)" c;
-        loop tl
+      bprintf b "(Code %S)" c;
+      loop tl
     | Code_block(lang, c) :: tl ->
-        bprintf b "(Code_block %s)" c;
-        loop tl
+      bprintf b "(Code_block %s)" c;
+      loop tl
     | Br :: tl ->
-        Buffer.add_string b "(Br)";
-        loop tl
+      Buffer.add_string b "(Br)";
+      loop tl
     | Hr :: tl ->
-        Buffer.add_string b "(Hr)";
-        loop tl
+      Buffer.add_string b "(Hr)";
+      loop tl
     | Raw s :: tl ->
-        bprintf b "(Raw %S)" s;
-        loop tl
+      bprintf b "(Raw %S)" s;
+      loop tl
     | Raw_block s :: tl ->
-        bprintf b "(Raw_block %S)" s;
-        loop tl
+      bprintf b "(Raw_block %S)" s;
+      loop tl
     | Html(tagname, attrs, body) :: tl ->
-        bprintf b "(Html %s %s " tagname (string_of_attrs attrs);
-        loop body;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Html %s %s " tagname (string_of_attrs attrs);
+      loop body;
+      bprintf b ")";
+      loop tl
     | Html_block(tagname, attrs, body) :: tl ->
-        bprintf b "(Html_block %s %s " tagname (string_of_attrs attrs);
-        loop body;
-        bprintf b ")";
-        loop tl
+      bprintf b "(Html_block %s %s " tagname (string_of_attrs attrs);
+      loop body;
+      bprintf b ")";
+      loop tl
     | Html_comment s :: tl ->
-        bprintf b "(Html_comment %S)" s;
-        loop tl
+      bprintf b "(Html_comment %S)" s;
+      loop tl
     | Url (href,s,title) :: tl ->
-        bprintf b "(Url %S %S %S)" href (html_of_md s) title;
-        loop tl
+      bprintf b "(Url %S %S %S)" href (html_of_md s) title;
+      loop tl
     | H1 md :: tl ->
-        Buffer.add_string b "(H1";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H1";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | H2 md :: tl ->
-        Buffer.add_string b "(H2";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H2";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | H3 md :: tl ->
-        Buffer.add_string b "(H3";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H3";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | H4 md :: tl ->
-        Buffer.add_string b "(H4";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H4";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | H5 md :: tl ->
-        Buffer.add_string b "(H5";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H5";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | H6 md :: tl ->
-        Buffer.add_string b "(H6";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
+      Buffer.add_string b "(H6";
+      loop md;
+      Buffer.add_string b ")";
+      loop tl
     | NL :: tl ->
-        Buffer.add_string b "(NL)";
-        loop tl
+      Buffer.add_string b "(NL)";
+      loop tl
     | [] -> ()
   in
-    loop md;
-    Buffer.contents b
+  loop md;
+  Buffer.contents b
 
 
 let escape_markdown_characters s =
   let b = Buffer.create (String.length s * 2) in
-    for i = 0 to String.length s - 1 do
-      match s.[i] with
-      | '.' as c ->
-        if i > 0 &&
-           match s.[i-1] with
-           | '0' .. '9' -> i+1 < String.length s && s.[i+1] = ' '
-           | _ -> false
-        then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '-' as c ->
-        if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
-          && (i+1 < String.length s && (s.[i+1] = ' '||s.[i+1] = '-'))
-        then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '+' as c ->
-        if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
-          && (i+1 < String.length s && s.[i+1] = ' ')
-        then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '!' as c ->
-        if i+1 < String.length s && s.[i+1] = '[' then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '<' as c ->
-        if i <> String.length s - 1 &&
-             (match s.[i+1] with 'a' .. 'z' | 'A' .. 'Z' -> false | _ -> true)
-        then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '>' as c ->
-        if i = 0 ||
-             (match s.[i-1] with ' ' | '\n' -> false | _ -> true)
-        then
-          Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | '#' as c ->
-         if i = 0 || s.[i-1] = '\n' then
-           Buffer.add_char b '\\';
-         Buffer.add_char b c
-      | '\\' | '[' | ']' | '(' | ')' | '`' | '*' as c ->
+  for i = 0 to String.length s - 1 do
+    match s.[i] with
+    | '.' as c ->
+      if i > 0 &&
+         match s.[i-1] with
+         | '0' .. '9' -> i+1 < String.length s && s.[i+1] = ' '
+         | _ -> false
+      then
         Buffer.add_char b '\\';
-        Buffer.add_char b c
-      | c ->
-        Buffer.add_char b c
-    done;
-    Buffer.contents b
+      Buffer.add_char b c
+    | '-' as c ->
+      if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
+      && (i+1 < String.length s && (s.[i+1] = ' '||s.[i+1] = '-'))
+      then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '+' as c ->
+      if (i = 0 || match s.[i-1] with ' '| '\n' -> true | _ -> false)
+      && (i+1 < String.length s && s.[i+1] = ' ')
+      then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '!' as c ->
+      if i+1 < String.length s && s.[i+1] = '[' then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '<' as c ->
+      if i <> String.length s - 1 &&
+         (match s.[i+1] with 'a' .. 'z' | 'A' .. 'Z' -> false | _ -> true)
+      then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '>' as c ->
+      if i = 0 ||
+         (match s.[i-1] with ' ' | '\n' -> false | _ -> true)
+      then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '#' as c ->
+      if i = 0 || s.[i-1] = '\n' then
+        Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | '\\' | '[' | ']' | '(' | ')' | '`' | '*' as c ->
+      Buffer.add_char b '\\';
+      Buffer.add_char b c
+    | c ->
+      Buffer.add_char b c
+  done;
+  Buffer.contents b
 
 let rec markdown_of_md md =
   if debug then eprintf "(OMD) markdown_of_md(%S)\n%!" (sexpr_of_md md);
@@ -902,27 +902,27 @@ let rec markdown_of_md md =
     (* [is_in_list: bool] is necessary to know if we are inside a paragraph
        which is inside a list item because those need to be indented! *)
     let loop ?(fst_p_in_li=fst_p_in_li) ?(is_in_list=is_in_list) list_indent l =
-        loop ~fst_p_in_li:fst_p_in_li ~is_in_list:is_in_list list_indent l
+      loop ~fst_p_in_li:fst_p_in_li ~is_in_list:is_in_list list_indent l
     in
     match l with
     | X x :: tl ->
-        (match x#to_t md with
-           | Some t -> loop list_indent t
-           | None ->
-             match x#to_html ~indent:0 html_of_md md with
-             | Some s -> Buffer.add_string b s
-             | None -> ());
-        loop list_indent tl
+      (match x#to_t md with
+       | Some t -> loop list_indent t
+       | None ->
+         match x#to_html ~indent:0 html_of_md md with
+         | Some s -> Buffer.add_string b s
+         | None -> ());
+      loop list_indent tl
     | Blockquote q :: tl ->
       Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
       if tl <> [] then Buffer.add_string b "\n";
       loop list_indent tl
     | Ref(rc, name, text, fallback) :: tl ->
-        if !references = None then references := Some rc;
-        loop list_indent (Raw(fallback#to_string)::tl)
+      if !references = None then references := Some rc;
+      loop list_indent (Raw(fallback#to_string)::tl)
     | Img_ref(rc, name, alt, fallback) :: tl ->
-        if !references = None then references := Some rc;
-        loop list_indent (Raw(fallback#to_string)::tl)
+      if !references = None then references := Some rc;
+      loop list_indent (Raw(fallback#to_string)::tl)
     | Paragraph [] :: tl -> loop list_indent tl
     | Paragraph md :: tl ->
       if is_in_list then
@@ -951,54 +951,54 @@ let rec markdown_of_md md =
       loop list_indent tl
     | Ol l :: tl ->
       if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
-           Buffer.add_char b '\n';
+        Buffer.add_char b '\n';
       let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
       List.iter(fun li ->
-                    incr c;
-                    add_spaces list_indent;
-                    Printf.bprintf b "%d. " !c;
-                    loop ~is_in_list:true (list_indent+4) li;
-                    Buffer.add_char b '\n';
-               ) l;
+          incr c;
+          add_spaces list_indent;
+          Printf.bprintf b "%d. " !c;
+          loop ~is_in_list:true (list_indent+4) li;
+          Buffer.add_char b '\n';
+        ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Ul l :: tl ->
       if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n' then
-           Buffer.add_char b '\n';
+        Buffer.add_char b '\n';
       List.iter(fun li ->
-                    add_spaces list_indent;
-                    Printf.bprintf b "- ";
-                    loop ~is_in_list:true (list_indent+4) li;
-                    Buffer.add_char b '\n';
-               ) l;
+          add_spaces list_indent;
+          Printf.bprintf b "- ";
+          loop ~is_in_list:true (list_indent+4) li;
+          Buffer.add_char b '\n';
+        ) l;
       if list_indent = 0 then Buffer.add_char b '\n';
       loop list_indent tl
     | Olp l :: tl ->
       let c = ref 0 in (* don't use List.iteri because it's not in 3.12 *)
       List.iter(fun li ->
-        if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
-        then Buffer.add_char b '\n';
-        add_spaces list_indent;
-        incr c;
-        bprintf b "%d. " !c;
-        loop ~is_in_list:true (list_indent+4) li;
-               (* Paragraphs => No need of '\n' *)
-      ) l;
+          if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
+          then Buffer.add_char b '\n';
+          add_spaces list_indent;
+          incr c;
+          bprintf b "%d. " !c;
+          loop ~is_in_list:true (list_indent+4) li;
+          (* Paragraphs => No need of '\n' *)
+        ) l;
       loop list_indent tl
     | Ulp l :: tl ->
       List.iter(fun li ->
-        if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
-        then Buffer.add_char b '\n';
-        add_spaces list_indent;
-        bprintf b "+ ";
-        loop ~is_in_list:true (list_indent+4) li;
-               (* Paragraphs => No need of '\n' *)
-               ) l;
+          if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '\n'
+          then Buffer.add_char b '\n';
+          add_spaces list_indent;
+          bprintf b "+ ";
+          loop ~is_in_list:true (list_indent+4) li;
+          (* Paragraphs => No need of '\n' *)
+        ) l;
       begin match tl with
-      | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
-      | NL::(H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_ ->
-        Buffer.add_char b '\n'
-      | _ -> ()
+        | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_
+        | NL::(H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _)::_ ->
+          Buffer.add_char b '\n'
+        | _ -> ()
       end;
       loop list_indent tl
     | Code(_lang, c) :: tl -> (* FIXME *)
@@ -1020,16 +1020,16 @@ let rec markdown_of_md md =
             | '`' -> loop s x (succ b) (succ i)
             | _ -> loop (filter b s) (max b x) 0 (succ i)
         in
-          loop [1;2;3;4;5;6;7;8;9;10] 0 0 0
+        loop [1;2;3;4;5;6;7;8;9;10] 0 0 0
       in
-        begin
-          Printf.bprintf b "%s" (String.make n '`');
-          if c.[0] = '`' then Buffer.add_char b ' ';
-          Printf.bprintf b "%s" c;
-          if c.[String.length c - 1] = '`' then Buffer.add_char b ' ';
-          Printf.bprintf b "%s" (String.make n '`');
-        end;
-        loop list_indent tl
+      begin
+        Printf.bprintf b "%s" (String.make n '`');
+        if c.[0] = '`' then Buffer.add_char b ' ';
+        Printf.bprintf b "%s" c;
+        if c.[String.length c - 1] = '`' then Buffer.add_char b ' ';
+        Printf.bprintf b "%s" (String.make n '`');
+      end;
+      loop list_indent tl
     | Code_block(lang, c) :: tl ->
       let n = (* compute how many backquotes we need to use *)
         let filter n s =
@@ -1042,14 +1042,14 @@ let rec markdown_of_md md =
         let rec loop s b i =
           if i = l then
             match filter b s with
-              | hd::_ -> hd
-              | [] -> 0
+            | hd::_ -> hd
+            | [] -> 0
           else
             match c.[i] with
             | '`' -> loop s (succ b) (succ i)
             | _ -> loop (filter b s) 0 (succ i)
         in
-          loop [3;4;5;6;7;8;9;10] 0 0
+        loop [3;4;5;6;7;8;9;10] 0 0
       in
       let output_indented_block n s =
         let rec loop p i =
@@ -1058,33 +1058,33 @@ let rec markdown_of_md md =
           else
             match p with
             | '\n' ->
-                Printf.bprintf b "%s" (String.make n ' ');
-                Buffer.add_char b s.[i];
-                loop s.[i] (succ i)
+              Printf.bprintf b "%s" (String.make n ' ');
+              Buffer.add_char b s.[i];
+              loop s.[i] (succ i)
             | _ ->
-                Buffer.add_char b s.[i];
-                loop s.[i] (succ i)
+              Buffer.add_char b s.[i];
+              loop s.[i] (succ i)
         in loop '\n' 0
       in
-        if n = 0 then  (* FIXME *)
-          begin
-            (* case where we can't use backquotes *)
+      if n = 0 then  (* FIXME *)
+        begin
+          (* case where we can't use backquotes *)
+          Buffer.add_char b '\n';
+          output_indented_block (4+list_indent) c;
+          if tl <> [] then Buffer.add_string b "\n\n"
+        end
+      else
+        begin
+          Buffer.add_string b (String.make (list_indent) ' ');
+          Printf.bprintf b "%s%s\n" (String.make n '`')
+            (if lang = "" then !default_language else lang);
+          output_indented_block (list_indent) c;
+          if Buffer.nth b (Buffer.length b - 1) <> '\n' then
             Buffer.add_char b '\n';
-            output_indented_block (4+list_indent) c;
-            if tl <> [] then Buffer.add_string b "\n\n"
-          end
-        else
-          begin
-            Buffer.add_string b (String.make (list_indent) ' ');
-            Printf.bprintf b "%s%s\n" (String.make n '`')
-              (if lang = "" then !default_language else lang);
-            output_indented_block (list_indent) c;
-            if Buffer.nth b (Buffer.length b - 1) <> '\n' then
-              Buffer.add_char b '\n';
-            Buffer.add_string b (String.make (list_indent) ' ');
-            Printf.bprintf b "%s\n" (String.make n '`');
-          end;
-        loop list_indent tl
+          Buffer.add_string b (String.make (list_indent) ' ');
+          Printf.bprintf b "%s\n" (String.make n '`');
+        end;
+      loop list_indent tl
     | Br :: tl ->
       Buffer.add_string b "<br />";
       loop list_indent tl
@@ -1200,26 +1200,26 @@ let rec markdown_of_md md =
           not(Buffer.nth b (Buffer.length b - 1) = '\n'
               && Buffer.nth b (Buffer.length b - 2) = '\n'))
       then
-      Buffer.add_string b "\n";
+        Buffer.add_string b "\n";
       loop list_indent tl
     | [] -> ()
   in
-    loop 0 md;
-    begin match !references with
-      | None -> ()
-      | Some r ->
-          Buffer.add_char b '\n';
-          List.iter
-            (fun (name, (url, title)) ->
-               if title = "" then
-                 bprintf b "[%s]: %s \n" name url
-               else
-                 bprintf b "[%s]: %s \"%s\"\n" name url title
-            )
-            r#get_all
-    end;
-    let res = Buffer.contents b in
-    if debug then
-      eprintf "(OMD) markdown_of_md(%S) => %S\n%!"
-        (sexpr_of_md md) res;
-    res
+  loop 0 md;
+  begin match !references with
+    | None -> ()
+    | Some r ->
+      Buffer.add_char b '\n';
+      List.iter
+        (fun (name, (url, title)) ->
+           if title = "" then
+             bprintf b "[%s]: %s \n" name url
+           else
+             bprintf b "[%s]: %s \"%s\"\n" name url title
+        )
+        r#get_all
+  end;
+  let res = Buffer.contents b in
+  if debug then
+    eprintf "(OMD) markdown_of_md(%S) => %S\n%!"
+      (sexpr_of_md md) res;
+  res

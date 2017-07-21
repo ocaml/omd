@@ -102,12 +102,12 @@ struct
 
   (** set of known inline HTML tags *)
   let inline_htmltags_set =
-      (StringSet.of_list
-         (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
-         [ "b";"big";"i";"small";"tt";
-           "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
-           "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
-           "button";"input";"label";"select";"textarea";])
+    (StringSet.of_list
+       (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
+       [ "b";"big";"i";"small";"tt";
+         "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
+         "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
+         "button";"input";"label";"select";"textarea";])
 
   (** N.B. it seems that there is no clear distinction between inline
       tags and block-level tags: in HTML4 it was not clear, in HTML5
@@ -1129,7 +1129,7 @@ struct
               None
           method to_string = ""
         end
-      )
+       )
 
   let tag__maybe_h2 (main_loop:main_loop) =
     Tag("tag__maybe_h2",
@@ -1152,7 +1152,7 @@ struct
               None
           method to_string = ""
         end
-      )
+       )
 
   let tag__md md = (* [md] should be in reverse *)
     Tag("tag__md",
@@ -1413,7 +1413,7 @@ struct
      if debug then
        eprintf \"Omd_parser.read_until_"^a^" %S bq=%b no_nl=%b => %S\\n%!\" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
      res
-"))
+     "))
 
      [ "gt", "Greaterthan", "Lessthan";
      "lt", "Lessthan", "";
@@ -1429,9 +1429,9 @@ struct
 
   (* begin generated part *)
 
-let read_until_gt ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_gt ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Greaterthan as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Greaterthans 0) :: tl ->
@@ -1457,7 +1457,7 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
+          loop (e::accu) n tl
       | Backslash :: (Lessthan as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Lessthans 0) :: tl ->
@@ -1466,7 +1466,7 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) (n+1) tl
       | Lessthans x as e :: tl ->
         loop (e::accu) (n+x+2) tl
-         | Greaterthan as e :: tl ->
+      | Greaterthan as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1496,17 +1496,17 @@ let read_until_gt ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_lt ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_lt ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Lessthan as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Lessthans 0) :: tl ->
@@ -1532,7 +1532,7 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Lessthan as e :: tl ->
+          loop (e::accu) n tl    | Lessthan as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1562,17 +1562,17 @@ let read_until_lt ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_lt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Cparenthesis as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Cparenthesiss 0) :: tl ->
@@ -1598,7 +1598,7 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
+          loop (e::accu) n tl
       | Backslash :: (Oparenthesis as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Oparenthesiss 0) :: tl ->
@@ -1607,7 +1607,7 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) (n+1) tl
       | Oparenthesiss x as e :: tl ->
         loop (e::accu) (n+x+2) tl
-         | Cparenthesis as e :: tl ->
+      | Cparenthesis as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1637,17 +1637,17 @@ let read_until_cparenth ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_cparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Oparenthesis as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Oparenthesiss 0) :: tl ->
@@ -1673,7 +1673,7 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Oparenthesis as e :: tl ->
+          loop (e::accu) n tl    | Oparenthesis as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1703,17 +1703,17 @@ let read_until_oparenth ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_oparenth %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_dq ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_dq ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Doublequote as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Doublequotes 0) :: tl ->
@@ -1739,7 +1739,7 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Doublequote as e :: tl ->
+          loop (e::accu) n tl    | Doublequote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1769,17 +1769,17 @@ let read_until_dq ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_dq %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_q ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_q ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Quote as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Quotes 0) :: tl ->
@@ -1805,7 +1805,7 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Quote as e :: tl ->
+          loop (e::accu) n tl    | Quote as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1835,17 +1835,17 @@ let read_until_q ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_q %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_obracket ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_obracket ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Obracket as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Obrackets 0) :: tl ->
@@ -1871,7 +1871,7 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Obracket as e :: tl ->
+          loop (e::accu) n tl    | Obracket as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1901,17 +1901,17 @@ let read_until_obracket ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_obracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Cbracket as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Cbrackets 0) :: tl ->
@@ -1937,7 +1937,7 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl
+          loop (e::accu) n tl
       | Backslash :: (Obracket as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Obrackets 0) :: tl ->
@@ -1946,7 +1946,7 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) (n+1) tl
       | Obrackets x as e :: tl ->
         loop (e::accu) (n+x+2) tl
-         | Cbracket as e :: tl ->
+      | Cbracket as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -1976,17 +1976,17 @@ let read_until_cbracket ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_cbracket %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
 
-let read_until_space ?(bq=false) ?(no_nl=false) l =
-     assert_well_formed l;
-     let rec loop accu n = function
+  let read_until_space ?(bq=false) ?(no_nl=false) l =
+    assert_well_formed l;
+    let rec loop accu n = function
       | Backslash :: (Space as b) :: tl ->
         loop (b::accu) n tl
       | Backslash :: (Spaces 0) :: tl ->
@@ -2012,7 +2012,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               n
               tl
         else
-         loop (e::accu) n tl    | Space as e :: tl ->
+          loop (e::accu) n tl    | Space as e :: tl ->
         if n = 0 then
           List.rev accu, tl
         else
@@ -2042,13 +2042,13 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         loop (e::accu) n tl
       | [] ->
         raise Premature_ending
-     in
-     if debug then
-       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
-     let res = loop [] 0 l in
-     if debug then
-       eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
-     res
+    in
+    if debug then
+      eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+    let res = loop [] 0 l in
+    if debug then
+      eprintf "Omd_parser.read_until_space %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+    res
   (* /end generated part *)
 
   let read_until_newline l =
@@ -2272,15 +2272,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     try
       maybe_ref l
     with | Premature_ending | NL_exception ->
+    try
+      maybe_def l
+    with
+    | Premature_ending | NL_exception ->
       try
-        maybe_def l
+        maybe_nonregular_ref l
       with
       | Premature_ending | NL_exception ->
-        try
-          maybe_nonregular_ref l
-        with
-        | Premature_ending | NL_exception ->
-          None
+        None
 
 
   (** maybe a link *)
@@ -2295,15 +2295,15 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           read_until_cparenth ~no_nl:true ~bq:false l
         in
         if debug then eprintf "(OMD) maybe_link >> l_cp=%S r_cp=%S\n%!"
-          (L.string_of_tokens l_cp)
-          (L.string_of_tokens r_cp);
+            (L.string_of_tokens l_cp)
+            (L.string_of_tokens r_cp);
         try
           let l_dq, r_dq =
             read_until_dq ~no_nl:true ~bq:false l
           in
           if debug then eprintf "(OMD) maybe_link >> l_dq=%S r_dq=%S\n%!"
-            (L.string_of_tokens l_dq)
-            (L.string_of_tokens r_dq);
+              (L.string_of_tokens l_dq)
+              (L.string_of_tokens r_dq);
           (* maybe title *)
           if List.length l_cp > List.length l_dq then (* title *)
             begin
@@ -2438,7 +2438,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
         (* A line with spaces shouldn't interfere here,
            which is about at least 3 consecutive newlines,
            so we stop. *)
-         Split([], l)
+        Split([], l)
       | Newline :: (Spaces _ as s) :: tl ->
         Continue_with
           ([s;
@@ -2458,7 +2458,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                 object
                   method parser_extension r p =
                     function (Space|Spaces _)::tl -> Some(r,p,Space::tl)
-                       | _ -> None
+                           | _ -> None
                   method to_string = ""
                 end);
             Newline],
@@ -2501,7 +2501,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     in
     let rec list_items ~p indents items l =
       if debug then eprintf "(OMD) list_items: p=%b l=(%s)\n%!"
-                            p (L.destring_of_tokens l);
+          p (L.destring_of_tokens l);
       match l with
       (* no more list items *)
       | [] ->
@@ -2537,7 +2537,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
             | [] ->
               assert(items = []);
               list_items ~p [1] ((U,[1],rev_to_t new_item)::items) rest
-             | 1::_ ->
+            | 1::_ ->
               list_items ~p indents ((U,indents,rev_to_t new_item)::items) rest
             | i::_ ->
               if i > 1 then
@@ -2662,11 +2662,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
               match items with
               | [] -> ""
               | (O,indent::_,item)::tl ->
-                 sprintf "(O,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
-                 ^ string_of_items tl
+                sprintf "(O,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
+                ^ string_of_items tl
               | (U,indent::_,item)::tl ->
-                 sprintf "(U,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
-                 ^ string_of_items tl
+                sprintf "(U,i=%d,%S)" (indent) (Omd_backend.html_of_md item)
+                ^ string_of_items tl
               | _ -> "(weird)"
             in
             eprintf "(OMD) NALI parse_list: l=(%S) items=%s\n%!"
@@ -2820,12 +2820,12 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     String.length s > 1
     && (s.[0] = 'X' || s.[0] = 'x')
     && (let rec loop i =
-         i = String.length s
-         ||
-         (match s.[i] with
-          | '0' .. '9' | 'A' .. 'F' | 'a' .. 'f' ->
-            loop (succ i)
-          | _ -> false)
+          i = String.length s
+          ||
+          (match s.[i] with
+           | '0' .. '9' | 'A' .. 'F' | 'a' .. 'f' ->
+             loop (succ i)
+           | _ -> false)
         in loop 1)
 
   let mediatypetextomd : string list ref = ref []
@@ -3005,7 +3005,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
           (* No [Hr], but maybe [Ul], [Ol], code,... *)
           let n = L.length sp in
           let r, p, l =
-           spaces_at_beginning_of_line main_loop default_lang n r previous tl in
+            spaces_at_beginning_of_line main_loop default_lang n r previous tl in
           main_impl_rev ~html r p l
         | Some tl ->
           main_impl_rev ~html (Hr::r) [Newline] tl
@@ -3282,7 +3282,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
 
     (* Word(w) *)
     | _, Word w::tl ->
-       main_impl_rev ~html (Text w :: r) [Word w] tl
+      main_impl_rev ~html (Text w :: r) [Word w] tl
 
     (* newline at the end *)
     | _, [Newline] ->
@@ -3502,10 +3502,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   if debug then eprintf "(OMD) 3419 BHTML loop\n%!";
                   loop
                     (add_token_to_body
-                      Slash
-                      (add_token_to_body
-                        Greaterthan
-                        body))
+                       Slash
+                       (add_token_to_body
+                          Greaterthan
+                          body))
                     attrs tagstatus tokens
               end
             (* closing the tag opener *)
@@ -3582,10 +3582,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         if debug then eprintf "(OMD) 3489 BHTML loop\n%!";
                         loop
                           (add_token_to_body
-                            word
-                            (add_token_to_body
-                               Lessthan
-                               body))
+                             word
+                             (add_token_to_body
+                                Lessthan
+                                body))
                           attrs tagstatus tokens
                       | Some(b, tokens) ->
                         if debug then begin
@@ -3648,11 +3648,11 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                         if debug then
                           eprintf "(OMD) 3552 BHTML tokens=%s delimiter=%s \
                                    after=%s before=%s (tagname=t)=%b\n%!"
-                              (L.destring_of_tokens tokens)
-                              (L.destring_of_tokens delimiter)
-                              (L.destring_of_tokens after)
-                              (L.destring_of_tokens before)
-                              (tagname = t);
+                            (L.destring_of_tokens tokens)
+                            (L.destring_of_tokens delimiter)
+                            (L.destring_of_tokens after)
+                            (L.destring_of_tokens before)
+                            (tagname = t);
                         (match !mediatypetextomd with
                          | _ :: tl -> mediatypetextomd := tl
                          | [] -> assert false);
@@ -3688,7 +3688,7 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                           loop [T.HTML(t, attrs, body)] [] tagstatus l
                         | [] ->
                           Some([T.HTML(t, attrs, body)], l)
-                      end
+                    end
                 | T.Open t :: _ ->
                   if debug then
                     eprintf
@@ -4018,17 +4018,17 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
                   None
                 | T.Awaiting _ :: _ -> None
                 | _ ->
-                    begin
-                      if debug then
-                        eprintf "(OMD) 3796 tag %s, attrs=[]\n%!" tagname;
-                      match loop [] [] (T.Awaiting tagname::tagstatus) tokens
-                      with
-                      | None ->
-                        loop (T.TOKENS[word;Lessthan]::body)
-                          attrs tagstatus tokens
-                      | Some(b,tokens) ->
-                        Some(b@body, tokens)
-                    end
+                  begin
+                    if debug then
+                      eprintf "(OMD) 3796 tag %s, attrs=[]\n%!" tagname;
+                    match loop [] [] (T.Awaiting tagname::tagstatus) tokens
+                    with
+                    | None ->
+                      loop (T.TOKENS[word;Lessthan]::body)
+                        attrs tagstatus tokens
+                    | Some(b,tokens) ->
+                      Some(b@body, tokens)
+                  end
               end
             (* end of opening tag *)
             | Greaterthan::tokens ->
@@ -4431,10 +4431,10 @@ let read_until_space ?(bq=false) ?(no_nl=false) l =
     List.rev (main_loop_rev ~html r previous lexemes)
 
   and main_loop ?(html=false) (r:r) (previous:p) (lexemes:l) =
-      main_impl ~html r previous lexemes
+    main_impl ~html r previous lexemes
 
   and main_loop_rev ?(html=false) (r:r) (previous:p) (lexemes:l) =
-      main_impl_rev ~html r previous lexemes
+    main_impl_rev ~html r previous lexemes
 
 
   let main_parse lexemes =

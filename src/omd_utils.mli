@@ -23,10 +23,10 @@ val warn : ?we:bool -> string -> unit
     else raises [Omd_utils.Error x]. *)
 
 module StringSet :
-  sig
-    include Set.S with type elt = string
-    val of_list : elt list -> t
-  end
+sig
+  include Set.S with type elt = string
+  val of_list : elt list -> t
+end
 (** Set of [string]. Cf. documentation of {!Set.S} *)
 
 type 'a split = 'a list -> 'a split_action
@@ -35,13 +35,13 @@ type 'a split = 'a list -> 'a split_action
 and 'a split_action =
   (** Don't split yet *)
   | Continue
-  
+
   (** Don't split yet but continue with those two lists instead of default *)
   | Continue_with of 'a list * 'a list
-  
+
   (** Do split with this split scheme *)
   | Split of 'a list * 'a list
-(** Type of a split action *)
+  (** Type of a split action *)
 
 
 val fsplit_rev :
@@ -87,7 +87,7 @@ val htmlentities : ?md:bool -> string -> string
 
 val minimalize_blanks : string -> string
 (** [minimalize_blanks s] returns a copy of [s] in which the first and last
-   characters are never blank, and two consecutive blanks never happen. *)
+    characters are never blank, and two consecutive blanks never happen. *)
 
 
 val eat : ('a -> bool) -> 'a list -> 'a list

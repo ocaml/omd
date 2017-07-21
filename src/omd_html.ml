@@ -39,23 +39,23 @@ let to_string html =
           if not (String.contains v '\'') then
             pp " %s='%s'" a v
           else not (String.contains v '"') then
-            pp " %s=\"%s\"" a v
-          else
-            (
-              pp " %s=\"" a;
-              for i = 0 to String.length v - 1 do
-                match v.[i] with
-                | '"' -> pp "&quot;"
-                | c    -> pp "%c" c
-              done;
-              pp "\""
-            )
-        | a, None ->
-          Printf.bprintf b " %s=''" a (* HTML5 *)
-    )
-    attrs
-  in
-  List.iter loop html;
-  Buffer.contents b
+  pp " %s=\"%s\"" a v
+else
+  (
+    pp " %s=\"" a;
+    for i = 0 to String.length v - 1 do
+      match v.[i] with
+      | '"' -> pp "&quot;"
+      | c    -> pp "%c" c
+    done;
+    pp "\""
+  )
+                                         | a, None ->
+                                           Printf.bprintf b " %s=''" a (* HTML5 *)
+)
+attrs
+in
+List.iter loop html;
+Buffer.contents b
 
 

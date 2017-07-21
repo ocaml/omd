@@ -16,8 +16,8 @@ let lex_from_inchannel ic =
   let ic_content =
     let b = Buffer.create 64 in
     try while true do
-          Buffer.add_char b (input_char ic)
-        done;
-        assert false
+        Buffer.add_char b (input_char ic)
+      done;
+      assert false
     with End_of_file -> Buffer.contents b in
   lex ic_content

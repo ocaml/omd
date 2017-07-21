@@ -16,7 +16,7 @@ let of_input lex ?extensions:e ?default_lang:d s =
       let extensions = match e with Some x -> x | None -> E.extensions
       let default_lang = match d with Some x -> x | None -> E.default_lang
     end
-  ) in
+    ) in
   let md =
     Parser.parse (lex s)
   in
@@ -46,7 +46,7 @@ let html_of_string (html:string) : string =
 let rec set_default_lang lang = function
   | Code("", code) :: tl -> Code(lang, code) :: set_default_lang lang tl
   | Code_block("", code) :: tl -> Code_block(lang, code)
-                                 :: set_default_lang lang tl
+                                  :: set_default_lang lang tl
   (* Recurse on all elements even though code (blocks) are not allowed
      everywhere. *)
   | H1 t :: tl -> H1(set_default_lang lang t) :: set_default_lang lang tl
@@ -56,25 +56,25 @@ let rec set_default_lang lang = function
   | H5 t :: tl -> H5(set_default_lang lang t) :: set_default_lang lang tl
   | H6 t :: tl -> H6(set_default_lang lang t) :: set_default_lang lang tl
   | Paragraph t :: tl -> Paragraph(set_default_lang lang t)
-                        :: set_default_lang lang tl
+                         :: set_default_lang lang tl
   | Emph t :: tl -> Emph(set_default_lang lang t) :: set_default_lang lang tl
   | Bold t :: tl -> Bold(set_default_lang lang t) :: set_default_lang lang tl
   | Ul t :: tl -> Ul(List.map (set_default_lang lang) t)
-                 :: set_default_lang lang tl
+                  :: set_default_lang lang tl
   | Ol t :: tl -> Ol(List.map (set_default_lang lang) t)
-                 :: set_default_lang lang tl
+                  :: set_default_lang lang tl
   | Ulp t :: tl -> Ulp(List.map (set_default_lang lang) t)
-                  :: set_default_lang lang tl
+                   :: set_default_lang lang tl
   | Olp t :: tl -> Olp(List.map (set_default_lang lang) t)
-                  :: set_default_lang lang tl
+                   :: set_default_lang lang tl
   | Url(href, t, title) :: tl -> Url(href, set_default_lang lang t, title)
-                                :: set_default_lang lang tl
+                                 :: set_default_lang lang tl
   | Blockquote t :: tl -> Blockquote(set_default_lang lang t)
-                         :: set_default_lang lang tl
+                          :: set_default_lang lang tl
   (* Elements that do not contain Markdown. *)
   | (Text _|Code _|Code_block _|Br|Hr|NL|Ref _|Img_ref _|Raw _|Raw_block _
     |Html _|Html_block _|Html_comment _|Img _|X _) as e :: tl ->
-     e :: set_default_lang lang tl
+    e :: set_default_lang lang tl
   | [] -> []
 
 
@@ -155,11 +155,11 @@ let toc ?(start=[]) ?(depth=2) md =
   let headers = match start with
     | [] -> headers
     | number :: subsections ->
-       if number < 0 then invalid_arg("Omd.toc: level 1 start must be >= 0");
-       find_start headers 1 number subsections in
+      if number < 0 then invalid_arg("Omd.toc: level 1 start must be >= 0");
+      find_start headers 1 number subsections in
   let len = List.length start in
   let toc, _ = make_toc headers
-                        ~min_level:(len + 1) ~max_level:(len + depth) in
+      ~min_level:(len + 1) ~max_level:(len + depth) in
   match toc with
   | [] -> []
   | _ -> [Ul(toc)]

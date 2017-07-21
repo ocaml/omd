@@ -125,21 +125,21 @@ type tok =
   | Underscores of int (* __.. *)
   | Word of string
   | Tag of name * extension
-(** Lexer's tokens. If you want to use the parser with an extended
-    lexer, you may use the constructor [Tag] to implement
-    the parser's extension. In the parser, [Tag] is used (at least)
-    3 times in order to represent metadata or to store data.
+  (** Lexer's tokens. If you want to use the parser with an extended
+      lexer, you may use the constructor [Tag] to implement
+      the parser's extension. In the parser, [Tag] is used (at least)
+      3 times in order to represent metadata or to store data.
 
-    The integers carried by constructors means that the represented
-    character appears (n+2) times. So, [Ampersand(0)] is "&&".
-    Notably, this allows to use the property that in the match
-    case [Ampersand _ ->], we know there are at least 2 ampersands.
-    This is particularly useful for some characters, such as newlines
-    and spaces. It's not useful for all of them indeed but it has
-    been designed this way for the sake of uniformity (one doesn't
-    want to know by heart which constructor have that "at least 2"
-    property and which haven't).
-*)
+      The integers carried by constructors means that the represented
+      character appears (n+2) times. So, [Ampersand(0)] is "&&".
+      Notably, this allows to use the property that in the match
+      case [Ampersand _ ->], we know there are at least 2 ampersands.
+      This is particularly useful for some characters, such as newlines
+      and spaces. It's not useful for all of them indeed but it has
+      been designed this way for the sake of uniformity (one doesn't
+      want to know by heart which constructor have that "at least 2"
+      property and which haven't).
+  *)
 
 and extension = <
   parser_extension : t -> tok list -> tok list -> ((t * tok list * tok list) option);

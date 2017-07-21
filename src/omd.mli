@@ -21,10 +21,10 @@ type t = element list
 (** Representation of a Markdown document.  *)
 
 and ref_container =
-    (< add_ref: string -> string -> string -> unit ;
-       get_ref : string -> (string*string) option;
-       get_all : (string * (string * string)) list;
-     >)
+  (< add_ref: string -> string -> string -> unit ;
+     get_ref : string -> (string*string) option;
+     get_all : (string * (string * string)) list;
+   >)
 
 (** A element of a Markdown document. *)
 and element = Omd_representation.element =
@@ -74,12 +74,12 @@ and element = Omd_representation.element =
   | Blockquote of t  (** Quoted block *)
   | Img of alt * src * title
   | X of (< (* extension of [element]. *)
-           name: string;
-           (* N.B. [to_html] means that htmlentities will not
-              be applied to its output. *)
-           to_html: ?indent:int -> (t -> string) -> t -> string option;
-           to_sexpr: (t -> string) -> t -> string option;
-           to_t: t -> t option >)
+        name: string;
+        (* N.B. [to_html] means that htmlentities will not
+           be applied to its output. *)
+        to_html: ?indent:int -> (t -> string) -> t -> string option;
+        to_sexpr: (t -> string) -> t -> string option;
+        to_t: t -> t option >)
 
 and fallback = < to_string : string ; to_t : t >
 (** Fallback for references in case they refer to non-existant references *)
@@ -108,8 +108,8 @@ type code_stylist = lang:string -> string -> string
 (** {2 Input and Output} *)
 
 val of_string : ?extensions:Omd_representation.extensions ->
-                ?default_lang: name ->
-                string -> t
+  ?default_lang: name ->
+  string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
 
@@ -120,8 +120,8 @@ val of_string : ?extensions:Omd_representation.extensions ->
     and {!Omd_parser.parse}.  *)
 
 val of_bigarray : ?extensions:Omd_representation.extensions ->
-                  ?default_lang: name ->
-                  Omd_lexer.bigstring -> t
+  ?default_lang: name ->
+  Omd_lexer.bigstring -> t
 (** As {!of_string}, but read input from a bigarray rather than from a
     string. *)
 
