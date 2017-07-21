@@ -82,54 +82,11 @@ let length t =
   c + nl
 
 let split_first = function
-  | Ampersands n -> Ampersand, (if n > 0 then Ampersands(n-1) else Ampersand)
-  | Ats n -> At, (if n > 0 then Ats(n-1) else At)
-  | Backquotes n -> Backquote, (if n > 0 then Backquotes(n-1) else Backquote)
-  | Backslashs n -> Backslash, (if n > 0 then Backslashs(n-1) else Backslash)
-  | Bars n -> Bar, (if n > 0 then Bars(n-1) else Bar)
-  | Carets n -> Caret, (if n > 0 then Carets(n-1) else Caret)
-  | Cbraces n -> Cbrace, (if n > 0 then Cbraces(n-1) else Cbrace)
-  | Colons n -> Colon, (if n > 0 then Colons(n-1) else Colon)
-  | Commas n -> Comma, (if n > 0 then Commas(n-1) else Comma)
-  | Cparenthesiss n -> Cparenthesis, (if n > 0 then Cparenthesiss(n-1)
-                                      else Cparenthesis)
-  | Cbrackets n -> Cbracket, (if n > 0 then Cbrackets(n-1) else Cbracket)
-  | Dollars n -> Dollar, (if n > 0 then Dollars(n-1) else Dollar)
-  | Dots n -> Dot, (if n > 0 then Dots(n-1) else Dot)
-  | Doublequotes n -> Doublequote, (if n > 0 then Doublequotes(n-1)
-                                    else Doublequote)
-  | Exclamations n -> Exclamation, (if n > 0 then Exclamations(n-1)
-                                    else Exclamation)
-  | Equals n -> Equal, (if n > 0 then Equals(n-1) else Equal)
-  | Greaterthans n -> Greaterthan, (if n > 0 then Greaterthans(n-1)
-                                    else Greaterthan)
-  | Hashs n -> Hash, (if n > 0 then Hashs(n-1) else Hash)
-  | Lessthans n -> Lessthan, (if n > 0 then Lessthans(n-1) else Lessthan)
-  | Minuss n -> Minus, (if n > 0 then Minuss(n-1) else Minus)
-  | Newlines n -> Newline, (if n > 0 then Newlines(n-1) else Newline)
-  | Obraces n -> Obrace, (if n > 0 then Obraces(n-1) else Obrace)
-  | Oparenthesiss n -> Oparenthesis, (if n > 0 then Oparenthesiss(n-1)
-                                      else Oparenthesis)
-  | Obrackets n -> Obracket, (if n > 0 then Obrackets(n-1) else Obracket)
-  | Percents n -> Percent, (if n > 0 then Percents(n-1) else Percent)
-  | Pluss n -> Plus, (if n > 0 then Pluss(n-1) else Plus)
-  | Questions n -> Question, (if n > 0 then Questions(n-1) else Question)
-  | Quotes n -> Quote, (if n > 0 then Quotes(n-1) else Quote)
-  | Semicolons n -> Semicolon, (if n > 0 then Semicolons(n-1) else Semicolon)
-  | Slashs n -> Slash, (if n > 0 then Slashs(n-1) else Slash)
-  | Spaces n -> Space, (if n > 0 then Spaces(n-1) else Space)
-  | Stars n -> Star, (if n > 0 then Stars(n-1) else Star)
-  | Tabs n -> Tab, (if n > 0 then Tabs(n-1) else Tab)
-  | Tildes n -> Tilde, (if n > 0 then Tildes(n-1) else Tilde)
-  | Underscores n -> Underscore, (if n > 0 then Underscores(n-1)
-                                  else Underscore)
-  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace | Colon
-  | Comma | Cparenthesis | Cbracket | Dollar | Dot | Doublequote
-  | Exclamation | Equal | Greaterthan | Hash | Lessthan | Minus
-  | Newline | Number _ | Obrace | Oparenthesis | Obracket | Percent
-  | Plus | Question | Quote | Semicolon | Slash | Space | Star | Tab
-  | Tilde | Underscore | Tag _ | Word _ ->
+  | Delim (1, _) | Number _ | Tag _ | Word _ ->
       invalid_arg "Omd_lexer.split_first"
+  | Delim (n, d) ->
+      assert (n >= 2);
+      Delim (1, d), Delim (n-1, d)
 
 module type Input =
 sig
