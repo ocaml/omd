@@ -1544,48 +1544,47 @@ struct
     let rp, l = list_items ~p:false [] [] l in
     rp::r, [Newline], l
 
-  let icode ?(default_lang=default_lang) r _p l =
+  let icode ?(default_lang = default_lang) r _p l =
     assert_well_formed l;
     (* indented code: returns (r,p,l) where r is the result, p is the
        last thing read, l is the remains *)
-    let dummy_tag = Tag("dummy_tag",
-                        object
-                          method to_string = ""
-                          method parser_extension = fun r p l -> None
-                        end) in
+    let dummy_tag =
+      Tag("dummy_tag",
+          object
+            method to_string = ""
+            method parser_extension = fun r p l -> None
+          end)
+    in
     let accu = Buffer.create 64 in
-    let rec loop s tl = match s, tl with
-      | (Newline|Newlines _ as p), (Space|Spaces(0|1))::_ ->
+    let rec loop s tl =
+      match s, tl with
+      | Delim (_, Newline) as p, Delim ((1|2|3), Space) :: _ ->
           (* 1, 2 or 3 spaces. *)
           (* -> Return what's been found as code because what follows isn't. *)
-          Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
-      | (Newline|Newlines _ as p), Spaces(n)::tl ->
-          assert(n>0);
+          Code_block (default_lang, Buffer.contents accu) :: r, [p], tl
+      | Delim (_, Newline) as p, Delim (n, Space) :: tl when n >= 4 ->
           (* At least 4 spaces, it's still code. *)
           Buffer.add_string accu (L.string_of_token p);
-          loop
-            (if n >= 4 then Spaces(n-4) else if n = 3 then Space else dummy_tag)
-            tl
-      | (Newline|Newlines _ as p), (not_spaces::_ as tl) -> (* stop *)
-          Code_block(default_lang, Buffer.contents accu) :: r, [p], tl
+          loop (if n >= 5 then Delim (n-4, Space) else dummy_tag) tl
+      | Delim (_, Newline) as p, (not_spaces :: _ as tl) -> (* stop *)
+          Code_block (default_lang, Buffer.contents accu) :: r, [p], tl
       (* -> Return what's been found as code because it's no more code. *)
-      | p, e::tl ->
+      | p, e :: tl ->
           Buffer.add_string accu (L.string_of_token p);
           (* html entities are to be converted later! *)
           loop e tl
       | p, [] ->
           Buffer.add_string accu (L.string_of_token p);
-          Code_block(default_lang, Buffer.contents accu)::r, [p], []
+          Code_block (default_lang, Buffer.contents accu) :: r, [p], []
     in
     match l with
-    | Spaces n::tl ->
-        if n >= 4 then
-          Some(loop (Spaces(n-4)) tl)
-        else if n = 3 then
-          Some(loop Space tl)
-        else Some(loop dummy_tag tl)
-    | _ -> assert false
-
+    | Delim (n, Space) :: tl when n >= 2 ->
+        if n >= 5 then
+          Some (loop (Delim (n-4, Space)) tl)
+        else
+          Some (loop dummy_tag tl)
+    | _ ->
+        assert false
 
   (* Returns [(r,p,l)] where [r] is the result, [p] is the last thing
      read, and [l] is what remains. *)
