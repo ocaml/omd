@@ -325,6 +325,7 @@ struct
 end
 
 module Lex_string = Lex(StringLabels)
+
 let lex = Lex_string.lex
 
 type bigstring = (char,
@@ -345,8 +346,9 @@ struct
     for i = 0 to len - 1 do
       Bytes.unsafe_set s i (BA.Array1.unsafe_get arr (i + pos))
     done;
-    Bytes.unsafe_to_string s
+    Bytes.to_string s
 end
+
 module Lex_bigarray = Lex(Bigarray_input)
 let lex_bigarray = Lex_bigarray.lex
 
@@ -354,7 +356,6 @@ let make_space = function
   | 0 -> invalid_arg "Omd_lexer.make_space"
   | 1 -> Space
   | n -> if n < 0 then invalid_arg "Omd_lexer.make_space" else Spaces (n-2)
-
 
 (*
 (** [string_of_tl l] returns the string representation of l.

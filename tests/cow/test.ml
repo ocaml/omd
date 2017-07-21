@@ -11,7 +11,7 @@ let slurp filename =
   let size = in_channel_length file in
   let buf = Bytes.create size in
   really_input file buf 0 size;
-  Bytes.unsafe_to_string buf
+  Bytes.to_string buf
 
 let remove_blank s =
   let b = Buffer.create (String.length s) in
