@@ -997,43 +997,23 @@ struct
   let read_title (main_loop:main_loop) n r _previous lexemes =
     let title, rest =
       let rec loop accu = function
-        | Backslash::Hash::tl ->
-            loop (Hash::Backslash::accu) tl
-        | Backslashs(n)::Hash::tl when n mod 2 = 1 ->
-            loop (Hash::Backslashs(n-1)::accu) tl
-        | Backslash::Hashs(h)::tl ->
-            begin match tl with
-            | []
-            | (Space|Spaces _)::(Newline|Newlines _)::_
-            | (Newline|Newlines _)::_ ->
-                loop (Hash::Backslash::accu)
-                  ((if h = 0 then Hash else Hashs(h-1))::tl)
-            | _ ->
-                loop (Hashs(h)::Backslash::accu) tl
-            end
-        | Backslashs(n)::Hashs(h)::tl when n mod 2 = 1 ->
-            begin match tl with
-            | []
-            | (Space|Spaces _)::(Newline|Newlines _)::_
-            | (Newline|Newlines _)::_ ->
-                loop (Hash::Backslashs(n)::accu)
-                  ((if h = 0 then Hash else Hashs(h-1))::tl)
-            | _ ->
-                loop (Hashs(h)::Backslashs(n)::accu) tl
-            end
-        | (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
-        | (Hash|Hashs _) :: (Space|Spaces _) :: ((Newline|Newlines _)::_ as l)
-        | ((Newline|Newlines _) :: _ as l)
+        | Delim (n, Backslash) :: Delim (h, Hash) ::
+          ([] | Delim (_, Space) :: Delim (_, Newline) :: _ | Delim (_, Newline) :: _ as tl) when n mod 2 = 1 ->
+            loop (Delim (1, Hash) :: Delim (n, Backslash) :: accu) (delim (h-1) Hash tl)
+        | Delim (n, Backslash) :: Delim (h, Hash) :: tl when n mod 2 = 1 ->
+            loop (Delim (h, Hash) :: Delim (n, Backslash) :: accu) tl
+        | Delim (_, Hash) :: (Delim (_, Newline) :: _ as l)
+        | Delim (_, Hash) :: Delim (_, Space) :: (Delim (_, Newline) :: _ as l)
+        | (Delim (_, Newline) :: _ as l)
         | ([] as l)
-        | (Space|Spaces _) :: (Hash|Hashs _) :: ((Newline|Newlines _) :: _ as l)
-        | (Space|Spaces _) :: (Hash|Hashs _) :: (Space|Spaces _)
-          :: ((Newline|Newlines _)::_ as l)
-        | (Space|Spaces _) :: ((Newline|Newlines _) :: _ as l)
-        | (Space|Spaces _) :: ([] as l) ->
+        | Delim (_, Space) :: Delim (_, Hash) :: (Delim (_, Newline) :: _ as l)
+        | Delim (_, Space) :: Delim (_, Hash) :: Delim (_, Space) :: (Delim (_, Newline) :: _ as l)
+        | Delim (_, Space) :: (Delim (_, Newline) :: _ as l)
+        | Delim (_, Space) :: ([] as l) ->
             main_loop [] [] (List.rev accu), l
-        | [Hash|Hashs _]
-        | [(Space|Spaces _); Hash|Hashs _]
-        | [(Space|Spaces _); (Hash|Hashs _); (Space|Spaces _)] ->
+        | [Delim (_, Hash)]
+        | [Delim (_, Space); Delim (_, Hash)]
+        | [Delim (_, Space); Delim (_, Hash); Delim (_, Space)] ->
             main_loop [] [] (List.rev accu), []
         | x::tl ->
             loop (x::accu) tl
@@ -1041,12 +1021,12 @@ struct
       loop [] lexemes
     in
     match n with
-    | 1 -> Some(H1 title :: r, [Newline], rest)
-    | 2 -> Some(H2 title :: r, [Newline], rest)
-    | 3 -> Some(H3 title :: r, [Newline], rest)
-    | 4 -> Some(H4 title :: r, [Newline], rest)
-    | 5 -> Some(H5 title :: r, [Newline], rest)
-    | 6 -> Some(H6 title :: r, [Newline], rest)
+    | 1 -> Some (H1 title :: r, [Delim (1, Newline)], rest)
+    | 2 -> Some (H2 title :: r, [Delim (1, Newline)], rest)
+    | 3 -> Some (H3 title :: r, [Delim (1, Newline)], rest)
+    | 4 -> Some (H4 title :: r, [Delim (1, Newline)], rest)
+    | 5 -> Some (H5 title :: r, [Delim (1, Newline)], rest)
+    | 6 -> Some (H6 title :: r, [Delim (1, Newline)], rest)
     | _ -> None
 
   let maybe_extension extensions r p l =
