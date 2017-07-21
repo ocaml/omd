@@ -7,7 +7,7 @@
 
 val debug : bool
 (** Equals [true] if the environment variable DEBUG is set,
-    or if the environment variable OMD_DEBUG is set to a string 
+    or if the environment variable OMD_DEBUG is set to a string
     that is not ["false"]. *)
 
 val trackfix : bool
@@ -43,10 +43,7 @@ and 'a split_action =
   | Split of 'a list * 'a list
   (** Type of a split action *)
 
-
-val fsplit_rev :
-  ?excl:('a list -> bool) ->
-  f:'a split -> 'a list -> ('a list * 'a list) option
+val fsplit_rev : ?excl:('a list -> bool) -> f:'a split -> 'a list -> ('a list * 'a list) option
 (** [fsplit_rev ?excl ~f l] returns [Some(x,y)] where [x] is the
     **reversed** list of the consecutive elements of [l] that obey the
     split function [f].
@@ -64,11 +61,10 @@ val fsplit_rev :
     if the splitting should be stopped right away. When the split
     fails, it returns [None]. *)
 
-
 val fsplit :
   ?excl:('a list -> bool) ->
   f:'a split -> 'a list -> ('a list * 'a list) option
-(** [fsplit ?excl ~f l] returns [Some(List.rev x, y)] 
+(** [fsplit ?excl ~f l] returns [Some(List.rev x, y)]
     if [fsplit ?excl ~f l] returns [Some(x,y)], else it returns [None]. *)
 
 val id_of_string : < mangle : string -> string; .. > -> string -> string
@@ -89,11 +85,9 @@ val minimalize_blanks : string -> string
 (** [minimalize_blanks s] returns a copy of [s] in which the first and last
     characters are never blank, and two consecutive blanks never happen. *)
 
-
 val eat : ('a -> bool) -> 'a list -> 'a list
 (** [eat f l] returns [l] where elements satisfying [f] have been removed,
     but it stops removing as soon as one element doesn't satisfy [f]. *)
-
 
 val extract_html_attributes : string -> (string * string) list
 (** Takes some HTML and returns the list of attributes of the first
