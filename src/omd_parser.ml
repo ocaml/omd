@@ -156,7 +156,7 @@ struct
       | Delim (n, a) :: Delim (m, b) :: tl when a = b ->
           (* if trackfix then eprintf "(OMD) Ampersand 1\n"; *)
           loop accu (Delim (n+m, a) :: tl)
-      | x::tl ->
+      | x :: tl ->
           loop (x :: accu) tl
       | [] ->
           List.rev accu
@@ -176,45 +176,66 @@ struct
       | [] ->
           let accu =
             match cp with
-            | [] | [NL] | [Br] -> accu
-            | (NL|Br)::cp -> Paragraph(List.rev cp)::accu
-            | cp -> Paragraph(List.rev cp)::accu
+            | [] | [NL] | [Br] ->
+                accu
+            | (NL | Br) :: cp ->
+                Paragraph (List.rev cp) :: accu
+            | cp ->
+                Paragraph (List.rev cp) :: accu
           in
           List.rev accu
       | Blockquote b1 :: Blockquote b2 :: tl ->
-          loop cp accu (Blockquote(b1@b2):: tl)
+          loop cp accu (Blockquote(b1@b2) :: tl)
       | Blockquote b :: tl ->
-          let e = Blockquote(loop [] [] b) in
-          (match cp with
-           | [] | [NL] | [Br] -> loop cp (e::accu) tl
-           | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+          let e = Blockquote (loop [] [] b) in
+          begin match cp with
+          | [] | [NL] | [Br] ->
+              loop cp (e :: accu) tl
+          | _ ->
+              loop [] (e :: Paragraph (List.rev cp) :: accu) tl
+          end
       | (Ulp b) :: tl ->
-          let e = Ulp(List.map (fun li -> loop [] [] li) b) in
-          (match cp with
-           | [] | [NL] | [Br] -> loop cp (e::accu) tl
-           | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+          let e = Ulp (List.map (fun li -> loop [] [] li) b) in
+          begin match cp with
+          | [] | [NL] | [Br] ->
+              loop cp (e :: accu) tl
+          | _ ->
+              loop [] (e :: Paragraph (List.rev cp) :: accu) tl
+          end
       | (Olp b) :: tl ->
-          let e = Olp(List.map (fun li -> loop [] [] li) b) in
-          (match cp with
-           | [] | [NL] | [Br] -> loop cp (e::accu) tl
-           | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+          let e = Olp (List.map (fun li -> loop [] [] li) b) in
+          begin match cp with
+          | [] | [NL] | [Br] ->
+              loop cp (e :: accu) tl
+          | _ ->
+              loop [] (e :: Paragraph (List.rev cp) :: accu) tl
+          end
       | Html_comment _ as e :: tl ->
-          (match cp with
-           | [] -> loop [] (e::accu) tl
-           | [NL] | [Br] -> loop [] (e::NL::accu) tl
-           | _ -> loop (e::cp) accu tl)
+          begin match cp with
+          | [] ->
+              loop [] (e :: accu) tl
+          | [NL] | [Br] ->
+              loop [] (e :: NL :: accu) tl
+          | _ ->
+              loop (e :: cp) accu tl
+          end
       | (Raw_block _ | Html_block _) as e :: tl ->
-          (match cp with
-           | [] | [NL] | [Br] -> loop cp (e::cp@accu) tl
-           | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
-      | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
-        | Ol _ | Ul _) as e :: tl ->
-          (match cp with
-           | [] | [NL] | [Br] -> loop cp (e::accu) tl
-           | _ -> loop [] (e::Paragraph(List.rev cp)::accu) tl)
+          begin match cp with
+          | [] | [NL] | [Br] ->
+              loop cp (e :: cp@accu) tl
+          | _ ->
+              loop [] (e :: Paragraph (List.rev cp) :: accu) tl
+          end
+      | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _) as e :: tl ->
+          begin match cp with
+          | [] | [NL] | [Br] ->
+              loop cp (e :: accu) tl
+          | _ ->
+              loop [] (e :: Paragraph (List.rev cp) :: accu) tl
+          end
       | Text "\n" :: _ | Paragraph _ :: _ ->
           invalid_arg "Omd_parser.make_paragraphs"
-      | (NL|Br) :: (NL|Br) :: tl ->
+      | (NL | Br) :: (NL | Br) :: tl ->
           let tl = remove_initial_newlines tl in
           begin match cp with
           | [] | [NL] | [Br] -> loop [] (NL::NL::accu) tl
@@ -275,40 +296,39 @@ struct
       if debug then eprintf "(OMD) clean_paragraphs\n";
       function
       | [] -> []
-      | Paragraph[]::tl -> tl
-      | Paragraph(p) :: tl ->
-          Paragraph(clean_paragraphs
-                      (remove_initial_newlines
-                         (remove_white_crumbs(normalise_md p))))
-          :: clean_paragraphs tl
-      | H1 v :: tl -> H1(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | H2 v :: tl -> H2(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | H3 v :: tl -> H3(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | H4 v :: tl -> H4(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | H5 v :: tl -> H5(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | H6 v :: tl -> H6(clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | Emph v :: tl -> Emph(clean_paragraphs v)
-                        :: clean_paragraphs tl
-      | Bold v :: tl -> Bold(clean_paragraphs v)
-                        :: clean_paragraphs tl
-      | Ul v :: tl -> Ul(List.map clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | Ol v :: tl -> Ol(List.map clean_paragraphs v)
-                      :: clean_paragraphs tl
-      | Ulp v :: tl -> Ulp(List.map clean_paragraphs v)
-                       :: clean_paragraphs tl
-      | Olp v :: tl -> Olp(List.map clean_paragraphs v)
-                       :: clean_paragraphs tl
-      | Blockquote v :: tl -> Blockquote(clean_paragraphs v)
-                              :: clean_paragraphs tl
-      | Url(href,v,title) :: tl -> Url(href,(clean_paragraphs v),title)
-                                   :: clean_paragraphs tl
+      | Paragraph [] :: tl ->
+          tl
+      | Paragraph (p) :: tl ->
+          Paragraph (clean_paragraphs (remove_initial_newlines (remove_white_crumbs (normalise_md p)))) ::
+          clean_paragraphs tl
+      | H1 v :: tl ->
+          H1 (clean_paragraphs v) :: clean_paragraphs tl
+      | H2 v :: tl ->
+          H2 (clean_paragraphs v) :: clean_paragraphs tl
+      | H3 v :: tl ->
+          H3 (clean_paragraphs v) :: clean_paragraphs tl
+      | H4 v :: tl ->
+          H4 (clean_paragraphs v) :: clean_paragraphs tl
+      | H5 v :: tl ->
+          H5 (clean_paragraphs v) :: clean_paragraphs tl
+      | H6 v :: tl ->
+          H6(clean_paragraphs v) :: clean_paragraphs tl
+      | Emph v :: tl ->
+          Emph (clean_paragraphs v) :: clean_paragraphs tl
+      | Bold v :: tl ->
+          Bold (clean_paragraphs v) :: clean_paragraphs tl
+      | Ul v :: tl ->
+          Ul (List.map clean_paragraphs v) :: clean_paragraphs tl
+      | Ol v :: tl ->
+          Ol (List.map clean_paragraphs v) :: clean_paragraphs tl
+      | Ulp v :: tl ->
+          Ulp (List.map clean_paragraphs v) :: clean_paragraphs tl
+      | Olp v :: tl ->
+          Olp (List.map clean_paragraphs v) :: clean_paragraphs tl
+      | Blockquote v :: tl ->
+          Blockquote (clean_paragraphs v) :: clean_paragraphs tl
+      | Url(href,v,title) :: tl ->
+          Url (href,(clean_paragraphs v),title) :: clean_paragraphs tl
       | Text _
       | Code _
       | Code_block _
@@ -323,13 +343,12 @@ struct
       | Html_block _
       | Html_comment _
       | Img _
-      | X _ as v :: tl -> v :: clean_paragraphs tl
+      | X _ as v :: tl ->
+          v :: clean_paragraphs tl
     in
-    let r = clean_paragraphs(loop [] [] md)
-    in
+    let r = clean_paragraphs(loop [] [] md) in
     if debug then eprintf "(OMD) clean_paragraphs %S --> %S\n%!"
-        (Omd_backend.sexpr_of_md md)
-        (Omd_backend.sexpr_of_md r);
+        (Omd_backend.sexpr_of_md md) (Omd_backend.sexpr_of_md r);
     r
 
   (** [assert_well_formed] is a developer's function that helps to
@@ -338,34 +357,39 @@ struct
   let assert_well_formed (l:tok list) : unit =
     if trackfix then
       let rec equiv l1 l2 = match l1, l2 with
-        | [], [] -> true
-        | Tag _::tl1, Tag _::tl2-> equiv tl1 tl2
-        | e1::tl1, e2::tl2 -> e1 = e2 && equiv tl1 tl2
-        | _ -> false
+        | [], [] ->
+            true
+        | Tag _ :: tl1, Tag _ :: tl2 ->
+            equiv tl1 tl2
+        | e1 :: tl1, e2 :: tl2 ->
+            e1 = e2 && equiv tl1 tl2
+        | _ ->
+            false
       in
-      assert(equiv (fix l) l);
-      ()
+      assert (equiv (fix l) l)
 
   (* Generate fallback for references. *)
   let extract_fallback _main_loop remains l =
     if debug then eprintf "(OMD) Omd_parser.extract_fallback\n%!";
     let rec loop accu = function
-      | [] -> List.rev accu
+      | [] ->
+          List.rev accu
       | e :: tl as r ->
           if r == remains then
             List.rev accu
-          else
+          else begin
             match e, remains with
             | Delim (n, Cbracket), Delim (m, Cbracket) :: r when m + 1 = n && tl = r ->
                 let accu = Word "]" :: accu in
                 List.rev accu
             | _ ->
-                loop (e::accu) tl
+                loop (e :: accu) tl
+          end
     in
     let a = loop [] l in
     object
       method to_string = L.string_of_tokens a
-      method to_t = [Text(L.string_of_tokens a)]
+      method to_t = [Text (L.string_of_tokens a)]
     end
 
   let unindent_rev n lexemes =
@@ -381,9 +405,9 @@ struct
             loop (nl::cl@accu) [] tl
           else
             (cl@accu), l
-      | (Delim ((1 | 2), Newline) as nl) :: (Delim (_, Space) as s) :: tl ->
+      | (Delim ((1|2), Newline) as nl) :: (Delim (_, Space) as s) :: tl ->
           let x = L.length s - n in
-          loop (nl::cl@accu)
+          loop (nl :: cl@accu)
             (if x > 0 then [L.make_space x] else [])
             tl
       | Delim (_, Newline) :: _ as l ->
@@ -1812,10 +1836,10 @@ struct
         end
 
     (* hashes *)
-    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: Delim (_, Space) :: tl
-    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: tl -> (* hash titles *)
+    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (Delim (_, Space) :: ttl as tl)
+    | ([] | [Delim (_, Newline)]), (Delim (n, Hash) as t) :: (ttl as tl) -> (* hash titles *)
         if n <= 6 then
-          match read_title main_loop n r previous tl with
+          match read_title main_loop n r previous ttl with
           | Some (r, p, l) ->
               main_impl_rev ~html r p l
           | None ->
@@ -1984,7 +2008,8 @@ struct
               None
           | Delim (1, Greaterthan) :: tl ->
               let url =
-                (L.string_of_token w) ^ "://" ^ (if n = 2 then "" else String.make (n-1) '/') ^ L.string_of_tokens (List.rev accu)
+                L.string_of_token w ^ "://" ^
+                (if n = 2 then "" else String.make (n-3) '/') ^ L.string_of_tokens (List.rev accu)
               in
               Some (url, tl)
           | x :: tl ->
@@ -2070,18 +2095,17 @@ struct
     (* block html *)
     | ([] | [Delim (_, Newline) | Tag ("HTMLBLOCK", _)]),
       (Delim (1, Lessthan) as t) ::
-      ((Word(tagnametop) as w) :: ((Delim (_, Space)|Delim (_, Greaterthan)) :: _ as html_stuff) as tlx) ->
+      ((Word(tagnametop) as w) :: ((Delim (_, Space) | Delim (_, Greaterthan)) :: _ as html_stuff) as tlx) ->
         if StringSet.mem tagnametop inline_htmltags_set then
           main_impl_rev ~html r [Word ""] lexemes
-        else if not (blind_html || StringSet.mem tagnametop htmltags_set) then
-          begin match maybe_extension extensions r previous lexemes with
+        else if not (blind_html || StringSet.mem tagnametop htmltags_set) then begin
+          match maybe_extension extensions r previous lexemes with
           | None ->
               main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tlx
           | Some (r, p, l) ->
               main_impl_rev ~html r p l
-          end
-        else
-          let read_html() =
+        end else
+          let read_html () =
             let module T = struct
               type t =
                 | Awaiting of string
@@ -2106,13 +2130,13 @@ struct
                     else
                       Html_block (t, f_a, md_of_interm_list ~html:true (List.rev c)) ::
                       md_of_interm_list tl
-                | MD md::tl ->
+                | MD md :: tl ->
                     md@md_of_interm_list tl
                 | RTOKENS t1 :: FTOKENS t2 :: tl ->
                     md_of_interm_list (FTOKENS (List.rev_append t1 t2) :: tl)
                 | RTOKENS t1 :: RTOKENS t2 :: tl ->
                     md_of_interm_list (FTOKENS (List.rev_append t1 (List.rev t2)) :: tl)
-                | FTOKENS t1::FTOKENS t2 :: tl ->
+                | FTOKENS t1 :: FTOKENS t2 :: tl ->
                     md_of_interm_list (FTOKENS (t1@t2) :: tl)
                 | FTOKENS t :: tl ->
                     if html then
