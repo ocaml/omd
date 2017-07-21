@@ -531,76 +531,50 @@ struct
       match l with
       | [] ->
           None
-      | (Newline|Newlines _)::_ ->
+      | Delim (_, Newline) ::_ ->
           None
-      | Backslash::Backquote::tl ->
-          detect_balanced_bqs n (Backquote::Backslash::r) tl
-      | Backslash::Backquotes 0::tl ->
-          detect_balanced_bqs n (Backquote::Backslash::r) (Backquote::tl)
-      | Backslash::Backquotes x::tl ->
-          detect_balanced_bqs n (Backquote::Backslash::r) (Backquotes(x-1)::tl)
-      | Backslashs(m) as b::Backquote::tl when m mod 2 = 1 ->
-          detect_balanced_bqs n (Backquote::b::r) tl
-      | Backslashs(m) as b::Backquotes 0::tl when m mod 2 = 1 ->
-          detect_balanced_bqs n (Backquote::b::r) (Backquote::tl)
-      | Backslashs(m) as b::Backquotes x::tl when m mod 2 = 1 ->
-          detect_balanced_bqs n (Backquote::b::r) (Backquotes(x-1)::tl)
-      | (Backquote as b)::tl when n = 1 ->
-          Some(List.rev (b::r), tl)
-      | (Backquotes x as b)::tl when n = x+2 ->
-          Some(List.rev (b::r), tl)
-      | e::tl ->
-          detect_balanced_bqs n (e::r) tl
+      | Delim (m, Backslash) as b :: Delim (x, Backquote) :: tl when m mod 2 = 1 ->
+          detect_balanced_bqs n (Delim (1, Backquote) :: b ::r) (delim (x-1) Backquote tl)
+      | Delim (x, Backquote) as b :: tl when n = x ->
+          Some (List.rev (b :: r), tl)
+      | e :: tl ->
+          detect_balanced_bqs n (e :: r) tl
     in
     let rec loop r = function
       | [] ->
           if r = [] then
             None
           else
-            Some(List.rev r, [])
-      | Backslash::Backquote::tl ->
-          loop (Backquote::Backslash::r) tl
-      | Backslashs(m) as b::Backquote::tl when m mod 2 = 1 ->
-          loop (Backquote::b::r) tl
-      | Backslash::Backquotes 0::tl ->
-          loop (Backquote::Backslash::r) (Backquote::tl)
-      | Backslash::Backquotes x::tl ->
-          loop (Backquote::Backslash::r) (Backquotes(x-1)::tl)
-      | Backslashs(m) as b::Backquotes 0::tl when m mod 2 = 1 ->
-          loop (Backquote::b::r) (Backquote::tl)
-      | Backslashs(m) as b::Backquotes x::tl when m mod 2 = 1 ->
-          loop (Backquote::b::r) (Backquotes(x-1)::tl)
-      | Backquote::tl ->
-          begin match detect_balanced_bqs 1 [] tl with
+            Some (List.rev r, [])
+      | Delim (m, Backslash) as b :: Delim (x, Backquote) :: tl when m mod 2 = 1 ->
+          loop (Delim (1, Backquote) :: b :: r) (delim (x-1) Backquote tl)
+      | Delim (x, Backquote) :: tl ->
+          begin match detect_balanced_bqs x [] tl with
           | Some(bl,tl) -> loop (bl@r) tl
           | _ -> None
           end
-      | Backquotes(x)::tl ->
-          begin match detect_balanced_bqs (x+2) [] tl with
-          | Some(bl,tl) -> loop (bl@r) tl
-          | _ -> None
-          end
-      | Newline::(Equal|Equals _|Minus|Minuss _)::tl ->
+      | Delim (1, Newline) :: Delim (_, (Equal | Minus)) :: tl ->
           if r = [] then
             None
           else
-            Some(List.rev r, tl)
-      | (Newline|Newlines _)::_ ->
+            Some (List.rev r, tl)
+      | Delim (_, Newline) :: _ ->
           if debug then
             eprintf "(OMD) Omd_parser.setext_title is wrongly used!\n%!";
           None
-      | e::tl ->
-          loop (e::r) tl
+      | e :: tl ->
+          loop (e :: r) tl
     in
     if match l with
-      | Lessthan::Word _::_ ->
+      | Delim (1, Lessthan) :: Word _ :: _ ->
           begin match main_loop [] [] l with
-          | (Html_block _ | Code_block _ | Raw_block _)::_ ->
+          | (Html_block _ | Code_block _ | Raw_block _) :: _ ->
               true
           | _ ->
               false
           end
-      | _ -> false
+      | _ ->
+          false
     then
       None
     else
