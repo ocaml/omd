@@ -714,17 +714,16 @@ struct
   let hr_s l =
     assert_well_formed l;
     let rec loop n = function
-      | ((Newline|Newlines _)::tl) | ([] as tl) ->
+      | Delim (_, Newline) :: tl | ([] as tl) ->
           if n >= 3 then Some tl else None
-      | (Space|Spaces _)::tl ->
+      | Delim (_, Space) :: tl ->
           loop n tl
-      | Star::tl ->
-          loop (n+1) tl
-      | Stars x::tl ->
-          loop (x+2+n) tl
-      | _::_ ->
+      | Delim (x, Star) :: tl ->
+          loop (x+n) tl
+      | _ :: _ ->
           None
-    in loop 0 l
+    in
+    loop 0 l
 
   let hr l =
     match hr_m l with
