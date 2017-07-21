@@ -28,82 +28,48 @@ open Omd_representation
 type token = Omd_representation.tok
 type t = Omd_representation.tok list
 
-let string_of_token = function
-  | Tag (name, o) ->
-      if Omd_utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
-  | Ampersand -> "&"
-  | Ampersands n -> assert (n >= 0); String.make (2+n) '&'
-  | At -> "@"
-  | Ats n -> assert (n >= 0); String.make (2+n) '@'
-  | Backquote -> "`"
-  | Backquotes n -> assert (n >= 0); String.make (2+n) '`'
-  | Backslash -> "\\"
-  | Backslashs n -> assert (n >= 0); String.make (2+n) '\\'
-  | Bar -> "|"
-  | Bars n -> assert (n >= 0); String.make (2+n) '|'
-  | Caret -> "^"
-  | Carets n -> assert (n >= 0); String.make (2+n) '^'
-  | Cbrace -> "}"
-  | Cbraces n -> assert (n >= 0); String.make (2+n) '}'
-  | Colon -> ":"
-  | Colons n -> assert (n >= 0); String.make (2+n) ':'
-  | Comma -> ","
-  | Commas n -> assert (n >= 0); String.make (2+n) ','
-  | Cparenthesis -> ")"
-  | Cparenthesiss n -> assert (n >= 0); String.make (2+n) ')'
-  | Cbracket -> "]"
-  | Cbrackets n -> assert (n >= 0); String.make (2+n) ']'
-  | Dollar -> "$"
-  | Dollars n -> assert (n >= 0); String.make (2+n) '$'
-  | Dot -> "."
-  | Dots n -> assert (n >= 0); String.make (2+n) '.'
-  | Doublequote -> "\""
-  | Doublequotes n -> assert (n >= 0); String.make (2+n) '"'
-  | Exclamation -> "!"
-  | Exclamations n -> assert (n >= 0); String.make (2+n) '!'
-  | Equal -> "="
-  | Equals n -> assert (n >= 0); String.make (2+n) '='
-  | Greaterthan -> ">"
-  | Greaterthans n -> assert (n >= 0); String.make (2+n) '>'
-  | Hash -> "#"
-  | Hashs n -> assert (n >= 0); String.make (2+n) '#'
-  | Lessthan -> "<"
-  | Lessthans n -> assert (n >= 0); String.make (2+n) '<'
-  | Minus -> "-"
-  | Minuss n -> assert (n >= 0); String.make (2+n) '-'
-  | Newline -> "\n"
-  | Newlines n -> assert (n >= 0); String.make (2+n) '\n'
-  | Number s -> s
-  | Obrace -> "{"
-  | Obraces n -> assert (n >= 0); String.make (2+n) '{'
-  | Oparenthesis -> "("
-  | Oparenthesiss n -> assert (n >= 0); String.make (2+n) '('
-  | Obracket -> "["
-  | Obrackets n -> assert (n >= 0); String.make (2+n) '['
-  | Percent -> "%"
-  | Percents n -> assert (n >= 0); String.make (2+n) '%'
-  | Plus -> "+"
-  | Pluss n -> assert (n >= 0); String.make (2+n) '+'
-  | Question -> "?"
-  | Questions n -> assert (n >= 0); String.make (2+n) '?'
-  | Quote -> "'"
-  | Quotes n -> assert (n >= 0); String.make (2+n) '\''
-  | Semicolon -> ";"
-  | Semicolons n -> assert (n >= 0); String.make (2+n) ';'
-  | Slash -> "/"
-  | Slashs n -> assert (n >= 0); String.make (2+n) '/'
-  | Space -> " "
-  | Spaces n -> assert (n >= 0); String.make (2+n) ' '
-  | Star -> "*"
-  | Stars n -> assert (n >= 0); String.make (2+n) '*'
-  | Tab -> "    "
-  | Tabs n -> assert (n >= 0); String.make ((2+n)*4) ' '
-  | Tilde -> "~"
-  | Tildes n -> assert (n >= 0); String.make (2+n) '~'
-  | Underscore -> "_"
-  | Underscores n -> assert (n >= 0); String.make (2+n) '_'
-  | Word s -> s
+let char_of_delim = function
+  | Ampersand -> '&'
+  | At -> '@'
+  | Backquote -> '`'
+  | Backslash -> '\\'
+  | Bar -> '|'
+  | Caret -> '^'
+  | Cbrace -> '}'
+  | Colon -> ':'
+  | Comma -> ','
+  | Cparenthesis -> ')'
+  | Cbracket -> ']'
+  | Dollar -> '$'
+  | Dot -> '.'
+  | Doublequote -> '\''
+  | Exclamation -> '!'
+  | Equal -> '='
+  | Greaterthan -> '>'
+  | Hash -> '#'
+  | Lessthan -> '<'
+  | Minus -> '-'
+  | Newline -> '\n'
+  | Obrace -> '{'
+  | Oparenthesis -> '('
+  | Obracket -> '['
+  | Percent -> '%'
+  | Plus -> '+'
+  | Question -> '?'
+  | Quote -> '\''
+  | Semicolon -> ';'
+  | Slash -> '/'
+  | Space -> ' '
+  | Star -> '*'
+  | Tab -> assert false
+  | Tilde -> '~'
+  | Underscore -> '_'
 
+let string_of_token = function
+  | Tag (name, o) -> if Omd_utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
+  | Word s | Number s -> s
+  | Delim (n, Tab) -> assert (n >= 0); String.make (4*n) ' '
+  | Delim (n, d) -> assert (n >= 0); String.make n (char_of_delim d)
 
 let size_and_newlines = function
   | Tag _ -> (0, 0)
