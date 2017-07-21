@@ -1542,7 +1542,7 @@ struct
           make_up p items, l
     in
     let rp, l = list_items ~p:false [] [] l in
-    rp::r, [Newline], l
+    rp::r, [Delim (1, Newline)], l
 
   let icode ?(default_lang = default_lang) r _p l =
     assert_well_formed l;
@@ -1591,92 +1591,89 @@ struct
   let spaces_at_beginning_of_line main_loop default_lang n r previous lexemes =
     assert_well_formed lexemes;
     assert (n > 0);
-    if n <= 3 then (
+    if n <= 3 then begin
       match lexemes with
-      | (Star|Minus|Plus) :: (Space|Spaces _) :: _ ->
+      | Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: _ ->
           (* unordered list *)
-          parse_list main_loop r [] (L.make_space n::lexemes)
-      | (Number _)::Dot::(Space|Spaces _)::tl ->
+          parse_list main_loop r [] (L.make_space n :: lexemes)
+      | Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
           (* ordered list *)
-          parse_list main_loop r [] (L.make_space n::lexemes)
-      | []
-      | (Newline|Newlines _) :: _  -> (* blank line, skip spaces *)
+          parse_list main_loop r [] (L.make_space n :: lexemes)
+      | [] | Delim (_, Newline) :: _  -> (* blank line, skip spaces *)
           r, previous, lexemes
-      |  _::_ ->
-          Text (" ")::r, previous, lexemes
-    )
-    else ( (* n>=4, blank line or indented code *)
+      | _ :: _ ->
+          Text (" ") :: r, previous, lexemes
+    end else begin (* n>=4, blank line or indented code *)
       match lexemes with
-      | [] | (Newline|Newlines _) :: _  -> r, previous, lexemes
+      | [] | Delim (_, Newline) :: _  ->
+          r, previous, lexemes
       | _ ->
-          match
-            icode ~default_lang r [Newline] (L.make_space n :: lexemes)
-          with
-          | Some(r,p,l) -> r,p,l
+          begin match icode ~default_lang r [Delim (1, Newline)] (L.make_space n :: lexemes) with
+          | Some (r, p, l) ->
+              r, p, l
           | None ->
-              if debug then
-                eprintf "(OMD) Omd_parser.icode or \
-                         Omd_parser.main_loop is broken\n%!";
+              if debug then eprintf "(OMD) Omd_parser.icode or Omd_parser.main_loop is broken\n%!";
               assert false
-    )
+          end
+    end
 
-  let spaces_not_at_beginning_of_line ?(html=false) n r lexemes =
+  let spaces_not_at_beginning_of_line ?(html = false) n r lexemes =
     assert_well_formed lexemes;
     assert (n > 0);
     if n = 1 then
-      (Text " "::r), [Space], lexemes
-    else (
+      Text " " :: r, [Delim (1, Space)], lexemes
+    else begin
       match lexemes with
-      | Newline :: tl when not html ->
+      | Delim (1, Newline) :: tl when not html ->
           if debug then
-            eprintf
-              "(OMD) 2 or more spaces before a newline, eat the newline\n%!";
-          Br::r, [Spaces(n-2)], tl
-      | Newlines k :: tl when not html ->
+            eprintf "(OMD) 2 or more spaces before a newline, eat the newline\n%!";
+          Br :: r, [Delim (n, Space)], tl
+      | Delim (k, Newline) :: tl when not html && k >= 2 ->
           if debug then
-            eprintf
-              "(OMD) 2 or more spaces before a newline, eat 1 newline";
-          let newlines = if k = 0 then Newline else Newlines(k-1) in
-          Br::r, [Spaces(n-2)], newlines :: tl
+            eprintf "(OMD) 2 or more spaces before a newline, eat 1 newline";
+          let newlines = Delim (k-1, Newline) in
+          Br :: r, [Delim (n, Space)], newlines :: tl
       | _ ->
-          assert (n>1);
-          (Text (String.make n ' ')::r), [Spaces(n-2)], lexemes
-    )
-
+          assert (n > 1);
+          Text (String.make n ' ') :: r, [Delim (n, Space)], lexemes
+    end
 
   let maybe_autoemail r p l =
     assert_well_formed l;
     match l with
-    | Lessthan::tl ->
-        begin
-          match
-            fsplit ~excl:(function (Newline|Newlines _|Space|Spaces _) :: _-> true
-                                 | [] -> true
-                                 | _ -> false)
-              ~f:(function At::tl -> Split([],tl) | _ -> Continue)
-              tl
-          with
-          | None -> None
-          | Some(left, right) ->
-              match
-                fsplit
-                  ~excl:(function
-                      | (Newline|Newlines _|Space|Spaces _) :: _-> true
-                      | [] -> true
-                      | _ -> false)
-                  ~f:(function Greaterthan::tl -> Split([],tl)
-                             | Greaterthans 0::tl -> Split([],Greaterthan::tl)
-                             | Greaterthans n::tl -> Split([],Greaterthans(n-1)::tl)
-                             | _ -> Continue)
-                  right
-              with
-              | None -> None
-              | Some(domain, tl) ->
-                  let email = L.string_of_tokens left
-                              ^ "@" ^ L.string_of_tokens domain in
-                  Some(Url("mailto:"^email,[Text email],"")::r,[Greaterthan],tl)
+    | Delim (1, Lessthan) :: tl ->
+        begin match
+          fsplit ~excl:(function
+              | Delim (_, (Newline|Space)) :: _ | [] ->
+                  true
+              | _ ->
+                  false
+            )
+            ~f:(function Delim (1, At) :: tl -> Split ([], tl) | _ -> Continue)
+            tl
+        with
+        | None ->
+            None
+        | Some (left, right) ->
+            match
+              fsplit
+                ~excl:(function
+                    | Delim (_, (Newline|Space)) :: _ | [] -> true
+                    | _ -> false
+                  )
+                ~f:(function
+                    | Delim (n, Greaterthan) :: tl -> Split ([], delim (n-1) Greaterthan tl)
+                    | _ -> Continue
+                  ) right
+            with
+            | None ->
+                None
+            | Some (domain, tl) ->
+                let email = L.string_of_tokens left ^ "@" ^ L.string_of_tokens domain in
+                Some (Url ("mailto:" ^ email, [Text email], "") :: r, [Delim (1, Greaterthan)], tl)
         end
-    | _ -> failwith "Omd_parser.maybe_autoemail: wrong use of the function."
+    | _ ->
+        failwith "Omd_parser.maybe_autoemail: wrong use of the function."
 
   let is_hex s =
     String.length s > 1
