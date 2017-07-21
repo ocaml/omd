@@ -950,7 +950,7 @@ struct
     read_until Lessthan None ?bq ?no_nl l
 
   let read_until_cparenth ?bq ?no_nl l =
-    read_until Cparenthesis (Some Oparenthesis) ?bq ?no_nl
+    read_until Cparenthesis (Some Oparenthesis) ?bq ?no_nl l
 
   let read_until_oparenth ?bq ?no_nl l =
     read_until Oparenthesis None ?bq ?no_nl l
@@ -1088,88 +1088,88 @@ struct
       (* check that there are no unwanted characters between CB and OB. *)
       if eat (let flag = ref true in
               function (* allow only a space, multiple spaces, or a newline *)
-              | Newline -> !flag && (flag := false; true)
-              | (Space|Spaces _) -> !flag && (flag := false; true)
+              | Delim (1, Newline) -> !flag && (flag := false; true)
+              | Delim (_, Space) -> !flag && (flag := false; true)
               | _ -> false) blank <> [] then
         raise Premature_ending (* <-- not a regular reference *)
-      else
+      else begin
         match read_until_cbracket ~bq:true remains with
         | [], remains ->
-            let fallback = extract_fallback main_loop remains (Obracket::l) in
+            let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
             let id = L.string_of_tokens text in (* implicit anchor *)
-            Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
+            Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
         | id, remains ->
-            let fallback = extract_fallback main_loop remains (Obracket::l) in
-            Some(((Ref(rc, L.string_of_tokens id,
-                       L.string_of_tokens text, fallback))::r),
-                 [Cbracket], remains)
+            let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
+            Some(Ref (rc, L.string_of_tokens id, L.string_of_tokens text, fallback) :: r, [Delim (1, Cbracket)], remains)
+      end
     in
     let rec maybe_nonregular_ref l =
       let text, remains = read_until_cbracket ~bq:true l in
       (* check that there is no ill-placed open bracket *)
-      if (try ignore(read_until_obracket ~bq:true text); true
-          with Premature_ending -> false) then
+      if (match read_until_obracket ~bq:true text with _ -> true | exception Premature_ending -> false) then
         raise Premature_ending; (* <-- ill-placed open bracket *)
-      let fallback = extract_fallback main_loop remains (Obracket::l) in
+      let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
       let id = L.string_of_tokens text in (* implicit anchor *)
-      Some(((Ref(rc, id, id, fallback))::r), [Cbracket], remains)
+      Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
     in
     let rec maybe_def l =
       match read_until_cbracket ~bq:true l with
-      | _, [] -> raise Premature_ending
-      | id, (Colon::(Space|Spaces _)::remains)
-      | id, (Colon::remains) ->
-          begin
-            match
-              fsplit
-                ~f:(function
-                    | (Space|Spaces _|Newline|Newlines _):: _ as l -> Split([], l)
-                    | e::tl -> Continue
-                    | [] -> Split([],[]))
-                remains
-            with
-            | None | Some([], _) -> raise Premature_ending
-            | Some(url, remains) ->
-                let title, remains =
-                  match
-                    eat
-                      (function | (Space|Spaces _|Newline|Newlines _) -> true
-                                | _ -> false)
-                      remains
-                  with
-                  | Doublequotes(0)::tl -> [], tl
-                  | Doublequote::tl -> read_until_dq ~bq:true tl
-                  | Quotes(0)::tl -> [], tl
-                  | Quote::tl -> read_until_q ~bq:true tl
-                  | Oparenthesis::tl-> read_until_cparenth ~bq:true tl
-                  | l -> [], l
-                in
-                let url =
-                  let url = L.string_of_tokens url in
-                  if String.length url > 2 && url.[0] = '<'
-                     && url.[String.length url - 1] = '>' then
-                    String.sub url 1 (String.length url - 2)
-                  else
-                    url
-                in
-                rc#add_ref (L.string_of_tokens id) (L.string_of_tokens title) url;
-                Some(r, [Newline], remains)
+      | _, [] ->
+          raise Premature_ending
+      | id, (Delim (1, Colon) :: Delim (_, Space) :: remains)
+      | id, (Delim (1, Colon) :: remains) ->
+          begin match
+            fsplit
+              ~f:(function
+                  | Delim (_, (Space | Newline)) :: _ as l ->
+                      Split ([], l)
+                  | e :: tl ->
+                      Continue
+                  | [] ->
+                      Split ([], [])
+                ) remains
+          with
+          | None | Some([], _) ->
+              raise Premature_ending
+          | Some (url, remains) ->
+              let title, remains =
+                match eat (function Delim (_, (Space | Newline)) -> true | _ -> false) remains with
+                | Delim (2, Doublequote) :: tl ->
+                    [], tl
+                | Delim (1, Doublequote) :: tl ->
+                    read_until_dq ~bq:true tl
+                | Delim (2, Quote) :: tl ->
+                    [], tl
+                | Delim (1, Quote) :: tl ->
+                    read_until_q ~bq:true tl
+                | Delim (1, Oparenthesis) :: tl->
+                    read_until_cparenth ~bq:true tl
+                | l ->
+                    [], l
+              in
+              let url =
+                let url = L.string_of_tokens url in
+                if String.length url > 2 && url.[0] = '<' && url.[String.length url - 1] = '>' then
+                  String.sub url 1 (String.length url - 2)
+                else
+                  url
+              in
+              rc#add_ref (L.string_of_tokens id) (L.string_of_tokens title) url;
+              Some(r, [Delim (1, Newline)], remains)
           end
-      | _ -> raise Premature_ending
+      | _ ->
+          raise Premature_ending
     in
     try
       maybe_ref l
-    with | Premature_ending | NL_exception ->
+    with Premature_ending | NL_exception ->
     try
       maybe_def l
-    with
-    | Premature_ending | NL_exception ->
-        try
-          maybe_nonregular_ref l
-        with
-        | Premature_ending | NL_exception ->
-            None
-
+    with Premature_ending | NL_exception ->
+    try
+      maybe_nonregular_ref l
+    with Premature_ending | NL_exception ->
+      None
 
   (** maybe a link *)
   let maybe_link (main_loop:main_loop) r _p l =
