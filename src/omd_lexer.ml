@@ -72,25 +72,10 @@ let string_of_token = function
   | Delim (n, d) -> assert (n >= 0); String.make n (char_of_delim d)
 
 let size_and_newlines = function
-  | Tag _ -> (0, 0)
-  | Ampersand | At | Backquote | Backslash | Bar | Caret | Cbrace
-  | Colon | Comma | Cparenthesis | Cbracket | Dollar | Dot
-  | Doublequote | Exclamation | Equal | Greaterthan | Hash | Lessthan
-  | Minus | Obrace | Oparenthesis | Obracket | Percent | Plus
-  | Question | Quote | Semicolon | Slash | Space | Star | Tab
-  | Tilde | Underscore -> (1, 0)
-  | Ampersands x | Ats x | Backquotes x | Backslashs x | Bars x | Carets x
-  | Cbraces x | Colons x | Commas x | Cparenthesiss x | Cbrackets x
-  | Dollars x | Dots x
-  | Doublequotes x | Exclamations x | Equals x | Greaterthans x | Hashs x
-  | Lessthans x
-  | Minuss x | Obraces x | Oparenthesiss x | Obrackets x | Percents x | Pluss x
-  | Questions x | Quotes x | Semicolons x | Slashs x | Spaces x | Stars x
-  | Tabs x
-  | Tildes x | Underscores x -> (2+x, 0)
-  | Newline -> (0, 1)
-  | Newlines x -> (0, 2+x)
-  | Number s | Word s -> (String.length s, 0)
+  | Tag _ -> 0, 0
+  | Delim (x, Newline) -> 0, x
+  | Delim (x, _) -> x, 0
+  | Number s | Word s -> String.length s, 0
 
 let length t =
   let c, nl = size_and_newlines t in
