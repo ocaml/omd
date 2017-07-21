@@ -407,10 +407,12 @@ struct
     List.rev fst, snd
 
   let rec is_blank = function
-    | (Space | Spaces _ | Newline | Newlines _) :: tl ->
+    | Delim (_, (Space | Newline)) :: tl ->
         is_blank tl
-    | [] -> true
-    | _ -> false
+    | [] ->
+        true
+    | _ ->
+        false
 
   let semph_or_bold (n:int) (l:l) =
     (* FIXME: use rpl call/return convention *)
