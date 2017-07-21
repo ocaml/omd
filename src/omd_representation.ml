@@ -22,14 +22,17 @@ end = object
 
   method get_ref name =
     try
-      let (url, title) as r =
-        try R.find name c
+      let r =
+        try
+          R.find name c
         with Not_found ->
           let ln = String.lowercase_ascii name in
-          try R.find ln c
+          try
+            R.find ln c
           with Not_found ->
             R.find ln c2
-      in Some r
+      in
+      Some r
     with Not_found ->
       None
 end
@@ -241,10 +244,11 @@ and extension =
 
 type extensions = extension list
 
-let empty_extension = object
-  method parser_extension r p l = None
-  method to_string = ""
-end
+let empty_extension =
+  object
+    method parser_extension _r _p _l = None
+    method to_string = ""
+  end
 
 let rec normalise_md l =
   if debug then
@@ -301,17 +305,6 @@ let rec normalise_md l =
     a
   else
     normalise_md b
-
-
-
-let dummy_X =
-  X (object
-    method name = "dummy"
-    method to_html ?(indent=0) _ _ = None
-    method to_sexpr _ _ = None
-    method to_t _ = None
-  end)
-
 
 let rec visit f = function
   | [] -> []
@@ -390,7 +383,7 @@ let rec visit f = function
       | Some(l) -> l@visit f tl
       | None -> Url(href,visit f v,title)::visit f tl
       end
-  | Text v as e::tl ->
+  | Text _v as e::tl ->
       begin match f e with
       | Some(l) -> l@visit f tl
       | None -> e::visit f tl

@@ -13,8 +13,6 @@ open Omd_utils
 
 let default_language = ref ""
 
-
-
 let text_of_md md =
   let b = Buffer.create 128 in
   let rec loop = function
@@ -23,10 +21,10 @@ let text_of_md md =
     | Blockquote q :: tl ->
         loop q;
         loop tl
-    | Ref(rc, name, text, fallback) :: tl ->
+    | Ref (_rc, name, _text, _fallback) :: tl ->
         Buffer.add_string b (htmlentities ~md:true name);
         loop tl
-    | Img_ref(rc, name, alt, fallback) :: tl ->
+    | Img_ref (_rc, name, _alt, _fallback) :: tl ->
         Buffer.add_string b (htmlentities ~md:true name);
         loop tl
     | Paragraph md :: tl ->
@@ -34,7 +32,7 @@ let text_of_md md =
         Buffer.add_char b '\n';
         Buffer.add_char b '\n';
         loop tl
-    | Img(alt, src, title) :: tl ->
+    | Img(alt, _src, _title) :: tl ->
         Buffer.add_string b (htmlentities ~md:true alt);
         loop tl
     | Text t :: tl ->
@@ -60,25 +58,25 @@ let text_of_md md =
     | (Ulp l | Olp l) :: tl ->
         List.iter loop l;
         loop tl
-    | Code_block(lang, c) :: tl ->
+    | Code_block (_lang, c) :: tl ->
         Buffer.add_string b (htmlentities ~md:false c);
         loop tl
-    | Code(lang, c) :: tl ->
+    | Code (_lang, c) :: tl ->
         Buffer.add_string b (htmlentities ~md:false c);
         loop tl
     | Br :: tl ->
         loop tl
     | Hr :: tl ->
         loop tl
-    | Html(tagname, attrs, body) :: tl ->
+    | Html (_tagname, _attrs, body) :: tl ->
         loop body;
         loop tl
-    | Html_block(tagname, attrs, body) :: tl ->
+    | Html_block (_tagname, _attrs, body) :: tl ->
         loop body;
         loop tl
-    | Html_comment s :: tl ->
+    | Html_comment _s :: tl ->
         loop tl
-    | Url (href,s,title) :: tl ->
+    | Url (_href, s, _title) :: tl ->
         loop s;
         loop tl
     | H1 md :: tl
@@ -97,7 +95,7 @@ let text_of_md md =
   loop md;
   Buffer.contents b
 
-let default_code_stylist ~lang code = code
+let default_code_stylist ~lang:_ code = code
 
 let filter_text_omd_rev l =
   let rec loop b r = function
@@ -119,28 +117,35 @@ let remove_links : t -> t =
 
 let rec html_and_headers_of_md
     ?(remove_header_links=false)
-    ?(override=(fun (e:element) -> (None:string option)))
-    ?(pindent=false)
-    ?(nl2br=false)
+    ?(override = (fun (_e : element) -> (None : string option)))
+    ?(pindent = false)
+    ?(nl2br = false)
     ?cs:(code_style=default_code_stylist)
     md
   =
-  let ids = object(this)
-    val mutable ids = StringSet.add "" StringSet.empty
-    method mangle id =
-      let rec m i =
-        if StringSet.mem id ids then
-          let idx = if i > 0 then id^"_"^string_of_int i else id in
-          if StringSet.mem idx ids then
-            m (i+1)
+  let ids =
+    object
+      val mutable ids = StringSet.add "" StringSet.empty
+
+      method mangle id =
+        let rec m i =
+          if StringSet.mem id ids then
+            let idx =
+              if i > 0 then
+                id^"_"^string_of_int i
+              else
+                id
+            in
+            if StringSet.mem idx ids then
+              m (i+1)
+            else
+              (ids <- StringSet.add idx ids; idx)
           else
-            (ids <- StringSet.add idx ids;
-             idx)
-        else
-          (ids <- StringSet.add id ids;
-           id)
-      in m 0
-  end in
+            (ids <- StringSet.add id ids; id)
+        in
+        m 0
+    end
+  in
   let empty s =
     let rec loop i =
       if i < String.length s then
@@ -649,50 +654,48 @@ and string_of_attrs attrs =
     attrs;
   Buffer.contents b
 
-and html_of_md
-    ?(override=(fun (e:element) -> (None:string option)))
-    ?(pindent=false)
-    ?(nl2br=false)
-    ?cs
-    md
-  =
-  fst (html_and_headers_of_md ~override ~pindent ~nl2br ?cs md)
+and html_of_md ?override ?pindent ?nl2br ?cs md =
+  fst (html_and_headers_of_md ?override ?pindent ?nl2br ?cs md)
+
 and headers_of_md ?remove_header_links md =
   snd (html_and_headers_of_md ?remove_header_links md)
-
 
 let rec sexpr_of_md md =
   let b = Buffer.create 64 in
   let rec loop = function
     | X x :: tl ->
-        (match x#to_t md with
-         | Some t ->
-             Buffer.add_string b "(X";
-             loop t;
-             Buffer.add_string b ")"
-         | None ->
-             match x#to_sexpr sexpr_of_md md with
-             | Some s ->
-                 Buffer.add_string b "(X";
-                 Buffer.add_string b s;
-                 Buffer.add_string b ")"
-             | None ->
-                 match x#to_html ~indent:0 html_of_md md with
-                 | Some s ->
-                     Buffer.add_string b "(X";
-                     Buffer.add_string b s;
-                     Buffer.add_string b ")"
-                 | None -> ());
+        begin match x#to_t md with
+        | Some t ->
+            Buffer.add_string b "(X";
+            loop t;
+            Buffer.add_string b ")"
+        | None ->
+            begin match x#to_sexpr sexpr_of_md md with
+            | Some s ->
+                Buffer.add_string b "(X";
+                Buffer.add_string b s;
+                Buffer.add_string b ")"
+            | None ->
+                begin match x#to_html ~indent:0 html_of_md md with
+                | Some s ->
+                    Buffer.add_string b "(X";
+                    Buffer.add_string b s;
+                    Buffer.add_string b ")"
+                | None ->
+                    ()
+                end
+            end
+        end;
         loop tl
     | Blockquote q :: tl ->
         Buffer.add_string b "(Blockquote";
         loop q;
         Buffer.add_string b ")";
         loop tl
-    | Ref(rc, name, text, _) :: tl ->
+    | Ref (_rc, name, text, _) :: tl ->
         bprintf b "(Ref %S %S)" name text;
         loop tl
-    | Img_ref(rc, name, alt, _) :: tl ->
+    | Img_ref (_rc, name, alt, _) :: tl ->
         bprintf b "(Img_ref %S %S)" name alt;
         loop tl
     | Paragraph md :: tl ->
@@ -744,10 +747,10 @@ let rec sexpr_of_md md =
         List.iter(fun li -> bprintf b "(Li "; loop li;bprintf b ")") l;
         bprintf b ")";
         loop tl
-    | Code(lang, c) :: tl ->
+    | Code (_lang, c) :: tl ->
         bprintf b "(Code %S)" c;
         loop tl
-    | Code_block(lang, c) :: tl ->
+    | Code_block (_lang, c) :: tl ->
         bprintf b "(Code_block %s)" c;
         loop tl
     | Br :: tl ->
@@ -877,11 +880,12 @@ let rec markdown_of_md md =
     let rec loop nl i =
       if i < l then
         begin
-          if nl && i < l - 1 then
-            (for i = 1 to indent do
-               Buffer.add_char b ' '
-             done;
-             Buffer.add_string b "> ");
+          if nl && i < l - 1 then begin
+            for _ = 1 to indent do
+              Buffer.add_char b ' '
+            done;
+            Buffer.add_string b "> "
+          end;
           match s.[i] with
           | '\n' ->
               Buffer.add_char b '\n';
@@ -895,7 +899,7 @@ let rec markdown_of_md md =
     in loop true 0
   in
   let b = Buffer.create 64 in
-  let add_spaces n = for i = 1 to n do Buffer.add_char b ' ' done in
+  let add_spaces n = for _ = 1 to n do Buffer.add_char b ' ' done in
   let references = ref None in
   let rec loop ?(fst_p_in_li=true) ?(is_in_list=false) list_indent l =
     (* [list_indent: int] is the indentation level in number of spaces. *)
@@ -917,10 +921,10 @@ let rec markdown_of_md md =
         Buffer.add_string b (quote ~indent:list_indent (markdown_of_md q));
         if tl <> [] then Buffer.add_string b "\n";
         loop list_indent tl
-    | Ref(rc, name, text, fallback) :: tl ->
+    | Ref (rc, _name, _text, fallback) :: tl ->
         if !references = None then references := Some rc;
         loop list_indent (Raw(fallback#to_string)::tl)
-    | Img_ref(rc, name, alt, fallback) :: tl ->
+    | Img_ref (rc, _name, _alt, fallback) :: tl ->
         if !references = None then references := Some rc;
         loop list_indent (Raw(fallback#to_string)::tl)
     | Paragraph [] :: tl -> loop list_indent tl

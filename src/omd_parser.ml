@@ -5,21 +5,20 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-let sdebug = true
-
 open Printf
 open Omd_representation
 open Omd_utils
+
 module L = Omd_lexer
 
 type r = Omd_representation.t
-(** accumulator (beware, reversed tokens) *)
+(* accumulator (beware, reversed tokens) *)
 
 and p = Omd_representation.tok list
-(** context information: previous elements *)
+(* context information: previous elements *)
 
 and l = Omd_representation.tok list
-(** tokens to parse *)
+(* tokens to parse *)
 
 and main_loop =
   ?html:bool ->
@@ -27,25 +26,24 @@ and main_loop =
   p -> (* info: previous elements *)
   l -> (* tokens to parse *)
   Omd_representation.t (* final result *)
-(** most important loop *)
+(* most important loop *)
 
-
-(** N.B. Please do not use tabulations in your Markdown file! *)
+(* N.B. Please do not use tabulations in your Markdown file! *)
 
 module type Env = sig
   val rc: Omd_representation.ref_container
-  val extensions : Omd_representation.extensions
-  val default_lang : string
-  val gh_uemph_or_bold_style : bool
-  val blind_html : bool
-  val strict_html : bool
-  val warning : bool
-  val warn_error : bool
+  val extensions: Omd_representation.extensions
+  val default_lang: string
+  val gh_uemph_or_bold_style: bool
+  val blind_html: bool
+  val strict_html: bool
+  val warning: bool
+  val warn_error: bool
 end
 
 module Unit = struct end
 
-module Default_env (Unit:sig end) : Env = struct
+module Default_env (Unit : sig end) : Env = struct
   let rc = new Omd_representation.ref_container
   let extensions = []
   let default_lang = ""
@@ -348,8 +346,8 @@ struct
       assert(equiv (fix l) l);
       ()
 
-  (** Generate fallback for references. *)
-  let extract_fallback main_loop remains l =
+  (* Generate fallback for references. *)
+  let extract_fallback _main_loop remains l =
     if debug then eprintf "(OMD) Omd_parser.extract_fallback\n%!";
     let rec loop accu = function
       | [] -> List.rev accu
@@ -584,10 +582,10 @@ struct
           (L.string_of_tokens l)
           (match result with
            | None -> ""
-           | Some (x,tl) -> L.string_of_tokens x)
+           | Some (x, _) -> L.string_of_tokens x)
           (match result with
            | None -> ""
-           | Some (x,tl) -> L.string_of_tokens tl);
+           | Some (_, tl) -> L.string_of_tokens tl);
       result
 
   let tag__maybe_h1 (main_loop:main_loop) =
@@ -639,7 +637,7 @@ struct
   let tag__md md = (* [md] should be in reverse *)
     Tag("tag__md",
         object
-          method parser_extension r p l = Some(md@r, [], l)
+          method parser_extension r _p l = Some(md@r, [], l)
           method to_string = ""
         end
        )
@@ -656,7 +654,7 @@ struct
           begin match
             fsplit_rev
               ~f:(function
-                  | Delim (_, (Space | Equal)) :: tl ->
+                  | Delim (_, (Space | Equal)) :: _ ->
                       Continue
                   | [] ->
                       Split ([],[])
@@ -675,7 +673,7 @@ struct
           begin match
             fsplit_rev
               ~f:(function
-                  | Delim (_, (Space | Minus)) :: tl ->
+                  | Delim (_, (Space | Minus)) :: _ ->
                       Continue
                   | [] ->
                       Split ([], [])
@@ -743,7 +741,7 @@ struct
     let rec code_block accu = function
       | [] ->
           None
-      | Delim (n, Backquote) as b :: tl ->
+      | Delim (_, Backquote) as b :: tl ->
           if e = b then
             match accu with
             | Delim (1, Newline) :: accu ->
@@ -1078,7 +1076,7 @@ struct
     (* this function is called when we know it's not a link although
        it started with a '[' *)
     (* So it could be a reference or a link definition. *)
-    let rec maybe_ref l =
+    let maybe_ref l =
       let text, remains = read_until_cbracket ~bq:true l in
       (* check that there is no ill-placed open bracket *)
       if (try ignore(read_until_obracket ~bq:true text); true
@@ -1103,7 +1101,7 @@ struct
             Some(Ref (rc, L.string_of_tokens id, L.string_of_tokens text, fallback) :: r, [Delim (1, Cbracket)], remains)
       end
     in
-    let rec maybe_nonregular_ref l =
+    let maybe_nonregular_ref l =
       let text, remains = read_until_cbracket ~bq:true l in
       (* check that there is no ill-placed open bracket *)
       if (match read_until_obracket ~bq:true text with _ -> true | exception Premature_ending -> false) then
@@ -1112,7 +1110,7 @@ struct
       let id = L.string_of_tokens text in (* implicit anchor *)
       Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
     in
-    let rec maybe_def l =
+    let maybe_def l =
       match read_until_cbracket ~bq:true l with
       | _, [] ->
           raise Premature_ending
@@ -1123,7 +1121,7 @@ struct
               ~f:(function
                   | Delim (_, (Space | Newline)) :: _ as l ->
                       Split ([], l)
-                  | e :: tl ->
+                  | _ :: _ ->
                       Continue
                   | [] ->
                       Split ([], [])
@@ -1258,7 +1256,7 @@ struct
       match l with
       | [] ->
           Split ([], [])
-      | Delim (2, Newline) :: (Delim (n, Space) :: Delim (1, Greaterthan) :: Delim (_, Space) :: tl as s) when n >= 2 ->
+      | Delim (2, Newline) :: (Delim (n, Space) :: Delim (1, Greaterthan) :: Delim (_, Space) :: _ as s) when n >= 2 ->
           if n = indent+4 then (* blockquote *)
             match unindent n (Delim (1, Newline) :: s) with
             | Delim (n, Newline) :: block, rest ->
@@ -1273,7 +1271,7 @@ struct
                 Continue_with (Delim (2, Newline) :: block, rest)
           else
             Split ([], l)
-      | Delim (2, Newline) :: (Delim (n, Space) :: tl as s) when n >= 2 ->
+      | Delim (2, Newline) :: (Delim (n, Space) :: _ as s) when n >= 2 ->
           assert (n >= 0);
           if n >= indent+8 then (* code inside item *)
             match unindent (indent+4) (Delim (1, Newline) :: s) with
@@ -1360,12 +1358,12 @@ struct
       if debug then eprintf "(OMD) make_up p=%b\n%!" p;
       let items = List.rev items in
       match items with
-      | (U, _, item) :: _ ->
+      | (U, _, _item) :: _ ->
           if p then
             Ulp (List.map (fun (_, _, i) -> i) items)
           else
             Ul (List.map (fun (_, _, i) -> i) items)
-      | (O, _, item) :: _ ->
+      | (O, _, _item) :: _ ->
           if p then
             Olp (List.map (fun (_, _, i) -> i) items)
           else
@@ -1380,13 +1378,13 @@ struct
       match l with
       (* no more list items *)
       | [] ->
-          make_up p items, l
+          make_up ~p items, l
       (* more list items *)
       (* new unordered items *)
       | Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: tl ->
           begin match fsplit_rev ~f:(end_of_item 0) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some (new_item, rest) ->
               let p = p || has_paragraphs new_item in
               if debug then
@@ -1399,12 +1397,12 @@ struct
               | 0::_ ->
                   list_items ~p indents ((U, indents, rev_to_t new_item) :: items) rest
               | _::_ ->
-                  make_up p items, l
+                  make_up ~p items, l
           end
       | Delim (1, Space) :: Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: tl ->
           begin match fsplit_rev ~f:(end_of_item 1) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some (new_item, rest) ->
               let p = p || has_paragraphs new_item in
               match indents with
@@ -1415,7 +1413,7 @@ struct
                   list_items ~p indents ((U, indents, rev_to_t new_item) :: items) rest
               | i::_ ->
                   if i > 1 then
-                    make_up p items, l
+                    make_up ~p items, l
                   else (* i < 1 : new sub list*)
                     let sublist, remains =
                       list_items ~p (1::indents)
@@ -1426,7 +1424,7 @@ struct
       | Delim (n, Space) :: Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: tl when n >= 2 ->
           begin match fsplit_rev ~f:(end_of_item (n+2)) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some(new_item, rest) ->
               let p = p || has_paragraphs new_item in
               match indents with
@@ -1449,13 +1447,13 @@ struct
                     in
                     list_items ~p indents (add sublist items) remains
                   else (* i > n + 2 *)
-                    make_up p items, l
+                    make_up ~p items, l
           end
       (* new ordered items *)
       | Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
           begin match fsplit_rev ~f:(end_of_item 0) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some(new_item, rest) ->
               let p = p || has_paragraphs new_item in
               assert_well_formed new_item;
@@ -1466,12 +1464,12 @@ struct
               | 0::_ ->
                   list_items ~p indents ((O, indents, rev_to_t new_item) :: items) rest
               | _::_ ->
-                  make_up p items, l
+                  make_up ~p items, l
           end
       | Delim (1, Space) :: Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
           begin match fsplit_rev ~f:(end_of_item 1) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some (new_item, rest) ->
               let p = p || has_paragraphs new_item in
               match indents with
@@ -1482,7 +1480,7 @@ struct
                   list_items ~p indents ((O, indents, rev_to_t new_item) :: items) rest
               | i::_ ->
                   if i > 1 then
-                    make_up p items, l
+                    make_up ~p items, l
                   else (* i < 1 : new sub list*)
                     let sublist, remains =
                       list_items ~p (1::indents)
@@ -1493,7 +1491,7 @@ struct
       | Delim (n, Space) :: Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl when n >= 2 ->
           begin match fsplit_rev ~f:(end_of_item (n+2)) tl with
           | None ->
-              make_up p items, l
+              make_up ~p items, l
           | Some(new_item, rest) ->
               let p = p || has_paragraphs new_item in
               match indents with
@@ -1516,7 +1514,7 @@ struct
                     in
                     list_items ~p:p indents (add sublist items) remains
                   else (* i > n + 2 *)
-                    make_up p items, l
+                    make_up ~p items, l
           end
       | Delim (2, Newline) :: (Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: _ as l)
       | Delim (2, Newline) :: (Number _ :: Delim (1, Dot) :: Delim (_, Space) :: _ as l)
@@ -1539,7 +1537,7 @@ struct
               (L.string_of_tokens l) (string_of_items items)
           end;
           (* not a list item *)
-          make_up p items, l
+          make_up ~p items, l
     in
     let rp, l = list_items ~p:false [] [] l in
     rp::r, [Delim (1, Newline)], l
@@ -1552,7 +1550,7 @@ struct
       Tag("dummy_tag",
           object
             method to_string = ""
-            method parser_extension = fun r p l -> None
+            method parser_extension = fun _r _p _l -> None
           end)
     in
     let accu = Buffer.create 64 in
@@ -1566,7 +1564,7 @@ struct
           (* At least 4 spaces, it's still code. *)
           Buffer.add_string accu (L.string_of_token p);
           loop (if n >= 5 then Delim (n-4, Space) else dummy_tag) tl
-      | Delim (_, Newline) as p, (not_spaces :: _ as tl) -> (* stop *)
+      | Delim (_, Newline) as p, (_not_spaces :: _ as tl) -> (* stop *)
           Code_block (default_lang, Buffer.contents accu) :: r, [p], tl
       (* -> Return what's been found as code because it's no more code. *)
       | p, e :: tl ->
@@ -1596,7 +1594,7 @@ struct
       | Delim (1, (Star|Minus|Plus)) :: Delim (_, Space) :: _ ->
           (* unordered list *)
           parse_list main_loop r [] (L.make_space n :: lexemes)
-      | Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
+      | Number _ :: Delim (1, Dot) :: Delim (_, Space) :: _ ->
           (* ordered list *)
           parse_list main_loop r [] (L.make_space n :: lexemes)
       | [] | Delim (_, Newline) :: _  -> (* blank line, skip spaces *)
@@ -1638,7 +1636,7 @@ struct
           Text (String.make n ' ') :: r, [Delim (n, Space)], lexemes
     end
 
-  let maybe_autoemail r p l =
+  let maybe_autoemail r _p l =
     assert_well_formed l;
     match l with
     | Delim (1, Lessthan) :: tl ->
@@ -1726,7 +1724,7 @@ struct
         end
 
     (* HTML comments *)
-    | _, (Delim (1, Lessthan) as t) :: (Delim (1, Exclamation) :: Delim (2, Minus) :: c as tl) ->
+    | _, (Delim (1, Lessthan) as t) :: (Delim (1, Exclamation) :: Delim (2, Minus) :: _ as tl) ->
         let f = function
           | Delim (x, Minus) as m :: (Delim (_, Greaterthan) as g) :: tl when x >= 2 ->
               Split ([g; m], tl)
@@ -1761,7 +1759,7 @@ struct
     | ([] | [Delim (_, Newline)]), (Delim ((1|2|3), Space) as s) :: Delim (1, Greaterthan) :: Delim (_, Space) :: _ ->
         (* It's 1, 2 or 3 spaces, not more because it wouldn't mean
            quoting anymore but code. *)
-        let new_r, p, rest =
+        let new_r, _p, rest =
           let foo, rest =
             match unindent (L.length s) (Delim (1, Newline) :: lexemes) with
             | Delim (_, Newline) :: foo, rest ->
@@ -1891,7 +1889,7 @@ struct
         end
 
     (* enumerated lists *)
-    | ([] | [Delim (_, Newline)]), Number _ :: Delim (1, Dot) :: Delim (_, Space) :: tl ->
+    | ([] | [Delim (_, Newline)]), Number _ :: Delim (1, Dot) :: Delim (_, Space) :: _ ->
         let md, new_p, new_l = parse_list main_loop r [] lexemes in
         main_impl_rev ~html md new_p new_l
 
@@ -1982,7 +1980,7 @@ struct
          Delim (1, Colon) :: Delim (n, Slash) :: tl when n >= 2 ->
         (* "semi-automatic" URLs *)
         let rec read_url accu = function
-          | Delim (_, Newline) :: tl ->
+          | Delim (_, Newline) :: _ ->
               None
           | Delim (1, Greaterthan) :: tl ->
               let url =
@@ -2301,7 +2299,7 @@ struct
                             | [] ->
                                 Some([T.HTML (t, attrs, body)], l)
                       end
-                  | T.Open t :: _ ->
+                  | T.Open _ :: _ ->
                       if debug then eprintf "(OMD) 3591 BHTML Some `>` isn't for an opening tag\n%!";
                       loop (add_token_to_body (Delim (1, Greaterthan)) body) attrs tagstatus tokens
                   | [] ->
@@ -2554,7 +2552,7 @@ struct
                   | T.Open _ :: _ ->
                       if debug then eprintf "(OMD) maybe code in inline HTML: let's try\n%!";
                       begin match bcode [] [Delim (1, Space)] tokens with
-                      | Some ((Code _ :: _) as c, p, l) ->
+                      | Some ((Code _ :: _) as c, _, l) ->
                           if debug then eprintf "(OMD) maybe code in inline HTML: confirmed\n%!";
                           loop (T.MD c :: body) [] tagstatus l
                       | _ ->
@@ -2625,7 +2623,7 @@ struct
                                  it. *)
                               loop (T.HTML (t, attrs, b) :: body) [] tagstatus tokens
                       end
-                  | T.Open t :: _ ->
+                  | T.Open _ :: _ ->
                       if debug then eprintf "(OMD) Turns out an `>` isn't for an opening tag\n%!";
                       loop (T.TOKENS [Delim (1, Greaterthan)] :: body) attrs tagstatus tokens
                   | [] ->
@@ -2779,7 +2777,7 @@ struct
     (* line breaks *)
     | _, Delim (1, Newline) :: tl ->
         main_impl_rev ~html (NL :: r) [Delim (1, Newline)] tl
-    | _, Delim (n, Newline) :: tl (* n >= 2 *) ->
+    | _, Delim (_, Newline) :: tl (* n >= 2 *) ->
         main_impl_rev ~html (NL :: NL :: r) [Delim (1, Newline)] tl
 
     (* [ *)
@@ -2820,7 +2818,7 @@ struct
               None
           with
           | Some (url, tls) ->
-              let title, should_be_empty_list = read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
+              let title, _should_be_empty_list = read_until_dq ~bq:true (snd (read_until_dq ~bq:true tls)) in
               let url = L.string_of_tokens url in
               let title = L.string_of_tokens title in
               main_impl_rev ~html (Img ("", url, title) :: r) [Delim (1, Cparenthesis)] tl
@@ -2903,7 +2901,7 @@ struct
           | alt, Delim (1, Obracket) :: ((Delim (1, Newline) | Delim (_, Space) | Word _ | Number _) :: _ as ntl) ->
               begin try
                 match read_until_cbracket ~bq:true ~no_nl:false ntl with
-                | [], rest ->
+                | [], _rest ->
                     raise Premature_ending
                 | id, rest ->
                     let fallback = extract_fallback main_loop rest lexemes in
@@ -2986,11 +2984,11 @@ struct
     main_parse lexemes
 end
 
-let default_parse ?(extensions = []) ?(default_lang = "") lexemes =
+let default_parse ?extensions:(e = []) ?default_lang:(d = "") lexemes =
   let module E = struct
-    include Default_env(Unit)
-    let extensions = extensions
-    let default_lang = default_lang
+    include Default_env (Unit)
+    let extensions = e
+    let default_lang = d
   end
   in
   let module M = Make(E) in

@@ -199,7 +199,7 @@ let minimalize_blanks s =
       match s.[i] with
       | ' ' | '\t' | '\n' ->
           loop true (succ i)
-      | c ->
+      | _c ->
           if Buffer.length b > 0 && f then Buffer.add_char b ' ';
           loop false (succ i)
     end
@@ -211,7 +211,7 @@ let rec eat f = function
   | e::tl as l -> if f e then eat f tl else l
 
 let rec extract_html_attributes (html : string) =
-  let rec cut_on_char_from s i c =
+  let cut_on_char_from s i c =
     match String.index_from s i c with
     | 0 -> "", String.sub s 1 (String.length s - 1)
     | j -> String.sub s i (j-i), String.sub s (j+1) (String.length s - (j+1))
@@ -281,13 +281,13 @@ let rec extract_html_attributes (html : string) =
         end
   end
 
-let rec extract_inner_html (html : string) =
-  let rec cut_on_char_from s i c =
+let extract_inner_html (html : string) =
+  let cut_on_char_from s i c =
     match String.index_from s i c with
     | 0 -> "", String.sub s 1 (String.length s - 1)
     | j -> String.sub s i (j-i), String.sub s (j+1) (String.length s - (j+1))
   in
-  let rec rcut_on_char_from s i c =
+  let rcut_on_char_from s i c =
     match String.rindex_from s i c with
     | 0 -> "", String.sub s 1 (String.length s - 1)
     | j -> String.sub s 0 j, String.sub s (j+1) (String.length s - (j+1))

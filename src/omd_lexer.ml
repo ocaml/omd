@@ -129,7 +129,9 @@ struct
             | ';' | '>' | '~' | '<' | '@' | '&' | '|' | '^' | '.' | '/'
             | '$' | '%' | '!' | '?' | '=' ->
                 Word(I.sub s ~pos:start ~len:(!i-start))
-            | c -> incr i; loop()
+            | _ ->
+                incr i;
+                loop()
         end
       in
       loop()
@@ -219,8 +221,8 @@ struct
         | '='  -> delim Equal
         | '!'  -> delim Exclamation
         | '?'  -> delim Question
-        | '0' .. '9' -> maybe_number()
-        | c -> word()
+        | '0' .. '9' -> maybe_number ()
+        | _ -> word ()
       in
       result := w :: !result
     done;

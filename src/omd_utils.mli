@@ -33,15 +33,15 @@ type 'a split = 'a list -> 'a split_action
 (** Type of a split function *)
 
 and 'a split_action =
-  (** Don't split yet *)
   | Continue
+  (** Don't split yet *)
 
-  (** Don't split yet but continue with those two lists instead of default *)
   | Continue_with of 'a list * 'a list
+  (** Don't split yet but continue with those two lists instead of default *)
 
-  (** Do split with this split scheme *)
   | Split of 'a list * 'a list
-  (** Type of a split action *)
+  (** Do split with this split scheme *)
+(** Type of a split action *)
 
 val fsplit_rev : ?excl:('a list -> bool) -> f:'a split -> 'a list -> ('a list * 'a list) option
 (** [fsplit_rev ?excl ~f l] returns [Some(x,y)] where [x] is the
