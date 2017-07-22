@@ -60,62 +60,66 @@ struct
 
   let warn = Omd_utils.warn ~we:warn_error
 
-  (** set of known HTML codes *)
-  let htmlcodes_set = StringSet.of_list (* This list should be checked... *)
-      (* list extracted from: http://www.w3.org/TR/html4/charset.html *)
-      [ "AElig";  "Aacute";  "Acirc";  "Agrave"; "Alpha";  "Aring";  "Atilde";
-        "Auml"; "Beta";  "Ccedil"; "Chi"; "Dagger";  "Delta"; "ETH"; "Eacute";
-        "Ecirc";  "Egrave";  "Epsilon";   "Eta";  "Euml";  "Gamma";  "Iacute";
-        "Icirc"; "Igrave"; "Iota";  "Iuml"; "Kappa"; "Lambda"; "Mu"; "Ntilde";
-        "Nu";  "OElig";  "Oacute";   "Ocirc";  "Ograve";  "Omega";  "Omicron";
-        "Oslash";  "Otilde";  "Ouml";  "Phi";  "Pi";  "Prime";  "Psi";  "Rho";
-        "Scaron";  "Sigma";   "THORN";  "Tau";  "Theta";   "Uacute";  "Ucirc";
+  (* set of known HTML codes, extracted from:
+     http://www.w3.org/TR/html4/charset.html, to be checked. *)
+  let htmlcodes_set =
+    StringSet.of_list
+      [
+        "AElig"; "Aacute"; "Acirc"; "Agrave"; "Alpha"; "Aring"; "Atilde";
+        "Auml"; "Beta"; "Ccedil"; "Chi"; "Dagger"; "Delta"; "ETH"; "Eacute";
+        "Ecirc"; "Egrave"; "Epsilon";  "Eta"; "Euml"; "Gamma"; "Iacute";
+        "Icirc"; "Igrave"; "Iota"; "Iuml"; "Kappa"; "Lambda"; "Mu"; "Ntilde";
+        "Nu"; "OElig"; "Oacute";  "Ocirc"; "Ograve"; "Omega"; "Omicron";
+        "Oslash"; "Otilde"; "Ouml"; "Phi"; "Pi"; "Prime"; "Psi"; "Rho";
+        "Scaron"; "Sigma";  "THORN"; "Tau"; "Theta";  "Uacute"; "Ucirc";
         "Ugrave"; "Upsilon"; "Uuml"; "Xi"; "Yacute"; "Yuml"; "Zeta"; "aacute";
         "acirc"; "acute"; "aelig"; "agrave"; "alefsym"; "alpha"; "amp"; "and";
-        "ang"; "aring"; "asymp";  "atilde"; "auml"; "bdquo"; "beta"; "brvbar";
-        "bull";  "cap";  "ccedil"; "cedil";  "cent";  "chi"; "circ";  "clubs";
-        "cong";  "copy"; "crarr"; "cup";  "curren"; "dArr";  "dagger"; "darr";
-        "deg";  "delta";  "diams";   "divide";  "eacute";  "ecirc";  "egrave";
-        "empty";  "emsp"; "ensp";  "epsilon"; "equiv";  "eta";  "eth"; "euml";
-        "euro";  "exist";  "fnof";  "forall";  "frac12";  "frac14";  "frac34";
-        "frasl";  "gamma";  "ge"; "gt";  "hArr";  "harr"; "hearts";  "hellip";
+        "ang"; "aring"; "asymp"; "atilde"; "auml"; "bdquo"; "beta"; "brvbar";
+        "bull"; "cap"; "ccedil"; "cedil"; "cent"; "chi"; "circ"; "clubs";
+        "cong"; "copy"; "crarr"; "cup"; "curren"; "dArr"; "dagger"; "darr";
+        "deg"; "delta"; "diams";  "divide"; "eacute"; "ecirc"; "egrave";
+        "empty"; "emsp"; "ensp"; "epsilon"; "equiv"; "eta"; "eth"; "euml";
+        "euro"; "exist"; "fnof"; "forall"; "frac12"; "frac14"; "frac34";
+        "frasl"; "gamma"; "ge"; "gt"; "hArr"; "harr"; "hearts"; "hellip";
         "iacute"; "icirc"; "iexcl"; "igrave"; "image"; "infin"; "int"; "iota";
-        "iquest"; "isin"; "iuml";  "kappa"; "lArr"; "lambda"; "lang"; "laquo";
-        "larr";  "lceil";  "ldquo"; "le";  "lfloor";  "lowast"; "loz";  "lrm";
-        "lsaquo"; "lsquo"; "lt";  "macr"; "mdash"; "micro"; "middot"; "minus";
-        "mu"; "nabla";  "nbsp"; "ndash";  "ne"; "ni"; "not";  "notin"; "nsub";
-        "ntilde";  "nu";   "oacute";  "ocirc";  "oelig";   "ograve";  "oline";
+        "iquest"; "isin"; "iuml"; "kappa"; "lArr"; "lambda"; "lang"; "laquo";
+        "larr"; "lceil"; "ldquo"; "le"; "lfloor"; "lowast"; "loz"; "lrm";
+        "lsaquo"; "lsquo"; "lt"; "macr"; "mdash"; "micro"; "middot"; "minus";
+        "mu"; "nabla"; "nbsp"; "ndash"; "ne"; "ni"; "not"; "notin"; "nsub";
+        "ntilde"; "nu";  "oacute"; "ocirc"; "oelig";  "ograve"; "oline";
         "omega"; "omicron"; "oplus"; "or"; "ordf"; "ordm"; "oslash"; "otilde";
-        "otimes";  "ouml";  "para";  "part";  "permil"; "perp";  "phi";  "pi";
-        "piv";  "plusmn";  "pound"; "prime";  "prod";  "prop"; "psi";  "quot";
-        "rArr";  "radic"; "rang"; "raquo";  "rarr"; "rceil";  "rdquo"; "real";
-        "reg"; "rfloor";  "rho"; "rlm"; "rsaquo";  "rsquo"; "sbquo"; "scaron";
-        "sdot";  "sect";  "shy"; "sigma";  "sigmaf";  "sim"; "spades";  "sub";
-        "sube"; "sum"; "sup"; "sup1";  "sup2"; "sup3"; "supe"; "szlig"; "tau";
-        "there4";  "theta"; "thetasym";  "thinsp"; "thorn";  "tilde"; "times";
-        "trade"; "uArr"; "uacute";  "uarr"; "ucirc"; "ugrave"; "uml"; "upsih";
-        "upsilon";  "uuml"; "weierp"; "xi";  "yacute"; "yen";  "yuml"; "zeta";
-        "zwj"; "zwnj"; ]
+        "otimes"; "ouml"; "para"; "part"; "permil"; "perp"; "phi"; "pi";
+        "piv"; "plusmn"; "pound"; "prime"; "prod"; "prop"; "psi"; "quot";
+        "rArr"; "radic"; "rang"; "raquo"; "rarr"; "rceil"; "rdquo"; "real";
+        "reg"; "rfloor"; "rho"; "rlm"; "rsaquo"; "rsquo"; "sbquo"; "scaron";
+        "sdot"; "sect"; "shy"; "sigma"; "sigmaf"; "sim"; "spades"; "sub";
+        "sube"; "sum"; "sup"; "sup1"; "sup2"; "sup3"; "supe"; "szlig"; "tau";
+        "there4"; "theta"; "thetasym"; "thinsp"; "thorn"; "tilde"; "times";
+        "trade"; "uArr"; "uacute"; "uarr"; "ucirc"; "ugrave"; "uml"; "upsih";
+        "upsilon"; "uuml"; "weierp"; "xi"; "yacute"; "yen"; "yuml"; "zeta";
+        "zwj"; "zwnj"
+      ]
 
-
-  (** set of known inline HTML tags *)
+  (* set of known inline HTML tags, from
+     https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
   let inline_htmltags_set =
-    (StringSet.of_list
-       (* from https://developer.mozilla.org/en-US/docs/HTML/Inline_elements *)
-       [ "b";"big";"i";"small";"tt";
-         "abbr";"acronym";"cite";"code";"dfn";"em";"kbd";"strong";"samp";"var";
-         "a";"bdo";"br";"img";"map";"object";"q";"span";"sub";"sup";
-         "button";"input";"label";"select";"textarea";])
+    StringSet.of_list
+      [
+        "b"; "big"; "i"; "small"; "tt";
+        "abbr"; "acronym"; "cite"; "code"; "dfn"; "em"; "kbd"; "strong"; "samp"; "var";
+        "a"; "bdo"; "br"; "img"; "map"; "object"; "q"; "span"; "sub"; "sup";
+        "button"; "input"; "label"; "select"; "textarea"
+      ]
 
-  (** N.B. it seems that there is no clear distinction between inline
-      tags and block-level tags: in HTML4 it was not clear, in HTML5
-      it's even more complicated. So, the choice *here* is to specify
-      a set of tags considered as "inline", cf. [inline_htmltags_set].
-      So there will be inline tags, non-inline tags, and unknown
-      tags.*)
+  (* N.B. it seems that there is no clear distinction between inline tags and
+     block-level tags: in HTML4 it was not clear, in HTML5 it's even more
+     complicated. So, the choice *here* is to specify a set of tags considered
+     as "inline", cf. [inline_htmltags_set].  So there will be inline tags,
+     non-inline tags, and unknown tags.*)
 
-  (** set of HTML tags that may appear out of a body *)
-  let notinbodytags = StringSet.of_list
+  (* set of HTML tags that may appear out of a body *)
+  let notinbodytags =
+    StringSet.of_list
       [
         "title";
         "link";
@@ -126,31 +130,31 @@ struct
         "body";
       ]
 
-  (** All known HTML tags *)
+  (* All known HTML tags *)
   let htmltags_set =
-    StringSet.union notinbodytags
-      (StringSet.union inline_htmltags_set
-         (StringSet.of_list
-            [
-              "a";"abbr";"acronym";"address";"applet";"area";"article";"aside"
-              ;"audio";"b";"base";"basefont";"bdi";"bdo";"big";"blockquote"
-              ;"br";"button";"canvas";"caption";"center";"cite";"code";"col"
-              ;"colgroup";"command";"datalist";"dd";"del";"details";"dfn"
-              ;"dialog";"dir";"div";"dl";"dt";"em";"embed";"fieldset"
-              ;"figcaption";"figure";"font";"footer";"form";"frame";"frameset"
-              ;"h2";"h3";"h4";"h5";"h6"
-              ;"h1";"header";"hr";"i";"iframe";"img";"input";"ins";"kbd"
-              ;"keygen";"label";"legend";"li";"map";"mark";"menu";"meter";"nav"
-              ;"noframes";"noscript";"object";"ol";"optgroup";"option";"output"
-              ;"p";"param";"pre";"progress";"q";"rp";"rt";"ruby";"s";"samp"
-              ;"script";"section";"select";"small";"source";"span";"strike"
-              ;"strong";"style";"sub";"summary";"sup";"table";"tbody";"td"
-              ;"textarea";"tfoot";"th";"thead";"time";"tr";"track";"tt";"u"
-              ;"ul";"var";"video";"wbr"
-            ]))
+    let tags =
+      [
+        "a"; "abbr"; "acronym"; "address"; "applet"; "area"; "article"; "aside";
+        "audio"; "b"; "base"; "basefont"; "bdi"; "bdo"; "big"; "blockquote";
+        "br"; "button"; "canvas"; "caption"; "center"; "cite"; "code"; "col";
+        "colgroup"; "command"; "datalist"; "dd"; "del"; "details"; "dfn";
+        "dialog"; "dir"; "div"; "dl"; "dt"; "em"; "embed"; "fieldset";
+        "figcaption"; "figure"; "font"; "footer"; "form"; "frame"; "frameset";
+        "h2"; "h3"; "h4"; "h5"; "h6";
+        "h1"; "header"; "hr"; "i"; "iframe"; "img"; "input"; "ins"; "kbd";
+        "keygen"; "label"; "legend"; "li"; "map"; "mark"; "menu"; "meter"; "nav";
+        "noframes"; "noscript"; "object"; "ol"; "optgroup"; "option"; "output";
+        "p"; "param"; "pre"; "progress"; "q"; "rp"; "rt"; "ruby"; "s"; "samp";
+        "script"; "section"; "select"; "small"; "source"; "span"; "strike";
+        "strong"; "style"; "sub"; "summary"; "sup"; "table"; "tbody"; "td";
+        "textarea"; "tfoot"; "th"; "thead"; "time"; "tr"; "track"; "tt"; "u";
+        "ul"; "var"; "video"; "wbr"
+      ]
+    in
+    StringSet.union notinbodytags (StringSet.union inline_htmltags_set (StringSet.of_list tags))
 
-  (** This functions fixes bad lexing trees, which may be built when
-      extraction a portion of another lexing tree. *)
+  (* This functions fixes bad lexing trees, which may be built when
+     extraction a portion of another lexing tree. *)
   let fix l =
     let rec loop accu = function
       | Delim (n, a) :: Delim (m, b) :: tl when a = b ->
@@ -169,8 +173,8 @@ struct
     | (NL | Br) :: tl -> remove_initial_newlines tl
     | l -> l
 
-  (** - recognizes paragraphs
-      - glues following blockquotes  *)
+  (* - recognizes paragraphs
+     - glues following blockquotes  *)
   let make_paragraphs md =
     let rec loop cp accu = function (* cp means current paragraph *)
       | [] ->
@@ -185,7 +189,7 @@ struct
           in
           List.rev accu
       | Blockquote b1 :: Blockquote b2 :: tl ->
-          loop cp accu (Blockquote(b1@b2) :: tl)
+          loop cp accu (Blockquote (b1@b2) :: tl)
       | Blockquote b :: tl ->
           let e = Blockquote (loop [] [] b) in
           begin match cp with
@@ -248,34 +252,18 @@ struct
              of the extension shall be considered final as late
              as possible. *)
           begin match x#to_t md with
-          | None -> loop (e::cp) accu tl
-          | Some(t) ->
-              match t with
-              | ( H1 _
-                | H2 _
-                | H3 _
-                | H4 _
-                | H5  _
-                | H6  _
-                | Paragraph  _
-                | Ul _
-                | Ol _
-                | Ulp _
-                | Olp _
-                | Code_block _
-                | Hr
-                | Html_block _
-                | Raw_block _
-                | Blockquote _
-                ) :: _
-                ->
-                  (match cp with
-                   | [] | [NL] | [Br] ->
-                       loop cp (e::accu) tl
-                   | _ ->
-                       loop [] (e::Paragraph(List.rev cp)::accu) tl)
+          | None ->
+              loop (e :: cp) accu tl
+          | Some ((H1 _|H2 _|H3 _|H4 _|H5 _|H6 _|Paragraph _|
+                   Ul _|Ol _|Ulp _|Olp _|Code_block _|Hr|Html_block _|Raw_block _| Blockquote _) :: _) ->
+              begin match cp with
+              | [] | [NL] | [Br] ->
+                  loop cp (e::accu) tl
               | _ ->
-                  loop (e::cp) accu tl
+                  loop [] (e::Paragraph(List.rev cp)::accu) tl
+              end
+          | Some _ ->
+              loop (e::cp) accu tl
           end
       | e::tl ->
           loop (e::cp) accu tl
@@ -327,8 +315,8 @@ struct
           Olp (List.map clean_paragraphs v) :: clean_paragraphs tl
       | Blockquote v :: tl ->
           Blockquote (clean_paragraphs v) :: clean_paragraphs tl
-      | Url(href,v,title) :: tl ->
-          Url (href,(clean_paragraphs v),title) :: clean_paragraphs tl
+      | Url (href, v, title) :: tl ->
+          Url (href, clean_paragraphs v, title) :: clean_paragraphs tl
       | Text _
       | Code _
       | Code_block _
@@ -351,9 +339,9 @@ struct
         (Omd_backend.sexpr_of_md md) (Omd_backend.sexpr_of_md r);
     r
 
-  (** [assert_well_formed] is a developer's function that helps to
-      track badly constructed token lists.  This function has an
-      effect only if [trackfix] is [true].  *)
+  (* [assert_well_formed] is a developer's function that helps to
+     track badly constructed token lists.  This function has an
+     effect only if [trackfix] is [true].  *)
   let assert_well_formed (l:tok list) : unit =
     if trackfix then
       let rec equiv l1 l2 = match l1, l2 with
@@ -752,7 +740,7 @@ struct
     | None -> hr_s l
     | Some _ as tl -> tl
 
-  (** [bcode] parses code that's delimited by backquote(s) *)
+  (* [bcode] parses code that's delimited by backquote(s) *)
   let bcode ?(default_lang = default_lang) r p l =
     assert_well_formed l;
     let e, tl =
@@ -1193,7 +1181,7 @@ struct
     with Premature_ending | NL_exception ->
       None
 
-  (** maybe a link *)
+  (* maybe a link *)
   let maybe_link (main_loop:main_loop) r _p l =
     if debug then eprintf "(OMD) # maybe_link\n";
     assert_well_formed l;
