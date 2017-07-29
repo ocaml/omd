@@ -1,5 +1,5 @@
 #								-*-conf-*-
-OASISFormat: 0.3
+OASISFormat: 0.4
 Name:        omd
 Version:     1.3.0
 Synopsis:    A Markdown frontend in pure OCaml.
@@ -14,7 +14,7 @@ Authors:     Philippe Wang <philippe.wang@gmail.com>
 Maintainers: Philippe Wang <philippe.wang@gmail.com>
 License:     ISC
 Homepage:    https://github.com/ocaml/omd
-Plugins:     META (0.3), StdFiles (0.3)
+Plugins:     META (0.4), StdFiles (0.4)
 
 Library "omd"
   Path:         src
