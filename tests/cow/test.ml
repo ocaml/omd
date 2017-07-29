@@ -9,11 +9,9 @@ let dir =
 let slurp filename =
   let file = open_in filename in
   let size = in_channel_length file in
-  let buf = String.create size in
-  begin
-    really_input file buf 0 size;
-    buf
-  end
+  let buf = Bytes.create size in
+  really_input file buf 0 size;
+  Bytes.unsafe_to_string buf
 
 let remove_blank s =
   let b = Buffer.create (String.length s) in
