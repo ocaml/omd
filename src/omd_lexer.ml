@@ -346,7 +346,7 @@ struct
       for i = 0 to len - 1 do
         String.unsafe_set s i (BA.Array1.unsafe_get arr (i + pos))
       done;
-      s
+      Bytes.to_string s
     end
 end
 module Lex_bigarray = Lex(Bigarray_input)
