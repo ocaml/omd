@@ -88,6 +88,8 @@ if you find something that seems wrong.**
   containing just `<foo></foo>` will be converted to 
   `<p>&lt;foo&gt;&lt;/foo&gt;</p>`.
   - It's possible to ask `omd` to relax this constraint.
+  
+- If you need the contents of an HTML block element to be treated by OMD as Markdown (instead of just HTML), use HTML attribute `media:type` with value `text/omd` as in `<p media:type='text/omd'>*Some* Markdown **here**.</p>`.
 
 - Some additional features are available on the command line. 
   For more information, used the command `omd -help`
