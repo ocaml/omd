@@ -2,7 +2,7 @@ PKGNAME = $(shell oasis query name)
 PKGVERSION = $(shell oasis query version)
 PKG_TARBALL = $(PKGNAME)-$(PKGVERSION).tar.gz
 
-DISTFILES = README.md _oasis setup.ml Makefile \
+DISTFILES = README.md _oasis setup.ml Makefile omd.install \
   $(wildcard $(addprefix src/, *.ml *.mli *.mllib *.mlpack *.ab))
 
 PREFIX = $(shell opam config var prefix)

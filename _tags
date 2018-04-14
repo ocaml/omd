@@ -1,4 +1,4 @@
 # OASIS_START
 # OASIS_STOP
 
-true: annot
+true: annot, safe_string
