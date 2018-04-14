@@ -61,7 +61,7 @@ there can't be [Word "foo"; Word "bar"] because it should be
 
 ### Flaws in Markdown
 
-Since there are no errors in  Markdown, it means taht everything has a
+Since there are no errors in  Markdown, it means that everything has a
 meaning.  Sometimes, one has to imagine a meaning that is not too much
 nonsense.
 
