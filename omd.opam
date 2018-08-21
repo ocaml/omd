@@ -11,12 +11,12 @@ tags: [ "org:ocamllabs" "org:mirage"  ]
 depends: [
   "base-bytes"
   "base-bigarray"
-  "jbuilder" {build & >= "1.0+beta10"}
+  "dune" {build & >= "1.0"}
 ]
 build: [
-  ["jbuilder" "subst"] {pinned}
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 build-test: [
-  ["jbuilder" "runtest" "-p" name]
+  ["dune" "runtest" "-p" name "-j" jobs]
 ]
