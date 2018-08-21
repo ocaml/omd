@@ -7,5 +7,5 @@
 
 (alias
  ((name runtest)
-  (deps (test.exe))
-  (action (progn (chdir ../../../../tests/cow (run ${<}))))))
+  (deps (test.exe (glob_files *.{md,html})))
+  (action (run ${<}))))
