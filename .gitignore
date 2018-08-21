@@ -1,11 +1,3 @@
 _build/
-*.native
-*.opt
-*.byte
-#*
-.#*
-*~
-.DS_Store
-.depend
 .merlin
 *.install
