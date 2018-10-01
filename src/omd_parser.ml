@@ -947,10 +947,10 @@ struct
           raise Premature_ending
     in
     if debug then
-      eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
+      eprintf "Omd_parser.read_until %S bq=%b no_nl=%b\n%!" (L.string_of_tokens l) bq no_nl;
     let res = loop [] 0 l in
     if debug then
-      eprintf "Omd_parser.read_until_gt %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
+      eprintf "Omd_parser.read_until %S bq=%b no_nl=%b => %S\n%!" (L.string_of_tokens l) bq no_nl (L.string_of_tokens (fst res));
     res
 
   let read_until_gt ?bq ?no_nl l =
