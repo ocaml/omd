@@ -1984,8 +1984,8 @@ struct
         assert (n >= 0);
         main_impl_rev ~html (Text (String.make 1 (L.char_of_delim d)) :: r) [Delim (1, Backslash); Delim (1, d)] (delim (n-1) d tl)
 
-    | _, Delim (1, Backslash) :: [] ->
-        main_impl_rev ~html (Text "\\" :: r) [] []
+    | _, (Delim (1, Backslash) as t) :: tl ->
+        main_impl_rev ~html (Text "\\" :: r) [t] tl
     | _, (Delim (n, Backslash) as t) :: tl (* when n >= 2 *) -> (* \\\\... *)
         main_impl_rev ~html (Text (String.make (n/2) '\\') :: r) [t] (delim (n mod 2) Backslash tl)
 
