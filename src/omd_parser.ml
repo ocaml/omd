@@ -914,6 +914,8 @@ struct
           loop (Delim (1, b) :: accu) n (delim (x-1) b tl)
       | Delim (1, Backslash) :: Delim (x, b) :: tl when Some b = rdelim ->
           loop (Delim (1, b) :: accu) n (delim (x-1) b tl)
+      | Delim (1, Backslash) as e :: tl ->
+          loop (e :: accu) n tl
       | Delim (x, Backslash) :: tl ->
           loop (delim (x/2) Backslash accu) n (delim (x mod 2) Backslash tl)
       | Delim (_, Backquote) as e :: tl as l ->
