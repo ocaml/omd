@@ -3,7 +3,19 @@
  (modules test)
  (libraries omd))
 
-(alias
- (name runtest)
- (deps test.exe (glob_files *.{md,html}))
- (action (run %{exe:test.exe})))
+(executable
+ (name gen)
+ (modules gen))
+
+(rule
+ (targets dune.inc)
+ (deps (glob_files *.md))
+ (mode promote)
+ (action (with-stdout-to %{targets} (run ./gen.exe %{deps}))))
+
+(include dune.inc)
+
+;; (alias
+;;  (name runtest)
+;;  (deps test.exe (glob_files *.{md,html}))
+;;  (action (run %{exe:test.exe})))
