@@ -42,7 +42,7 @@ let char_of_delim = function
   | Cbracket -> ']'
   | Dollar -> '$'
   | Dot -> '.'
-  | Doublequote -> '\''
+  | Doublequote -> '\"'
   | Exclamation -> '!'
   | Equal -> '='
   | Greaterthan -> '>'
