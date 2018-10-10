@@ -94,6 +94,9 @@ Version numbers are trying to follow this scheme:
 algorithm, interface or editorial policy changes, 
 and `x` is for deeper changes.
 
+- 2.0.0.alpha Big refactoring by @nojb. Changes in interface (simplification of code, might affect performance a little). To be tested!
+
+
 - 1.3.x might stop checking validity of HTML tag *names*
   and accept any XML-parsable tag name.
 
