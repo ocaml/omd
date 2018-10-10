@@ -1,7 +1,7 @@
 OMD: extensible Markdown library and tool in OCaml
 ==================================================
 
-**Since 2.0.0.alpha (10 October 2018), some instructions here might be out of date. Pull requests are welcome!**
+<span style="color:red; weight:bold;">Since 2.0.0.alpha (10 October 2018), some instructions here might be out of date. Pull requests are welcome!</span>
 
 OMD provides two things:
 
