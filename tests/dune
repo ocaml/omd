@@ -1,0 +1,9 @@
+(executable
+ (name test_spec)
+ (modules test_spec)
+ (libraries omd))
+
+(alias
+ (name runtest)
+ (deps test_spec.exe)
+ (action (run %{deps})))

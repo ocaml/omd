@@ -13,18 +13,17 @@
     N.B. This module is supposed to be reentrant,
     if it's not then please report the bug. *)
 
-
-(************************************************************************)
 (** {2 Representation of Markdown documents} *)
 
 type t = element list
 (** Representation of a Markdown document.  *)
 
 and ref_container =
-    (< add_ref: string -> string -> string -> unit ;
-       get_ref : string -> (string*string) option;
-       get_all : (string * (string * string)) list;
-     >)
+  <
+    add_ref: string -> string -> string -> unit;
+    get_ref: string -> (string * string) option;
+    get_all: (string * (string * string)) list;
+  >
 
 (** A element of a Markdown document. *)
 and element = Omd_representation.element =
@@ -73,13 +72,13 @@ and element = Omd_representation.element =
   (** Raw_block: a block with contents that shall never be converted *)
   | Blockquote of t  (** Quoted block *)
   | Img of alt * src * title
-  | X of (< (* extension of [element]. *)
-           name: string;
-           (* N.B. [to_html] means that htmlentities will not
-              be applied to its output. *)
-           to_html: ?indent:int -> (t -> string) -> t -> string option;
-           to_sexpr: (t -> string) -> t -> string option;
-           to_t: t -> t option >)
+  | X of (* extension of [element]. *)
+      <
+        name: string; (* N.B. [to_html] means that htmlentities will not be applied to its output. *)
+        to_html: ?indent:int -> (t -> string) -> t -> string option;
+        to_sexpr: (t -> string) -> t -> string option;
+        to_t: t -> t option;
+      >
 
 and fallback = < to_string : string ; to_t : t >
 (** Fallback for references in case they refer to non-existant references *)
@@ -103,13 +102,9 @@ type code_stylist = lang:string -> string -> string
 (** Function that takes a language name and some code and returns
     that code with style. *)
 
-
-(************************************************************************)
 (** {2 Input and Output} *)
 
-val of_string : ?extensions:Omd_representation.extensions ->
-                ?default_lang: name ->
-                string -> t
+val of_string: ?extensions:Omd_representation.extensions -> ?default_lang:name -> string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
 
@@ -119,18 +114,16 @@ val of_string : ?extensions:Omd_representation.extensions ->
     If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
     and {!Omd_parser.parse}.  *)
 
-val of_bigarray : ?extensions:Omd_representation.extensions ->
-                  ?default_lang: name ->
-                  Omd_lexer.bigstring -> t
+val of_bigarray: ?extensions:Omd_representation.extensions -> ?default_lang:name -> Omd_lexer.bigstring -> t
 (** As {!of_string}, but read input from a bigarray rather than from a
     string. *)
 
-val set_default_lang : name -> t -> t
+val set_default_lang: name -> t -> t
 (** [set_default_lang lang md] return a copy of [md] where the
     language of all [Code] or [Code_block] with an empty language is
     set to [lang]. *)
 
-val to_html :
+val to_html:
   ?override:(Omd_representation.element -> string option) ->
   ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
@@ -138,17 +131,15 @@ val to_html :
     convert [Html of string] and [Html_block of string]
     into your HTML representation.  *)
 
-val to_markdown : t -> string
+val to_markdown: t -> string
 (** Translate markdown representation into textual markdown. *)
 
-val to_text : t -> string
+val to_text: t -> string
 (** Translate markdown representation into raw text. *)
 
-
-(************************************************************************)
 (** {2 Tansforming Markdown documents} *)
 
-val toc : ?start:int list -> ?depth:int -> t -> t
+val toc: ?start:int list -> ?depth:int -> t -> t
 (** [toc md] returns [toc] a table of contents for [md].
 
     @param start gives the section for which the TOC must be built.
@@ -161,5 +152,3 @@ val toc : ?start:int list -> ?depth:int -> t -> t
     first [H1].
 
     @param depth the table of contents.  Default: [2].  *)
-
-;;

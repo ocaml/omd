@@ -27,8 +27,8 @@ val html_of_md :
     behaviour for a constructor of Omd_representation.element, 
     as in the following example:
 
-let customized_to_html =
-  Omd.html_of_md 
+    let customized_to_html =
+    Omd.html_of_md 
     ~override:(function
         | Url (href,s,title) ->
           Some("<a href='" 
@@ -39,7 +39,7 @@ let customized_to_html =
                ^ ">"
                ^ Omd_backend.html_of_md s ^ " target='_blank'</a>")
         | _ -> None)
- *)
+*)
 
 val headers_of_md :
   ?remove_header_links:bool ->
@@ -54,7 +54,7 @@ val headers_of_md :
     both the headers and the HTML version of [md].
     If [remove_header_links], then remove links inside headers (h1, h2, ...).
     Default value of [remove_header_links]: cf. [html_and_headers_of_md].
- *)
+*)
 
 val html_and_headers_of_md :
   ?remove_header_links:bool ->
@@ -64,7 +64,7 @@ val html_and_headers_of_md :
   ?cs:code_stylist ->
   Omd_representation.t ->
   string *
-    (Omd_representation.element * Omd_utils.StringSet.elt * string) list
+  (Omd_representation.element * Omd_utils.StringSet.elt * string) list
 (** [html_and_headers_of_md md] is the same as [(html_of_md md,
     headers_of_md md)] except that it's two times faster.
     If you need both headers and html, don't use [html_of_md]

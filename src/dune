@@ -1,0 +1,12 @@
+(library
+ (name omd)
+ (public_name omd)
+ (wrapped false)
+ (modules omd_lexer omd_parser omd_representation omd_backend omd omd_utils)
+ (libraries bigarray))
+
+(executable
+ (name omd_main)
+ (public_name omd)
+ (modules omd_main)
+ (libraries omd))

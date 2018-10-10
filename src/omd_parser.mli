@@ -40,10 +40,13 @@ module type Env =
 sig
   val rc: Omd_representation.ref_container
   (** reference container *)
+
   val extensions : Omd_representation.extensions
   (** list of parser extensions *)
+
   val default_lang : string
   (** default language for code blocks *)
+
   val gh_uemph_or_bold_style : bool
   (** flag: bold/emph using using underscores is by default
       github-style, which means that underscores inside words are
@@ -51,28 +54,33 @@ sig
       it's more convenient. However it is also less expressive
       because then you can't bold/emph a part of a word. You might
       want to set this flag to false. *)
+
   val blind_html : bool
   (** flag: if true, will not check whether a used HTML tag actually
       exists in HTML. *)
+
   val strict_html : bool
   (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
+
   val warning : bool
   (** flag: if true, will output warnings *)
+
   val warn_error : bool
   (** flag: if true, will convert warnings to errors *)
 end
 
 module Default_env : functor (Unit: sig end) -> Env
 
-module Make : functor (Env : Env) ->
-sig
-
+module Make : functor (Env : Env) -> sig
   val rc: Omd_representation.ref_container
   (** reference container *)
+
   val extensions : Omd_representation.extensions
   (** list of parser extensions *)
+
   val default_lang : string
   (** default language for code blocks *)
+
   val gh_uemph_or_bold_style : bool
   (** flag: bold/emph using using underscores is by default
       github-style, which means that underscores inside words are
@@ -80,12 +88,13 @@ sig
       it's more convenient. However it is also less expressive
       because then you can't bold/emph a part of a word. You might
       want to set this flag to false. *)
+
   val blind_html : bool
   (** flag: if true, will not check whether a used HTML tag actually
       exists in HTML. *)
+
   val strict_html : bool
   (** flag: if true, will only accept known inline HTML tags in inline HTML. *)
-
 
   val htmlcodes_set : Omd_utils.StringSet.t
   (** set of known HTML codes *)
@@ -376,4 +385,3 @@ sig
   val parse : Omd_representation.tok list -> Omd_representation.t
 
 end
-
