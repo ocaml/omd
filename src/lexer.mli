@@ -1,4 +1,4 @@
-type token = Omd_representation.tok
+type token = Representation.tok
 type t = token list
 
 val lex : string -> t
@@ -17,7 +17,7 @@ type bigstring = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.
 val lex_bigarray : bigstring -> t
 (** As {!lex}, but read input from a bigarray rather than from a string. *)
 
-val char_of_delim : Omd_representation.delim -> char
+val char_of_delim : Representation.delim -> char
 
 val string_of_tokens : t -> string
 (** [string_of_tokens t] return the string corresponding to the token

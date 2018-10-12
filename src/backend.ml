@@ -8,8 +8,8 @@
 type code_stylist = lang:string -> string -> string
 
 open Printf
-open Omd_representation
-open Omd_utils
+open Representation
+open Utils
 
 let default_language = ref ""
 
@@ -109,7 +109,7 @@ let filter_text_omd_rev l =
   loop false [] l
 
 let remove_links : t -> t =
-  Omd_representation.visit
+  Representation.visit
     (fun e ->
        match e with
        | Url(_, t, _) -> Some t

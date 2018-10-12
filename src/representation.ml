@@ -1,8 +1,8 @@
-open Omd_utils
+open Utils
 open Printf
 
-(** references, instances created in [Omd_parser.main_parse] and
-    accessed in the [Omd_backend] module. *)
+(** references, instances created in [Parser.main_parse] and
+    accessed in the [Backend] module. *)
 module R = Map.Make(String)
 class ref_container : object
   val mutable c : (string * string) R.t

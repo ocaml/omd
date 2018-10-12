@@ -18,10 +18,10 @@
 open Omd
 
 let remove_comments l =
-  let open Omd_representation in
+  let open Representation in
   let rec loop = function
     | true, Delim (n, Exclamation) :: tl when n > 2 ->
-        loop (true, Omd_utils.eat (function Delim (_, Newline) -> false | _ -> true) tl)
+        loop (true, Utils.eat (function Delim (_, Newline) -> false | _ -> true) tl)
     | _, (Delim (_, Newline) as e) :: tl ->
         e :: loop (true, tl)
     | _, e :: tl ->
@@ -31,14 +31,14 @@ let remove_comments l =
   loop (true, l)
 
 let remove_endline_comments l =
-  let open Omd_representation in
+  let open Representation in
   let rec loop = function
     | Delim (1, Backslash) :: (Delim (n, Exclamation) as e) :: tl when n > 2 ->
         e :: loop tl
     | Delim (b, Backslash) :: (Delim (n, Exclamation) as e) :: tl when n > 2 && b mod 2 = 1 ->
         Delim (b-1, Backslash) :: e :: loop tl
     | Delim (n, Exclamation) :: tl when n > 2 ->
-        loop (Omd_utils.eat (function Delim (_, Newline) -> false | _-> true) tl)
+        loop (Utils.eat (function Delim (_, Newline) -> false | _-> true) tl)
     | e :: tl ->
         e :: loop tl
     | [] ->
@@ -116,7 +116,7 @@ let register_code_stylist_of_program x =
     exit 1
 
 let register_default_language l =
-  Omd_backend.default_language := l
+  Backend.default_language := l
 
 (* HTML comments might contain some double-dash (--) that are not well
     treated by HTML parsers. For instance "<!-- -- -->" should be
@@ -154,7 +154,7 @@ let patch_html_comments l =
   loop [] l
 
 let tag_toc l =
-  let open Omd_representation in
+  let open Representation in
   let x =
     object (self)
       (* [shield] is used to prevent endless loops.
@@ -211,7 +211,7 @@ let split_comma_int_list s =
       List.rev !l
   end
 
-module E = Omd_parser.Default_env(struct end)
+module E = Parser.Default_env(struct end)
 
 let omd_gh_uemph_or_bold_style =
   ref E.gh_uemph_or_bold_style
@@ -229,12 +229,12 @@ let omd_warn_error =
   ref E.warn_error
 
 let list_html_tags ~inline =
-  let module Parser = Omd_parser.Make (E) in
+  let module Parser = Parser.Make (E) in
   if inline then
-    Omd_utils.StringSet.iter (fun e -> print_string e; print_char '\n')
+    Utils.StringSet.iter (fun e -> print_string e; print_char '\n')
       Parser.inline_htmltags_set
   else
-    Omd_utils.StringSet.iter (fun e -> print_string e; print_char '\n')
+    Utils.StringSet.iter (fun e -> print_string e; print_char '\n')
       Parser.htmltags_set
 
 let verbatim_start = ref ""
@@ -243,7 +243,7 @@ let verbatim_end = ref ""
 
 let lex_with_verb_extension s =
   if !verbatim_start = "" || !verbatim_end = "" then
-    Omd_lexer.lex s
+    Lexer.lex s
   else begin
     let module M = struct
       type t = Verb of string | To_lex of string
@@ -276,19 +276,19 @@ let lex_with_verb_extension s =
       List.rev_map
         (function
           | To_lex x ->
-              Omd_lexer.lex x
+              Lexer.lex x
           | Verb x ->
-              [Omd_representation.Tag (
+              [Representation.Tag (
                   "raw",
                   object
                     method parser_extension r p l =
                       match p with
                       | [] ->
-                          Some(Raw_block x :: r, [Omd_representation.Delim (1, Omd_representation.Space)], l)
-                      | [Omd_representation.Delim (n, Omd_representation.Newline)] when n >= 2 -> (* FIXME: n >= 2 needed ? *)
-                          Some(Raw_block x :: r, [Omd_representation.Delim (1, Omd_representation.Space)], l)
+                          Some(Raw_block x :: r, [Representation.Delim (1, Representation.Space)], l)
+                      | [Representation.Delim (n, Representation.Newline)] when n >= 2 -> (* FIXME: n >= 2 needed ? *)
+                          Some(Raw_block x :: r, [Representation.Delim (1, Representation.Space)], l)
                       | _ ->
-                          Some(Raw x :: r, [Omd_representation.Delim (1, Omd_representation.Space)], l)
+                          Some(Raw x :: r, [Representation.Delim (1, Representation.Space)], l)
 
                     method to_string =
                       x
@@ -397,7 +397,7 @@ let main () =
         let lexed = lex_with_verb_extension (Buffer.contents b) in
         let preprocessed = preprocess (if !toc then tag_toc lexed else lexed) in
         let module E = struct
-          include Omd_parser.Default_env (struct end)
+          include Parser.Default_env (struct end)
           let warning = !omd_warning || !omd_warn_error
           let warn_error = !omd_warn_error
           let gh_uemph_or_bold_style = !omd_gh_uemph_or_bold_style
@@ -405,7 +405,7 @@ let main () =
           let strict_html = !omd_strict_html
         end
         in
-        let module Parser = Omd_parser.Make (E) in
+        let module Parser = Parser.Make (E) in
         let parsed1 = Parser.parse preprocessed in
         let parsed2 =
           if !protect_html_comments then
@@ -433,7 +433,7 @@ let main () =
                  something to do with Parser.make_paragraphs, which seems to
                  prevent tag_toc from working properly when using to_html!
               *)
-              (Parser.make_paragraphs (Parser.parse(Omd_lexer.lex(to_markdown o1))))
+              (Parser.make_paragraphs (Parser.parse(Lexer.lex(to_markdown o1))))
           else
             to_html
               ~pindent:true ~nl2br:false ~cs:code_stylist#style
@@ -443,8 +443,8 @@ let main () =
         output_string output o2;
         if o2 <> "" && o2.[String.length o2 - 1] <> '\n' then output_char output '\n';
         flush output;
-        if false && Omd_utils.debug then
-          print_endline (Omd_backend.sexpr_of_md (Omd_parser.default_parse (preprocess(Omd_lexer.lex (Buffer.contents b)))))
+        if false && Utils.debug then
+          print_endline (Backend.sexpr_of_md (Omd.Parser.default_parse (preprocess(Lexer.lex (Buffer.contents b)))))
     ) input_files
 
 (* call the main function *)
@@ -452,7 +452,7 @@ let () =
   try
     main ()
   with
-  | Omd_utils.Error msg when not Omd_utils.debug ->
+  | Utils.Error msg when not Utils.debug ->
       Printf.eprintf "(OMD) Error: %s\n" msg;
       exit 1
   | Sys_error msg ->

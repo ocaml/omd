@@ -1,6 +1,7 @@
 (* This file tests the conformity of the generated AST with Markdown.  *)
 
 open Printf
+open Omd
 
 let success = ref 0
 let failures = ref 0
@@ -27,8 +28,8 @@ let test name md_string desired_md =
       printf "%s: FAILURE\n" name;
       printf "   input = %S\nexpected = %S\n  result = %S\n"
         md_string
-        (Omd_backend.sexpr_of_md desired_md)
-        (Omd_backend.sexpr_of_md md)
+        (Backend.sexpr_of_md desired_md)
+        (Backend.sexpr_of_md md)
     )
   with e ->
     incr failures;
@@ -36,7 +37,6 @@ let test name md_string desired_md =
 
 
 let () =
-  let open Omd in
   (* Paragraphs and Line Breaks
    ***********************************************************************)
   (* "A paragraph is simply one or more consecutive lines of text,

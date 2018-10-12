@@ -5,25 +5,31 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-include Omd_representation
-include Omd_backend
+module Representation = Representation
+module Utils = Utils
+module Backend = Backend
+module Parser = Parser
+module Lexer = Lexer
+
+include Representation
+include Backend
 
 let of_input lex ?extensions:e ?default_lang:d s =
   let module E = struct
-    include Omd_parser.Default_env (struct end)
+    include Parser.Default_env (struct end)
     let extensions = match e with Some x -> x | None -> extensions
     let default_lang = match d with Some x -> x | None -> default_lang
   end
   in
-  let module Parser = Omd_parser.Make (E) in
+  let module Parser = Parser.Make (E) in
   let md = Parser.parse (lex s) in
   Parser.make_paragraphs md
 
-let of_string = of_input Omd_lexer.lex
-let of_bigarray = of_input Omd_lexer.lex_bigarray
+let of_string = of_input Lexer.lex
+let of_bigarray = of_input Lexer.lex_bigarray
 
 let to_html:
-  ?override:(Omd_representation.element -> string option) ->
+  ?override:(Representation.element -> string option) ->
   ?pindent:bool ->
   ?nl2br:bool ->
   ?cs:code_stylist -> t -> string
@@ -152,7 +158,7 @@ and toc_entry headers h_level t id tl ~min_level ~max_level =
 
 let toc ?(start = []) ?(depth = 2) md =
   if depth < 1 then invalid_arg "Omd.toc: ~depth must be >= 1";
-  let headers = Omd_backend.headers_of_md ~remove_header_links:true md in
+  let headers = Backend.headers_of_md ~remove_header_links:true md in
   let headers =
     match start with
     | [] -> headers

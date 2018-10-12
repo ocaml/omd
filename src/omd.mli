@@ -15,6 +15,12 @@
 
 (** {2 Representation of Markdown documents} *)
 
+module Representation = Representation
+module Utils = Utils
+module Backend = Backend
+module Parser = Parser
+module Lexer = Lexer
+
 type t = element list
 (** Representation of a Markdown document.  *)
 
@@ -26,7 +32,7 @@ and ref_container =
   >
 
 (** A element of a Markdown document. *)
-and element = Omd_representation.element =
+and element = Representation.element =
   | H1 of t          (** Header of level 1 *)
   | H2 of t          (** Header of level 2 *)
   | H3 of t          (** Header of level 3 *)
@@ -104,17 +110,17 @@ type code_stylist = lang:string -> string -> string
 
 (** {2 Input and Output} *)
 
-val of_string: ?extensions:Omd_representation.extensions -> ?default_lang:name -> string -> t
+val of_string: ?extensions:Representation.extensions -> ?default_lang:name -> string -> t
 (** [of_string s] returns the Markdown representation of the string
     [s].
 
     @param lang language for blocks of code where it was not
     specified.  Default: [""].
 
-    If you want to use a custom lexer or parser, use {!Omd_lexer.lex}
-    and {!Omd_parser.parse}.  *)
+    If you want to use a custom lexer or parser, use {!Lexer.lex}
+    and {!Parser.parse}.  *)
 
-val of_bigarray: ?extensions:Omd_representation.extensions -> ?default_lang:name -> Omd_lexer.bigstring -> t
+val of_bigarray: ?extensions:Representation.extensions -> ?default_lang:name -> Lexer.bigstring -> t
 (** As {!of_string}, but read input from a bigarray rather than from a
     string. *)
 
@@ -124,7 +130,7 @@ val set_default_lang: name -> t -> t
     set to [lang]. *)
 
 val to_html:
-  ?override:(Omd_representation.element -> string option) ->
+  ?override:(Representation.element -> string option) ->
   ?pindent:bool -> ?nl2br:bool -> ?cs:code_stylist -> t -> string
 (** Translate markdown representation into raw HTML.  If you need a
     full HTML representation, you mainly have to figure out how to
