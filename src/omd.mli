@@ -33,12 +33,7 @@ and ref_container =
 
 (** A element of a Markdown document. *)
 and element = Representation.element =
-  | H1 of t          (** Header of level 1 *)
-  | H2 of t          (** Header of level 2 *)
-  | H3 of t          (** Header of level 3 *)
-  | H4 of t          (** Header of level 4 *)
-  | H5 of t          (** Header of level 5 *)
-  | H6 of t          (** Header of level 6 *)
+  | H of int * t          (** Header *)
   | Paragraph of t
   (** A Markdown paragraph (must be enabled in {!of_string}) *)
   | Text of string   (** Text. *)
