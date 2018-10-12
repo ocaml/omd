@@ -23,10 +23,10 @@
 
 (* class type tag = object method is_me : 'a. 'a -> bool end *)
 
-open Omd_representation
+open Representation
 
-type token = Omd_representation.tok
-type t = Omd_representation.tok list
+type token = Representation.tok
+type t = Representation.tok list
 
 let char_of_delim = function
   | Ampersand -> '&'
@@ -66,7 +66,7 @@ let char_of_delim = function
   | Underscore -> '_'
 
 let string_of_token = function
-  | Tag (name, o) -> if Omd_utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
+  | Tag (name, o) -> if Utils.debug then "TAG("^name^")" ^ o#to_string else o#to_string
   | Word s | Number s -> s
   | Delim (n, Tab) -> assert (n >= 0); String.make (4*n) ' '
   | Delim (n, d) -> assert (n >= 0); String.make n (char_of_delim d)

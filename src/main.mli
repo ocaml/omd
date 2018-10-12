@@ -5,18 +5,18 @@
 (* http://www.isc.org/downloads/software-support-policy/isc-license/   *)
 (***********************************************************************)
 
-val remove_comments : Omd_representation.tok list -> Omd_representation.tok list
+val remove_comments : Omd.Representation.tok list -> Omd.Representation.tok list
 (** [remove_comments l] returns [l] without OMD comments. *)
 
 val remove_endline_comments :
-  Omd_representation.tok list -> Omd_representation.tok list
+  Omd.Representation.tok list -> Omd.Representation.tok list
 (** [remove_endline_comments l] returns [l] without OMD endline-comments. *)
 
 val preprocess_functions :
-  (Omd_representation.tok list -> Omd_representation.tok list) list ref
+  (Omd.Representation.tok list -> Omd.Representation.tok list) list ref
 (** [preprocess_functions] contains the list of preprocessing functions *)
 
-val preprocess : Omd_representation.tok list -> Omd_representation.tok list
+val preprocess : Omd.Representation.tok list -> Omd.Representation.tok list
 (** [preprocess l] returns [l] to which all preprocessing functions
     (in reference [preprocess_functions]) have been applied. *)
 
@@ -66,10 +66,9 @@ val patch_html_comments : Omd.element list -> Omd.element list
     (cf. http://validator.w3.org/check). So one way to make life somewhat easier
     is to patch the comments and transform inner dashed to &#45;.  *)
 
-val tag_toc : Omd_representation.tok list -> Omd_representation.tok list
+val tag_toc : Omd.Representation.tok list -> Omd.Representation.tok list
 (** [tag_toc l] returns [l] where *Table of contents* has been replaced
     by a tag that can generate a table of contents. *)
 
 val main : unit -> unit
 (** main function *)
-

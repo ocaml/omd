@@ -6,18 +6,18 @@
 (***********************************************************************)
 
 open Printf
-open Omd_representation
-open Omd_utils
+open Representation
+open Utils
 
-module L = Omd_lexer
+module L = Lexer
 
-type r = Omd_representation.t
+type r = Representation.t
 (* accumulator (beware, reversed tokens) *)
 
-and p = Omd_representation.tok list
+and p = Representation.tok list
 (* context information: previous elements *)
 
-and l = Omd_representation.tok list
+and l = Representation.tok list
 (* tokens to parse *)
 
 and main_loop =
@@ -25,14 +25,14 @@ and main_loop =
   r -> (* accumulator (beware, reversed tokens) *)
   p -> (* info: previous elements *)
   l -> (* tokens to parse *)
-  Omd_representation.t (* final result *)
+  Representation.t (* final result *)
 (* most important loop *)
 
 (* N.B. Please do not use tabulations in your Markdown file! *)
 
 module type Env = sig
-  val rc: Omd_representation.ref_container
-  val extensions: Omd_representation.extensions
+  val rc: Representation.ref_container
+  val extensions: Representation.extensions
   val default_lang: string
   val gh_uemph_or_bold_style: bool
   val blind_html: bool
@@ -44,7 +44,7 @@ end
 module Unit = struct end
 
 module Default_env (Unit : sig end) : Env = struct
-  let rc = new Omd_representation.ref_container
+  let rc = new Representation.ref_container
   let extensions = []
   let default_lang = ""
   let gh_uemph_or_bold_style = true
@@ -58,7 +58,7 @@ module Make (Env:Env) =
 struct
   include Env
 
-  let warn = Omd_utils.warn ~we:warn_error
+  let warn = Utils.warn ~we:warn_error
 
   (* set of known HTML codes, extracted from:
      http://www.w3.org/TR/html4/charset.html, to be checked. *)
@@ -336,7 +336,7 @@ struct
     in
     let r = clean_paragraphs(loop [] [] md) in
     if debug then eprintf "(OMD) clean_paragraphs %S --> %S\n%!"
-        (Omd_backend.sexpr_of_md md) (Omd_backend.sexpr_of_md r);
+        (Backend.sexpr_of_md md) (Backend.sexpr_of_md r);
     r
 
   (* [assert_well_formed] is a developer's function that helps to
@@ -528,7 +528,7 @@ struct
     eat (function Delim (_, (Space | Newline)) -> true| _ -> false)
 
   (* used by tag__maybe_h1 and tag__maybe_h2 *)
-  let setext_title main_loop (l:l) : (Omd_representation.tok list * l) option =
+  let setext_title main_loop (l:l) : (Representation.tok list * l) option =
     assert_well_formed l;
     let rec detect_balanced_bqs n r l =
       (* If there's a balanced (complete) backquote-started code block
@@ -925,7 +925,7 @@ struct
                 loop (e :: accu) n tl
             | Some (r, _, tl) ->
                 loop (* not very pretty kind of hack *)
-                  (List.rev (L.lex (Omd_backend.markdown_of_md r))@accu)
+                  (List.rev (L.lex (Backend.markdown_of_md r))@accu)
                   n
                   tl
           else
@@ -1368,7 +1368,7 @@ struct
       | (U, indents, item)::tl ->
           (U, indents, (item@[sublist])) :: tl
     in
-    let make_up ~p items : Omd_representation.element =
+    let make_up ~p items : Representation.element =
       if debug then eprintf "(OMD) make_up p=%b\n%!" p;
       let items = List.rev items in
       match items with
@@ -1541,9 +1541,9 @@ struct
               match items with
               | [] -> ""
               | (O, indent :: _, item) :: tl ->
-                  sprintf "(O,i=%d,%S)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
+                  sprintf "(O,i=%d,%S)" (indent) (Backend.html_of_md item) ^ string_of_items tl
               | (U, indent :: _, item) :: tl ->
-                  sprintf "(U,i=%d,%S)" (indent) (Omd_backend.html_of_md item) ^ string_of_items tl
+                  sprintf "(U,i=%d,%S)" (indent) (Backend.html_of_md item) ^ string_of_items tl
               | _ ->
                   "(weird)"
             in
@@ -1719,7 +1719,7 @@ struct
     if debug then
       eprintf "(OMD) main_impl_rev html=%b r=%s p=(%s) l=(%s)\n%!"
         html
-        (Omd_backend.sexpr_of_md (List.rev r))
+        (Backend.sexpr_of_md (List.rev r))
         (L.destring_of_tokens previous)
         (L.destring_of_tokens lexemes);
     match previous, lexemes with
@@ -2105,7 +2105,7 @@ struct
                 | HTML of string * (string * string option) list * interm list
                 | FTOKENS of L.t
                 | RTOKENS of L.t
-                | MD of Omd_representation.t
+                | MD of Representation.t
 
               let rec md_of_interm_list html l =
                 let md_of_interm_list ?(html = html) l = md_of_interm_list html l in
@@ -2157,7 +2157,7 @@ struct
             let rec loop (body:T.interm list) attrs tagstatus tokens =
               if debug then
                 eprintf "(OMD) 3333 BHTML loop body=%S tagstatus=%S %S\n%!"
-                  (Omd_backend.sexpr_of_md(T.md_of_interm_list body))
+                  (Backend.sexpr_of_md(T.md_of_interm_list body))
                   (T.string_of_tagstatus tagstatus) (L.destring_of_tokens tokens);
               match tokens with
               | [] ->
@@ -2483,7 +2483,7 @@ struct
               type interm =
                 | HTML of string * (string * string option) list * interm list
                 | TOKENS of L.t
-                | MD of Omd_representation.t
+                | MD of Representation.t
 
               let rec md_of_interm_list = function
                 | [] ->
