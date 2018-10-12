@@ -230,7 +230,7 @@ struct
           | _ ->
               loop [] (e :: Paragraph (List.rev cp) :: accu) tl
           end
-      | (Code_block _ | H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _ | Ol _ | Ul _) as e :: tl ->
+      | (Code_block _ | H _ | Ol _ | Ul _) as e :: tl ->
           begin match cp with
           | [] | [NL] | [Br] ->
               loop cp (e :: accu) tl
@@ -254,7 +254,7 @@ struct
           begin match x#to_t md with
           | None ->
               loop (e :: cp) accu tl
-          | Some ((H1 _|H2 _|H3 _|H4 _|H5 _|H6 _|Paragraph _|
+          | Some ((H _|Paragraph _|
                    Ul _|Ol _|Ulp _|Olp _|Code_block _|Hr|Html_block _|Raw_block _| Blockquote _) :: _) ->
               begin match cp with
               | [] | [NL] | [Br] ->
@@ -289,18 +289,8 @@ struct
       | Paragraph (p) :: tl ->
           Paragraph (clean_paragraphs (remove_initial_newlines (remove_white_crumbs (normalise_md p)))) ::
           clean_paragraphs tl
-      | H1 v :: tl ->
-          H1 (clean_paragraphs v) :: clean_paragraphs tl
-      | H2 v :: tl ->
-          H2 (clean_paragraphs v) :: clean_paragraphs tl
-      | H3 v :: tl ->
-          H3 (clean_paragraphs v) :: clean_paragraphs tl
-      | H4 v :: tl ->
-          H4 (clean_paragraphs v) :: clean_paragraphs tl
-      | H5 v :: tl ->
-          H5 (clean_paragraphs v) :: clean_paragraphs tl
-      | H6 v :: tl ->
-          H6(clean_paragraphs v) :: clean_paragraphs tl
+      | H (i, v) :: tl ->
+          H (i, clean_paragraphs v) :: clean_paragraphs tl
       | Emph v :: tl ->
           Emph (clean_paragraphs v) :: clean_paragraphs tl
       | Bold v :: tl ->
@@ -610,7 +600,7 @@ struct
                 | None ->
                     None
                 | Some (title, tl) ->
-                    let title = H1 (main_loop [] [] title) in
+                    let title = H (1, main_loop [] [] title) in
                     Some (title :: r, [Delim (1, Newline)], tl)
                 end
             | _ ->
@@ -633,7 +623,7 @@ struct
                 | None ->
                     None
                 | Some (title, tl) ->
-                    let title = H2 (main_loop [] [] title) in
+                    let title = H (2, main_loop [] [] title) in
                     Some (title :: r, [Delim (1, Newline)], tl)
                 end
             | _ ->
@@ -1033,12 +1023,7 @@ struct
       loop [] lexemes
     in
     match n with
-    | 1 -> Some (H1 title :: r, [Delim (1, Newline)], rest)
-    | 2 -> Some (H2 title :: r, [Delim (1, Newline)], rest)
-    | 3 -> Some (H3 title :: r, [Delim (1, Newline)], rest)
-    | 4 -> Some (H4 title :: r, [Delim (1, Newline)], rest)
-    | 5 -> Some (H5 title :: r, [Delim (1, Newline)], rest)
-    | 6 -> Some (H6 title :: r, [Delim (1, Newline)], rest)
+    | 1 | 2 | 3 | 4 | 5 | 6 -> Some (H (n, title) :: r, [Delim (1, Newline)], rest)
     | _ -> None
 
   let maybe_extension extensions r p l =

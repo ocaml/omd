@@ -38,12 +38,7 @@ end = object
 end
 
 type element =
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
+  | H of int * t
   | Paragraph of t
   | Text of string
   | Emph of t
@@ -82,12 +77,10 @@ and t = element list
 
 
 let rec loose_compare t1 t2 = match t1,t2 with
-  | H1 e1::tl1, H1 e2::tl2
-  | H2 e1::tl1, H2 e2::tl2
-  | H3 e1::tl1, H3 e2::tl2
-  | H4 e1::tl1, H4 e2::tl2
-  | H5 e1::tl1, H5 e2::tl2
-  | H6 e1::tl1, H6 e2::tl2
+  | H (i, e1)::tl1, H (j, e2)::tl2 when i = j ->
+      (match loose_compare e1 e2 with
+       | 0 -> loose_compare tl1 tl2
+       | i -> i)
   | Emph e1::tl1, Emph e2::tl2
   | Bold e1::tl1, Bold e2::tl2
   | Blockquote e1::tl1, Blockquote e2::tl2
@@ -264,17 +257,11 @@ let rec normalise_md l =
     | [] -> []
     | NL::NL::NL::tl -> loop (NL::NL::tl)
     | Text t1::Text t2::tl -> loop (Text(t1^t2)::tl)
-    | NL::(((Paragraph _|H1 _|H2 _|H3 _|H4 _|H5 _|H6 _
-            |Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
+    | NL::(((Paragraph _|H _|Code_block _|Ol _|Ul _|Olp _|Ulp _)::_) as tl) -> loop tl
     | Paragraph[Text " "]::tl -> loop tl
     | Paragraph[]::tl -> loop tl
     | Paragraph(p)::tl -> Paragraph(loop p)::loop tl
-    | H1 v::tl -> H1(loop v)::loop tl
-    | H2 v::tl -> H2(loop v)::loop tl
-    | H3 v::tl -> H3(loop v)::loop tl
-    | H4 v::tl -> H4(loop v)::loop tl
-    | H5 v::tl -> H5(loop v)::loop tl
-    | H6 v::tl -> H6(loop v)::loop tl
+    | H (i, v)::tl -> H(i, loop v)::loop tl
     | Emph v::tl -> Emph(loop v)::loop tl
     | Bold v::tl -> Bold(loop v)::loop tl
     | Ul v::tl -> Ul(List.map loop v)::loop tl
@@ -313,35 +300,10 @@ let rec visit f = function
       | Some(l) -> l@visit f tl
       | None -> Paragraph(visit f v)::visit f tl
       end
-  | H1 v as e::tl ->
+  | H (i, v) as e::tl ->
       begin match f e with
       | Some(l) -> l@visit f tl
-      | None -> H1(visit f v)::visit f tl
-      end
-  | H2 v as e::tl ->
-      begin match f e with
-      | Some(l) -> l@visit f tl
-      | None -> H2(visit f v)::visit f tl
-      end
-  | H3 v as e::tl ->
-      begin match f e with
-      | Some(l) -> l@visit f tl
-      | None -> H3(visit f v)::visit f tl
-      end
-  | H4 v as e::tl ->
-      begin match f e with
-      | Some(l) -> l@visit f tl
-      | None -> H4(visit f v)::visit f tl
-      end
-  | H5 v as e::tl ->
-      begin match f e with
-      | Some(l) -> l@visit f tl
-      | None -> H5(visit f v)::visit f tl
-      end
-  | H6 v as e::tl ->
-      begin match f e with
-      | Some(l) -> l@visit f tl
-      | None -> H6(visit f v)::visit f tl
+      | None -> H(i, visit f v)::visit f tl
       end
   | Emph v as e::tl ->
       begin match f e with

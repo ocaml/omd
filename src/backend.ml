@@ -79,12 +79,7 @@ let text_of_md md =
     | Url (_href, s, _title) :: tl ->
         loop s;
         loop tl
-    | H1 md :: tl
-    | H2 md :: tl
-    | H3 md :: tl
-    | H4 md :: tl
-    | H5 md :: tl
-    | H6 md :: tl ->
+    | H (_, md) :: tl ->
         loop md;
         loop tl
     | NL :: tl ->
@@ -471,13 +466,13 @@ let rec html_and_headers_of_md
             Buffer.add_string b "</a>";
             loop indent tl
         end
-    | (H1 md as e) :: tl ->
+    | (H (i, md) as e) :: tl ->
         let e, md =
           if not remove_header_links then
             e, md
           else
             let md = remove_links md in
-            H1 md, md in
+            H (i, md), md in
         begin match override e with
         | Some s ->
             Buffer.add_string b s;
@@ -486,126 +481,11 @@ let rec html_and_headers_of_md
             let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
             let id = id_of_string ids (text_of_md md) in
             headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h1 id=\"";
+            Buffer.add_string b (Printf.sprintf "<h%d id=\"" i);
             Buffer.add_string b id;
             Buffer.add_string b "\">";
             Buffer.add_string b ih;
-            Buffer.add_string b "</h1>";
-            loop indent tl
-        end
-    | (H2 md as e) :: tl ->
-        let e, md =
-          if not remove_header_links then
-            e, md
-          else
-            let md = remove_links md in
-            H2 md, md
-        in
-        begin match override e with
-        | Some s ->
-            Buffer.add_string b s;
-            loop indent tl
-        | None ->
-            let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
-            let id = id_of_string ids (text_of_md md) in
-            headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h2 id=\"";
-            Buffer.add_string b id;
-            Buffer.add_string b "\">";
-            Buffer.add_string b ih;
-            Buffer.add_string b "</h2>";
-            loop indent tl
-        end
-    | (H3 md as e) :: tl ->
-        let e, md =
-          if not remove_header_links then
-            e, md
-          else
-            let md = remove_links md in
-            H3 md, md
-        in
-        begin match override e with
-        | Some s ->
-            Buffer.add_string b s;
-            loop indent tl
-        | None ->
-            let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
-            let id = id_of_string ids (text_of_md md) in
-            headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h3 id=\"";
-            Buffer.add_string b id;
-            Buffer.add_string b "\">";
-            Buffer.add_string b ih;
-            Buffer.add_string b "</h3>";
-            loop indent tl
-        end
-    | (H4 md as e) :: tl ->
-        let e, md =
-          if not remove_header_links then
-            e, md
-          else
-            let md = remove_links md in
-            H4 md, md
-        in
-        begin match override e with
-        | Some s ->
-            Buffer.add_string b s;
-            loop indent tl
-        | None ->
-            let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
-            let id = id_of_string ids (text_of_md md) in
-            headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h4 id=\"";
-            Buffer.add_string b id;
-            Buffer.add_string b "\">";
-            Buffer.add_string b ih;
-            Buffer.add_string b "</h4>";
-            loop indent tl
-        end
-    | (H5 md as e) :: tl ->
-        let e, md =
-          if not remove_header_links then
-            e, md
-          else
-            let md = remove_links md in
-            H5 md, md
-        in
-        begin match override e with
-        | Some s ->
-            Buffer.add_string b s;
-            loop indent tl
-        | None ->
-            let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
-            let id = id_of_string ids (text_of_md md) in
-            headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h5 id=\"";
-            Buffer.add_string b id;
-            Buffer.add_string b "\">";
-            Buffer.add_string b ih;
-            Buffer.add_string b "</h5>";
-            loop indent tl
-        end
-    | (H6 md as e) :: tl ->
-        let e, md =
-          if not remove_header_links then
-            e, md
-          else
-            let md = remove_links md in
-            H6 md, md
-        in
-        begin match override e with
-        | Some s ->
-            Buffer.add_string b s;
-            loop indent tl
-        | None ->
-            let ih = html_of_md ~override ~pindent ~nl2br ~cs:code_style md in
-            let id = id_of_string ids (text_of_md md) in
-            headers := (e, id, ih) :: !headers;
-            Buffer.add_string b "<h6 id=\"";
-            Buffer.add_string b id;
-            Buffer.add_string b "\">";
-            Buffer.add_string b ih;
-            Buffer.add_string b "</h6>";
+            Buffer.add_string b (Printf.sprintf "</h%d>" i);
             loop indent tl
         end
     | NL as e :: tl ->
@@ -772,33 +652,9 @@ let rec sexpr_of_md md =
     | Url (href,s,title) :: tl ->
         bprintf b "(Url %S %S %S)" href (html_of_md s) title;
         loop tl
-    | H1 md :: tl ->
-        Buffer.add_string b "(H1";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
-    | H2 md :: tl ->
-        Buffer.add_string b "(H2";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
-    | H3 md :: tl ->
-        Buffer.add_string b "(H3";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
-    | H4 md :: tl ->
-        Buffer.add_string b "(H4";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
-    | H5 md :: tl ->
-        Buffer.add_string b "(H5";
-        loop md;
-        Buffer.add_string b ")";
-        loop tl
-    | H6 md :: tl ->
-        Buffer.add_string b "(H6";
+    | H (i, md) :: tl ->
+        Buffer.add_string b "(H";
+        Buffer.add_string b (string_of_int i);
         loop md;
         Buffer.add_string b ")";
         loop tl
@@ -990,8 +846,8 @@ let rec markdown_of_md md =
             (* Paragraphs => No need of '\n' *)
           ) l;
         begin match tl with
-        | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _) :: _
-        | NL :: (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _) :: _ ->
+        | H _ :: _
+        | NL :: H _ :: _ ->
             Buffer.add_char b '\n'
         | _ ->
             ()
@@ -1115,8 +971,7 @@ let rec markdown_of_md md =
         let needs_newlines =
           match tl with
           | NL :: Paragraph p :: _ | Paragraph p :: _ -> p <> []
-          | (H1 _ | H2 _ | H3 _ | H4 _ | H5 _ | H6 _
-            | Ul _ | Ol _ | Ulp _ | Olp _ | Code (_, _) | Code_block (_, _)
+          | (H _ | Ul _ | Ol _ | Ulp _ | Olp _ | Code (_, _) | Code_block (_, _)
             | Text _ | Emph _ | Bold _ | Br |Hr | Url (_, _, _)
             | Ref (_, _, _, _) | Img_ref (_, _, _, _)
             | Html (_, _, _) | Blockquote _ | Img (_, _, _)) :: _ ->
@@ -1158,33 +1013,9 @@ let rec markdown_of_md md =
         else
           bprintf b "[%s](%s \"%s\")" (markdown_of_md s) href title;
         loop list_indent tl
-    | H1 md :: tl ->
-        Buffer.add_string b "# ";
-        loop list_indent md;
-        Buffer.add_string b "\n";
-        loop list_indent tl
-    | H2 md :: tl ->
-        Buffer.add_string b "## ";
-        loop list_indent md;
-        Buffer.add_string b "\n";
-        loop list_indent tl
-    | H3 md :: tl ->
-        Buffer.add_string b "### ";
-        loop list_indent md;
-        Buffer.add_string b "\n";
-        loop list_indent tl
-    | H4 md :: tl ->
-        Buffer.add_string b "#### ";
-        loop list_indent md;
-        Buffer.add_string b "\n";
-        loop list_indent tl
-    | H5 md :: tl ->
-        Buffer.add_string b "##### ";
-        loop list_indent md;
-        Buffer.add_string b "\n";
-        loop list_indent tl
-    | H6 md :: tl ->
-        Buffer.add_string b "###### ";
+    | H (i, md) :: tl ->
+        Buffer.add_string b (String.make i '#');
+        Buffer.add_char b ' ';
         loop list_indent md;
         Buffer.add_string b "\n";
         loop list_indent tl

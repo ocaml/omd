@@ -9,12 +9,7 @@ class ref_container :
     method get_all : (string * (string * string)) list
   end
 type element =
-  | H1 of t
-  | H2 of t
-  | H3 of t
-  | H4 of t
-  | H5 of t
-  | H6 of t
+  | H of int * t
   | Paragraph of t
   | Text of string
   | Emph of t

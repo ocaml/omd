@@ -47,18 +47,8 @@ let rec set_default_lang lang = function
       Code_block (lang, code) :: set_default_lang lang tl
   (* Recurse on all elements even though code (blocks) are not allowed
      everywhere. *)
-  | H1 t :: tl ->
-      H1 (set_default_lang lang t) :: set_default_lang lang tl
-  | H2 t :: tl ->
-      H2 (set_default_lang lang t) :: set_default_lang lang tl
-  | H3 t :: tl ->
-      H3 (set_default_lang lang t) :: set_default_lang lang tl
-  | H4 t :: tl ->
-      H4 (set_default_lang lang t) :: set_default_lang lang tl
-  | H5 t :: tl ->
-      H5 (set_default_lang lang t) :: set_default_lang lang tl
-  | H6 t :: tl ->
-      H6 (set_default_lang lang t) :: set_default_lang lang tl
+  | H (i, t) :: tl ->
+      H (i, set_default_lang lang t) :: set_default_lang lang tl
   | Paragraph t :: tl ->
       Paragraph (set_default_lang lang t) :: set_default_lang lang tl
   | Emph t :: tl ->
@@ -92,12 +82,7 @@ let rec set_default_lang lang = function
 let rec find_start headers level number subsections =
   match headers with
   | [] -> []
-  | (H1 _, _, _) :: tl -> deal_with_header 1 headers tl level number subsections
-  | (H2 _, _, _) :: tl -> deal_with_header 2 headers tl level number subsections
-  | (H3 _, _, _) :: tl -> deal_with_header 3 headers tl level number subsections
-  | (H4 _, _, _) :: tl -> deal_with_header 4 headers tl level number subsections
-  | (H5 _, _, _) :: tl -> deal_with_header 5 headers tl level number subsections
-  | (H6 _, _, _) :: tl -> deal_with_header 6 headers tl level number subsections
+  | (H (i, _), _, _) :: tl -> deal_with_header i headers tl level number subsections
   | _ :: _ -> assert false
 
 and deal_with_header h_level headers tl level number subsections =
@@ -129,12 +114,7 @@ let rec make_toc (headers:(element*string*string)list) ~min_level ~max_level =
   else begin
     match headers with
     | [] -> [], []
-    | (H1 t, id, _) :: tl -> toc_entry headers 1 t id tl ~min_level ~max_level
-    | (H2 t, id, _) :: tl -> toc_entry headers 2 t id tl ~min_level ~max_level
-    | (H3 t, id, _) :: tl -> toc_entry headers 3 t id tl ~min_level ~max_level
-    | (H4 t, id, _) :: tl -> toc_entry headers 4 t id tl ~min_level ~max_level
-    | (H5 t, id, _) :: tl -> toc_entry headers 5 t id tl ~min_level ~max_level
-    | (H6 t, id, _) :: tl -> toc_entry headers 6 t id tl ~min_level ~max_level
+    | (H (i, t), id, _) :: tl -> toc_entry headers i t id tl ~min_level ~max_level
     | _ :: _ -> assert false
   end
 

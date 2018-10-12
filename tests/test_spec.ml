@@ -62,25 +62,25 @@ let () =
 
   (* Headers
    ***********************************************************************)
-  test "header, ===" "Title\n=="  [Omd.H1 [Omd.Text "Title"]];
-  test "header, ---" "Title\n---" [Omd.H2 [Omd.Text "Title"]];
+  test "header, ===" "Title\n=="  [Omd.H (1, [Omd.Text "Title"])];
+  test "header, ---" "Title\n---" [Omd.H (2, [Omd.Text "Title"])];
 
-  test "header, #" "# Title" [Omd.H1 [Omd.Text "Title"]];
-  test "header, ##" "## Title" [Omd.H2 [Omd.Text "Title"]];
-  test "header, ###" "### Title" [Omd.H3 [Omd.Text "Title"]];
-  test "header, ####" "#### Title" [Omd.H4 [Omd.Text "Title"]];
-  test "header, #####" "##### Title" [Omd.H5 [Omd.Text "Title"]];
-  test "header, ######" "###### Title" [Omd.H6 [Omd.Text "Title"]];
+  test "header, #" "# Title" [Omd.H (1, [Omd.Text "Title"])];
+  test "header, ##" "## Title" [Omd.H (2, [Omd.Text "Title"])];
+  test "header, ###" "### Title" [Omd.H (3, [Omd.Text "Title"])];
+  test "header, ####" "#### Title" [Omd.H (4, [Omd.Text "Title"])];
+  test "header, #####" "##### Title" [Omd.H (5, [Omd.Text "Title"])];
+  test "header, ######" "###### Title" [Omd.H (6, [Omd.Text "Title"])];
   test "header, too deep" "######## Title\n"
     [Omd.Paragraph[Omd.Text "######## Title"]];
-  test "header, # + space" "# Title  " [Omd.H1 [Omd.Text "Title"]];
-  test "header, # #" "# Title ###" [Omd.H1 [Omd.Text "Title"]];
-  test "header, # #" "# Title # " [Omd.H1 [Omd.Text "Title"]];
-  test "header, ## + space" "## Title #  " [Omd.H2 [Omd.Text "Title"]];
+  test "header, # + space" "# Title  " [Omd.H (1, [Omd.Text "Title"])];
+  test "header, # #" "# Title ###" [Omd.H (1, [Omd.Text "Title"])];
+  test "header, # #" "# Title # " [Omd.H (1, [Omd.Text "Title"])];
+  test "header, ## + space" "## Title #  " [Omd.H (2, [Omd.Text "Title"])];
 
-  test "header, # + \\n" "# Title\n" [Omd.H1 [Omd.Text "Title"]];
-  test "header, # + space + \\n" "# Title  \n" [Omd.H1 [Omd.Text "Title"]];
-  test "header, # + # + \\n" "# Title # \n" [Omd.H1 [Omd.Text "Title"]];
+  test "header, # + \\n" "# Title\n" [Omd.H (1, [Omd.Text "Title"])];
+  test "header, # + space + \\n" "# Title  \n" [Omd.H (1, [Omd.Text "Title"])];
+  test "header, # + # + \\n" "# Title # \n" [Omd.H (1, [Omd.Text "Title"])];
 
 
   (* Blockquotes
@@ -98,11 +98,11 @@ let () =
                     Paragraph [Text "quoted2"]]];
 
   test "blockquote + header" "> ## header\n"
-       [Blockquote [H2 [Text "header"]]];
+       [Blockquote [H (2, [Text "header"])]];
   test "blockquote + header + par" "> ## header\nHello"
-       [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
+       [Blockquote [H (2, [Text "header"]); Paragraph [Text "Hello"]]];
   test "blockquote + header + par" "> ## header\n> Hello"
-       [Blockquote [H2 [Text "header"];  Paragraph [Text "Hello"]]];
+       [Blockquote [H (2, [Text "header"]); Paragraph [Text "Hello"]]];
   test "blockquote + list" "> 1. item1\n> 2. item2\n"
        [Blockquote [Ol [[Text "item1"];
                         [Text "item2"]]]];
@@ -140,7 +140,7 @@ let () =
 # header"
        [Ulp [[Paragraph [Omd.Text "A"]];
              [Paragraph [Omd.Text "B"]; Code_block ("", "code")]];
-        NL; H1 [Text "header"]];
+        NL; H (1, [Text "header"])];
 
   (* Code
    ***********************************************************************)
