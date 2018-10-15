@@ -53,6 +53,10 @@ and is_atx_heading = parse
   | _ | eof
     { None }
 
+and is_fenced_code = parse
+  | ' '? ' '? ' '? "~~~" '~'* (_* as info) | ' '? ' '? ' '? "```" '`'* (_* as info) { Some (String.trim info) }
+  | _ | eof { None }
+
 {
 let is_thematic_break s =
   is_thematic_break (Lexing.from_string s)
@@ -71,4 +75,7 @@ let indent s =
 
 let is_atx_heading s =
   is_atx_heading (Lexing.from_string s)
+
+let is_fenced_code s =
+  is_fenced_code (Lexing.from_string s)
 }

@@ -393,11 +393,13 @@ module New : sig
     | Blockquote of 'content block list
     | Thematic_break
     | Atx_heading of int * string
+    | Fenced_code of string * 'content
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
+    | Rfenced_code of string * 'content
     | Rempty
 
   type 'content state =

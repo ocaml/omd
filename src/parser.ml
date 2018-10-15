@@ -3003,11 +3003,13 @@ module New = struct
     | Blockquote of 'content block list
     | Thematic_break
     | Atx_heading of int * string
+    | Fenced_code of string * 'content
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
+    | Rfenced_code of string * 'content
     | Rempty
 
   type 'content state =
@@ -3021,6 +3023,8 @@ module New = struct
           List (List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph content ->
           Paragraph (List.rev content) :: c
+      | Rfenced_code (info, lines) ->
+          Fenced_code (info, List.rev lines) :: c
       | Rempty ->
           c
     in
@@ -3048,13 +3052,18 @@ module New = struct
                     | Some (n, s) ->
                         Atx_heading (n, s) :: c, Rempty
                     | None ->
-                        begin match Auxlex.is_list_item s with
-                        | Some (_, indent) ->
-                            let s = String.sub s indent (String.length s - indent) in
-                            let c1, next = process [] s Rempty in
-                            c, Rlist (indent, [], c1, next)
+                        begin match Auxlex.is_fenced_code s with
+                        | Some info ->
+                            c, Rfenced_code (info, [])
                         | None ->
-                            c, Rparagraph [s]
+                            begin match Auxlex.is_list_item s with
+                            | Some (_, indent) ->
+                                let s = String.sub s indent (String.length s - indent) in
+                                let c1, next = process [] s Rempty in
+                                c, Rlist (indent, [], c1, next)
+                            | None ->
+                                c, Rparagraph [s]
+                            end
                         end
                     end
                 end
@@ -3068,6 +3077,8 @@ module New = struct
             close c self, Rempty
           else
             c, Rparagraph (s :: lines)
+      | Rfenced_code (_info, _lines) ->
+          assert false
       | Rblockquote (c1, next) as self ->
           begin match Auxlex.is_blockquote s with
           | Some n ->
