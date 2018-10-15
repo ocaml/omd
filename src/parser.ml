@@ -3081,6 +3081,7 @@ module New = struct
           else begin (* TODO handle loose lists *)
             match Auxlex.is_list_item s with
             | Some (_, ind) ->
+                let c1 = close c1 next in
                 let s = String.sub s ind (String.length s - ind) in
                 let c2, next = process [] s Rempty in
                 c, Rlist (ind, List.rev c1 :: items, c2, next)
