@@ -7,9 +7,9 @@ type list_item_kind =
 let ws = [' ''\t']*
 
 rule is_thematic_break = parse
-  | ' '?' '?' '? '*' ws '*' ws '*' ws eof
-  | ' '?' '?' '? '_' ws '_' ws '_' ws eof
-  | ' '?' '?' '? '-' ws '-' ws '-' ws eof { true }
+  | ' '? ' '? ' '? '*' ws '*' ws '*' ws eof
+  | ' '? ' '? ' '? '_' ws '_' ws '_' ws eof
+  | ' '? ' '? ' '? '-' ws '-' ws '-' ws eof { true }
   | _ | eof { false }
 
 and is_empty = parse
@@ -17,7 +17,7 @@ and is_empty = parse
   | _ { false }
 
 and is_blockquote = parse
-  | ' '?' '?' '? '>' ' '? { Some (String.length (Lexing.lexeme lexbuf)) }
+  | ' '? ' '? ' '? '>' ' '? { Some (String.length (Lexing.lexeme lexbuf)) }
   | _ | eof { None }
 
 and is_list_item = parse
@@ -32,6 +32,13 @@ and indent acc = parse
   | ' ' { indent (acc + 1) lexbuf }
   | '\t' { indent (acc + 4) lexbuf }
   | _ | eof { acc }
+
+and is_atx_heading = parse
+  | ' '? ' '? ' '? ("#" | "##" | "###" | "####" | "#####" | "######" as atx)
+      ws* (' ' _+ | "" as title) ws+ '#'* ws* eof
+    { Some (String.length atx, title) }
+  | _ | eof
+    { None }
 
 {
 let is_thematic_break s =
@@ -48,4 +55,7 @@ let is_list_item s =
 
 let indent s =
   indent 0 (Lexing.from_string s)
+
+let is_atx_heading s =
+  is_atx_heading (Lexing.from_string s)
 }

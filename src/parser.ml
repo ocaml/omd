@@ -3002,6 +3002,7 @@ module New = struct
     | List of 'content block list list
     | Blockquote of 'content block list
     | Thematic_break
+    | Atx_heading of int * string
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
@@ -3043,13 +3044,18 @@ module New = struct
                 | true ->
                     Thematic_break :: c, Rempty
                 | false ->
-                    begin match Auxlex.is_list_item s with
-                    | Some (_, indent) ->
-                        let s = String.sub s indent (String.length s - indent) in
-                        let c1, next = process [] s Rempty in
-                        c, Rlist (indent, [], c1, next)
+                    begin match Auxlex.is_atx_heading s with
+                    | Some (n, s) ->
+                        Atx_heading (n, s) :: c, Rempty
                     | None ->
-                        c, Rparagraph [s]
+                      begin match Auxlex.is_list_item s with
+                      | Some (_, indent) ->
+                          let s = String.sub s indent (String.length s - indent) in
+                          let c1, next = process [] s Rempty in
+                          c, Rlist (indent, [], c1, next)
+                      | None ->
+                          c, Rparagraph [s]
+                      end
                     end
                 end
             | Some n ->
