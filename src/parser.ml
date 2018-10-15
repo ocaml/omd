@@ -3009,7 +3009,7 @@ module New = struct
     | Rparagraph of 'content
     | Rempty
 
-  and 'content state =
+  type 'content state =
     | Rdocument of 'content block list * 'content container
 
   let close c next =

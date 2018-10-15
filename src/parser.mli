@@ -393,7 +393,14 @@ module New : sig
     | Blockquote of 'content block list
     | Thematic_break
 
-  type 'content state
+  type 'content container =
+    | Rblockquote of 'content block list * 'content container
+    | Rlist of int * 'content block list list * 'content block list * 'content container
+    | Rparagraph of 'content
+    | Rempty
+
+  type 'content state =
+    | Rdocument of 'content block list * 'content container
 
   val finish : 'a list state -> 'a list block list
   val empty : 'content state
