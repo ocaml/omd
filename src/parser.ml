@@ -3073,6 +3073,7 @@ module New = struct
               c2 @ close c self, next
           end
       | Rlist (ind, items, c1, next) as self ->
+          Printf.eprintf "Rlist: indent s=%d, ind=%d\n%!" (Auxlex.indent s) ind;
           if Auxlex.indent s >= ind then
             let s = String.sub s ind (String.length s - ind) in
             let c1, next = process c1 s next in
