@@ -392,6 +392,7 @@ module New : sig
     | List of 'content block list list
     | Blockquote of 'content block list
     | Thematic_break
+    | Atx_heading of int * string
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
