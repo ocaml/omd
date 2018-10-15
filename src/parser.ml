@@ -3012,18 +3012,21 @@ module New = struct
   and 'content state =
     | Rdocument of 'content block list * 'content container
 
-  let finish (Rdocument (closed, next)) =
-    let rec finish c = function
+  let close c next =
+    let rec close c = function
       | Rblockquote (closed, next) ->
-          Blockquote (List.rev (finish closed next)) :: c
+          Blockquote (List.rev (close closed next)) :: c
       | Rlist (_, closed_items, last_item, next) ->
-          List (List.rev (List.rev (finish last_item next) :: closed_items)) :: c
+          List (List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph content ->
           Paragraph (List.rev content) :: c
       | Rempty ->
           c
     in
-    List.rev (finish closed next)
+    List.rev (close c next)
+
+  let finish (Rdocument (closed, next)) =
+    close closed next
 
   let empty =
     Rdocument ([], Rempty)
@@ -3054,12 +3057,12 @@ module New = struct
                 let c1, next = process [] s Rempty in
                 c, Rblockquote (c1, next)
           end
-      | Rparagraph lines ->
+      | Rparagraph lines as self ->
           if Auxlex.is_empty s then
-            Paragraph (List.rev lines) :: c, Rempty
+            close c self, Rempty
           else
             c, Rparagraph (s :: lines)
-      | Rblockquote (c1, next) ->
+      | Rblockquote (c1, next) as self ->
           begin match Auxlex.is_blockquote s with
           | Some n ->
               let s = String.sub s n (String.length s - n) in
@@ -3067,10 +3070,23 @@ module New = struct
               c, Rblockquote (c1, next)
           | None ->
               let c2, next = process [] s Rempty in
-              c2 @ Blockquote (List.rev c1) :: c, next
+              c2 @ close c self, next
           end
-      | _ ->
-          assert false
+      | Rlist (ind, items, c1, _next) as self ->
+          if Auxlex.indent s >= ind then
+            let s = String.sub s ind (String.length s - ind) in
+            let c1, next = process c1 s next in
+            c, Rlist (ind, items, c1, next)
+          else begin (* TODO handle loose lists *)
+            match Auxlex.is_list_item s with
+            | Some (_, ind) ->
+                let s = String.sub s ind (String.length s - ind) in
+                let c2, next = process [] s Rempty in
+                c, Rlist (ind, List.rev c1 :: items, c2, next)
+            | None ->
+                let c2, next = process [] s Rempty in
+                c2 @ close c self, next
+          end
     in
     let c, next = process c s next in
     Rdocument (c, next)

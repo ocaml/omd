@@ -28,6 +28,11 @@ and is_list_item = parse
   | _ | eof
       { None }
 
+and indent acc = parse
+  | ' ' { indent (acc + 1) lexbuf }
+  | '\t' { indent (acc + 4) lexbuf }
+  | _ | eof { acc }
+
 {
 let is_thematic_break s =
   is_thematic_break (Lexing.from_string s)
@@ -40,4 +45,7 @@ let is_blockquote s =
 
 let is_list_item s =
   is_list_item (Lexing.from_string s)
+
+let indent s =
+  indent 0 (Lexing.from_string s)
 }
