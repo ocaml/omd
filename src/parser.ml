@@ -3003,7 +3003,7 @@ module New = struct
     | Blockquote of 'content block list
     | Thematic_break
     | Atx_heading of int * string
-    | Fenced_code of string * 'content
+    | Code_block of string * 'content
     | Html_block of 'content
 
   type html_kind =
@@ -3014,6 +3014,7 @@ module New = struct
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
     | Rfenced_code of int * int * string * 'content
+    | Rindented_code of 'content
     | Rhtml of html_kind * 'content
     | Rempty
 
@@ -3029,16 +3030,18 @@ module New = struct
       | Rparagraph content ->
           Paragraph (List.rev content) :: c
       | Rfenced_code (_, _, info, lines) ->
-          Fenced_code (info, List.rev lines) :: c
+          Code_block (info, List.rev lines) :: c
+      | Rindented_code lines ->
+          Code_block ("", List.rev lines) :: c
       | Rhtml (_, lines) ->
           Html_block (List.rev lines) :: c
       | Rempty ->
           c
     in
-    List.rev (close c next)
+    close c next
 
   let finish (Rdocument (closed, next)) =
-    close closed next
+    List.rev (close closed next)
 
   let empty =
     Rdocument ([], Rempty)
@@ -3075,16 +3078,20 @@ module New = struct
                             begin match Auxlex.is_html_opening s with
                             | Some kind ->
                                 let kind = match kind with `Comment -> Hcomment in
-                                let c1, next = process [] s (Rhtml (kind, [])) in
-                                c1 @ c, next
+                                process c s (Rhtml (kind, []))
                             | None ->
-                                begin match Auxlex.is_list_item s with
-                                | Some (_, indent) ->
-                                    let s = String.sub s indent (String.length s - indent) in
-                                    let c1, next = process [] s Rempty in
-                                    c, Rlist (indent, [], c1, next)
-                                | None ->
-                                    c, Rparagraph [s]
+                                if Auxlex.indent s >= 4 then
+                                  (* FIXME handle tab *)
+                                  let s = String.sub s 4 (String.length s - 4) in
+                                  c, Rindented_code [s]
+                                else begin
+                                  match Auxlex.is_list_item s with
+                                  | Some (_, indent) ->
+                                      let s = String.sub s indent (String.length s - indent) in
+                                      let c1, next = process [] s Rempty in
+                                      c, Rlist (indent, [], c1, next)
+                                  | None ->
+                                      c, Rparagraph [s]
                                 end
                             end
                         end
@@ -3114,6 +3121,12 @@ module New = struct
               in
               c, Rfenced_code (ind, num, info, s :: lines)
           end
+      | Rindented_code lines as self ->
+          if Auxlex.is_empty s || Auxlex.indent s < 4 then
+            process (close c self) s Rempty
+          else
+            let s = String.sub s 4 (String.length s - 4) in
+            c, Rindented_code (s :: lines)
       | Rhtml (Hcomment, lines) ->
           if string_contains "-->" s then
             close c (Rhtml (Hcomment, s :: lines)), Rempty
@@ -3126,8 +3139,7 @@ module New = struct
               let c1, next = process c1 s next in
               c, Rblockquote (c1, next)
           | None ->
-              let c2, next = process [] s Rempty in
-              c2 @ close c self, next
+              process (close c self) s Rempty
           end
       | Rlist (ind, items, c1, next) as self ->
           if Auxlex.is_empty s || Auxlex.indent s >= ind then
@@ -3142,8 +3154,7 @@ module New = struct
                 let c2, next = process [] s Rempty in
                 c, Rlist (ind, List.rev c1 :: items, c2, next)
             | None ->
-                let c2, next = process [] s Rempty in
-                c2 @ close c self, next
+                process (close c self) s Rempty
           end
     in
     let c, next = process c s next in

@@ -393,7 +393,7 @@ module New : sig
     | Blockquote of 'content block list
     | Thematic_break
     | Atx_heading of int * string
-    | Fenced_code of string * 'content
+    | Code_block of string * 'content
     | Html_block of 'content
 
   type html_kind =
@@ -404,6 +404,7 @@ module New : sig
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
     | Rfenced_code of int * int * string * 'content
+    | Rindented_code of 'content
     | Rhtml of html_kind * 'content
     | Rempty
 

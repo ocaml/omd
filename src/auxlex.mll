@@ -95,4 +95,7 @@ let is_fenced_code_closing num s =
 
 let is_html_opening s =
   is_html_opening (Lexing.from_string s)
+
+let is_indented_code s =
+  indent s >= 4
 }
