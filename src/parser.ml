@@ -3009,7 +3009,7 @@ module New = struct
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
-    | Rfenced_code of string * 'content
+    | Rfenced_code of int * int * string * 'content
     | Rempty
 
   type 'content state =
@@ -3023,7 +3023,7 @@ module New = struct
           List (List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph content ->
           Paragraph (List.rev content) :: c
-      | Rfenced_code (info, lines) ->
+      | Rfenced_code (_, _, info, lines) ->
           Fenced_code (info, List.rev lines) :: c
       | Rempty ->
           c
@@ -3053,8 +3053,8 @@ module New = struct
                         Atx_heading (n, s) :: c, Rempty
                     | None ->
                         begin match Auxlex.is_fenced_code s with
-                        | Some info ->
-                            c, Rfenced_code (info, [])
+                        | Some (ind, num, info) ->
+                            c, Rfenced_code (ind, num, info, [])
                         | None ->
                             begin match Auxlex.is_list_item s with
                             | Some (_, indent) ->
@@ -3077,8 +3077,20 @@ module New = struct
             close c self, Rempty
           else
             c, Rparagraph (s :: lines)
-      | Rfenced_code (_info, _lines) ->
-          assert false
+      | Rfenced_code (ind, num, info, lines) as self ->
+          begin match Auxlex.is_fenced_code_closing num s with
+          | true ->
+              close c self, Rempty
+          | false ->
+              let s =
+                let ind = min (Auxlex.indent s) ind in
+                if ind > 0 then
+                  String.sub s ind (String.length s - ind)
+                else
+                  s
+              in
+              c, Rfenced_code (ind, num, info, s :: lines)
+          end
       | Rblockquote (c1, next) as self ->
           begin match Auxlex.is_blockquote s with
           | Some n ->

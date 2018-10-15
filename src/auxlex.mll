@@ -54,8 +54,10 @@ and is_atx_heading = parse
     { None }
 
 and is_fenced_code = parse
-  | ' '? ' '? ' '? "~~~" '~'* (_* as info) | ' '? ' '? ' '? "```" '`'* (_* as info) { Some (String.trim info) }
-  | _ | eof { None }
+  | (' '? ' '? ' '? as ind) ("~~~" '~'* | "```" '`'* as delim) (_* as info)
+      { Some (String.length ind, String.length delim, String.trim info) }
+  | _ | eof
+    { None }
 
 {
 let is_thematic_break s =
@@ -78,4 +80,11 @@ let is_atx_heading s =
 
 let is_fenced_code s =
   is_fenced_code (Lexing.from_string s)
+
+let is_fenced_code_closing num s =
+  match is_fenced_code s with
+  | Some (_, num', "") ->
+      num' >= num
+  | _ ->
+      false
 }

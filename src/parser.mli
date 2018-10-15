@@ -399,7 +399,7 @@ module New : sig
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
-    | Rfenced_code of string * 'content
+    | Rfenced_code of int * int * string * 'content
     | Rempty
 
   type 'content state =
