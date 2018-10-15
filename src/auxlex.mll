@@ -2,6 +2,19 @@
 type list_item_kind =
   | Ordered of int
   | Bullet of char
+
+let remove_trailing_hashes s =
+  let c =
+    let c = ref 0 in
+    try
+      for i = String.length s - 1 downto 0 do
+        if s.[i] = '#' then incr c else raise Exit
+      done;
+      String.length s
+    with Exit ->
+      !c
+  in
+  String.sub s 0 (String.length s - c)
 }
 
 let ws = [' ''\t']*
@@ -35,8 +48,8 @@ and indent acc = parse
 
 and is_atx_heading = parse
   | ' '? ' '? ' '? ("#" | "##" | "###" | "####" | "#####" | "######" as atx)
-      ws* (' ' _+ | "" as title) ws+ '#'* ws* eof
-    { Some (String.length atx, title) }
+      (ws+ (_+ as title) | ("" as title)) eof
+    { Some (String.length atx, String.trim (remove_trailing_hashes (String.trim title))) }
   | _ | eof
     { None }
 
