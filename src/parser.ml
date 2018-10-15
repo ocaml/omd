@@ -3073,8 +3073,8 @@ module New = struct
               c2 @ close c self, next
           end
       | Rlist (ind, items, c1, next) as self ->
-          if Auxlex.indent s >= ind then
-            let s = String.sub s ind (String.length s - ind) in
+          if Auxlex.is_empty s || Auxlex.indent s >= ind then
+            let s = if Auxlex.is_empty s then s else String.sub s ind (String.length s - ind) in
             let c1, next = process c1 s next in
             c, Rlist (ind, items, c1, next)
           else begin (* TODO handle loose lists *)
