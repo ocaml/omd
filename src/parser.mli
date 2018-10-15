@@ -385,3 +385,17 @@ module Make : functor (Env : Env) -> sig
   val parse : Representation.tok list -> Representation.t
 
 end
+
+module New : sig
+  type 'content block =
+    | Paragraph of 'content
+    | List of 'content block list list
+    | Blockquote of 'content block list
+    | Thematic_break
+
+  type 'content state
+
+  val finish : 'a list state -> 'a list block list
+  val empty : 'content state
+  val process : string list state -> string -> string list state
+end

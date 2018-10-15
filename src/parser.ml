@@ -2995,3 +2995,76 @@ let default_parse ?extensions:(e = []) ?default_lang:(d = "") lexemes =
   in
   let module M = Make(E) in
   M.main_parse lexemes
+
+module New = struct
+  type 'content block =
+    | Paragraph of 'content
+    | List of 'content block list list
+    | Blockquote of 'content block list
+    | Thematic_break
+
+  type 'content container =
+    | Rblockquote of 'content block list * 'content container
+    | Rlist of 'content block list list * 'content block list * 'content container
+    | Rparagraph of 'content
+    | Rempty
+
+  and 'content state =
+    | Rdocument of 'content block list * 'content container
+
+  let finish (Rdocument (closed, next)) =
+    let rec finish c = function
+      | Rblockquote (closed, next) ->
+          Blockquote (List.rev (finish closed next)) :: c
+      | Rlist (closed_items, last_item, next) ->
+          List (List.rev (List.rev (finish last_item next) :: closed_items)) :: c
+      | Rparagraph content ->
+          Paragraph (List.rev content) :: c
+      | Rempty ->
+          c
+    in
+    List.rev (finish closed next)
+
+  let empty =
+    Rdocument ([], Rempty)
+
+  let process (Rdocument (c, next)) s =
+    let rec process c s = function
+      | Rempty ->
+          if Auxlex.is_empty s then
+            c, Rempty
+          else begin
+            match Auxlex.is_blockquote s with
+            | None ->
+                begin match Auxlex.is_thematic_break s with
+                | true ->
+                    Thematic_break :: c, Rempty
+                | false ->
+                    c, Rparagraph [s]
+                end
+            | Some n ->
+                let s = String.sub s n (String.length s - n) in
+                let c1, next = process [] s Rempty in
+                c, Rblockquote (c1, next)
+          end
+      | Rparagraph lines ->
+          if Auxlex.is_empty s then
+            Paragraph (List.rev lines) :: c, Rempty
+          else
+            c, Rparagraph (s :: lines)
+      | Rblockquote (c1, next) ->
+          begin match Auxlex.is_blockquote s with
+          | Some n ->
+              let s = String.sub s n (String.length s - n) in
+              let c1, next = process c1 s next in
+              c, Rblockquote (c1, next)
+          | None ->
+              let c2, next = process [] s Rempty in
+              c2 @ Blockquote (List.rev c1) :: c, next
+          end
+      | _ ->
+          assert false
+    in
+    let c, next = process c s next in
+    Rdocument (c, next)
+end
