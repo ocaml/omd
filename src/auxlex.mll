@@ -31,7 +31,8 @@ and is_list_item = parse
 and indent acc = parse
   | ' ' { indent (acc + 1) lexbuf }
   | '\t' { indent (acc + 4) lexbuf }
-  | _ | eof { acc }
+  | eof { max_int }
+  | _ { acc }
 
 {
 let is_thematic_break s =
