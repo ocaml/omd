@@ -394,12 +394,17 @@ module New : sig
     | Thematic_break
     | Atx_heading of int * string
     | Fenced_code of string * 'content
+    | Html_block of 'content
+
+  type html_kind =
+    | Hcomment
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
     | Rfenced_code of int * int * string * 'content
+    | Rhtml of html_kind * 'content
     | Rempty
 
   type 'content state =

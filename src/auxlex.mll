@@ -18,11 +18,12 @@ let remove_trailing_hashes s =
 }
 
 let ws = [' ''\t']*
+let sp3 = ' '? ' '? ' '?
 
 rule is_thematic_break = parse
-  | ' '? ' '? ' '? '*' ws '*' ws '*' ws eof
-  | ' '? ' '? ' '? '_' ws '_' ws '_' ws eof
-  | ' '? ' '? ' '? '-' ws '-' ws '-' ws eof { true }
+  | sp3 '*' ws '*' ws '*' ws eof
+  | sp3 '_' ws '_' ws '_' ws eof
+  | sp3 '-' ws '-' ws '-' ws eof { true }
   | _ | eof { false }
 
 and is_empty = parse
@@ -30,7 +31,7 @@ and is_empty = parse
   | _ { false }
 
 and is_blockquote = parse
-  | ' '? ' '? ' '? '>' ' '? { Some (String.length (Lexing.lexeme lexbuf)) }
+  | sp3 '>' ' '? { Some (String.length (Lexing.lexeme lexbuf)) }
   | _ | eof { None }
 
 and is_list_item = parse
@@ -47,17 +48,21 @@ and indent acc = parse
   | _ | eof { acc }
 
 and is_atx_heading = parse
-  | ' '? ' '? ' '? ("#" | "##" | "###" | "####" | "#####" | "######" as atx)
+  | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx)
       (ws+ (_+ as title) | ("" as title)) eof
     { Some (String.length atx, String.trim (remove_trailing_hashes (String.trim title))) }
   | _ | eof
     { None }
 
 and is_fenced_code = parse
-  | (' '? ' '? ' '? as ind) ("~~~" '~'* | "```" '`'* as delim) (_* as info)
+  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) (_* as info)
       { Some (String.length ind, String.length delim, String.trim info) }
   | _ | eof
     { None }
+
+and is_html_opening = parse
+  | sp3 "<!--" { Some `Comment }
+  | _ | eof { None }
 
 {
 let is_thematic_break s =
@@ -87,4 +92,7 @@ let is_fenced_code_closing num s =
       num' >= num
   | _ ->
       false
+
+let is_html_opening s =
+  is_html_opening (Lexing.from_string s)
 }

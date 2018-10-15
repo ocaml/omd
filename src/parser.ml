@@ -3004,12 +3004,17 @@ module New = struct
     | Thematic_break
     | Atx_heading of int * string
     | Fenced_code of string * 'content
+    | Html_block of 'content
+
+  type html_kind =
+    | Hcomment
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
     | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
     | Rfenced_code of int * int * string * 'content
+    | Rhtml of html_kind * 'content
     | Rempty
 
   type 'content state =
@@ -3025,6 +3030,8 @@ module New = struct
           Paragraph (List.rev content) :: c
       | Rfenced_code (_, _, info, lines) ->
           Fenced_code (info, List.rev lines) :: c
+      | Rhtml (_, lines) ->
+          Html_block (List.rev lines) :: c
       | Rempty ->
           c
     in
@@ -3035,6 +3042,15 @@ module New = struct
 
   let empty =
     Rdocument ([], Rempty)
+
+  let string_contains s1 s =
+    let rec loop i =
+      if i + String.length s1 > String.length s then
+        false
+      else
+        s1 = String.sub s i (String.length s1) || loop (i + 1)
+    in
+    loop 0
 
   let process (Rdocument (c, next)) s =
     let rec process c s = function
@@ -3056,13 +3072,20 @@ module New = struct
                         | Some (ind, num, info) ->
                             c, Rfenced_code (ind, num, info, [])
                         | None ->
-                            begin match Auxlex.is_list_item s with
-                            | Some (_, indent) ->
-                                let s = String.sub s indent (String.length s - indent) in
-                                let c1, next = process [] s Rempty in
-                                c, Rlist (indent, [], c1, next)
+                            begin match Auxlex.is_html_opening s with
+                            | Some kind ->
+                                let kind = match kind with `Comment -> Hcomment in
+                                let c1, next = process [] s (Rhtml (kind, [])) in
+                                c1 @ c, next
                             | None ->
-                                c, Rparagraph [s]
+                                begin match Auxlex.is_list_item s with
+                                | Some (_, indent) ->
+                                    let s = String.sub s indent (String.length s - indent) in
+                                    let c1, next = process [] s Rempty in
+                                    c, Rlist (indent, [], c1, next)
+                                | None ->
+                                    c, Rparagraph [s]
+                                end
                             end
                         end
                     end
@@ -3091,6 +3114,11 @@ module New = struct
               in
               c, Rfenced_code (ind, num, info, s :: lines)
           end
+      | Rhtml (Hcomment, lines) ->
+          if string_contains "-->" s then
+            close c (Rhtml (Hcomment, s :: lines)), Rempty
+          else
+            c, Rhtml (Hcomment, s :: lines)
       | Rblockquote (c1, next) as self ->
           begin match Auxlex.is_blockquote s with
           | Some n ->
