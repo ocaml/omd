@@ -3005,7 +3005,7 @@ module New = struct
 
   type 'content container =
     | Rblockquote of 'content block list * 'content container
-    | Rlist of 'content block list list * 'content block list * 'content container
+    | Rlist of int * 'content block list list * 'content block list * 'content container
     | Rparagraph of 'content
     | Rempty
 
@@ -3016,7 +3016,7 @@ module New = struct
     let rec finish c = function
       | Rblockquote (closed, next) ->
           Blockquote (List.rev (finish closed next)) :: c
-      | Rlist (closed_items, last_item, next) ->
+      | Rlist (_, closed_items, last_item, next) ->
           List (List.rev (List.rev (finish last_item next) :: closed_items)) :: c
       | Rparagraph content ->
           Paragraph (List.rev content) :: c
@@ -3040,7 +3040,14 @@ module New = struct
                 | true ->
                     Thematic_break :: c, Rempty
                 | false ->
-                    c, Rparagraph [s]
+                    begin match Auxlex.is_list_item s with
+                    | Some (_, indent) ->
+                        let s = String.sub s indent (String.length s - indent) in
+                        let c1, next = process [] s Rempty in
+                        c, Rlist (indent, [], c1, next)
+                    | None ->
+                        c, Rparagraph [s]
+                    end
                 end
             | Some n ->
                 let s = String.sub s n (String.length s - n) in
