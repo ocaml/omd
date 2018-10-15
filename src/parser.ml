@@ -3048,14 +3048,14 @@ module New = struct
                     | Some (n, s) ->
                         Atx_heading (n, s) :: c, Rempty
                     | None ->
-                      begin match Auxlex.is_list_item s with
-                      | Some (_, indent) ->
-                          let s = String.sub s indent (String.length s - indent) in
-                          let c1, next = process [] s Rempty in
-                          c, Rlist (indent, [], c1, next)
-                      | None ->
-                          c, Rparagraph [s]
-                      end
+                        begin match Auxlex.is_list_item s with
+                        | Some (_, indent) ->
+                            let s = String.sub s indent (String.length s - indent) in
+                            let c1, next = process [] s Rempty in
+                            c, Rlist (indent, [], c1, next)
+                        | None ->
+                            c, Rparagraph [s]
+                        end
                     end
                 end
             | Some n ->
