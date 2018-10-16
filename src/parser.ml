@@ -3111,12 +3111,12 @@ module New = struct
     end
 
   let process (Rdocument (c, next)) s =
-    let rec process c s next =
+    let rec process c next s =
       match next, classify_line s with
       | Rempty, Lempty ->
           c, Rempty
       | Rempty, Lblockquote s ->
-          let c1, next = process [] s Rempty in
+          let c1, next = process [] Rempty s in
           c, Rblockquote (c1, next)
       | Rempty, Lthematic_break ->
           Thematic_break :: c, Rempty
@@ -3125,11 +3125,11 @@ module New = struct
       | Rempty, Lfenced_code (ind, num, info) ->
           c, Rfenced_code (ind, num, info, [])
       | Rempty, Lhtml kind ->
-          process c s (Rhtml (kind, []))
+          process c (Rhtml (kind, [])) s
       | Rempty, Lindented_code s ->
           c, Rindented_code [s]
       | Rempty, Llist_item (indent, s) ->
-          let c1, next = process [] s Rempty in
+          let c1, next = process [] Rempty s in
           c, Rlist (indent, [], c1, next)
       | Rempty, Lparagraph s ->
           c, Rparagraph [s]
@@ -3151,31 +3151,31 @@ module New = struct
       | Rindented_code lines, Lindented_code s ->
           c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
-          process (close c self) s Rempty
+          process (close c self) Rempty s
       | Rhtml (Hcomment, lines), _ when string_contains "-->" s ->
           close c (Rhtml (Hcomment, s :: lines)), Rempty
       | Rhtml (Hcomment, lines), _ ->
           c, Rhtml (Hcomment, s :: lines)
       | Rblockquote (c1, next), Lblockquote s ->
-          let c1, next = process c1 s next in
+          let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
       | Rblockquote _ as self, _ ->
-          process (close c self) s Rempty
+          process (close c self) Rempty s
       | Rlist (_, items, c1, next), Llist_item (ind, s) ->
           (* TODO handle loose lists *)
           let c1 = close c1 next in
-          let c2, next = process [] s Rempty in
+          let c2, next = process [] Rempty s in
           c, Rlist (ind, List.rev c1 :: items, c2, next)
       | Rlist (ind, items, c1, next), Lempty ->
-          let c1, next = process c1 s next in
+          let c1, next = process c1 next s in
           c, Rlist (ind, items, c1, next)
       | Rlist (ind, items, c1, next), _ when Auxlex.indent s >= ind ->
           let s = String.sub s ind (String.length s - ind) in
-          let c1, next = process c1 s next in
+          let c1, next = process c1 next s in
           c, Rlist (ind, items, c1, next)
       | Rlist _ as self, _ ->
-          process (close c self) s Rempty
+          process (close c self) Rempty s
     in
-    let c, next = process c s next in
+    let c, next = process c next s in
     Rdocument (c, next)
 end
