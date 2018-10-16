@@ -3055,107 +3055,126 @@ module New = struct
     in
     loop 0
 
-  let process (Rdocument (c, next)) s =
-    let rec process c s = function
-      | Rempty ->
-          if Auxlex.is_empty s then
-            c, Rempty
-          else begin
-            match Auxlex.is_blockquote s with
-            | None ->
-                begin match Auxlex.is_thematic_break s with
-                | true ->
-                    Thematic_break :: c, Rempty
-                | false ->
-                    begin match Auxlex.is_atx_heading s with
-                    | Some (n, s) ->
-                        Atx_heading (n, s) :: c, Rempty
-                    | None ->
-                        begin match Auxlex.is_fenced_code s with
-                        | Some (ind, num, info) ->
-                            c, Rfenced_code (ind, num, info, [])
-                        | None ->
-                            begin match Auxlex.is_html_opening s with
-                            | Some kind ->
-                                let kind = match kind with `Comment -> Hcomment in
-                                process c s (Rhtml (kind, []))
-                            | None ->
-                                if Auxlex.indent s >= 4 then
-                                  (* FIXME handle tab *)
-                                  let s = String.sub s 4 (String.length s - 4) in
-                                  c, Rindented_code [s]
-                                else begin
-                                  match Auxlex.is_list_item s with
-                                  | Some (_, indent) ->
-                                      let s = String.sub s indent (String.length s - indent) in
-                                      let c1, next = process [] s Rempty in
-                                      c, Rlist (indent, [], c1, next)
-                                  | None ->
-                                      c, Rparagraph [s]
-                                end
-                            end
-                        end
-                    end
-                end
-            | Some n ->
-                let s = String.sub s n (String.length s - n) in
-                let c1, next = process [] s Rempty in
-                c, Rblockquote (c1, next)
-          end
-      | Rparagraph lines as self ->
-          if Auxlex.is_empty s then
-            close c self, Rempty
-          else
-            c, Rparagraph (s :: lines)
-      | Rfenced_code (ind, num, info, lines) as self ->
-          begin match Auxlex.is_fenced_code_closing num s with
+  type line_kind =
+    | Lempty
+    | Lblockquote of string
+    | Lthematic_break
+    | Latx_heading of int * string
+    | Lfenced_code of int * int * string
+    | Lindented_code of string
+    | Lhtml of html_kind
+    | Llist_item of int * string
+    | Lparagraph of string
+
+  let classify_line s =
+    if Auxlex.is_empty s then
+      Lempty
+    else begin
+      match Auxlex.is_blockquote s with
+      | Some n ->
+          let s = String.sub s n (String.length s - n) in
+          Lblockquote s
+      | None ->
+          begin match Auxlex.is_thematic_break s with
           | true ->
-              close c self, Rempty
+              Lthematic_break
           | false ->
-              let s =
-                let ind = min (Auxlex.indent s) ind in
-                if ind > 0 then
-                  String.sub s ind (String.length s - ind)
-                else
-                  s
-              in
-              c, Rfenced_code (ind, num, info, s :: lines)
+              begin match Auxlex.is_atx_heading s with
+              | Some (n, s) ->
+                  Latx_heading (n, s)
+              | None ->
+                  begin match Auxlex.is_fenced_code s with
+                  | Some (ind, num, info) ->
+                      Lfenced_code (ind, num, info)
+                  | None ->
+                      begin match Auxlex.is_html_opening s with
+                      | Some kind ->
+                          let kind = match kind with `Comment -> Hcomment in
+                          Lhtml kind
+                      | None ->
+                          if Auxlex.indent s >= 4 then
+                            (* FIXME handle tab *)
+                            let s = String.sub s 4 (String.length s - 4) in
+                            Lindented_code s
+                          else begin
+                            match Auxlex.is_list_item s with
+                            | Some (_, indent) ->
+                                let s = String.sub s indent (String.length s - indent) in
+                                Llist_item (indent, s)
+                            | None ->
+                                Lparagraph s
+                          end
+                      end
+                  end
+              end
           end
-      | Rindented_code lines as self ->
-          if Auxlex.is_empty s || Auxlex.indent s < 4 then
-            process (close c self) s Rempty
-          else
-            let s = String.sub s 4 (String.length s - 4) in
-            c, Rindented_code (s :: lines)
-      | Rhtml (Hcomment, lines) ->
-          if string_contains "-->" s then
-            close c (Rhtml (Hcomment, s :: lines)), Rempty
-          else
-            c, Rhtml (Hcomment, s :: lines)
-      | Rblockquote (c1, next) as self ->
-          begin match Auxlex.is_blockquote s with
-          | Some n ->
-              let s = String.sub s n (String.length s - n) in
-              let c1, next = process c1 s next in
-              c, Rblockquote (c1, next)
-          | None ->
-              process (close c self) s Rempty
-          end
-      | Rlist (ind, items, c1, next) as self ->
-          if Auxlex.is_empty s || Auxlex.indent s >= ind then
-            let s = if Auxlex.is_empty s then s else String.sub s ind (String.length s - ind) in
-            let c1, next = process c1 s next in
-            c, Rlist (ind, items, c1, next)
-          else begin (* TODO handle loose lists *)
-            match Auxlex.is_list_item s with
-            | Some (_, ind) ->
-                let c1 = close c1 next in
-                let s = String.sub s ind (String.length s - ind) in
-                let c2, next = process [] s Rempty in
-                c, Rlist (ind, List.rev c1 :: items, c2, next)
-            | None ->
-                process (close c self) s Rempty
-          end
+    end
+
+  let process (Rdocument (c, next)) s =
+    let rec process c s next =
+      match next, classify_line s with
+      | Rempty, Lempty ->
+          c, Rempty
+      | Rempty, Lblockquote s ->
+          let c1, next = process [] s Rempty in
+          c, Rblockquote (c1, next)
+      | Rempty, Lthematic_break ->
+          Thematic_break :: c, Rempty
+      | Rempty, Latx_heading (n, s) ->
+          Atx_heading (n, s) :: c, Rempty
+      | Rempty, Lfenced_code (ind, num, info) ->
+          c, Rfenced_code (ind, num, info, [])
+      | Rempty, Lhtml kind ->
+          process c s (Rhtml (kind, []))
+      | Rempty, Lindented_code s ->
+          c, Rindented_code [s]
+      | Rempty, Llist_item (indent, s) ->
+          let c1, next = process [] s Rempty in
+          c, Rlist (indent, [], c1, next)
+      | Rempty, Lparagraph s ->
+          c, Rparagraph [s]
+      | Rparagraph _ as self, Lempty ->
+          close c self, Rempty
+      | Rparagraph lines, _ ->
+          c, Rparagraph (s :: lines)
+      | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
+          close c self, Rempty
+      | Rfenced_code (ind, num, info, lines), _ ->
+          let s =
+            let ind = min (Auxlex.indent s) ind in
+            if ind > 0 then
+              String.sub s ind (String.length s - ind)
+            else
+              s
+          in
+          c, Rfenced_code (ind, num, info, s :: lines)
+      | Rindented_code lines, Lindented_code s ->
+          c, Rindented_code (s :: lines)
+      | Rindented_code _ as self, _ ->
+          process (close c self) s Rempty
+      | Rhtml (Hcomment, lines), _ when string_contains "-->" s ->
+          close c (Rhtml (Hcomment, s :: lines)), Rempty
+      | Rhtml (Hcomment, lines), _ ->
+          c, Rhtml (Hcomment, s :: lines)
+      | Rblockquote (c1, next), Lblockquote s ->
+          let c1, next = process c1 s next in
+          c, Rblockquote (c1, next)
+      | Rblockquote _ as self, _ ->
+          process (close c self) s Rempty
+      | Rlist (_, items, c1, next), Llist_item (ind, s) ->
+          (* TODO handle loose lists *)
+          let c1 = close c1 next in
+          let c2, next = process [] s Rempty in
+          c, Rlist (ind, List.rev c1 :: items, c2, next)
+      | Rlist (ind, items, c1, next), Lempty ->
+          let c1, next = process c1 s next in
+          c, Rlist (ind, items, c1, next)
+      | Rlist (ind, items, c1, next), _ when Auxlex.indent s >= ind ->
+          let s = String.sub s ind (String.length s - ind) in
+          let c1, next = process c1 s next in
+          c, Rlist (ind, items, c1, next)
+      | Rlist _ as self, _ ->
+          process (close c self) s Rempty
     in
     let c, next = process c s next in
     Rdocument (c, next)
