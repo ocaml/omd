@@ -27,3 +27,5 @@ end with type blocks := string t list
 val to_html : ('a -> string) -> 'a t -> string
 
 val of_channel : in_channel -> string t list
+
+val print : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit

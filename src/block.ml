@@ -283,3 +283,25 @@ let of_channel ic =
         Parser.finish state
   in
   loop Parser.empty
+
+module F = Format
+
+let rec print f ppf = function
+  | Paragraph x ->
+      F.fprintf ppf "@[<1>(paragraph@ %a)@]" f x
+  | List (_, xs) ->
+      let pp ppf x =
+        F.fprintf ppf "@[<1>(%a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space (print f)) x
+      in
+      F.fprintf ppf "@[<1>(list@ %a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space pp) xs
+  | Blockquote xs ->
+      F.fprintf ppf "@[<1>(blockquote@ %a)@]"
+        (F.pp_print_list ~pp_sep:F.pp_print_space (print f)) xs
+  | Thematic_break ->
+      F.pp_print_string ppf "thematic-break"
+  | Atx_heading (i, x) ->
+      F.fprintf ppf "@[<1>(atx %d@ %a)@]" i f x
+  | Code_block (lang, x) ->
+      F.fprintf ppf "@[<1>(code:%s %S)@]" lang x
+  | Html_block x ->
+      F.fprintf ppf "@[<1>(html %S)@]" x

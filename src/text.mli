@@ -3,13 +3,13 @@ type t =
   | Text of string
   | Emph of t
   | Bold of t
-  | Code of name * string
+  | Code of string
   | Br
   | NL
   | Url of href * t * title
   | Ref of name * string * fallback
   | Img_ref of name * alt * fallback
-  | Html of name * (string * string option) list * t
+  | Html of string
   | Raw of string
   | Img of alt * src * title
 
@@ -19,6 +19,8 @@ and alt = string
 and src = string
 and href = string
 and title = string
+
+val print : Format.formatter -> t -> unit
 
 val html_of_md : t -> string
 val markdown_of_md : t -> string

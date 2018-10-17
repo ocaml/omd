@@ -14,13 +14,13 @@ type t =
   | Text of string
   | Emph of t
   | Bold of t
-  | Code of name * string
+  | Code of string
   | Br
   | NL
   | Url of href * t * title
   | Ref of name * string * fallback
   | Img_ref of name * alt * fallback
-  | Html of name * (string * string option) list * t
+  | Html of string
   | Raw of string
   | Img of alt * src * title
 
@@ -31,15 +31,33 @@ and src = string
 and href = string
 and title = string
 
-let filter_text_omd_rev l =
-  let rec loop b r = function
-    | [] -> if b then r else l
-    | ("media:type", Some "text/omd")::tl ->
-        loop true r tl
-    | e::tl ->
-        loop b (e::r) tl
-  in
-  loop false [] l
+module F = Format
+
+let rec print ppf = function
+  | Cat l ->
+      F.pp_print_list ~pp_sep:F.pp_print_space print ppf l
+  | Text s ->
+      F.fprintf ppf "%S" s
+  | Emph x ->
+      F.fprintf ppf "@[<1>(emph@ %a)@]" print x
+  | Bold x ->
+      F.fprintf ppf "@[<1>(bold@ %a)@]" print x
+  | Code x ->
+      F.fprintf ppf "@[<1>(code@ %S)@]" x
+  | Br ->
+      F.pp_print_string ppf "br"
+  | NL ->
+      F.pp_print_string ppf "NL"
+  | Url (url, _, _) ->
+      F.fprintf ppf "@[<1>(url@ %S)@]" url
+  | Ref (_, s, _) | Img_ref (_, s, _) ->
+      F.fprintf ppf "@[<1>(ref@ %S)@]" s
+  | Html html ->
+      F.fprintf ppf "@[<1>(html@ %S)@]" html
+  | Raw s ->
+      F.fprintf ppf "%S" s
+  | Img (_, src, _) ->
+      F.fprintf ppf "@[<1>(img@ %S)@]" src
 
 let rec html_of_md md =
   let b = Buffer.create 64 in
@@ -71,24 +89,16 @@ let rec html_of_md md =
         Buffer.add_string b "<strong>";
         loop md;
         Buffer.add_string b "</strong>"
-    | Code(lang, c) ->
-        if lang = "" then
-          Buffer.add_string b "<code>"
-        else
-          bprintf b "<code class='%s'>" lang;
+    | Code c ->
+        Buffer.add_string b "<code>";
         Buffer.add_string b (htmlentities ~md:false c);
         Buffer.add_string b "</code>"
     | Br ->
         Buffer.add_string b "<br/>"
     | Raw s ->
         Buffer.add_string b s
-    | Html(tagname, attrs, body) ->
-        let attrs = filter_text_omd_rev attrs in
-        Printf.bprintf b "<%s" tagname;
-        Buffer.add_string b (string_of_attrs attrs);
-        Buffer.add_string b ">";
-        loop body;
-        Printf.bprintf b "</%s>" tagname
+    | Html body ->
+        Buffer.add_string b body
     | Url (href,s,title) ->
         let s = html_of_md s in
         Buffer.add_string b "<a href='";
@@ -106,24 +116,6 @@ let rec html_of_md md =
         Buffer.add_string b "\n"
   in
   loop md;
-  Buffer.contents b
-
-and string_of_attrs attrs =
-  let b = Buffer.create 1024 in
-  List.iter (function
-      | (a, Some v) ->
-          if not(String.contains v '\'') then
-            Printf.bprintf b " %s='%s'" a v
-          else if not(String.contains v '"') then
-            Printf.bprintf b " %s=\"%s\"" a v
-          else
-            Printf.bprintf b " %s=\"%s\"" a v
-      | a, None ->
-          (* if html4 then *)
-          (*   Printf.bprintf b " %s='%s'" a a *)
-          (* else *)
-          Printf.bprintf b " %s=''" a (* HTML5 *)
-    ) attrs;
   Buffer.contents b
 
 let escape_markdown_characters s =
@@ -194,7 +186,7 @@ let rec markdown_of_md md =
         Buffer.add_string b "**";
         loop md;
         Buffer.add_string b "**"
-    | Code (_lang, c) ->
+    | Code c ->
         let n = (* compute how many backquotes we need to use *)
           let filter (n:int) (s:int list) =
             if n > 0 && n < 10 then
@@ -225,16 +217,8 @@ let rec markdown_of_md md =
         Buffer.add_string b "<br />"
     | Raw s ->
         Buffer.add_string b s
-    | Html(tagname, attrs, body) ->
-        let a = filter_text_omd_rev attrs in
-        Printf.bprintf b "<%s" tagname;
-        Buffer.add_string b (string_of_attrs a);
-        Buffer.add_string b ">";
-        if a == attrs then
-          loop body
-        else
-          Buffer.add_string b (html_of_md body);
-        Printf.bprintf b "</%s>" tagname
+    | Html body ->
+        Buffer.add_string b body
     | Url (href,s,title) ->
         if title = "" then
           bprintf b "[%s](%s)" (markdown_of_md s) href
@@ -543,7 +527,7 @@ struct
     eat (function Delim (_, (Space | Newline)) -> true| _ -> false)
 
   (* [bcode] parses code that's delimited by backquote(s) *)
-  let bcode ?(default_lang = default_lang) r _p l =
+  let bcode r _p l =
     assert_well_formed l;
     let e, tl =
       match l with
@@ -593,7 +577,7 @@ struct
         let code = L.string_of_tokens cb in
         if debug then
           eprintf "(OMD) clean_bcode %S => %S\n%!" code (clean_bcode code);
-        Some (Code (default_lang, clean_bcode code) :: r, [Delim (1, Backquote)], l)
+        Some (Code (clean_bcode code) :: r, [Delim (1, Backquote)], l)
 
   exception NL_exception
   exception Premature_ending
@@ -1063,7 +1047,7 @@ struct
 
     (* backquotes *)
     | _, (Delim (_, Backquote) as t) :: tl ->
-        begin match bcode ~default_lang r previous lexemes with
+        begin match bcode r previous lexemes with
         | Some(r, p, l) -> main_impl_rev ~html r p l
         | None -> main_impl_rev ~html (Text (L.string_of_token t)::r) [t] tl
         end
@@ -1101,8 +1085,8 @@ struct
               let rec md_of_interm_list = function
                 | [] ->
                     []
-                | HTML (t, a, c) :: tl ->
-                    Html (t, a, Cat (md_of_interm_list (List.rev c))) :: md_of_interm_list tl
+                | HTML _ :: tl ->
+                    Html "TODO" :: md_of_interm_list tl
                 | MD md :: tl ->
                     md :: md_of_interm_list tl
                 | TOKENS t1 :: TOKENS t2 :: tl ->
