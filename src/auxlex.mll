@@ -61,10 +61,25 @@ and is_fenced_code = parse
     { None }
 
 and is_html_opening = parse
-  | sp3 "<!--" { Some (`Contains "-->") }
-  | sp3 "<?" { Some (`Contains "?>") }
-  | sp3 "<!" { Some (`Contains ">") }
-  | sp3 "<![CDATA[" { Some (`Contains "]]>") }
+  | sp3 "<!--" { Some (`Contains ["-->"]) }
+  | sp3 "<?" { Some (`Contains ["?>"]) }
+  | sp3 "<!" { Some (`Contains [">"]) }
+  | sp3 "<![CDATA[" { Some (`Contains ["]]>"]) }
+  | sp3 ("<script" | "<pre" | "<style") ws ('>' | eof)
+      { Some (`Contains ["</script>"; "</pre>"; "</style>"]) }
+  | sp3 '<' '/'?
+      ("address" | "aside" | "base" | "basefont" | "blockquote" |
+       "body" | "caption" | "center" | "col" | "colgroup" | "dd" |
+       "details" | "dialog" | "dir" | "div" | "dl" | "dt" |
+       "fieldset" | "figcaption" | "figure" | "footer" | "form" |
+       "frame" | "frameset" | "h1" | "h2" | "h3" | "h4" | "h5" |
+       "h6" | "head" | "header" | "hr" | "html" | "iframe" | "legend" |
+       "li" | "link" | "main" | "menu" | "menuitem" | "meta" | "nav" |
+       "noframes" | "ol" | "optgroup" | "option" | "p" | "param" |
+       "section" | "source" | "summary" | "table" | "tbody" |
+       "td" | "tfoot" | "th" | "thead" | "title" | "tr" | "track" |
+       "ul") ws ('/'?'>' | eof)
+      { Some `Blank }
   | _ | eof { None }
 
 {

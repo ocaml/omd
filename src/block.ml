@@ -26,7 +26,7 @@ module Parser = struct
   type blocks = string t list
 
   type html_kind =
-    | Hcontains of string
+    | Hcontains of string list
     | Hblank
 
   type container =
@@ -112,7 +112,7 @@ module Parser = struct
                       | Some kind ->
                           let kind =
                             match kind with
-                            | `Contains s -> Hcontains s
+                            | `Contains l -> Hcontains l
                             | `Blank -> Hblank
                           in
                           Lhtml kind
@@ -182,7 +182,7 @@ module Parser = struct
           c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
           process (close c self) Rempty s
-      | Rhtml (Hcontains t as k, lines), _ when string_contains t s ->
+      | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
           close c (Rhtml (k, s :: lines)), Rempty
       | Rhtml (Hblank, _) as self, Lempty ->
           close c self, Rempty
