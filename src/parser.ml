@@ -3133,8 +3133,8 @@ module New = struct
           c, Rlist (indent, [], c1, next)
       | Rempty, Lparagraph s ->
           c, Rparagraph [s]
-      | Rparagraph _ as self, Lempty ->
-          close c self, Rempty
+      | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _) ->
+          process (close c self) Rempty s
       | Rparagraph lines, _ ->
           c, Rparagraph (s :: lines)
       | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
