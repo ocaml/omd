@@ -3,9 +3,9 @@ type 'a t =
   | List of 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
-  | Atx_heading of int * string
-  | Code_block of string * 'a
-  | Html_block of 'a
+  | Atx_heading of int * 'a
+  | Code_block of string * string
+  | Html_block of string
 
 val map: f:('a -> 'b) -> 'a t -> 'b t
 
@@ -17,3 +17,7 @@ module Parser : sig
   val process : t -> string -> t
   val finish : t -> blocks
 end with type blocks := string t list
+
+val to_html : ('a -> string) -> 'a t -> string
+
+val of_channel : in_channel -> string t list

@@ -3,17 +3,18 @@ type 'a t =
   | List of 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
-  | Atx_heading of int * string
-  | Code_block of string * 'a
-  | Html_block of 'a
+  | Atx_heading of int * 'a
+  | Code_block of string * string
+  | Html_block of string
 
 let rec map ~f = function
   | Paragraph x -> Paragraph (f x)
   | List xs -> List (List.map (List.map (map ~f)) xs)
   | Blockquote xs -> Blockquote (List.map (map ~f) xs)
-  | Thematic_break | Atx_heading _ as x -> x
-  | Code_block (s, x) -> Code_block (s, f x)
-  | Html_block x -> Html_block (f x)
+  | Thematic_break -> Thematic_break
+  | Atx_heading (i, x) -> Atx_heading (i, f x)
+  | Code_block _ as x -> x
+  | Html_block _ as x -> x
 
 module Parser = struct
   type blocks = string t list
@@ -220,3 +221,55 @@ module Parser = struct
     let c, next = process c next s in
     Rdocument (c, next)
 end
+
+let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
+  let b = Buffer.create 64 in
+  let rec loop indent = function
+    | Blockquote q ->
+        Buffer.add_string b "<blockquote>";
+        List.iter (loop indent) q;
+        Buffer.add_string b "</blockquote>"
+    | Paragraph md ->
+        Buffer.add_string b "<p>";
+        Buffer.add_string b (f md);
+        Buffer.add_string b "</p>\n"
+    | List l ->
+        Buffer.add_string b "<ol>";
+        List.iter (fun li ->
+            Buffer.add_string b "<li>";
+            List.iter (loop (indent+2)) li;
+            Buffer.add_string b "</li>"
+          ) l;
+        Buffer.add_string b "</ol>"
+    | Code_block(lang, c) ->
+        if lang = "" then
+          Buffer.add_string b "<pre><code>"
+        else
+          Printf.bprintf b "<pre class='%s'><code class='%s'>" lang lang;
+        Buffer.add_string b c;
+        Buffer.add_string b "</code></pre>"
+    | Thematic_break ->
+        Buffer.add_string b "<hr />"
+    | Html_block body ->
+        Buffer.add_string b body
+    | Atx_heading (i, md) ->
+        let md = f md in
+        let id = "foo" in (* FIXME *)
+        Buffer.add_string b (Printf.sprintf "<h%d id=\"" i);
+        Buffer.add_string b id;
+        Buffer.add_string b "\">";
+        Buffer.add_string b md;
+        Buffer.add_string b (Printf.sprintf "</h%d>" i)
+  in
+  loop 0 md;
+  Buffer.contents b
+
+let of_channel ic =
+  let rec loop state =
+    match input_line ic with
+    | s ->
+        loop (Parser.process state s)
+    | exception End_of_file ->
+        Parser.finish state
+  in
+  loop Parser.empty

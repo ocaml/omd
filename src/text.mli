@@ -20,6 +20,7 @@ and src = string
 and href = string
 and title = string
 
+val html_of_md : t -> string
 val markdown_of_md : t -> string
 
 module type Env =

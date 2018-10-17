@@ -7,7 +7,7 @@
  (libraries bigarray))
 
 (executable
- (name main)
+ (name simple_main)
  (public_name omd)
- (modules main)
+ (modules simple_main)
  (libraries omd))

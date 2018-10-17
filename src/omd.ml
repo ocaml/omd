@@ -10,6 +10,8 @@ module Utils = Utils
 module Backend = Backend
 module Parser = Parser
 module Lexer = Lexer
+module Block = Block
+module Text = Text
 
 include Representation
 include Backend
