@@ -61,7 +61,10 @@ and is_fenced_code = parse
     { None }
 
 and is_html_opening = parse
-  | sp3 "<!--" { Some `Comment }
+  | sp3 "<!--" { Some (`Contains "-->") }
+  | sp3 "<?" { Some (`Contains "?>") }
+  | sp3 "<!" { Some (`Contains ">") }
+  | sp3 "<![CDATA[" { Some (`Contains "]]>") }
   | _ | eof { None }
 
 {

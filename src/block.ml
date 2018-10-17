@@ -26,7 +26,8 @@ module Parser = struct
   type blocks = string t list
 
   type html_kind =
-    | Hcomment
+    | Hcontains of string
+    | Hblank
 
   type container =
     | Rblockquote of blocks * container
@@ -109,7 +110,11 @@ module Parser = struct
                   | None ->
                       begin match Auxlex.is_html_opening s with
                       | Some kind ->
-                          let kind = match kind with `Comment -> Hcomment in
+                          let kind =
+                            match kind with
+                            | `Contains s -> Hcontains s
+                            | `Blank -> Hblank
+                          in
                           Lhtml kind
                       | None ->
                           if Auxlex.indent s >= 4 then
@@ -177,10 +182,12 @@ module Parser = struct
           c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
           process (close c self) Rempty s
-      | Rhtml (Hcomment, lines), _ when string_contains "-->" s ->
-          close c (Rhtml (Hcomment, s :: lines)), Rempty
-      | Rhtml (Hcomment, lines), _ ->
-          c, Rhtml (Hcomment, s :: lines)
+      | Rhtml (Hcontains t as k, lines), _ when string_contains t s ->
+          close c (Rhtml (k, s :: lines)), Rempty
+      | Rhtml (Hblank, _) as self, Lempty ->
+          close c self, Rempty
+      | Rhtml (k, lines), _ ->
+          c, Rhtml (k, s :: lines)
       | Rblockquote (c1, next), Lblockquote s ->
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
@@ -264,7 +271,8 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
     | Thematic_break ->
         Buffer.add_string b "<hr />\n"
     | Html_block body ->
-        Buffer.add_string b body
+        Buffer.add_string b body;
+        Buffer.add_char b '\n'
     | Atx_heading (i, md) ->
         let md = f md in
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
