@@ -399,19 +399,19 @@ module New : sig
   type html_kind =
     | Hcomment
 
-  type 'content container =
-    | Rblockquote of 'content block list * 'content container
-    | Rlist of int * 'content block list list * 'content block list * 'content container
-    | Rparagraph of 'content
-    | Rfenced_code of int * int * string * 'content
-    | Rindented_code of 'content
-    | Rhtml of html_kind * 'content
+  type container =
+    | Rblockquote of string block list * container
+    | Rlist of int * string block list list * string block list * container
+    | Rparagraph of string list
+    | Rfenced_code of int * int * string * string list
+    | Rindented_code of string list
+    | Rhtml of html_kind * string list
     | Rempty
 
-  type 'content state =
-    | Rdocument of 'content block list * 'content container
+  type state =
+    | Rdocument of string block list * container
 
-  val finish : 'a list state -> 'a list block list
-  val empty : 'content state
-  val process : string list state -> string -> string list state
+  val finish : state -> string block list
+  val empty : state
+  val process : state -> string -> state
 end

@@ -3009,32 +3009,33 @@ module New = struct
   type html_kind =
     | Hcomment
 
-  type 'content container =
-    | Rblockquote of 'content block list * 'content container
-    | Rlist of int * 'content block list list * 'content block list * 'content container
-    | Rparagraph of 'content
-    | Rfenced_code of int * int * string * 'content
-    | Rindented_code of 'content
-    | Rhtml of html_kind * 'content
+  type container =
+    | Rblockquote of string block list * container
+    | Rlist of int * string block list list * string block list * container
+    | Rparagraph of string list
+    | Rfenced_code of int * int * string * string list
+    | Rindented_code of string list
+    | Rhtml of html_kind * string list
     | Rempty
 
-  type 'content state =
-    | Rdocument of 'content block list * 'content container
+  type state =
+    | Rdocument of string block list * container
 
-  let close c next =
+  let close c next : string block list =
+    let concat l = String.concat "\n" (List.rev l) in
     let rec close c = function
       | Rblockquote (closed, next) ->
           Blockquote (List.rev (close closed next)) :: c
       | Rlist (_, closed_items, last_item, next) ->
           List (List.rev (List.rev (close last_item next) :: closed_items)) :: c
-      | Rparagraph content ->
-          Paragraph (List.rev content) :: c
-      | Rfenced_code (_, _, info, lines) ->
-          Code_block (info, List.rev lines) :: c
-      | Rindented_code lines ->
-          Code_block ("", List.rev lines) :: c
-      | Rhtml (_, lines) ->
-          Html_block (List.rev lines) :: c
+      | Rparagraph l ->
+          Paragraph (concat l) :: c
+      | Rfenced_code (_, _, info, l) ->
+          Code_block (info, concat l) :: c
+      | Rindented_code l ->
+          Code_block ("", concat l) :: c
+      | Rhtml (_, l) ->
+          Html_block (concat l) :: c
       | Rempty ->
           c
     in
