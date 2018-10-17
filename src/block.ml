@@ -258,8 +258,8 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
         if lang = "" then
           Buffer.add_string b "<pre><code>"
         else
-          Printf.bprintf b "<pre><code class='%s'>" lang;
-        Buffer.add_string b c;
+          Printf.bprintf b "<pre><code class='language-%s'>" lang;
+        Buffer.add_string b (Utils.htmlentities ~md:false c);
         Buffer.add_string b "\n</code></pre>\n"
     | Thematic_break ->
         Buffer.add_string b "<hr />\n"
