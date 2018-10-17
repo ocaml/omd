@@ -32,7 +32,7 @@ let main () =
       Format.eprintf "@[<v>%a@]@."
         (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Text.print)) md
     else begin
-      let html = String.concat "\n" (List.map (Block.to_html Text.html_of_md) md) in
+      let html = String.concat "" (List.map (Block.to_html Text.html_of_md) md) in
       output_string output html;
       flush output
     end
