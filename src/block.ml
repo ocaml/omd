@@ -1,6 +1,12 @@
+module List_kind = struct
+  type t =
+    | Ordered
+    | Unordered
+end
+
 type 'a t =
   | Paragraph of 'a
-  | List of 'a t list list
+  | List of List_kind.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
   | Atx_heading of int * 'a
@@ -9,7 +15,7 @@ type 'a t =
 
 let rec map ~f = function
   | Paragraph x -> Paragraph (f x)
-  | List xs -> List (List.map (List.map (map ~f)) xs)
+  | List (k, xs) -> List (k, List.map (List.map (map ~f)) xs)
   | Blockquote xs -> Blockquote (List.map (map ~f) xs)
   | Thematic_break -> Thematic_break
   | Atx_heading (i, x) -> Atx_heading (i, f x)
@@ -24,7 +30,7 @@ module Parser = struct
 
   type container =
     | Rblockquote of blocks * container
-    | Rlist of int * blocks list * blocks * container
+    | Rlist of List_kind.t * int * blocks list * blocks * container
     | Rparagraph of string list
     | Rfenced_code of int * int * string * string list
     | Rindented_code of string list
@@ -39,8 +45,8 @@ module Parser = struct
     let rec close c = function
       | Rblockquote (closed, next) ->
           Blockquote (List.rev (close closed next)) :: c
-      | Rlist (_, closed_items, last_item, next) ->
-          List (List.rev (List.rev (close last_item next) :: closed_items)) :: c
+      | Rlist (kind, _, closed_items, last_item, next) ->
+          List (kind, List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph l ->
           Paragraph (concat l) :: c
       | Rfenced_code (_, _, info, l) ->
@@ -77,7 +83,7 @@ module Parser = struct
     | Lfenced_code of int * int * string
     | Lindented_code of string
     | Lhtml of html_kind
-    | Llist_item of int * string
+    | Llist_item of List_kind.t * int * string
     | Lparagraph of string
 
   let classify_line s =
@@ -112,9 +118,14 @@ module Parser = struct
                             Lindented_code s
                           else begin
                             match Auxlex.is_list_item s with
-                            | Some (_, indent) ->
+                            | Some (kind, indent) ->
+                                let kind =
+                                  match kind with
+                                  | Bullet _ -> List_kind.Unordered
+                                  | Ordered _ -> Ordered
+                                in
                                 let s = String.sub s indent (String.length s - indent) in
-                                Llist_item (indent, s)
+                                Llist_item (kind, indent, s)
                             | None ->
                                 Lparagraph s
                           end
@@ -142,9 +153,9 @@ module Parser = struct
           process c (Rhtml (kind, [])) s
       | Rempty, Lindented_code s ->
           c, Rindented_code [s]
-      | Rempty, Llist_item (indent, s) ->
+      | Rempty, Llist_item (kind, indent, s) ->
           let c1, next = process [] Rempty s in
-          c, Rlist (indent, [], c1, next)
+          c, Rlist (kind, indent, [], c1, next)
       | Rempty, Lparagraph s ->
           c, Rparagraph [s]
       | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _) ->
@@ -173,24 +184,24 @@ module Parser = struct
       | Rblockquote (c1, next), Lblockquote s ->
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
-      | Rlist (_, items, c1, next), Llist_item (ind, s) ->
+      | Rlist (kind, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
           (* TODO handle loose lists *)
           let c1 = close c1 next in
           let c2, next = process [] Rempty s in
-          c, Rlist (ind, List.rev c1 :: items, c2, next)
-      | Rlist (ind, items, c1, next), Lempty ->
+          c, Rlist (kind, ind, List.rev c1 :: items, c2, next)
+      | Rlist (kind, ind, items, c1, next), Lempty ->
           let c1, next = process c1 next s in
-          c, Rlist (ind, items, c1, next)
-      | Rlist (ind, items, c1, next), _ when Auxlex.indent s >= ind ->
+          c, Rlist (kind, ind, items, c1, next)
+      | Rlist (kind, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
           let s = String.sub s ind (String.length s - ind) in
           let c1, next = process c1 next s in
-          c, Rlist (ind, items, c1, next)
+          c, Rlist (kind, ind, items, c1, next)
       | (Rlist _ | Rblockquote _ as self), _ ->
           let rec loop = function
-            | Rlist (ind, items, c, next) ->
+            | Rlist (kind, ind, items, c, next) ->
                 begin match loop next with
                 | Some next ->
-                    Some (Rlist (ind, items, c, next))
+                    Some (Rlist (kind, ind, items, c, next))
                 | None ->
                     None
                 end
@@ -224,23 +235,25 @@ end
 
 let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
   let b = Buffer.create 64 in
-  let rec loop indent = function
+  let rec loop ~p indent = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>";
-        List.iter (loop indent) q;
+        List.iter (loop ~p:true indent) q;
         Buffer.add_string b "</blockquote>"
     | Paragraph md ->
-        Buffer.add_string b "<p>";
+        if p then Buffer.add_string b "<p>";
         Buffer.add_string b (f md);
-        Buffer.add_string b "</p>\n"
-    | List l ->
-        Buffer.add_string b "<ol>";
+        if p then Buffer.add_string b "</p>\n"
+    | List (kind, l) ->
+        Buffer.add_string b
+          (match kind with List_kind.Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
         List.iter (fun li ->
             Buffer.add_string b "<li>";
-            List.iter (loop (indent+2)) li;
-            Buffer.add_string b "</li>"
+            List.iter (loop ~p:false (indent + 2)) li;
+            Buffer.add_string b "</li>\n"
           ) l;
-        Buffer.add_string b "</ol>"
+        Buffer.add_string b
+          (match kind with List_kind.Ordered -> "</ol>\n" | Unordered -> "</ul>\n")
     | Code_block(lang, c) ->
         if lang = "" then
           Buffer.add_string b "<pre><code>"
@@ -254,14 +267,14 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
         Buffer.add_string b body
     | Atx_heading (i, md) ->
         let md = f md in
-        let id = "foo" in (* FIXME *)
+        let id = "foo" in
         Buffer.add_string b (Printf.sprintf "<h%d id=\"" i);
         Buffer.add_string b id;
         Buffer.add_string b "\">";
         Buffer.add_string b md;
         Buffer.add_string b (Printf.sprintf "</h%d>" i)
   in
-  loop 0 md;
+  loop ~p:true 0 md;
   Buffer.contents b
 
 let of_channel ic =

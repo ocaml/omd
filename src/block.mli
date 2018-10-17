@@ -1,6 +1,12 @@
+module List_kind : sig
+  type t =
+    | Ordered
+    | Unordered
+end
+
 type 'a t =
   | Paragraph of 'a
-  | List of 'a t list list
+  | List of List_kind.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
   | Atx_heading of int * 'a
