@@ -9,7 +9,7 @@ type 'a t =
   | List of List_kind.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
-  | Atx_heading of int * 'a
+  | Heading of int * 'a
   | Code_block of string * string
   | Html_block of string
 

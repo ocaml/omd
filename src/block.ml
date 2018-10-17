@@ -9,7 +9,7 @@ type 'a t =
   | List of List_kind.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
-  | Atx_heading of int * 'a
+  | Heading of int * 'a
   | Code_block of string * string
   | Html_block of string
 
@@ -18,7 +18,7 @@ let rec map ~f = function
   | List (k, xs) -> List (k, List.map (List.map (map ~f)) xs)
   | Blockquote xs -> Blockquote (List.map (map ~f) xs)
   | Thematic_break -> Thematic_break
-  | Atx_heading (i, x) -> Atx_heading (i, f x)
+  | Heading (i, x) -> Heading (i, f x)
   | Code_block _ as x -> x
   | Html_block _ as x -> x
 
@@ -151,7 +151,7 @@ module Parser = struct
       | Rempty, Lthematic_break ->
           Thematic_break :: c, Rempty
       | Rempty, Latx_heading (n, s) ->
-          Atx_heading (n, s) :: c, Rempty
+          Heading (n, s) :: c, Rempty
       | Rempty, Lfenced_code (ind, num, info) ->
           c, Rfenced_code (ind, num, info, [])
       | Rempty, Lhtml kind ->
@@ -273,7 +273,7 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
     | Html_block body ->
         Buffer.add_string b body;
         Buffer.add_char b '\n'
-    | Atx_heading (i, md) ->
+    | Heading (i, md) ->
         let md = f md in
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
         Buffer.add_string b md;
@@ -298,17 +298,15 @@ let rec print f ppf = function
   | Paragraph x ->
       F.fprintf ppf "@[<1>(paragraph@ %a)@]" f x
   | List (_, xs) ->
-      let pp ppf x =
-        F.fprintf ppf "@[<1>(%a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space (print f)) x
-      in
+      let pp ppf x = F.pp_print_list ~pp_sep:F.pp_print_space (print f) ppf x in
       F.fprintf ppf "@[<1>(list@ %a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space pp) xs
   | Blockquote xs ->
       F.fprintf ppf "@[<1>(blockquote@ %a)@]"
         (F.pp_print_list ~pp_sep:F.pp_print_space (print f)) xs
   | Thematic_break ->
       F.pp_print_string ppf "thematic-break"
-  | Atx_heading (i, x) ->
-      F.fprintf ppf "@[<1>(atx %d@ %a)@]" i f x
+  | Heading (i, x) ->
+      F.fprintf ppf "@[<1>(heading %d@ %a)@]" i f x
   | Code_block (lang, x) ->
       F.fprintf ppf "@[<1>(code:%s %S)@]" lang x
   | Html_block x ->
