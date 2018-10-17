@@ -237,9 +237,9 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
   let b = Buffer.create 64 in
   let rec loop ~p indent = function
     | Blockquote q ->
-        Buffer.add_string b "<blockquote>";
+        Buffer.add_string b "<blockquote>\n";
         List.iter (loop ~p:true indent) q;
-        Buffer.add_string b "</blockquote>"
+        Buffer.add_string b "</blockquote>\n"
     | Paragraph md ->
         if p then Buffer.add_string b "<p>";
         Buffer.add_string b (f md);
