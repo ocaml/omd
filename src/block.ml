@@ -262,7 +262,7 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
         Buffer.add_string b c;
         Buffer.add_string b "</code></pre>"
     | Thematic_break ->
-        Buffer.add_string b "<hr />"
+        Buffer.add_string b "<hr />\n"
     | Html_block body ->
         Buffer.add_string b body
     | Atx_heading (i, md) ->
