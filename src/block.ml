@@ -267,12 +267,9 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
         Buffer.add_string b body
     | Atx_heading (i, md) ->
         let md = f md in
-        let id = "foo" in
-        Buffer.add_string b (Printf.sprintf "<h%d id=\"" i);
-        Buffer.add_string b id;
-        Buffer.add_string b "\">";
+        Buffer.add_string b (Printf.sprintf "<h%d>" i);
         Buffer.add_string b md;
-        Buffer.add_string b (Printf.sprintf "</h%d>" i)
+        Buffer.add_string b (Printf.sprintf "</h%d>\n" i)
   in
   loop ~p:true 0 md;
   Buffer.contents b
