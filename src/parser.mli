@@ -385,33 +385,3 @@ module Make : functor (Env : Env) -> sig
   val parse : Representation.tok list -> Representation.t
 
 end
-
-module New : sig
-  type 'content block =
-    | Paragraph of 'content
-    | List of 'content block list list
-    | Blockquote of 'content block list
-    | Thematic_break
-    | Atx_heading of int * string
-    | Code_block of string * 'content
-    | Html_block of 'content
-
-  type html_kind =
-    | Hcomment
-
-  type container =
-    | Rblockquote of string block list * container
-    | Rlist of int * string block list list * string block list * container
-    | Rparagraph of string list
-    | Rfenced_code of int * int * string * string list
-    | Rindented_code of string list
-    | Rhtml of html_kind * string list
-    | Rempty
-
-  type state =
-    | Rdocument of string block list * container
-
-  val finish : state -> string block list
-  val empty : state
-  val process : state -> string -> state
-end
