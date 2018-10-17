@@ -21,9 +21,9 @@ let ws = [' ''\t']*
 let sp3 = ' '? ' '? ' '?
 
 rule is_thematic_break = parse
-  | sp3 '*' ws '*' ws '*' ws eof
-  | sp3 '_' ws '_' ws '_' ws eof
-  | sp3 '-' ws '-' ws '-' ws eof { true }
+  | sp3 '*' ws '*' ws ('*' ws)+ eof
+  | sp3 '_' ws '_' ws ('_' ws)+ eof
+  | sp3 '-' ws '-' ws ('-' ws)+ eof { true }
   | _ | eof { false }
 
 and is_empty = parse
