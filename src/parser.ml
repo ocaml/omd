@@ -3159,8 +3159,6 @@ module New = struct
       | Rblockquote (c1, next), Lblockquote s ->
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
-      | Rblockquote _ as self, _ ->
-          process (close c self) Rempty s
       | Rlist (_, items, c1, next), Llist_item (ind, s) ->
           (* TODO handle loose lists *)
           let c1 = close c1 next in
@@ -3173,8 +3171,38 @@ module New = struct
           let s = String.sub s ind (String.length s - ind) in
           let c1, next = process c1 next s in
           c, Rlist (ind, items, c1, next)
-      | Rlist _ as self, _ ->
-          process (close c self) Rempty s
+      | (Rlist _ | Rblockquote _ as self), _ ->
+          let rec loop = function
+            | Rlist (ind, items, c, next) ->
+                begin match loop next with
+                | Some next ->
+                    Some (Rlist (ind, items, c, next))
+                | None ->
+                    None
+                end
+            | Rblockquote (c, next) ->
+                begin match loop next with
+                | Some next ->
+                    Some (Rblockquote (c, next))
+                | None ->
+                    None
+                end
+            | Rparagraph (_ :: _ as lines) ->
+                begin match classify_line s with
+                | Lparagraph s (* other kinds that cannot interrupt paragraph *) ->
+                    Some (Rparagraph (s :: lines))
+                | _ ->
+                    None
+                end
+            | _ ->
+                None
+          in
+          begin match loop self with
+          | Some next ->
+              c, next
+          | None ->
+              process (close c self) Rempty s
+          end
     in
     let c, next = process c next s in
     Rdocument (c, next)
