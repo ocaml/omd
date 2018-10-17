@@ -55,8 +55,8 @@ and is_atx_heading = parse
     { None }
 
 and is_fenced_code = parse
-  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) (_* as info)
-      { Some (String.length ind, String.length delim, String.trim info) }
+  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws ([^' ''\t']* as info)
+      { Some (String.length ind, String.length delim, info) }
   | _ | eof
     { None }
 
