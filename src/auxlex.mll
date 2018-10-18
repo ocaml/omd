@@ -60,6 +60,11 @@ and is_fenced_code = parse
   | _ | eof
     { None }
 
+and is_setext_underline = parse
+  | sp3 '='+ ws eof { Some 1 }
+  | sp3 '-'+ ws eof { Some 2 }
+  | _ | eof { None }
+
 and is_html_opening = parse
   | sp3 "<!--" { Some (`Contains ["-->"]) }
   | sp3 "<?" { Some (`Contains ["?>"]) }
@@ -116,4 +121,7 @@ let is_html_opening s =
 
 let is_indented_code s =
   indent s >= 4
+
+let is_setext_underline s =
+  is_setext_underline (Lexing.from_string s)
 }

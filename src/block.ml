@@ -10,7 +10,7 @@ type 'a t =
   | Blockquote of 'a t list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of string * string
+  | Code_block of string * string option
   | Html_block of string
 
 let rec map ~f = function
@@ -50,10 +50,12 @@ module Parser = struct
           List (kind, List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph l ->
           Paragraph (concat l) :: c
+      | Rfenced_code (_, _, info, []) ->
+          Code_block (info, None) :: c
       | Rfenced_code (_, _, info, l) ->
-          Code_block (info, concat l) :: c
+          Code_block (info, Some (concat l)) :: c
       | Rindented_code l ->
-          Code_block ("", concat l) :: c
+          Code_block ("", Some (concat l)) :: c
       | Rhtml (_, l) ->
           Html_block (concat l) :: c
       | Rempty ->
@@ -81,6 +83,7 @@ module Parser = struct
     | Lblockquote of string
     | Lthematic_break
     | Latx_heading of int * string
+    | Lsetext_heading of int
     | Lfenced_code of int * int * string
     | Lindented_code of string
     | Lhtml of html_kind
@@ -96,43 +99,48 @@ module Parser = struct
           let s = String.sub s n (String.length s - n) in
           Lblockquote s
       | None ->
-          begin match Auxlex.is_thematic_break s with
-          | true ->
-              Lthematic_break
-          | false ->
-              begin match Auxlex.is_atx_heading s with
-              | Some (n, s) ->
-                  Latx_heading (n, s)
-              | None ->
-                  begin match Auxlex.is_fenced_code s with
-                  | Some (ind, num, info) ->
-                      Lfenced_code (ind, num, info)
+          begin match Auxlex.is_setext_underline s with
+          | Some n ->
+              Lsetext_heading n
+          | None ->
+              begin match Auxlex.is_thematic_break s with
+              | true ->
+                  Lthematic_break
+              | false ->
+                  begin match Auxlex.is_atx_heading s with
+                  | Some (n, s) ->
+                      Latx_heading (n, s)
                   | None ->
-                      begin match Auxlex.is_html_opening s with
-                      | Some kind ->
-                          let kind =
-                            match kind with
-                            | `Contains l -> Hcontains l
-                            | `Blank -> Hblank
-                          in
-                          Lhtml kind
+                      begin match Auxlex.is_fenced_code s with
+                      | Some (ind, num, info) ->
+                          Lfenced_code (ind, num, info)
                       | None ->
-                          if Auxlex.indent s >= 4 then
-                            (* FIXME handle tab *)
-                            let s = String.sub s 4 (String.length s - 4) in
-                            Lindented_code s
-                          else begin
-                            match Auxlex.is_list_item s with
-                            | Some (kind, indent) ->
-                                let kind =
-                                  match kind with
-                                  | Bullet _ -> List_kind.Unordered
-                                  | Ordered _ -> Ordered
-                                in
-                                let s = String.sub s indent (String.length s - indent) in
-                                Llist_item (kind, indent, s)
-                            | None ->
-                                Lparagraph s
+                          begin match Auxlex.is_html_opening s with
+                          | Some kind ->
+                              let kind =
+                                match kind with
+                                | `Contains l -> Hcontains l
+                                | `Blank -> Hblank
+                              in
+                              Lhtml kind
+                          | None ->
+                              if Auxlex.indent s >= 4 then
+                                (* FIXME handle tab *)
+                                let s = String.sub s 4 (String.length s - 4) in
+                                Lindented_code s
+                              else begin
+                                match Auxlex.is_list_item s with
+                                | Some (kind, indent) ->
+                                    let kind =
+                                      match kind with
+                                      | Bullet _ -> List_kind.Unordered
+                                      | Ordered _ -> Ordered
+                                    in
+                                    let s = String.sub s indent (String.length s - indent) in
+                                    Llist_item (kind, indent, s)
+                                | None ->
+                                    Lparagraph s
+                              end
                           end
                       end
                   end
@@ -148,7 +156,7 @@ module Parser = struct
       | Rempty, Lblockquote s ->
           let c1, next = process [] Rempty s in
           c, Rblockquote (c1, next)
-      | Rempty, Lthematic_break ->
+      | Rempty, (Lthematic_break | Lsetext_heading 2) ->
           Thematic_break :: c, Rempty
       | Rempty, Latx_heading (n, s) ->
           Heading (n, s) :: c, Rempty
@@ -161,10 +169,12 @@ module Parser = struct
       | Rempty, Llist_item (kind, indent, s) ->
           let c1, next = process [] Rempty s in
           c, Rlist (kind, indent, [], c1, next)
-      | Rempty, Lparagraph s ->
+      | Rempty, (Lsetext_heading _ | Lparagraph _) ->
           c, Rparagraph [s]
       | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _) ->
           process (close c self) Rempty s
+      | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
+          Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: c, Rempty
       | Rparagraph lines, _ ->
           c, Rparagraph (s :: lines)
       | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
@@ -203,6 +213,10 @@ module Parser = struct
           let s = String.sub s ind (String.length s - ind) in
           let c1, next = process c1 next s in
           c, Rlist (kind, ind, items, c1, next)
+      (* | (Rlist _ | Rblockquote _ as self), *)
+      (*   (Latx_heading _ | Lthematic_break | Lsetext_heading _ | Lempty | *)
+      (*    Lfenced_code _ | Lindented_code _ | Lhtml _ | Llist_item _ | Lblockquote _) -> *)
+      (*     process (close c self) Rempty s *)
       | (Rlist _ | Rblockquote _ as self), _ ->
           let rec loop = function
             | Rlist (kind, ind, items, c, next) ->
@@ -261,11 +275,15 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
           ) l;
         Buffer.add_string b
           (match kind with List_kind.Ordered -> "</ol>\n" | Unordered -> "</ul>\n")
-    | Code_block(lang, c) ->
+    | Code_block ("", None) ->
+        Buffer.add_string b "<pre><code></code></pre>\n"
+    | Code_block (info, None) ->
+        Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>\n" info)
+    | Code_block (lang, Some c) ->
         if lang = "" then
           Buffer.add_string b "<pre><code>"
         else
-          Printf.bprintf b "<pre><code class='language-%s'>" lang;
+          Printf.bprintf b "<pre><code class=\"language-%s\">" lang;
         Buffer.add_string b (Utils.htmlentities ~md:false c);
         Buffer.add_string b "\n</code></pre>\n"
     | Thematic_break ->
@@ -307,7 +325,9 @@ let rec print f ppf = function
       F.pp_print_string ppf "thematic-break"
   | Heading (i, x) ->
       F.fprintf ppf "@[<1>(heading %d@ %a)@]" i f x
-  | Code_block (lang, x) ->
+  | Code_block (lang, None) ->
+      F.fprintf ppf "@[<1>(code:%s)@]" lang
+  | Code_block (lang, Some x) ->
       F.fprintf ppf "@[<1>(code:%s %S)@]" lang x
   | Html_block x ->
       F.fprintf ppf "@[<1>(html %S)@]" x

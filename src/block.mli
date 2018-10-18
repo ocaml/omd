@@ -10,7 +10,7 @@ type 'a t =
   | Blockquote of 'a t list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of string * string
+  | Code_block of string * string option
   | Html_block of string
 
 val map: f:('a -> 'b) -> 'a t -> 'b t
