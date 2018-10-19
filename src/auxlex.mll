@@ -3,19 +3,6 @@ type list_item_kind =
   | Ordered of int
   | Bullet of char
 
-let remove_trailing_hashes s =
-  let c =
-    let c = ref 0 in
-    try
-      for i = String.length s - 1 downto 0 do
-        if s.[i] = '#' then incr c else raise Exit
-      done;
-      String.length s
-    with Exit ->
-      !c
-  in
-  String.sub s 0 (String.length s - c)
-
 let tags =
   [ "address"; "aside"; "base"; "basefont"; "blockquote";
     "body"; "caption"; "center"; "col"; "colgroup"; "dd";
@@ -73,7 +60,8 @@ and indent acc = parse
 and is_atx_heading = parse
   | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx)
       (ws+ (_+ as title) | ("" as title)) eof
-    { Some (String.length atx, String.trim (remove_trailing_hashes (String.trim title))) }
+    { let title = String.trim (remove_trailing_hashes (Buffer.create (String.length title)) (Lexing.from_string title)) in
+      Some (String.length atx, title) }
   | _ | eof
     { None }
 
@@ -109,6 +97,9 @@ and is_html_opening = parse
   | _ | eof
       { None }
 
+and remove_trailing_hashes b = parse
+  | ' ' '#'+ ws* eof | eof { Buffer.contents b }
+  | _ as c { Buffer.add_char b c; remove_trailing_hashes b lexbuf }
 {
 let is_thematic_break s =
   is_thematic_break (Lexing.from_string s)
