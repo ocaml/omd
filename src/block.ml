@@ -235,7 +235,7 @@ module Parser = struct
                 end
             | Rparagraph (_ :: _ as lines) ->
                 begin match classify_line s with
-                | Lparagraph s (* other kinds that cannot interrupt paragraph *) ->
+                | Lparagraph _ | Lsetext_heading _ ->
                     Some (Rparagraph (s :: lines))
                 | _ ->
                     None
