@@ -20,6 +20,17 @@ let remove_trailing_hashes s =
 let ws = [' ''\t''\n''\r''\011''\012']
 let sp3 = (' ' (' ' ' '?)?)?
 
+let unquoted_attribute_value = [^' ''\t''\n''\r''\011''\012''"''\'''=''<''>''`']+
+let single_quoted_attribute_value = '\'' [^'\'']* '\''
+let double_quoted_attribute_value = '"' [^'"']* '"'
+let attribute_value = unquoted_attribute_value | single_quoted_attribute_value | double_quoted_attribute_value
+let attribute_value_specification = ws* '=' ws* attribute_value
+let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
+let attribute = ws+ attribute_name attribute_value_specification?
+let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
+let open_tag = '<' tag_name attribute+ ws* '/'? '>'
+let closing_tag = "</" tag_name ws* '>'
+
 rule is_thematic_break = parse
   | sp3 '*' ws* '*' ws* ('*' ws*)+ eof
   | sp3 '_' ws* '_' ws* ('_' ws*)+ eof
