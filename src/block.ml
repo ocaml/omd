@@ -4,9 +4,15 @@ module List_kind = struct
     | Unordered
 end
 
+module List_style = struct
+  type t =
+    | Loose
+    | Tight
+end
+
 type 'a t =
   | Paragraph of 'a
-  | List of List_kind.t * 'a t list list
+  | List of List_kind.t * List_style.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
   | Heading of int * 'a
@@ -15,7 +21,7 @@ type 'a t =
 
 let rec map ~f = function
   | Paragraph x -> Paragraph (f x)
-  | List (k, xs) -> List (k, List.map (List.map (map ~f)) xs)
+  | List (k, st, xs) -> List (k, st, List.map (List.map (map ~f)) xs)
   | Blockquote xs -> Blockquote (List.map (map ~f) xs)
   | Thematic_break -> Thematic_break
   | Heading (i, x) -> Heading (i, f x)
@@ -31,7 +37,7 @@ module Parser = struct
 
   type container =
     | Rblockquote of blocks * container
-    | Rlist of List_kind.t * int * blocks list * blocks * container
+    | Rlist of List_kind.t * List_style.t * bool * int * blocks list * blocks * container
     | Rparagraph of string list
     | Rfenced_code of int * int * string * string list
     | Rindented_code of string list
@@ -46,16 +52,17 @@ module Parser = struct
     let rec close c = function
       | Rblockquote (closed, next) ->
           Blockquote (List.rev (close closed next)) :: c
-      | Rlist (kind, _, closed_items, last_item, next) ->
-          List (kind, List.rev (List.rev (close last_item next) :: closed_items)) :: c
+      | Rlist (kind, style, _, _, closed_items, last_item, next) ->
+          List (kind, style, List.rev (List.rev (close last_item next) :: closed_items)) :: c
       | Rparagraph l ->
           Paragraph (concat l) :: c
       | Rfenced_code (_, _, info, []) ->
           Code_block (info, None) :: c
       | Rfenced_code (_, _, info, l) ->
           Code_block (info, Some (concat l)) :: c
-      | Rindented_code l ->
-          Code_block ("", Some (concat l)) :: c
+      | Rindented_code l -> (* TODO: trim from the right *)
+          let rec loop = function "" :: l -> loop l | _ as l -> l in
+          Code_block ("", Some (concat (loop l))) :: c
       | Rhtml (_, l) ->
           Html_block (concat l) :: c
       | Rempty ->
@@ -168,7 +175,7 @@ module Parser = struct
           c, Rindented_code [s]
       | Rempty, Llist_item (kind, indent, s) ->
           let c1, next = process [] Rempty s in
-          c, Rlist (kind, indent, [], c1, next)
+          c, Rlist (kind, List_style.Tight, false, indent, [], c1, next)
       | Rempty, (Lsetext_heading _ | Lparagraph _) ->
           c, Rparagraph [s]
       | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
@@ -205,24 +212,25 @@ module Parser = struct
       | Rblockquote (c1, next), Lblockquote s ->
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
-      | Rlist (kind, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
+      | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
           (* TODO handle loose lists *)
           let c1 = close c1 next in
           let c2, next = process [] Rempty s in
-          c, Rlist (kind, ind, List.rev c1 :: items, c2, next)
-      | Rlist (kind, ind, items, c1, next), Lempty ->
+          c, Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)
+      | Rlist (kind, style, _, ind, items, c1, next), Lempty ->
           let c1, next = process c1 next s in
-          c, Rlist (kind, ind, items, c1, next)
-      | Rlist (kind, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
+          c, Rlist (kind, style, true, ind, items, c1, next)
+      | Rlist (kind, style, prev_empty, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
           let s = String.sub s ind (String.length s - ind) in
+          let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
           let c1, next = process c1 next s in
-          c, Rlist (kind, ind, items, c1, next)
+          c, Rlist (kind, style, false, ind, items, c1, next)
       | (Rlist _ | Rblockquote _ as self), _ ->
           let rec loop = function
-            | Rlist (kind, ind, items, c, next) ->
+            | Rlist (kind, style, prev_empty, ind, items, c, next) ->
                 begin match loop next with
                 | Some next ->
-                    Some (Rlist (kind, ind, items, c, next))
+                    Some (Rlist (kind, style, prev_empty, ind, items, c, next))
                 | None ->
                     None
                 end
@@ -254,57 +262,60 @@ module Parser = struct
     Rdocument (c, next)
 end
 
-let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
-  let b = Buffer.create 64 in
+let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
   let rec loop = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>\n";
-        List.iter loop q;
-        Buffer.add_string b "</blockquote>\n"
+        List.iter (fun md -> loop md; Buffer.add_char b '\n') q;
+        Buffer.add_string b "</blockquote>"
     | Paragraph md ->
         Buffer.add_string b "<p>";
         Buffer.add_string b (f md);
-        Buffer.add_string b "</p>\n"
-    | List (kind, l) ->
+        Buffer.add_string b "</p>"
+    | List (kind, style, l) ->
         Buffer.add_string b
           (match kind with List_kind.Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
         List.iter (fun x ->
             Buffer.add_string b "<li>";
-            List.iter (li true) x;
+            List.iteri (fun i md -> li (i = 0) style md) x;
             Buffer.add_string b "</li>\n"
           ) l;
         Buffer.add_string b
-          (match kind with List_kind.Ordered -> "</ol>\n" | Unordered -> "</ul>\n")
+          (match kind with List_kind.Ordered -> "</ol>" | Unordered -> "</ul>")
     | Code_block ("", None) ->
-        Buffer.add_string b "<pre><code></code></pre>\n"
+        Buffer.add_string b "<pre><code></code></pre>"
     | Code_block (info, None) ->
-        Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>\n" info)
+        Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
     | Code_block (lang, Some c) ->
         if lang = "" then
           Buffer.add_string b "<pre><code>"
         else
           Printf.bprintf b "<pre><code class=\"language-%s\">" lang;
         Buffer.add_string b (Utils.htmlentities ~md:false c);
-        Buffer.add_string b "\n</code></pre>\n"
+        Buffer.add_string b "\n</code></pre>"
     | Thematic_break ->
-        Buffer.add_string b "<hr />\n"
+        Buffer.add_string b "<hr />"
     | Html_block body ->
-        Buffer.add_string b body;
-        Buffer.add_char b '\n'
+        Buffer.add_string b body
     | Heading (i, md) ->
         let md = f md in
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
         Buffer.add_string b md;
-        Buffer.add_string b (Printf.sprintf "</h%d>\n" i)
-  and li tight x =
-    match x with
-    | Paragraph md when tight ->
+        Buffer.add_string b (Printf.sprintf "</h%d>" i)
+  and li first style x =
+    match x, style with
+    | Paragraph md, List_style.Tight ->
         Buffer.add_string b (f md)
     | _ ->
-        Buffer.add_char b '\n';
-        loop x
+        if first then Buffer.add_char b '\n';
+        loop x;
+        Buffer.add_char b '\n'
   in
-  loop md;
+  loop md
+
+let to_html f mds =
+  let b = Buffer.create 64 in
+  List.iter (fun md -> to_html f b md; Buffer.add_char b '\n') mds;
   Buffer.contents b
 
 let of_channel ic =
@@ -322,7 +333,7 @@ module F = Format
 let rec print f ppf = function
   | Paragraph x ->
       F.fprintf ppf "@[<1>(paragraph@ %a)@]" f x
-  | List (_, xs) ->
+  | List (_, _, xs) ->
       let pp ppf x = F.pp_print_list ~pp_sep:F.pp_print_space (print f) ppf x in
       F.fprintf ppf "@[<1>(list@ %a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space pp) xs
   | Blockquote xs ->

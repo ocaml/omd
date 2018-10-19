@@ -4,9 +4,15 @@ module List_kind : sig
     | Unordered
 end
 
+module List_style : sig
+  type t =
+    | Loose
+    | Tight
+end
+
 type 'a t =
   | Paragraph of 'a
-  | List of List_kind.t * 'a t list list
+  | List of List_kind.t * List_style.t * 'a t list list
   | Blockquote of 'a t list
   | Thematic_break
   | Heading of int * 'a
@@ -24,7 +30,7 @@ module Parser : sig
   val finish : t -> blocks
 end with type blocks := string t list
 
-val to_html : ('a -> string) -> 'a t -> string
+val to_html : ('a -> string) -> 'a t list -> string
 
 val of_channel : in_channel -> string t list
 
