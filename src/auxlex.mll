@@ -89,15 +89,25 @@ and is_setext_underline = parse
   | _ | eof { None }
 
 and is_html_opening = parse
-  | sp3 "<!--" { Some (`Contains ["-->"]) }
-  | sp3 "<?" { Some (`Contains ["?>"]) }
-  | sp3 "<!" { Some (`Contains [">"]) }
-  | sp3 "<![CDATA[" { Some (`Contains ["]]>"]) }
+  | sp3 "<!--"
+      { Some (true, `Contains ["-->"]) }
+  | sp3 "<?"
+      { Some (true, `Contains ["?>"]) }
+  | sp3 "<!"
+      { Some (true, `Contains [">"]) }
+  | sp3 "<![CDATA["
+      { Some (true, `Contains ["]]>"]) }
   | sp3 ("<script" | "<pre" | "<style") (ws+ | '>' | eof)
-      { Some (`Contains ["</script>"; "</pre>"; "</style>"]) }
+      { Some (true, `Contains ["</script>"; "</pre>"; "</style>"]) }
   | sp3 ('<' | "</") (tag_name as tag) (ws+ | eof | '>' | "/>")
-      { if List.mem (String.lowercase_ascii tag) tags then Some `Blank else None }
-  | _ | eof { None }
+      { if List.mem (String.lowercase_ascii tag) tags then
+          Some (true, `Blank)
+        else
+          None }
+  | sp3 (open_tag | closing_tag) ws* eof
+      { Some (false, `Blank) }
+  | _ | eof
+      { None }
 
 {
 let is_thematic_break s =

@@ -86,7 +86,7 @@ module Parser = struct
     | Lsetext_heading of int
     | Lfenced_code of int * int * string
     | Lindented_code of string
-    | Lhtml of html_kind
+    | Lhtml of bool * html_kind
     | Llist_item of List_kind.t * int * string
     | Lparagraph of string
 
@@ -116,13 +116,13 @@ module Parser = struct
                           Lfenced_code (ind, num, info)
                       | None ->
                           begin match Auxlex.is_html_opening s with
-                          | Some kind ->
+                          | Some (can_interrupt_par, kind) ->
                               let kind =
                                 match kind with
                                 | `Contains l -> Hcontains l
                                 | `Blank -> Hblank
                               in
-                              Lhtml kind
+                              Lhtml (can_interrupt_par, kind)
                           | None ->
                               if Auxlex.indent s >= 4 then
                                 (* FIXME handle tab *)
@@ -162,7 +162,7 @@ module Parser = struct
           Heading (n, s) :: c, Rempty
       | Rempty, Lfenced_code (ind, num, info) ->
           c, Rfenced_code (ind, num, info, [])
-      | Rempty, Lhtml kind ->
+      | Rempty, Lhtml (_, kind) ->
           process c (Rhtml (kind, [])) s
       | Rempty, Lindented_code s ->
           c, Rindented_code [s]
@@ -171,7 +171,7 @@ module Parser = struct
           c, Rlist (kind, indent, [], c1, next)
       | Rempty, (Lsetext_heading _ | Lparagraph _) ->
           c, Rparagraph [s]
-      | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _) ->
+      | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
           process (close c self) Rempty s
       | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
           Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: c, Rempty
@@ -213,10 +213,6 @@ module Parser = struct
           let s = String.sub s ind (String.length s - ind) in
           let c1, next = process c1 next s in
           c, Rlist (kind, ind, items, c1, next)
-      (* | (Rlist _ | Rblockquote _ as self), *)
-      (*   (Latx_heading _ | Lthematic_break | Lsetext_heading _ | Lempty | *)
-      (*    Lfenced_code _ | Lindented_code _ | Lhtml _ | Llist_item _ | Lblockquote _) -> *)
-      (*     process (close c self) Rempty s *)
       | (Rlist _ | Rblockquote _ as self), _ ->
           let rec loop = function
             | Rlist (kind, ind, items, c, next) ->
@@ -235,7 +231,7 @@ module Parser = struct
                 end
             | Rparagraph (_ :: _ as lines) ->
                 begin match classify_line s with
-                | Lparagraph _ | Lsetext_heading _ ->
+                | Lparagraph _ | Lsetext_heading _ | Lhtml (false, _) ->
                     Some (Rparagraph (s :: lines))
                 | _ ->
                     None
@@ -256,21 +252,21 @@ end
 
 let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
   let b = Buffer.create 64 in
-  let rec loop ~p indent = function
+  let rec loop = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>\n";
-        List.iter (loop ~p:true indent) q;
+        List.iter loop q;
         Buffer.add_string b "</blockquote>\n"
     | Paragraph md ->
-        if p then Buffer.add_string b "<p>";
+        Buffer.add_string b "<p>";
         Buffer.add_string b (f md);
-        if p then Buffer.add_string b "</p>\n"
+        Buffer.add_string b "</p>\n"
     | List (kind, l) ->
         Buffer.add_string b
           (match kind with List_kind.Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
-        List.iter (fun li ->
+        List.iter (fun x ->
             Buffer.add_string b "<li>";
-            List.iter (loop ~p:false (indent + 2)) li;
+            List.iter (li true) x;
             Buffer.add_string b "</li>\n"
           ) l;
         Buffer.add_string b
@@ -296,8 +292,15 @@ let to_html : 'a. ('a -> string) -> 'a t -> string = fun f md ->
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
         Buffer.add_string b md;
         Buffer.add_string b (Printf.sprintf "</h%d>\n" i)
+  and li tight x =
+    match x with
+    | Paragraph md when tight ->
+        Buffer.add_string b (f md)
+    | _ ->
+        Buffer.add_char b '\n';
+        loop x
   in
-  loop ~p:true 0 md;
+  loop md;
   Buffer.contents b
 
 let of_channel ic =
