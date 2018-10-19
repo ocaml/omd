@@ -85,9 +85,9 @@ and is_html_opening = parse
       { Some (true, `Contains [">"]) }
   | sp3 "<![CDATA["
       { Some (true, `Contains ["]]>"]) }
-  | sp3 ("<script" | "<pre" | "<style") (ws+ | '>' | eof)
+  | sp3 ("<script" | "<pre" | "<style") (ws | '>' | eof)
       { Some (true, `Contains ["</script>"; "</pre>"; "</style>"]) }
-  | sp3 ('<' | "</") (tag_name as tag) (ws+ | eof | '>' | "/>")
+  | sp3 ('<' | "</") (tag_name as tag) (ws | eof | '>' | "/>")
       { if List.mem (String.lowercase_ascii tag) tags then
           Some (true, `Blank)
         else
