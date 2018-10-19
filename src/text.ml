@@ -67,11 +67,11 @@ let rec html_of_md md =
     | Ref(_, _, fallback) | Img_ref (_, _, fallback) ->
         loop (fallback#to_t)
     | Img (alt, src, title) ->
-        Buffer.add_string b "<img src='";
+        Buffer.add_string b "<img src=\"";
         Buffer.add_string b (htmlentities ~md:true src);
-        Buffer.add_string b "' alt='";
+        Buffer.add_string b "\" alt=\"";
         Buffer.add_string b (htmlentities ~md:true alt);
-        Buffer.add_string b "' ";
+        Buffer.add_string b "\" ";
         if title <> "" then begin
           Buffer.add_string b " title='";
           Buffer.add_string b (htmlentities ~md:true title);
