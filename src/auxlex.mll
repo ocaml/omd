@@ -17,13 +17,13 @@ let remove_trailing_hashes s =
   String.sub s 0 (String.length s - c)
 }
 
-let ws = [' ''\t']*
-let sp3 = ' '? ' '? ' '?
+let ws = [' ''\t''\n''\r''\011''\012']
+let sp3 = (' ' (' ' ' '?)?)?
 
 rule is_thematic_break = parse
-  | sp3 '*' ws '*' ws ('*' ws)+ eof
-  | sp3 '_' ws '_' ws ('_' ws)+ eof
-  | sp3 '-' ws '-' ws ('-' ws)+ eof { true }
+  | sp3 '*' ws* '*' ws* ('*' ws*)+ eof
+  | sp3 '_' ws* '_' ws* ('_' ws*)+ eof
+  | sp3 '-' ws* '-' ws* ('-' ws*)+ eof { true }
   | _ | eof { false }
 
 and is_empty = parse
@@ -55,14 +55,14 @@ and is_atx_heading = parse
     { None }
 
 and is_fenced_code = parse
-  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws ([^' ''\t']* as info)
+  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws* ([^' ''\t']* as info)
       { Some (String.length ind, String.length delim, info) }
   | _ | eof
     { None }
 
 and is_setext_underline = parse
-  | sp3 '='+ ws eof { Some 1 }
-  | sp3 '-'+ ws eof { Some 2 }
+  | sp3 '='+ ws* eof { Some 1 }
+  | sp3 '-'+ ws* eof { Some 2 }
   | _ | eof { None }
 
 and is_html_opening = parse
@@ -70,7 +70,7 @@ and is_html_opening = parse
   | sp3 "<?" { Some (`Contains ["?>"]) }
   | sp3 "<!" { Some (`Contains [">"]) }
   | sp3 "<![CDATA[" { Some (`Contains ["]]>"]) }
-  | sp3 ("<script" | "<pre" | "<style") ws ('>' | eof)
+  | sp3 ("<script" | "<pre" | "<style") ws* ('>' | eof)
       { Some (`Contains ["</script>"; "</pre>"; "</style>"]) }
   | sp3 '<' '/'?
       ("address" | "aside" | "base" | "basefont" | "blockquote" |
@@ -83,7 +83,7 @@ and is_html_opening = parse
        "noframes" | "ol" | "optgroup" | "option" | "p" | "param" |
        "section" | "source" | "summary" | "table" | "tbody" |
        "td" | "tfoot" | "th" | "thead" | "title" | "tr" | "track" |
-       "ul") ws ('/'?'>' | eof)
+       "ul") ws* ('/'?'>' | eof)
       { Some `Blank }
   | _ | eof { None }
 
