@@ -190,6 +190,10 @@ module Parser = struct
           c, Rfenced_code (ind, num, info, s :: lines)
       | Rindented_code lines, Lindented_code s ->
           c, Rindented_code (s :: lines)
+      | Rindented_code lines, Lempty ->
+          let n = min (Auxlex.indent s) 4 in
+          let s = String.sub s n (String.length s - n) in
+          c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
           process (close c self) Rempty s
       | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
