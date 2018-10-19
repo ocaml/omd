@@ -45,10 +45,10 @@ and is_blockquote = parse
   | _ | eof { None }
 
 and is_list_item = parse
-  | (['+''-''*'] as marker) (' ' ' '? ' '? ' '? as sp)
-      { Some (Bullet marker, String.length sp + 1) }
-  | (['0'-'9']+ as num) ('.' | ')') (' ' ' '? ' '? ' '? as sp)
-      { Some (Ordered (int_of_string num), String.length sp + String.length num + 1) }
+  | sp3 (['+''-''*'] as marker) sp3
+      { Some (Bullet marker, String.length (Lexing.lexeme lexbuf)) }
+  | sp3 (['0'-'9']+ as num) ('.' | ')') sp3
+      { Some (Ordered (int_of_string num), String.length (Lexing.lexeme lexbuf)) }
   | _ | eof
       { None }
 
