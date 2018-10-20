@@ -97,13 +97,39 @@ module Parser = struct
     | Llist_item of List_kind.t * int * string
     | Lparagraph of string
 
+  let subn n s =
+    let rec loop n i =
+      if n = 0 || i >= String.length s then
+        if i = 0 then
+          s
+        else
+          String.sub s i (String.length s - i)
+      else begin
+        match s.[i] with
+        | '\t' ->
+            let ts = (i / 4 + 1) * 4 - i in
+            if n >= ts then
+              loop (n - ts) (i + 1)
+            else
+              let b = Buffer.create (String.length s) in
+              for _ = 1 to ts - n do Buffer.add_char b ' ' done;
+              Buffer.add_substring b s (i + 1) (String.length s - i - 1);
+              Buffer.contents b
+        | _ ->
+            loop (n - 1) (i + 1)
+        (* | _ -> *)
+        (*     String.sub s i (String.length s - i) *)
+      end
+    in
+    loop n 0
+
   let classify_line s =
     if Auxlex.is_empty s then
       Lempty
     else begin
       match Auxlex.is_blockquote s with
       | Some n ->
-          let s = String.sub s n (String.length s - n) in
+          let s = subn n s in
           Lblockquote s
       | None ->
           begin match Auxlex.is_setext_underline s with
@@ -132,8 +158,7 @@ module Parser = struct
                               Lhtml (can_interrupt_par, kind)
                           | None ->
                               if Auxlex.indent s >= 4 then
-                                (* FIXME handle tab *)
-                                let s = String.sub s 4 (String.length s - 4) in
+                                let s = subn 4 s in
                                 Lindented_code s
                               else begin
                                 match Auxlex.is_list_item s with
@@ -143,7 +168,7 @@ module Parser = struct
                                       | Bullet _ -> List_kind.Unordered
                                       | Ordered _ -> Ordered
                                     in
-                                    let s = String.sub s indent (String.length s - indent) in
+                                    let s = subn indent s in
                                     Llist_item (kind, indent, s)
                                 | None ->
                                     Lparagraph s
@@ -190,7 +215,7 @@ module Parser = struct
           let s =
             let ind = min (Auxlex.indent s) ind in
             if ind > 0 then
-              String.sub s ind (String.length s - ind)
+              subn ind s
             else
               s
           in
@@ -199,7 +224,7 @@ module Parser = struct
           c, Rindented_code (s :: lines)
       | Rindented_code lines, Lempty ->
           let n = min (Auxlex.indent s) 4 in
-          let s = String.sub s n (String.length s - n) in
+          let s = subn n s in
           c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
           process (close c self) Rempty s
@@ -213,7 +238,6 @@ module Parser = struct
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
       | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
-          (* TODO handle loose lists *)
           let c1 = close c1 next in
           let c2, next = process [] Rempty s in
           c, Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)
@@ -221,7 +245,7 @@ module Parser = struct
           let c1, next = process c1 next s in
           c, Rlist (kind, style, true, ind, items, c1, next)
       | Rlist (kind, style, prev_empty, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
-          let s = String.sub s ind (String.length s - ind) in
+          let s = subn ind s in
           let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
           let c1, next = process c1 next s in
           c, Rlist (kind, style, false, ind, items, c1, next)
