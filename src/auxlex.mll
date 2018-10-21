@@ -95,7 +95,7 @@ and is_empty = parse
   | _ { false }
 
 and is_blockquote = parse
-  | sp3 '>' ' '? { Some (String.length (Lexing.lexeme lexbuf)) }
+  | sp3 '>' { Some (String.length (Lexing.lexeme lexbuf)) }
   | _ | eof { None }
 
 and is_list_item = parse

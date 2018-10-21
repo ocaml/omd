@@ -99,7 +99,9 @@ module Parser = struct
     else begin
       match Auxlex.is_blockquote s with
       | Some n ->
-          Lblockquote (Sub.offset n s)
+          let s = Sub.offset n s in
+          let s = if Auxlex.indent s > 0 then Sub.offset 1 s else s in
+          Lblockquote s
       | None ->
           begin match Auxlex.is_setext_underline s with
           | Some n ->
