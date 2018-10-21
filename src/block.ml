@@ -237,7 +237,8 @@ module Parser = struct
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
-        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, finish state :: items, process empty s)}
+        let style = if prev_empty then List_style.Loose else style in
+        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, {blocks = c1; next}), _ when Auxlex.indent s >= ind ->
@@ -245,12 +246,12 @@ module Parser = struct
         let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
         let {blocks = c1; next} = process {blocks = c1; next} s in
         {blocks; next = Rlist (kind, style, false, ind, items, {blocks = c1; next})}
-    | (Rlist _ | Rblockquote _ as self), _ ->
+    | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
-          | Rlist (kind, style, prev_empty, ind, items, {blocks = c; next}) ->
+          | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
               begin match loop next with
               | Some next ->
-                  Some (Rlist (kind, style, prev_empty, ind, items, {blocks = c; next}))
+                  Some (Rlist (kind, style, prev_empty, ind, items, {blocks; next}))
               | None ->
                   None
               end
@@ -271,11 +272,11 @@ module Parser = struct
           | _ ->
               None
         in
-        begin match loop self with
+        begin match loop next with
         | Some next ->
             {blocks; next}
         | None ->
-            process {blocks = close {blocks; next = self}; next = Rempty} s
+            process {blocks = close {blocks; next}; next = Rempty} s
         end
 end
 
