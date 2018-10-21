@@ -238,9 +238,8 @@ module Parser = struct
         {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
         {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, finish state :: items, process empty s)}
-    | Rlist (kind, style, _, ind, items, {blocks = c1; next}), Lempty ->
-        let {blocks = c1; next} = process {blocks = c1; next} s in
-        {blocks; next = Rlist (kind, style, true, ind, items, {blocks = c1; next})}
+    | Rlist (kind, style, _, ind, items, state), Lempty ->
+        {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, {blocks = c1; next}), _ when Auxlex.indent s >= ind ->
         let s = subn ind s in
         let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
