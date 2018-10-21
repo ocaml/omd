@@ -203,14 +203,14 @@ module Parser = struct
         {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph _) ->
         {blocks; next = Rparagraph [s]}
-    | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
-        process {blocks = close {blocks; next = self}; next = Rempty} s
+    | Rparagraph _, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
+        process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (s :: lines)}
-    | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
-        {blocks = close {blocks; next = self}; next = Rempty}
+    | Rfenced_code (_, num, _, _), Lfenced_code (_, num', "") when num' >= num ->
+        {blocks = close {blocks; next}; next = Rempty}
     | Rfenced_code (ind, num, info, lines), _ ->
         let s =
           let ind = min (Auxlex.indent s) ind in
@@ -226,12 +226,12 @@ module Parser = struct
         let n = min (Auxlex.indent s) 4 in
         let s = subn n s in
         {blocks; next = Rindented_code (s :: lines)}
-    | Rindented_code _ as self, _ ->
-        process {blocks = close {blocks; next = self}; next = Rempty} s
+    | Rindented_code _, _ ->
+        process {blocks = close {blocks; next}; next = Rempty} s
     | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
         {blocks = close {blocks; next = Rhtml (k, s :: lines)}; next = Rempty}
-    | Rhtml (Hblank, _) as self, Lempty ->
-        {blocks = close {blocks; next = self}; next = Rempty}
+    | Rhtml (Hblank, _), Lempty ->
+        {blocks = close {blocks; next}; next = Rempty}
     | Rhtml (k, lines), _ ->
         {blocks; next = Rhtml (k, s :: lines)}
     | Rblockquote state, Lblockquote s ->
@@ -241,15 +241,15 @@ module Parser = struct
         {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
-    | Rlist (kind, style, prev_empty, ind, items, {blocks = c1; next}), _ when Auxlex.indent s >= ind ->
+    | Rlist (kind, style, prev_empty, ind, items, state), _ when Auxlex.indent s >= ind ->
         let s = subn ind s in
         let style =
-          if prev_empty && next = Rempty && List.length c1 > 0 then
+          if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
             List_style.Loose
           else
             style
         in
-        {blocks; next = Rlist (kind, style, false, ind, items, process {blocks = c1; next} s)}
+        {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
           | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
