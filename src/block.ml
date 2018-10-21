@@ -28,6 +28,8 @@ let rec map ~f = function
   | Code_block _ as x -> x
   | Html_block _ as x -> x
 
+module Sub = Auxlex.Sub
+
 module Parser = struct
   type block = string t
   type blocks = block list
@@ -79,61 +81,25 @@ module Parser = struct
   let empty =
     {blocks = []; next = Rempty}
 
-  let string_contains s1 s =
-    let rec loop i =
-      if i + String.length s1 > String.length s then
-        false
-      else
-        s1 = String.sub s i (String.length s1) || loop (i + 1)
-    in
-    loop 0
-
   type line_kind =
     | Lempty
-    | Lblockquote of string
+    | Lblockquote of Sub.t
     | Lthematic_break
     | Latx_heading of int * string
     | Lsetext_heading of int
     | Lfenced_code of int * int * string
-    | Lindented_code of string
+    | Lindented_code of Sub.t
     | Lhtml of bool * html_kind
-    | Llist_item of List_kind.t * int * string
-    | Lparagraph of string
+    | Llist_item of List_kind.t * int * Sub.t
+    | Lparagraph of Sub.t
 
-  let subn n s =
-    let rec loop n i =
-      if n = 0 || i >= String.length s then
-        if i = 0 then
-          s
-        else
-          String.sub s i (String.length s - i)
-      else begin
-        match s.[i] with
-        | '\t' ->
-            let ts = (i / 4 + 1) * 4 - i in
-            if n >= ts then
-              loop (n - ts) (i + 1)
-            else
-              let b = Buffer.create (String.length s) in
-              for _ = 1 to ts - n do Buffer.add_char b ' ' done;
-              Buffer.add_substring b s (i + 1) (String.length s - i - 1);
-              Buffer.contents b
-        | _ ->
-            loop (n - 1) (i + 1)
-        (* | _ -> *)
-        (*     String.sub s i (String.length s - i) *)
-      end
-    in
-    loop n 0
-
-  let classify_line s =
+  let classify_line (s : Sub.t) =
     if Auxlex.is_empty s then
       Lempty
     else begin
       match Auxlex.is_blockquote s with
       | Some n ->
-          let s = subn n s in
-          Lblockquote s
+          Lblockquote (Sub.offset n s)
       | None ->
           begin match Auxlex.is_setext_underline s with
           | Some n ->
@@ -161,8 +127,7 @@ module Parser = struct
                               Lhtml (can_interrupt_par, kind)
                           | None ->
                               if Auxlex.indent s >= 4 then
-                                let s = subn 4 s in
-                                Lindented_code s
+                                Lindented_code (Sub.offset 4 s)
                               else begin
                                 match Auxlex.is_list_item s with
                                 | Some (kind, indent) ->
@@ -171,8 +136,7 @@ module Parser = struct
                                       | Bullet _ -> List_kind.Unordered
                                       | Ordered _ -> Ordered
                                     in
-                                    let s = subn indent s in
-                                    Llist_item (kind, indent, s)
+                                    Llist_item (kind, indent, Sub.offset indent s)
                                 | None ->
                                     Lparagraph s
                               end
@@ -198,42 +162,42 @@ module Parser = struct
     | Rempty, Lhtml (_, kind) ->
         process {blocks; next = Rhtml (kind, [])} s
     | Rempty, Lindented_code s ->
-        {blocks; next = Rindented_code [s]}
+        {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
         {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph _) ->
-        {blocks; next = Rparagraph [s]}
+        {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
-        {blocks; next = Rparagraph (s :: lines)}
+        {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, _, _), Lfenced_code (_, num', "") when num' >= num ->
         {blocks = close {blocks; next}; next = Rempty}
     | Rfenced_code (ind, num, info, lines), _ ->
         let s =
           let ind = min (Auxlex.indent s) ind in
           if ind > 0 then
-            subn ind s
+            Sub.offset ind s
           else
             s
         in
-        {blocks; next = Rfenced_code (ind, num, info, s :: lines)}
+        {blocks; next = Rfenced_code (ind, num, info, Sub.to_string s :: lines)}
     | Rindented_code lines, Lindented_code s ->
-        {blocks; next = Rindented_code (s :: lines)}
+        {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
         let n = min (Auxlex.indent s) 4 in
-        let s = subn n s in
-        {blocks; next = Rindented_code (s :: lines)}
+        let s = Sub.offset n s in
+        {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code _, _ ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
-        {blocks = close {blocks; next = Rhtml (k, s :: lines)}; next = Rempty}
+    | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> Sub.contains t s) l ->
+        {blocks = close {blocks; next = Rhtml (k, Sub.to_string s :: lines)}; next = Rempty}
     | Rhtml (Hblank, _), Lempty ->
         {blocks = close {blocks; next}; next = Rempty}
     | Rhtml (k, lines), _ ->
-        {blocks; next = Rhtml (k, s :: lines)}
+        {blocks; next = Rhtml (k, Sub.to_string s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
@@ -242,7 +206,7 @@ module Parser = struct
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, state), _ when Auxlex.indent s >= ind ->
-        let s = subn ind s in
+        let s = Sub.offset ind s in
         let style =
           if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
             List_style.Loose
@@ -269,7 +233,7 @@ module Parser = struct
           | Rparagraph (_ :: _ as lines) ->
               begin match classify_line s with
               | Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
-                  Some (Rparagraph (s :: lines))
+                  Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None
               end
@@ -282,6 +246,9 @@ module Parser = struct
         | None ->
             process {blocks = close {blocks; next}; next = Rempty} s
         end
+
+  let process state s =
+    process state (Sub.of_string s)
 end
 
 let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->

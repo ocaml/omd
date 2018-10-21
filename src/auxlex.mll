@@ -1,4 +1,58 @@
 {
+module Sub : sig
+  type t
+  val of_string : string -> t
+  val to_string : t -> string
+  val offset : int -> t -> t
+  val lexbuf : t -> Lexing.lexbuf
+  val contains : string -> t -> bool
+end = struct
+  type t = int * string
+
+  let of_string s = (0, s)
+  let to_string (off, s) = String.sub s off (String.length s - off)
+
+  let offset n (off, s) =
+    if n < 0 then invalid_arg "offset";
+    let rec loop n off s =
+      if n = 0 || off >= String.length s then
+        (off, s)
+      else begin
+        match s.[off] with
+        | '\t' ->
+            let ts = (off + 4) / 4 * 4 - off in
+            let b = Buffer.create (String.length s) in
+            Buffer.add_substring b s 0 off;
+            for _ = 1 to ts do Buffer.add_char b ' ' done;
+            Buffer.add_substring b s (off + 1) (String.length s - off - 1);
+            loop n off (Buffer.contents b)
+        | _ ->
+            loop (n - 1) (off + 1) s
+            (* | _ -> *)
+            (*     String.sub s i (String.length s - i) *)
+      end
+    in
+    loop n off s
+
+  let lexbuf (off, s) =
+    let off = ref off in
+    Lexing.from_function (fun b n ->
+        let n = min n (String.length s - !off) in
+        Bytes.blit_string s !off b 0 n;
+        off := n + !off;
+        n
+      )
+
+  let contains s1 (off, s) =
+    let rec loop off =
+      if off + String.length s1 > String.length s then
+        false
+      else
+        s1 = String.sub s off (String.length s1) || loop (off + 1)
+    in
+    loop off
+end
+
 type list_item_kind =
   | Ordered of int
   | Bullet of char
@@ -102,25 +156,25 @@ and remove_trailing_hashes b = parse
   | _ as c { Buffer.add_char b c; remove_trailing_hashes b lexbuf }
 {
 let is_thematic_break s =
-  is_thematic_break (Lexing.from_string s)
+  is_thematic_break (Sub.lexbuf s)
 
 let is_empty s =
-  is_empty (Lexing.from_string s)
+  is_empty (Sub.lexbuf s)
 
 let is_blockquote s =
-  is_blockquote (Lexing.from_string s)
+  is_blockquote (Sub.lexbuf s)
 
 let is_list_item s =
-  is_list_item (Lexing.from_string s)
+  is_list_item (Sub.lexbuf s)
 
 let indent s =
-  indent 0 (Lexing.from_string s)
+  indent 0 (Sub.lexbuf s)
 
 let is_atx_heading s =
-  is_atx_heading (Lexing.from_string s)
+  is_atx_heading (Sub.lexbuf s)
 
 let is_fenced_code s =
-  is_fenced_code (Lexing.from_string s)
+  is_fenced_code (Sub.lexbuf s)
 
 let is_fenced_code_closing num s =
   match is_fenced_code s with
@@ -130,11 +184,11 @@ let is_fenced_code_closing num s =
       false
 
 let is_html_opening s =
-  is_html_opening (Lexing.from_string s)
+  is_html_opening (Sub.lexbuf s)
 
 let is_indented_code s =
   indent s >= 4
 
 let is_setext_underline s =
-  is_setext_underline (Lexing.from_string s)
+  is_setext_underline (Sub.lexbuf s)
 }
