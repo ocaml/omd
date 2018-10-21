@@ -183,109 +183,106 @@ module Parser = struct
           end
     end
 
-  let process {blocks; next} s =
-    let rec process blocks next s =
-      match next, classify_line s with
-      | Rempty, Lempty ->
-          {blocks; next = Rempty}
-      | Rempty, Lblockquote s ->
-          let {blocks = c1; next} = process [] Rempty s in
-          {blocks; next = Rblockquote (c1, next)}
-      | Rempty, (Lthematic_break | Lsetext_heading 2) ->
-          {blocks = Thematic_break :: blocks; next = Rempty}
-      | Rempty, Latx_heading (n, s) ->
-          {blocks = Heading (n, s) :: blocks; next = Rempty}
-      | Rempty, Lfenced_code (ind, num, info) ->
-          {blocks; next = Rfenced_code (ind, num, info, [])}
-      | Rempty, Lhtml (_, kind) ->
-          process blocks (Rhtml (kind, [])) s
-      | Rempty, Lindented_code s ->
-          {blocks; next = Rindented_code [s]}
-      | Rempty, Llist_item (kind, indent, s) ->
-          let {blocks = c1; next} = process [] Rempty s in
-          {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], c1, next)}
-      | Rempty, (Lsetext_heading _ | Lparagraph _) ->
-          {blocks; next = Rparagraph [s]}
-      | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
-          process (close {blocks; next = self}) Rempty s
-      | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
-          {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
-      | Rparagraph lines, _ ->
-          {blocks; next = Rparagraph (s :: lines)}
-      | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
-          {blocks = close {blocks; next = self}; next = Rempty}
-      | Rfenced_code (ind, num, info, lines), _ ->
-          let s =
-            let ind = min (Auxlex.indent s) ind in
-            if ind > 0 then
-              subn ind s
-            else
-              s
-          in
-          {blocks; next = Rfenced_code (ind, num, info, s :: lines)}
-      | Rindented_code lines, Lindented_code s ->
-          {blocks; next = Rindented_code (s :: lines)}
-      | Rindented_code lines, Lempty ->
-          let n = min (Auxlex.indent s) 4 in
-          let s = subn n s in
-          {blocks; next = Rindented_code (s :: lines)}
-      | Rindented_code _ as self, _ ->
-          process (close {blocks; next = self}) Rempty s
-      | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
-          {blocks = close {blocks; next = Rhtml (k, s :: lines)}; next = Rempty}
-      | Rhtml (Hblank, _) as self, Lempty ->
-          {blocks = close {blocks; next = self}; next = Rempty}
-      | Rhtml (k, lines), _ ->
-          {blocks; next = Rhtml (k, s :: lines)}
-      | Rblockquote (c1, next), Lblockquote s ->
-          let {blocks = c1; next} = process c1 next s in
-          {blocks; next = Rblockquote (c1, next)}
-      | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
-          let c1 = close {blocks = c1; next} in
-          let {blocks = c2; next} = process [] Rempty s in
-          {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)}
-      | Rlist (kind, style, _, ind, items, c1, next), Lempty ->
-          let {blocks = c1; next} = process c1 next s in
-          {blocks; next = Rlist (kind, style, true, ind, items, c1, next)}
-      | Rlist (kind, style, prev_empty, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
-          let s = subn ind s in
-          let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
-          let {blocks = c1; next} = process c1 next s in
-          {blocks; next = Rlist (kind, style, false, ind, items, c1, next)}
-      | (Rlist _ | Rblockquote _ as self), _ ->
-          let rec loop = function
-            | Rlist (kind, style, prev_empty, ind, items, c, next) ->
-                begin match loop next with
-                | Some next ->
-                    Some (Rlist (kind, style, prev_empty, ind, items, c, next))
-                | None ->
-                    None
-                end
-            | Rblockquote (c, next) ->
-                begin match loop next with
-                | Some next ->
-                    Some (Rblockquote (c, next))
-                | None ->
-                    None
-                end
-            | Rparagraph (_ :: _ as lines) ->
-                begin match classify_line s with
-                | Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
-                    Some (Rparagraph (s :: lines))
-                | _ ->
-                    None
-                end
-            | _ ->
-                None
-          in
-          begin match loop self with
-          | Some next ->
-              {blocks; next}
-          | None ->
-              process (close {blocks; next = self}) Rempty s
-          end
-    in
-    process blocks next s
+  let rec process {blocks; next} s =
+    match next, classify_line s with
+    | Rempty, Lempty ->
+        {blocks; next = Rempty}
+    | Rempty, Lblockquote s ->
+        let {blocks = c1; next} = process empty s in
+        {blocks; next = Rblockquote (c1, next)}
+    | Rempty, (Lthematic_break | Lsetext_heading 2) ->
+        {blocks = Thematic_break :: blocks; next = Rempty}
+    | Rempty, Latx_heading (n, s) ->
+        {blocks = Heading (n, s) :: blocks; next = Rempty}
+    | Rempty, Lfenced_code (ind, num, info) ->
+        {blocks; next = Rfenced_code (ind, num, info, [])}
+    | Rempty, Lhtml (_, kind) ->
+        process {blocks; next = Rhtml (kind, [])} s
+    | Rempty, Lindented_code s ->
+        {blocks; next = Rindented_code [s]}
+    | Rempty, Llist_item (kind, indent, s) ->
+        let {blocks = c1; next} = process empty s in
+        {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], c1, next)}
+    | Rempty, (Lsetext_heading _ | Lparagraph _) ->
+        {blocks; next = Rparagraph [s]}
+    | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
+        process {blocks = close {blocks; next = self}; next = Rempty} s
+    | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
+        {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
+    | Rparagraph lines, _ ->
+        {blocks; next = Rparagraph (s :: lines)}
+    | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
+        {blocks = close {blocks; next = self}; next = Rempty}
+    | Rfenced_code (ind, num, info, lines), _ ->
+        let s =
+          let ind = min (Auxlex.indent s) ind in
+          if ind > 0 then
+            subn ind s
+          else
+            s
+        in
+        {blocks; next = Rfenced_code (ind, num, info, s :: lines)}
+    | Rindented_code lines, Lindented_code s ->
+        {blocks; next = Rindented_code (s :: lines)}
+    | Rindented_code lines, Lempty ->
+        let n = min (Auxlex.indent s) 4 in
+        let s = subn n s in
+        {blocks; next = Rindented_code (s :: lines)}
+    | Rindented_code _ as self, _ ->
+        process {blocks = close {blocks; next = self}; next = Rempty} s
+    | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
+        {blocks = close {blocks; next = Rhtml (k, s :: lines)}; next = Rempty}
+    | Rhtml (Hblank, _) as self, Lempty ->
+        {blocks = close {blocks; next = self}; next = Rempty}
+    | Rhtml (k, lines), _ ->
+        {blocks; next = Rhtml (k, s :: lines)}
+    | Rblockquote (c1, next), Lblockquote s ->
+        let {blocks = c1; next} = process {blocks = c1; next} s in
+        {blocks; next = Rblockquote (c1, next)}
+    | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
+        let c1 = close {blocks = c1; next} in
+        let {blocks = c2; next} = process empty s in
+        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)}
+    | Rlist (kind, style, _, ind, items, c1, next), Lempty ->
+        let {blocks = c1; next} = process {blocks = c1; next} s in
+        {blocks; next = Rlist (kind, style, true, ind, items, c1, next)}
+    | Rlist (kind, style, prev_empty, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
+        let s = subn ind s in
+        let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
+        let {blocks = c1; next} = process {blocks = c1; next} s in
+        {blocks; next = Rlist (kind, style, false, ind, items, c1, next)}
+    | (Rlist _ | Rblockquote _ as self), _ ->
+        let rec loop = function
+          | Rlist (kind, style, prev_empty, ind, items, c, next) ->
+              begin match loop next with
+              | Some next ->
+                  Some (Rlist (kind, style, prev_empty, ind, items, c, next))
+              | None ->
+                  None
+              end
+          | Rblockquote (c, next) ->
+              begin match loop next with
+              | Some next ->
+                  Some (Rblockquote (c, next))
+              | None ->
+                  None
+              end
+          | Rparagraph (_ :: _ as lines) ->
+              begin match classify_line s with
+              | Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
+                  Some (Rparagraph (s :: lines))
+              | _ ->
+                  None
+              end
+          | _ ->
+              None
+        in
+        begin match loop self with
+        | Some next ->
+            {blocks; next}
+        | None ->
+            process {blocks = close {blocks; next = self}; next = Rempty} s
+        end
 end
 
 let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
