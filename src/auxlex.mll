@@ -99,9 +99,9 @@ and is_blockquote = parse
   | _ | eof { None }
 
 and is_list_item = parse
-  | sp3 (['+''-''*'] as marker) ' ' (' ' ' '?)?
+  | sp3 (['+''-''*'] as marker) ' ' sp3
       { Some (Bullet marker, String.length (Lexing.lexeme lexbuf)) }
-  | sp3 (['0'-'9']+ as num) ('.' | ')') ' ' (' ' ' '?)?
+  | sp3 (['0'-'9']+ as num) ('.' | ')') ' ' sp3
       { Some (Ordered (int_of_string num), String.length (Lexing.lexeme lexbuf)) }
   | _ | eof
       { None }
