@@ -236,10 +236,8 @@ module Parser = struct
         {blocks; next = Rhtml (k, s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
-    | Rlist (kind, style, prev_empty, _, items, {blocks = c1; next}), Llist_item (kind', ind, s) when kind = kind' ->
-        let c1 = close {blocks = c1; next} in
-        let {blocks = c2; next} = process empty s in
-        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, {blocks = c2; next})}
+    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
+        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, finish state :: items, process empty s)}
     | Rlist (kind, style, _, ind, items, {blocks = c1; next}), Lempty ->
         let {blocks = c1; next} = process {blocks = c1; next} s in
         {blocks; next = Rlist (kind, style, true, ind, items, {blocks = c1; next})}
