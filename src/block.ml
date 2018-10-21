@@ -37,7 +37,7 @@ module Parser = struct
     | Hblank
 
   type container =
-    | Rblockquote of blocks * container
+    | Rblockquote of t
     | Rlist of List_kind.t * List_style.t * bool * int * blocks list * blocks * container
     | Rparagraph of string list
     | Rfenced_code of int * int * string * string list
@@ -45,7 +45,7 @@ module Parser = struct
     | Rhtml of html_kind * string list
     | Rempty
 
-  type t =
+  and t =
     {
       blocks: block list;
       next: container;
@@ -55,8 +55,8 @@ module Parser = struct
 
   let rec close {blocks; next} =
     match next with
-    | Rblockquote (closed, next) ->
-        Blockquote (finish {blocks = closed; next}) :: blocks
+    | Rblockquote state ->
+        Blockquote (finish state) :: blocks
     | Rlist (kind, style, _, _, closed_items, last_item, next) ->
         List (kind, style, List.rev (finish {blocks = last_item; next} :: closed_items)) :: blocks
     | Rparagraph l ->
@@ -188,8 +188,7 @@ module Parser = struct
     | Rempty, Lempty ->
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
-        let {blocks = c1; next} = process empty s in
-        {blocks; next = Rblockquote (c1, next)}
+        {blocks; next = Rblockquote (process empty s)}
     | Rempty, (Lthematic_break | Lsetext_heading 2) ->
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Latx_heading (n, s) ->
@@ -236,9 +235,8 @@ module Parser = struct
         {blocks = close {blocks; next = self}; next = Rempty}
     | Rhtml (k, lines), _ ->
         {blocks; next = Rhtml (k, s :: lines)}
-    | Rblockquote (c1, next), Lblockquote s ->
-        let {blocks = c1; next} = process {blocks = c1; next} s in
-        {blocks; next = Rblockquote (c1, next)}
+    | Rblockquote state, Lblockquote s ->
+        {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
         let c1 = close {blocks = c1; next} in
         let {blocks = c2; next} = process empty s in
@@ -260,10 +258,10 @@ module Parser = struct
               | None ->
                   None
               end
-          | Rblockquote (c, next) ->
+          | Rblockquote {blocks; next} ->
               begin match loop next with
               | Some next ->
-                  Some (Rblockquote (c, next))
+                  Some (Rblockquote {blocks; next})
               | None ->
                   None
               end
