@@ -243,9 +243,13 @@ module Parser = struct
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, {blocks = c1; next}), _ when Auxlex.indent s >= ind ->
         let s = subn ind s in
-        let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
-        let {blocks = c1; next} = process {blocks = c1; next} s in
-        {blocks; next = Rlist (kind, style, false, ind, items, {blocks = c1; next})}
+        let style =
+          if prev_empty && next = Rempty && List.length c1 > 0 then
+            List_style.Loose
+          else
+            style
+        in
+        {blocks; next = Rlist (kind, style, false, ind, items, process {blocks = c1; next} s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
           | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
