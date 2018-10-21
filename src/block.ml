@@ -29,7 +29,8 @@ let rec map ~f = function
   | Html_block _ as x -> x
 
 module Parser = struct
-  type blocks = string t list
+  type block = string t
+  type blocks = block list
 
   type html_kind =
     | Hcontains of string list
@@ -45,36 +46,38 @@ module Parser = struct
     | Rempty
 
   type t =
-    | Rdocument of blocks * container
+    {
+      blocks: block list;
+      next: container;
+    }
 
-  let close c next : blocks =
-    let concat l = String.concat "\n" (List.rev l) in
-    let rec close c = function
-      | Rblockquote (closed, next) ->
-          Blockquote (List.rev (close closed next)) :: c
-      | Rlist (kind, style, _, _, closed_items, last_item, next) ->
-          List (kind, style, List.rev (List.rev (close last_item next) :: closed_items)) :: c
-      | Rparagraph l ->
-          Paragraph (concat l) :: c
-      | Rfenced_code (_, _, info, []) ->
-          Code_block (info, None) :: c
-      | Rfenced_code (_, _, info, l) ->
-          Code_block (info, Some (concat l)) :: c
-      | Rindented_code l -> (* TODO: trim from the right *)
-          let rec loop = function "" :: l -> loop l | _ as l -> l in
-          Code_block ("", Some (concat (loop l))) :: c
-      | Rhtml (_, l) ->
-          Html_block (concat l) :: c
-      | Rempty ->
-          c
-    in
-    close c next
+  let concat l = String.concat "\n" (List.rev l)
 
-  let finish (Rdocument (closed, next)) =
-    List.rev (close closed next)
+  let rec close {blocks; next} =
+    match next with
+    | Rblockquote (closed, next) ->
+        Blockquote (finish {blocks = closed; next}) :: blocks
+    | Rlist (kind, style, _, _, closed_items, last_item, next) ->
+        List (kind, style, List.rev (finish {blocks = last_item; next} :: closed_items)) :: blocks
+    | Rparagraph l ->
+        Paragraph (concat l) :: blocks
+    | Rfenced_code (_, _, info, []) ->
+        Code_block (info, None) :: blocks
+    | Rfenced_code (_, _, info, l) ->
+        Code_block (info, Some (concat l)) :: blocks
+    | Rindented_code l -> (* TODO: trim from the right *)
+        let rec loop = function "" :: l -> loop l | _ as l -> l in
+        Code_block ("", Some (concat (loop l))) :: blocks
+    | Rhtml (_, l) ->
+        Html_block (concat l) :: blocks
+    | Rempty ->
+        blocks
+
+  and finish state =
+    List.rev (close state)
 
   let empty =
-    Rdocument ([], Rempty)
+    {blocks = []; next = Rempty}
 
   let string_contains s1 s =
     let rec loop i =
@@ -180,7 +183,7 @@ module Parser = struct
           end
     end
 
-  let process (Rdocument (c, next)) s =
+  let process {blocks = c; next} s =
     let rec process c next s =
       match next, classify_line s with
       | Rempty, Lempty ->
@@ -204,13 +207,13 @@ module Parser = struct
       | Rempty, (Lsetext_heading _ | Lparagraph _) ->
           c, Rparagraph [s]
       | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
-          process (close c self) Rempty s
+          process (close {blocks = c; next = self}) Rempty s
       | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
           Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: c, Rempty
       | Rparagraph lines, _ ->
           c, Rparagraph (s :: lines)
       | Rfenced_code (_, num, _, _) as self, Lfenced_code (_, num', "") when num' >= num ->
-          close c self, Rempty
+          close {blocks = c; next = self}, Rempty
       | Rfenced_code (ind, num, info, lines), _ ->
           let s =
             let ind = min (Auxlex.indent s) ind in
@@ -227,18 +230,18 @@ module Parser = struct
           let s = subn n s in
           c, Rindented_code (s :: lines)
       | Rindented_code _ as self, _ ->
-          process (close c self) Rempty s
+          process (close {blocks = c; next = self}) Rempty s
       | Rhtml (Hcontains l as k, lines), _ when List.exists (fun t -> string_contains t s) l ->
-          close c (Rhtml (k, s :: lines)), Rempty
+          close {blocks = c; next = Rhtml (k, s :: lines)}, Rempty
       | Rhtml (Hblank, _) as self, Lempty ->
-          close c self, Rempty
+          close {blocks = c; next = self}, Rempty
       | Rhtml (k, lines), _ ->
           c, Rhtml (k, s :: lines)
       | Rblockquote (c1, next), Lblockquote s ->
           let c1, next = process c1 next s in
           c, Rblockquote (c1, next)
       | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
-          let c1 = close c1 next in
+          let c1 = close {blocks = c1; next} in
           let c2, next = process [] Rempty s in
           c, Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)
       | Rlist (kind, style, _, ind, items, c1, next), Lempty ->
@@ -279,11 +282,11 @@ module Parser = struct
           | Some next ->
               c, next
           | None ->
-              process (close c self) Rempty s
+              process (close {blocks = c; next = self}) Rempty s
           end
     in
     let c, next = process c next s in
-    Rdocument (c, next)
+    {blocks = c; next}
 end
 
 let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
