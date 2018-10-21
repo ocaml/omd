@@ -38,7 +38,7 @@ module Parser = struct
 
   type container =
     | Rblockquote of t
-    | Rlist of List_kind.t * List_style.t * bool * int * blocks list * blocks * container
+    | Rlist of List_kind.t * List_style.t * bool * int * blocks list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * string * string list
     | Rindented_code of string list
@@ -57,8 +57,8 @@ module Parser = struct
     match next with
     | Rblockquote state ->
         Blockquote (finish state) :: blocks
-    | Rlist (kind, style, _, _, closed_items, last_item, next) ->
-        List (kind, style, List.rev (finish {blocks = last_item; next} :: closed_items)) :: blocks
+    | Rlist (kind, style, _, _, closed_items, state) ->
+        List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         Paragraph (concat l) :: blocks
     | Rfenced_code (_, _, info, []) ->
@@ -200,8 +200,7 @@ module Parser = struct
     | Rempty, Lindented_code s ->
         {blocks; next = Rindented_code [s]}
     | Rempty, Llist_item (kind, indent, s) ->
-        let {blocks = c1; next} = process empty s in
-        {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], c1, next)}
+        {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph _) ->
         {blocks; next = Rparagraph [s]}
     | Rparagraph _ as self, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
@@ -237,24 +236,24 @@ module Parser = struct
         {blocks; next = Rhtml (k, s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
-    | Rlist (kind, style, prev_empty, _, items, c1, next), Llist_item (kind', ind, s) when kind = kind' ->
+    | Rlist (kind, style, prev_empty, _, items, {blocks = c1; next}), Llist_item (kind', ind, s) when kind = kind' ->
         let c1 = close {blocks = c1; next} in
         let {blocks = c2; next} = process empty s in
-        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, c2, next)}
-    | Rlist (kind, style, _, ind, items, c1, next), Lempty ->
+        {blocks; next = Rlist (kind, (if prev_empty then Loose else style), false, ind, List.rev c1 :: items, {blocks = c2; next})}
+    | Rlist (kind, style, _, ind, items, {blocks = c1; next}), Lempty ->
         let {blocks = c1; next} = process {blocks = c1; next} s in
-        {blocks; next = Rlist (kind, style, true, ind, items, c1, next)}
-    | Rlist (kind, style, prev_empty, ind, items, c1, next), _ when Auxlex.indent s >= ind ->
+        {blocks; next = Rlist (kind, style, true, ind, items, {blocks = c1; next})}
+    | Rlist (kind, style, prev_empty, ind, items, {blocks = c1; next}), _ when Auxlex.indent s >= ind ->
         let s = subn ind s in
         let style = if prev_empty && next = Rempty && List.length c1 > 0 then List_style.Loose else style in
         let {blocks = c1; next} = process {blocks = c1; next} s in
-        {blocks; next = Rlist (kind, style, false, ind, items, c1, next)}
+        {blocks; next = Rlist (kind, style, false, ind, items, {blocks = c1; next})}
     | (Rlist _ | Rblockquote _ as self), _ ->
         let rec loop = function
-          | Rlist (kind, style, prev_empty, ind, items, c, next) ->
+          | Rlist (kind, style, prev_empty, ind, items, {blocks = c; next}) ->
               begin match loop next with
               | Some next ->
-                  Some (Rlist (kind, style, prev_empty, ind, items, c, next))
+                  Some (Rlist (kind, style, prev_empty, ind, items, {blocks = c; next}))
               | None ->
                   None
               end
