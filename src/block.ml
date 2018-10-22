@@ -83,7 +83,9 @@ module Parser = struct
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
-    | Rempty, (Lthematic_break | Lsetext_heading 2) ->
+    | Rempty, Lthematic_break ->
+        {blocks = Thematic_break :: blocks; next = Rempty}
+    | Rempty, Lsetext_heading (2, n) when n >= 3 ->
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Latx_heading (n, s) ->
         {blocks = Heading (n, s) :: blocks; next = Rempty}
@@ -100,7 +102,7 @@ module Parser = struct
     | Rparagraph _, (Lempty | Llist_item _ (* TODO non empty first line *)
                     | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
+    | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
@@ -163,7 +165,7 @@ module Parser = struct
               end
           | Rparagraph (_ :: _ as lines) ->
               begin match Auxlex.classify_line s with
-              | Auxlex.Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
+              | Auxlex.Lparagraph _ | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None

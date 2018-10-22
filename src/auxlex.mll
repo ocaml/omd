@@ -85,9 +85,9 @@ let open_tag = '<' tag_name attribute+ ws* '/'? '>'
 let closing_tag = "</" tag_name ws* '>'
 
 rule is_thematic_break = parse
-  | sp3 '*' ws* '*' ws* ('*' ws*)+ eof
-  | sp3 '_' ws* '_' ws* ('_' ws*)+ eof
-  | sp3 '-' ws* '-' ws* ('-' ws*)+ eof { true }
+  | sp3 '*' ws* '*' (ws* '*')+ ws* eof
+  | sp3 '_' ws* '_' (ws* '_')+ ws* eof
+  | sp3 '-' ws* '-' (ws* '-')+ ws* eof { true }
   | _ | eof { false }
 
 and is_empty = parse
@@ -126,8 +126,8 @@ and is_fenced_code = parse
     { None }
 
 and is_setext_underline = parse
-  | sp3 '='+ ws* eof { Some 1 }
-  | sp3 '-'+ ws* eof { Some 2 }
+  | sp3 ('='+ as s) ws* eof { Some (1, String.length s) }
+  | sp3 ('-'+ as s) ws* eof { Some (2, String.length s) }
   | _ | eof { None }
 
 and is_html_opening = parse
@@ -216,7 +216,7 @@ type line_kind =
   | Lblockquote of Sub.t
   | Lthematic_break
   | Latx_heading of int * string
-  | Lsetext_heading of int
+  | Lsetext_heading of int * int
   | Lfenced_code of int * int * string
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
@@ -234,8 +234,8 @@ let classify_line (s : Sub.t) =
         Lblockquote s
     | None ->
         begin match is_setext_underline s with
-        | Some n ->
-            Lsetext_heading n
+        | Some (n, l) ->
+            Lsetext_heading (n, l)
         | None ->
             begin match is_thematic_break s with
             | true ->
