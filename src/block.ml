@@ -58,7 +58,7 @@ module Parser = struct
     | Rlist (kind, style, _, _, closed_items, state) ->
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
-        Paragraph (concat l) :: blocks
+        Paragraph (String.trim (concat l)) :: blocks
     | Rfenced_code (_, _, info, []) ->
         Code_block (info, None) :: blocks
     | Rfenced_code (_, _, info, l) ->
