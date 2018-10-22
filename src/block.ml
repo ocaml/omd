@@ -97,7 +97,8 @@ module Parser = struct
         {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph _) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
-    | Rparagraph _, (Lempty | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
+    | Rparagraph _, (Lempty | Llist_item _ (* TODO non empty first line *)
+                    | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading n ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
@@ -130,9 +131,6 @@ module Parser = struct
         {blocks; next = Rhtml (k, Sub.to_string s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
-    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
-        let style = if prev_empty then List_style.Loose else style in
-        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, state), _ when Auxlex.indent s >= ind ->
@@ -144,6 +142,9 @@ module Parser = struct
             style
         in
         {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
+    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
+        let style = if prev_empty then List_style.Loose else style in
+        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
           | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
@@ -196,7 +197,7 @@ let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
           (match kind with List_kind.Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
         List.iter (fun x ->
             Buffer.add_string b "<li>";
-            List.iteri (fun i md -> li (i = 0) style md) x;
+            let _ = List.fold_left (li style) false x in
             Buffer.add_string b "</li>\n"
           ) l;
         Buffer.add_string b
@@ -221,14 +222,16 @@ let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
         Buffer.add_string b md;
         Buffer.add_string b (Printf.sprintf "</h%d>" i)
-  and li first style x =
+  and li style prev_nl x =
     match x, style with
     | Paragraph md, List_style.Tight ->
-        Buffer.add_string b (f md)
+        Buffer.add_string b (f md);
+        false
     | _ ->
-        if first then Buffer.add_char b '\n';
+        if not prev_nl then Buffer.add_char b '\n';
         loop x;
-        Buffer.add_char b '\n'
+        Buffer.add_char b '\n';
+        true
   in
   loop md
 
