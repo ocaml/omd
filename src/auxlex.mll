@@ -99,9 +99,9 @@ and is_blockquote = parse
   | _ | eof { None }
 
 and is_list_item = parse
-  | sp3 (['+''-''*'] as marker) ' ' sp3
+  | sp3 (['+''-''*'] as marker)
       { Some (Bullet marker, String.length (Lexing.lexeme lexbuf)) }
-  | sp3 (['0'-'9']+ as num) ('.' | ')') ' ' sp3
+  | sp3 (['0'-'9']+ as num) ('.' | ')')
       { Some (Ordered (int_of_string num), String.length (Lexing.lexeme lexbuf)) }
   | _ | eof
       { None }
@@ -164,11 +164,19 @@ let is_empty s =
 let is_blockquote s =
   is_blockquote (Sub.lexbuf s)
 
-let is_list_item s =
-  is_list_item (Sub.lexbuf s)
-
 let indent s =
   indent 0 (Sub.lexbuf s)
+
+let is_list_item s =
+  match is_list_item (Sub.lexbuf s) with
+  | Some (k, off) ->
+      let n = min 4 (indent (Sub.offset off s)) in
+      if n = 0 then
+        None
+      else
+        Some (k, off + n)
+  | None ->
+      None
 
 let is_atx_heading s =
   is_atx_heading (Sub.lexbuf s)
