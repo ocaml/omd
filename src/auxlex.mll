@@ -112,7 +112,7 @@ and indent acc = parse
   | _ | eof { acc }
 
 and is_atx_heading = parse
-  | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx) (ws _* as title)?
+  | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx) (ws _* as title)? eof
     { let title = match title with None -> "" | Some s -> s in
       let title = String.trim (remove_trailing_hashes (Buffer.create (String.length title)) (Lexing.from_string title)) in
       Some (String.length atx, title) }
