@@ -170,11 +170,14 @@ let indent s =
 let is_list_item s =
   match is_list_item (Sub.lexbuf s) with
   | Some (k, off) ->
-      let n = min 4 (indent (Sub.offset off s)) in
-      if n = 0 then
-        None
+      let n = indent (Sub.offset off s) in
+      if n > 0 then
+        if n <= 4 then
+          Some (k, off + n)
+        else
+          Some (k, off + 1)
       else
-        Some (k, off + n)
+        None
   | None ->
       None
 
