@@ -1050,10 +1050,6 @@ struct
         end
 
     (* HTML *)
-    (* <br/> and <hr/> with or without space(s) *)
-    | _, Delim (1, Lessthan) :: Word ("br"|"hr" as w) :: Delim (1, Slash) :: Delim (n, Greaterthan) :: tl
-    | _, Delim (1, Lessthan) :: Word ("br"|"hr" as w) :: Delim (_, Space) :: Delim (1, Slash) :: Delim (n, Greaterthan) :: tl ->
-        main_impl_rev ~html (Raw("<"^w^" />")::r) [Delim (1, Greaterthan)] (delim (n-1) Greaterthan tl)
 
     (* awaited orphan html closing tag *)
     | _, Delim (1, Lessthan) :: Delim (1, Slash) :: Word w :: Delim (n, Greaterthan) :: tl when !mediatypetextomd <> [] ->
