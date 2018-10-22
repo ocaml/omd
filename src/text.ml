@@ -59,8 +59,7 @@ let rec print ppf = function
   | Img (_, src, _) ->
       F.fprintf ppf "@[<1>(img@ %S)@]" src
 
-let rec html_of_md md =
-  let b = Buffer.create 64 in
+let rec html_of_md b md =
   let rec loop = function
     | Cat l ->
         List.iter loop l
@@ -100,7 +99,6 @@ let rec html_of_md md =
     | Html body ->
         Buffer.add_string b body
     | Url (href,s,title) ->
-        let s = html_of_md s in
         Buffer.add_string b "<a href='";
         Buffer.add_string b (htmlentities ~md:true href);
         Buffer.add_string b "'";
@@ -110,13 +108,12 @@ let rec html_of_md md =
           Buffer.add_string b "'"
         end;
         Buffer.add_string b ">";
-        Buffer.add_string b s;
+        html_of_md b s;
         Buffer.add_string b "</a>"
     | NL ->
         Buffer.add_string b "\n"
   in
-  loop md;
-  Buffer.contents b
+  loop md
 
 let escape_markdown_characters s =
   let b = Buffer.create (String.length s * 2) in

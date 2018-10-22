@@ -184,7 +184,7 @@ module Parser = struct
     process state (Sub.of_string s)
 end
 
-let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
+let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a t -> unit = fun f b md ->
   let rec loop = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>\n";
@@ -192,7 +192,7 @@ let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
         Buffer.add_string b "</blockquote>"
     | Paragraph md ->
         Buffer.add_string b "<p>";
-        Buffer.add_string b (f md);
+        f b md;
         Buffer.add_string b "</p>"
     | List (kind, style, l) ->
         Buffer.add_string b
@@ -220,14 +220,13 @@ let to_html : 'a. ('a -> string) -> Buffer.t -> 'a t -> unit = fun f b md ->
     | Html_block body ->
         Buffer.add_string b body
     | Heading (i, md) ->
-        let md = f md in
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
-        Buffer.add_string b md;
+        f b md;
         Buffer.add_string b (Printf.sprintf "</h%d>" i)
   and li style prev_nl x =
     match x, style with
     | Paragraph md, List_style.Tight ->
-        Buffer.add_string b (f md);
+        f b md;
         false
     | _ ->
         if not prev_nl then Buffer.add_char b '\n';

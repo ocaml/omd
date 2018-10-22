@@ -22,7 +22,7 @@ and title = string
 
 val print : Format.formatter -> t -> unit
 
-val html_of_md : t -> string
+val html_of_md : Buffer.t -> t -> unit
 val markdown_of_md : t -> string
 
 module type Env =

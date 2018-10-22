@@ -30,7 +30,7 @@ module Parser : sig
   val finish : t -> blocks
 end with type blocks := string t list
 
-val to_html : ('a -> string) -> 'a t list -> string
+val to_html : (Buffer.t -> 'a -> unit) -> 'a t list -> string
 
 val of_channel : in_channel -> string t list
 
