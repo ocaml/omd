@@ -199,4 +199,81 @@ let is_indented_code s =
 
 let is_setext_underline s =
   is_setext_underline (Sub.lexbuf s)
+
+type list_kind =
+  | Ordered
+  | Unordered
+
+type html_kind =
+  | Hcontains of string list
+  | Hblank
+
+type line_kind =
+  | Lempty
+  | Lblockquote of Sub.t
+  | Lthematic_break
+  | Latx_heading of int * string
+  | Lsetext_heading of int
+  | Lfenced_code of int * int * string
+  | Lindented_code of Sub.t
+  | Lhtml of bool * html_kind
+  | Llist_item of list_kind * int * Sub.t
+  | Lparagraph of Sub.t
+
+let classify_line (s : Sub.t) =
+  if is_empty s then
+    Lempty
+  else begin
+    match is_blockquote s with
+    | Some n ->
+        let s = Sub.offset n s in
+        let s = if indent s > 0 then Sub.offset 1 s else s in
+        Lblockquote s
+    | None ->
+        begin match is_setext_underline s with
+        | Some n ->
+            Lsetext_heading n
+        | None ->
+            begin match is_thematic_break s with
+            | true ->
+                Lthematic_break
+            | false ->
+                begin match is_atx_heading s with
+                | Some (n, s) ->
+                    Latx_heading (n, s)
+                | None ->
+                    begin match is_fenced_code s with
+                    | Some (ind, num, info) ->
+                        Lfenced_code (ind, num, info)
+                    | None ->
+                        begin match is_html_opening s with
+                        | Some (can_interrupt_par, kind) ->
+                            let kind =
+                              match kind with
+                              | `Contains l -> Hcontains l
+                              | `Blank -> Hblank
+                            in
+                            Lhtml (can_interrupt_par, kind)
+                        | None ->
+                            if indent s >= 4 then
+                              Lindented_code (Sub.offset 4 s)
+                            else begin
+                              match is_list_item s with
+                              | Some (kind, indent) ->
+                                  let kind =
+                                    match kind with
+                                    | Bullet _ -> Unordered
+                                    | Ordered _ -> Ordered
+                                  in
+                                  Llist_item (kind, indent, Sub.offset indent s)
+                              | None ->
+                                  Lparagraph s
+                            end
+                        end
+                    end
+                end
+            end
+        end
+  end
+
 }

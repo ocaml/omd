@@ -1,5 +1,5 @@
 module List_kind = struct
-  type t =
+  type t = Auxlex.list_kind =
     | Ordered
     | Unordered
 end
@@ -34,17 +34,13 @@ module Parser = struct
   type block = string t
   type blocks = block list
 
-  type html_kind =
-    | Hcontains of string list
-    | Hblank
-
   type container =
     | Rblockquote of t
     | Rlist of List_kind.t * List_style.t * bool * int * blocks list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * string * string list
     | Rindented_code of string list
-    | Rhtml of html_kind * string list
+    | Rhtml of Auxlex.html_kind * string list
     | Rempty
 
   and t =
@@ -81,77 +77,9 @@ module Parser = struct
   let empty =
     {blocks = []; next = Rempty}
 
-  type line_kind =
-    | Lempty
-    | Lblockquote of Sub.t
-    | Lthematic_break
-    | Latx_heading of int * string
-    | Lsetext_heading of int
-    | Lfenced_code of int * int * string
-    | Lindented_code of Sub.t
-    | Lhtml of bool * html_kind
-    | Llist_item of List_kind.t * int * Sub.t
-    | Lparagraph of Sub.t
-
-  let classify_line (s : Sub.t) =
-    if Auxlex.is_empty s then
-      Lempty
-    else begin
-      match Auxlex.is_blockquote s with
-      | Some n ->
-          let s = Sub.offset n s in
-          let s = if Auxlex.indent s > 0 then Sub.offset 1 s else s in
-          Lblockquote s
-      | None ->
-          begin match Auxlex.is_setext_underline s with
-          | Some n ->
-              Lsetext_heading n
-          | None ->
-              begin match Auxlex.is_thematic_break s with
-              | true ->
-                  Lthematic_break
-              | false ->
-                  begin match Auxlex.is_atx_heading s with
-                  | Some (n, s) ->
-                      Latx_heading (n, s)
-                  | None ->
-                      begin match Auxlex.is_fenced_code s with
-                      | Some (ind, num, info) ->
-                          Lfenced_code (ind, num, info)
-                      | None ->
-                          begin match Auxlex.is_html_opening s with
-                          | Some (can_interrupt_par, kind) ->
-                              let kind =
-                                match kind with
-                                | `Contains l -> Hcontains l
-                                | `Blank -> Hblank
-                              in
-                              Lhtml (can_interrupt_par, kind)
-                          | None ->
-                              if Auxlex.indent s >= 4 then
-                                Lindented_code (Sub.offset 4 s)
-                              else begin
-                                match Auxlex.is_list_item s with
-                                | Some (kind, indent) ->
-                                    let kind =
-                                      match kind with
-                                      | Bullet _ -> List_kind.Unordered
-                                      | Ordered _ -> Ordered
-                                    in
-                                    Llist_item (kind, indent, Sub.offset indent s)
-                                | None ->
-                                    Lparagraph s
-                              end
-                          end
-                      end
-                  end
-              end
-          end
-    end
-
   let rec process {blocks; next} s =
-    match next, classify_line s with
-    | Rempty, Lempty ->
+    match next, Auxlex.classify_line s with
+    | Rempty, Auxlex.Lempty ->
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
@@ -233,8 +161,8 @@ module Parser = struct
                   None
               end
           | Rparagraph (_ :: _ as lines) ->
-              begin match classify_line s with
-              | Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
+              begin match Auxlex.classify_line s with
+              | Auxlex.Lparagraph _ | Lsetext_heading 1 | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None
