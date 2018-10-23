@@ -1509,33 +1509,42 @@ struct
 end
 
 module P = struct
+  type ws =
+    | Start
+    | Ws
+    | Other
+
   let code n p =
     let b = Buffer.create 18 in
-    let rec f p =
+    let rec f prev_ws p =
       match Sub.head p with
-      | Some ('`', p) ->
-          let rec loop m p =
+      | Some ('`', q) ->
+          let rec loop m q =
             if m = 0 then
-              Some (Buffer.contents b, p)
+              Some (Buffer.contents b, q)
             else begin
-              match Sub.head p with
-              | Some ('`', p) ->
-                  loop (pred m) p
+              match Sub.head q with
+              | Some ('`', q) ->
+                  loop (pred m) q
               | Some _ ->
+                  if prev_ws = Ws then Buffer.add_char b ' ';
                   for _ = 1 to n - m do Buffer.add_char b '`' done;
-                  f p
+                  f Other q
               | None ->
                   None
             end
           in
-          loop (pred n) p
+          loop (pred n) q
+      | Some ((' ' | '\t' | '\n' | '\r' | '\011' | '\012'), p) ->
+          f (if prev_ws = Start then Start else Ws) p
       | Some (c, p) ->
+          if prev_ws = Ws then Buffer.add_char b ' ';
           Buffer.add_char b c;
-          f p
+          f Other p
       | None ->
           None
     in
-    f p
+    f Start p
 
   let f p =
     let b = Buffer.create 18 in
