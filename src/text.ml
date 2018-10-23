@@ -1509,21 +1509,27 @@ struct
 end
 
 module P = struct
+  let get s pos =
+    if pos >= String.length s then
+      None
+    else
+      Some (s.[pos], succ pos)
+
   type ws =
     | Start
     | Ws
     | Other
 
-  let code n p =
+  let code n s pos =
     let b = Buffer.create 18 in
-    let rec f prev_ws p =
-      match Sub.head p with
+    let rec f prev_ws pos =
+      match get s pos with
       | Some ('`', q) ->
           let rec loop m q =
             if m = 0 then
               Some (Buffer.contents b, q)
             else begin
-              match Sub.head q with
+              match get s q with
               | Some ('`', q) ->
                   loop (pred m) q
               | Some _ ->
@@ -1544,59 +1550,160 @@ module P = struct
       | None ->
           None
     in
-    f Start p
+    f Start pos
 
-  let autolink p =
-    let scheme p =
-      let rec loop n q =
-        if n >= 32 then
-          if n < 2 then
-            None
-          else
-            Some (Sub.take n p, q)
-        else begin
-          match Sub.head q with
-          | Some (('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q) ->
-              loop (succ n) q
-          | Some _ | None ->
-              if n < 2 then
-                None
-              else
-                Some (Sub.take n p, q)
-        end
-      in
-      match Sub.head p with
-      | Some (('a'..'z' | 'A'..'Z'), p) ->
-          loop 1 p
-      | Some _ | None ->
+  let email s q =
+    let atext q =
+      match get s q with
+      | Some (('a'..'z' | 'A'..'Z' | '0'..'9'
+              | '!' | '#' | '$' | '%'
+              | '&' | '\'' | '*' | '+'
+              | '-' | '/' | '=' | '?'
+              | '^' | '_' | '`' | '{'
+              | '|' | '}' | '~'), q) ->
+          Some q
+      | _ ->
           None
     in
-    match scheme p with
-    | Some (scheme, p) ->
-        begin match Sub.head p with
-        | Some (':', p) ->
-            let url, p =
-              let f = function
-                | '\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F' | ' ' | '<' | '>' -> false
-                | _ -> true
-              in
-              Sub.span f p
-            in
-            begin match Sub.head p with
-            | Some ('>', p) ->
-                Some (Printf.sprintf "%s:%s" (Sub.to_string scheme) (Sub.to_string url), p)
-            | Some _ | None ->
-                None
-            end
-        | Some _ | None ->
+    let label q =
+      let let_dig q =
+        match get s q with
+        | Some (('a'..'z' | 'A'..'Z' | '0'..'9'), q) ->
+            Some q
+        | _ ->
             None
+      in
+      let rec ldh_str q =
+        let let_dig_hyp q =
+          match let_dig q with
+          | Some _ as x -> x
+          | None ->
+              begin match get s q with
+              | Some ('-', q) -> Some q
+              | _ -> None
+              end
+        in
+        match let_dig_hyp q with
+        | Some q as x ->
+            begin match ldh_str q with
+            | Some _ as x -> x
+            | None -> x
+            end
+        | None ->
+            None
+      in
+      match let_dig q with
+      | Some q as x ->
+          begin match ldh_str q with
+          | Some _ as x -> x
+          | None ->
+              begin match let_dig q with
+              | Some _ as x -> x
+              | None -> x
+              end
+          end
+      | None ->
+          None
+    in
+    let atext_or_dot q =
+      match atext q with
+      | Some _ as x -> x
+      | None ->
+          begin match get s q with
+          | Some ('.', q) -> Some q
+          | _ -> None
+          end
+    in
+    let rec loop q =
+      match atext_or_dot q with
+      | Some q -> loop q
+      | None ->
+          begin match get s q with
+          | Some ('@', q) ->
+              let rec loop q =
+                match get s q with
+                | Some ('.', q) ->
+                    begin match label q with
+                    | Some q -> loop q
+                    | None -> None
+                    end
+                | _ ->
+                    Some q
+              in
+              begin match label q with
+              | Some q -> loop q
+              | _ -> None
+              end
+          | _ ->
+              None
+          end
+    in
+    match atext_or_dot q with
+    | Some q ->
+        loop q
+    | None ->
+        None
+
+  let autolink s pos =
+    let scheme q =
+      let letter q =
+        match get s q with
+        | Some (('a'..'z' | 'A'..'Z'), q) -> Some q
+        | _ -> None
+      in
+      let rec loop n q =
+        if n > 32 then
+          Some q
+        else begin
+          match get s q with
+          | Some (('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q) ->
+              loop (succ n) q
+          | _ ->
+              Some q
+        end
+      in
+      match letter q with
+      | Some q ->
+          begin match letter q with
+          | Some q -> loop 2 q
+          | None -> None
+          end
+      | None ->
+          None
+    in
+    let uri q =
+      match scheme q with
+      | Some q ->
+          begin match get s q with
+          | Some (':', q) ->
+              let rec loop q =
+                match get s q with
+                | Some (('\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F'
+                        | ' ' | '<' | '>'), _) -> q
+                | Some (_, q) -> loop q
+                | None -> q
+              in
+              Some (loop q)
+          | _ ->
+              None
+          end
+      | None ->
+          None
+    in
+    match
+      match uri pos with None -> email s pos | Some _ as x -> x
+    with
+    | Some q ->
+        begin match get s q with
+        | Some ('>', q1) -> Some (String.sub s pos (q - pos), q1)
+        | _ -> None
         end
     | None ->
         None
 
-  let f p =
+  let f pos =
     let b = Buffer.create 18 in
-    let get acc =
+    let text acc =
       if Buffer.length b = 0 then
         acc
       else begin
@@ -1605,41 +1712,41 @@ module P = struct
         Text s :: acc
       end
     in
-    let rec f acc p =
-      match Sub.head p with
-      | Some ('\\', p) ->
-          begin match Sub.head p with
-          | Some (c, p) ->
+    let rec f acc s pos =
+      match get s pos with
+      | Some ('\\', q) ->
+          begin match get s q with
+          | Some (c, q) ->
               Buffer.add_char b c;
-              f acc p
+              f acc s q
           | None ->
-              f acc p
+              f acc s q
           end
-      | Some ('`', p) ->
-          let rec loop n p =
-            match Sub.head p with
-            | Some ('`', p) ->
-                loop (succ n) p
+      | Some ('`', pos) ->
+          let rec loop n pos =
+            match get s pos with
+            | Some ('`', pos) ->
+                loop (succ n) pos
             | Some _ ->
-                begin match code n p with
-                | Some (s, p) ->
-                    f (Code s :: get acc) p
+                begin match code n s pos with
+                | Some (s, pos) ->
+                    f (Code s :: text acc) s pos
                 | None ->
                     Buffer.add_string b (String.make n '`');
-                    f acc p
+                    f acc s pos
                 end
             | None ->
                 Buffer.add_string b (String.make n '`');
-                f acc p
+                f acc s pos
           in
-          loop 1 p
-      | Some ('<', p) ->
-          begin match autolink p with
-          | Some (x, p) ->
-              f (Url (x, Text x, x) :: get acc) p
+          loop 1 pos
+      | Some ('<', pos) ->
+          begin match autolink s pos with
+          | Some (x, q) ->
+              f (Url (x, Text x, x) :: text acc) s q
           | None ->
               Buffer.add_char b '<';
-              f acc p
+              f acc s pos
               (* begin match html_tag p with *)
               (* | Some x -> *)
               (*     f (Html x :: acc) p *)
@@ -1647,9 +1754,9 @@ module P = struct
           end
       | Some (c, p) ->
           Buffer.add_char b c;
-          f acc p
+          f acc s p
       | None ->
-          List.rev (get acc)
+          List.rev (text acc)
     in
-    f [] p
+    f [] pos
 end

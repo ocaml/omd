@@ -86,5 +86,5 @@ module Make : functor (Env : Env) -> sig
 end
 
 module P : sig
-  val f : Sub.t -> t list
+  val f : string -> int -> t list
 end
