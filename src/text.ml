@@ -1509,11 +1509,13 @@ struct
 end
 
 module P = struct
+  exception Fail
+
   let get s pos =
     if pos >= String.length s then
-      None
+      raise Fail
     else
-      Some (s.[pos], succ pos)
+      s.[pos], succ pos
 
   type ws =
     | Start
@@ -1524,182 +1526,146 @@ module P = struct
     let b = Buffer.create 18 in
     let rec f prev_ws pos =
       match get s pos with
-      | Some ('`', q) ->
+      | '`', q ->
           let rec loop m q =
             if m = 0 then
-              Some (Buffer.contents b, q)
+              Buffer.contents b, q
             else begin
               match get s q with
-              | Some ('`', q) ->
+              | '`', q ->
                   loop (pred m) q
-              | Some _ ->
+              | _ ->
                   if prev_ws = Ws then Buffer.add_char b ' ';
                   for _ = 1 to n - m do Buffer.add_char b '`' done;
                   f Other q
-              | None ->
-                  None
             end
           in
           loop (pred n) q
-      | Some ((' ' | '\t' | '\n' | '\r' | '\011' | '\012'), p) ->
+      | (' ' | '\t' | '\n' | '\r' | '\011' | '\012'), p ->
           f (if prev_ws = Start then Start else Ws) p
-      | Some (c, p) ->
+      | c, p ->
           if prev_ws = Ws then Buffer.add_char b ' ';
           Buffer.add_char b c;
           f Other p
-      | None ->
-          None
     in
     f Start pos
 
   let email s q =
     let atext q =
       match get s q with
-      | Some (('a'..'z' | 'A'..'Z' | '0'..'9'
-              | '!' | '#' | '$' | '%'
-              | '&' | '\'' | '*' | '+'
-              | '-' | '/' | '=' | '?'
-              | '^' | '_' | '`' | '{'
-              | '|' | '}' | '~'), q) ->
-          Some q
+      | ('a'..'z' | 'A'..'Z' | '0'..'9'
+        | '!' | '#' | '$' | '%'
+        | '&' | '\'' | '*' | '+'
+        | '-' | '/' | '=' | '?'
+        | '^' | '_' | '`' | '{'
+        | '|' | '}' | '~'), q ->
+          q
       | _ ->
-          None
+          raise Fail
     in
     let label q =
       let let_dig q =
         match get s q with
-        | Some (('a'..'z' | 'A'..'Z' | '0'..'9'), q) ->
-            Some q
+        | ('a'..'z' | 'A'..'Z' | '0'..'9'), q ->
+            q
         | _ ->
-            None
+            raise Fail
       in
       let rec ldh_str q =
         let let_dig_hyp q =
           match let_dig q with
-          | Some _ as x -> x
-          | None ->
+          | q -> q
+          | exception Fail ->
               begin match get s q with
-              | Some ('-', q) -> Some q
-              | _ -> None
+              | '-', q -> q
+              | _ -> raise Fail
               end
         in
-        match let_dig_hyp q with
-        | Some q as x ->
-            begin match ldh_str q with
-            | Some _ as x -> x
-            | None -> x
-            end
-        | None ->
-            None
+        let q = let_dig_hyp q in
+        match ldh_str q with
+        | q -> q
+        | exception Fail -> q
       in
-      match let_dig q with
-      | Some q as x ->
-          begin match ldh_str q with
-          | Some _ as x -> x
-          | None ->
-              begin match let_dig q with
-              | Some _ as x -> x
-              | None -> x
-              end
+      let q = let_dig q in
+      match ldh_str q with
+      | q -> q
+      | exception Fail ->
+          begin match let_dig q with
+          | q -> q
+          | exception Fail -> q
           end
-      | None ->
-          None
     in
     let atext_or_dot q =
       match atext q with
-      | Some _ as x -> x
-      | None ->
+      | q -> q
+      | exception Fail ->
           begin match get s q with
-          | Some ('.', q) -> Some q
-          | _ -> None
+          | '.', q -> q
+          | _ -> raise Fail
           end
     in
     let rec loop q =
       match atext_or_dot q with
-      | Some q -> loop q
-      | None ->
+      | q -> loop q
+      | exception Fail ->
           begin match get s q with
-          | Some ('@', q) ->
+          | '@', q ->
               let rec loop q =
                 match get s q with
-                | Some ('.', q) ->
-                    begin match label q with
-                    | Some q -> loop q
-                    | None -> None
-                    end
+                | '.', q ->
+                    loop (label q)
                 | _ ->
-                    Some q
+                    q
               in
-              begin match label q with
-              | Some q -> loop q
-              | _ -> None
-              end
+              loop (label q)
           | _ ->
-              None
+              raise Fail
           end
     in
-    match atext_or_dot q with
-    | Some q ->
-        loop q
-    | None ->
-        None
+    let q = atext_or_dot q in
+    loop q
 
   let autolink s pos =
     let scheme q =
       let letter q =
         match get s q with
-        | Some (('a'..'z' | 'A'..'Z'), q) -> Some q
-        | _ -> None
+        | ('a'..'z' | 'A'..'Z'), q -> q
+        | _ -> raise Fail
       in
       let rec loop n q =
         if n > 32 then
-          Some q
+          q
         else begin
           match get s q with
-          | Some (('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q) ->
+          | ('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q ->
               loop (succ n) q
           | _ ->
-              Some q
+              q
         end
       in
-      match letter q with
-      | Some q ->
-          begin match letter q with
-          | Some q -> loop 2 q
-          | None -> None
-          end
-      | None ->
-          None
+      let q = letter q in
+      let q = letter q in
+      loop 2 q
     in
     let uri q =
-      match scheme q with
-      | Some q ->
-          begin match get s q with
-          | Some (':', q) ->
-              let rec loop q =
-                match get s q with
-                | Some (('\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F'
-                        | ' ' | '<' | '>'), _) -> q
-                | Some (_, q) -> loop q
-                | None -> q
-              in
-              Some (loop q)
-          | _ ->
-              None
-          end
-      | None ->
-          None
+      let q = scheme q in
+      match get s q with
+      | ':', q ->
+          let rec loop q =
+            match get s q with
+            | ('\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F'
+              | ' ' | '<' | '>'), _ -> q
+            | _, q -> loop q
+            | exception Fail -> q
+          in
+          loop q
+      | _ ->
+          raise Fail
     in
-    match
-      match uri pos with None -> email s pos | Some _ as x -> x
-    with
-    | Some q ->
-        begin match get s q with
-        | Some ('>', q1) -> Some (String.sub s pos (q - pos), q1)
-        | _ -> None
-        end
-    | None ->
-        None
+    let q = match uri pos with exception Fail -> email s pos | q -> q in
+    match get s q with
+    | '>', q1 -> String.sub s pos (q - pos), q1
+    | _ -> raise Fail
 
   let f pos =
     let b = Buffer.create 18 in
@@ -1714,37 +1680,37 @@ module P = struct
     in
     let rec f acc s pos =
       match get s pos with
-      | Some ('\\', q) ->
+      | '\\', q ->
           begin match get s q with
-          | Some (c, q) ->
+          | c, q ->
               Buffer.add_char b c;
               f acc s q
-          | None ->
+          | exception Fail ->
               f acc s q
           end
-      | Some ('`', pos) ->
+      | '`', pos ->
           let rec loop n pos =
             match get s pos with
-            | Some ('`', pos) ->
+            | '`', pos ->
                 loop (succ n) pos
-            | Some _ ->
+            | _ ->
                 begin match code n s pos with
-                | Some (s, pos) ->
+                | s, pos ->
                     f (Code s :: text acc) s pos
-                | None ->
+                | exception Fail ->
                     Buffer.add_string b (String.make n '`');
                     f acc s pos
                 end
-            | None ->
+            | exception Fail ->
                 Buffer.add_string b (String.make n '`');
                 f acc s pos
           in
           loop 1 pos
-      | Some ('<', pos) ->
+      | '<', pos ->
           begin match autolink s pos with
-          | Some (x, q) ->
+          | x, q ->
               f (Url (x, Text x, x) :: text acc) s q
-          | None ->
+          | exception Fail ->
               Buffer.add_char b '<';
               f acc s pos
               (* begin match html_tag p with *)
@@ -1752,10 +1718,10 @@ module P = struct
               (*     f (Html x :: acc) p *)
               (* | None -> *)
           end
-      | Some (c, p) ->
+      | c, p ->
           Buffer.add_char b c;
           f acc s p
-      | None ->
+      | exception Fail ->
           List.rev (text acc)
     in
     f [] pos
