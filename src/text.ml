@@ -871,28 +871,6 @@ struct
     | _, Tag _ :: _ ->
         assert false
 
-    (* (\* email-style quoting, with lines starting with spaces! *\) *)
-    (* | ([] | [Delim (_, Newline)]), (Delim ((1|2|3), Space) as s) :: Delim (1, Greaterthan) :: Delim (_, Space) :: _ -> *)
-    (*     (\* It's 1, 2 or 3 spaces, not more because it wouldn't mean *)
-    (*        quoting anymore but code. *\) *)
-    (*     let new_r, _p, rest = *)
-    (*       let foo, rest = *)
-    (*         match unindent (L.length s) (Delim (1, Newline) :: lexemes) with *)
-    (*         | Delim (_, Newline) :: foo, rest -> *)
-    (*             foo, rest *)
-    (*         | res -> *)
-    (*             res *)
-    (*       in *)
-    (*       match emailstyle_quoting main_loop [] previous (Delim (1, Newline) :: foo) with *)
-    (*       | Some (new_r, p, []) -> *)
-    (*           new_r, p, rest *)
-    (*       | _ -> *)
-    (*           if debug then *)
-    (*             eprintf "(OMD) Omd_parser.emailstyle_quoting or Omd_parser.main_loop is broken\n%!"; *)
-    (*           assert false *)
-    (*     in *)
-    (*     main_impl_rev ~html (new_r@r) [Delim (1, Newline)] rest *)
-
     (* minus *)
     | ([] | [Delim (_, Newline)]), (Delim (_, Minus) as t) :: (Delim (_, Space) :: _ as tl) ->
         main_impl_rev ~html (Text (L.string_of_token t) :: r) [t] tl
