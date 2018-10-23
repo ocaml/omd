@@ -1539,6 +1539,15 @@ module P = struct
 
   let f p =
     let b = Buffer.create 18 in
+    let get acc =
+      if Buffer.length b = 0 then
+        acc
+      else begin
+        let s = Buffer.contents b in
+        Buffer.clear b;
+        Text s :: acc
+      end
+    in
     let rec f acc p =
       match Sub.head p with
       | Some ('\\', p) ->
@@ -1547,7 +1556,7 @@ module P = struct
               Buffer.add_char b c;
               f acc p
           | None ->
-              assert false
+              f acc p
           end
       | Some ('`', p) ->
           let rec loop n p =
@@ -1557,14 +1566,7 @@ module P = struct
             | Some _ ->
                 begin match code n p with
                 | Some (s, p) ->
-                    let acc =
-                      if Buffer.length b > 0 then
-                        let s = Buffer.contents b in
-                        (Buffer.clear b; Text s :: acc)
-                      else
-                        acc
-                    in
-                    f (Code s :: acc) p
+                    f (Code s :: get acc) p
                 | None ->
                     Buffer.add_string b (String.make n '`');
                     f acc p
@@ -1590,13 +1592,7 @@ module P = struct
           Buffer.add_char b c;
           f acc p
       | None ->
-          let acc=
-            if Buffer.length b > 0 then
-              Text (Buffer.contents b) :: acc
-            else
-              acc
-          in
-          List.rev acc
+          List.rev (get acc)
     in
     f [] p
 end
