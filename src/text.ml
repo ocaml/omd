@@ -1550,15 +1550,43 @@ module P = struct
     in
     f Start pos
 
+  let char s c q =
+    let c1, q = get s q in
+    if c = c1 then q else raise Fail
+
+  let nonempty_separated_list sep f q =
+    let rec loop q =
+      match sep q with
+      | q -> loop (f q)
+      | exception Fail -> q
+    in
+    loop (f q)
+
+  let nonempty_list f q =
+    let rec loop q =
+      match f q with
+      | q -> loop q
+      | exception Fail -> q
+    in
+    loop q
+
+  let seq f g q =
+    g (f q)
+
+  let maybe f q =
+    match f q with
+    | q -> q
+    | exception Fail -> q
+
   let email s q =
-    let atext q =
+    let atext_or_dot q =
       match get s q with
       | ('a'..'z' | 'A'..'Z' | '0'..'9'
         | '!' | '#' | '$' | '%'
         | '&' | '\'' | '*' | '+'
         | '-' | '/' | '=' | '?'
         | '^' | '_' | '`' | '{'
-        | '|' | '}' | '~'), q ->
+        | '|' | '}' | '~' | '.'), q ->
           q
       | _ ->
           raise Fail
@@ -1566,64 +1594,25 @@ module P = struct
     let label q =
       let let_dig q =
         match get s q with
-        | ('a'..'z' | 'A'..'Z' | '0'..'9'), q ->
-            q
-        | _ ->
-            raise Fail
+        | ('a'..'z' | 'A'..'Z' | '0'..'9'), q -> q
+        | _ -> raise Fail
       in
-      let rec ldh_str q =
+      let ldh_str q =
         let let_dig_hyp q =
-          match let_dig q with
-          | q -> q
-          | exception Fail ->
-              begin match get s q with
-              | '-', q -> q
-              | _ -> raise Fail
-              end
-        in
-        let q = let_dig_hyp q in
-        match ldh_str q with
-        | q -> q
-        | exception Fail -> q
-      in
-      let q = let_dig q in
-      match ldh_str q with
-      | q -> q
-      | exception Fail ->
-          begin match let_dig q with
-          | q -> q
-          | exception Fail -> q
-          end
-    in
-    let atext_or_dot q =
-      match atext q with
-      | q -> q
-      | exception Fail ->
-          begin match get s q with
-          | '.', q -> q
+          match get s q with
+          | ('a'..'z' | 'A'..'Z' | '0'..'9' | '-'), q -> q
           | _ -> raise Fail
-          end
+        in
+        nonempty_list let_dig_hyp q
+      in
+      seq let_dig (maybe (seq (maybe ldh_str) let_dig)) q
     in
-    let rec loop q =
-      match atext_or_dot q with
-      | q -> loop q
-      | exception Fail ->
-          begin match get s q with
-          | '@', q ->
-              let rec loop q =
-                match get s q with
-                | '.', q ->
-                    loop (label q)
-                | _ ->
-                    q
-              in
-              loop (label q)
-          | _ ->
-              raise Fail
-          end
-    in
-    let q = atext_or_dot q in
-    loop q
+    let q = nonempty_list atext_or_dot q in
+    match get s q with
+    | '@', q ->
+        nonempty_separated_list (char s '.') label q
+    | _ ->
+        raise Fail
 
   let autolink s pos =
     let scheme q =
@@ -1643,9 +1632,7 @@ module P = struct
               q
         end
       in
-      let q = letter q in
-      let q = letter q in
-      loop 2 q
+      q |> letter |> letter |> loop 2
     in
     let uri q =
       let q = scheme q in
