@@ -1546,6 +1546,54 @@ module P = struct
     in
     f Start p
 
+  let autolink p =
+    let scheme p =
+      let rec loop n q =
+        if n >= 32 then
+          if n < 2 then
+            None
+          else
+            Some (Sub.take n p, q)
+        else begin
+          match Sub.head q with
+          | Some (('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q) ->
+              loop (succ n) q
+          | Some _ | None ->
+              if n < 2 then
+                None
+              else
+                Some (Sub.take n p, q)
+        end
+      in
+      match Sub.head p with
+      | Some (('a'..'z' | 'A'..'Z'), p) ->
+          loop 1 p
+      | Some _ | None ->
+          None
+    in
+    match scheme p with
+    | Some (scheme, p) ->
+        begin match Sub.head p with
+        | Some (':', p) ->
+            let url, p =
+              let f = function
+                | '\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F' | ' ' | '<' | '>' -> false
+                | _ -> true
+              in
+              Sub.span f p
+            in
+            begin match Sub.head p with
+            | Some ('>', p) ->
+                Some (Printf.sprintf "%s:%s" (Sub.to_string scheme) (Sub.to_string url), p)
+            | Some _ | None ->
+                None
+            end
+        | Some _ | None ->
+            None
+        end
+    | None ->
+        None
+
   let f p =
     let b = Buffer.create 18 in
     let get acc =
@@ -1585,18 +1633,18 @@ module P = struct
                 f acc p
           in
           loop 1 p
-      (* | Some ('<', p) -> *)
-      (*     begin match autolink p with *)
-      (*     | Some (x, p) -> *)
-      (*         f (Url x :: acc) p *)
-      (*     | None -> *)
-      (*         begin match html_tag p with *)
-      (*         | Some x -> *)
-      (*             f (Html x :: acc) p *)
-      (*         | None -> *)
-      (*             f acc p *)
-      (*         end *)
-      (*     end *)
+      | Some ('<', p) ->
+          begin match autolink p with
+          | Some (x, p) ->
+              f (Url (x, Text x, x) :: get acc) p
+          | None ->
+              Buffer.add_char b '<';
+              f acc p
+              (* begin match html_tag p with *)
+              (* | Some x -> *)
+              (*     f (Html x :: acc) p *)
+              (* | None -> *)
+          end
       | Some (c, p) ->
           Buffer.add_char b c;
           f acc p

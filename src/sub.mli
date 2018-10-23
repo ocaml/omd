@@ -8,3 +8,5 @@ val contains : string -> t -> bool
 
 val head : t -> (char * t) option
 val tail : t -> t
+val take : int -> t -> t
+val span : (char -> bool) -> t -> t * t

@@ -54,3 +54,16 @@ let tail ((off, s) as x) =
     (succ off, s)
   else
     x
+
+let take n (off, s) =
+  if n < 0 || off + n > String.length s then invalid_arg "take";
+  (0, String.sub s off n)
+
+let span f (off, s) =
+  let rec loop n =
+    if off + n >= String.length s || not (f s.[off + n]) then
+      (0, String.sub s off n), (off + n, s)
+    else
+      loop (succ n)
+  in
+  loop 0
