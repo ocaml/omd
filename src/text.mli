@@ -84,3 +84,7 @@ module Make : functor (Env : Env) -> sig
 
   val parse : Representation.tok list -> t
 end
+
+module P : sig
+  val f : Sub.t -> t list
+end

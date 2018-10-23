@@ -1507,3 +1507,96 @@ struct
   let parse lexemes =
     main_loop [] [] lexemes
 end
+
+module P = struct
+  let code n p =
+    let b = Buffer.create 18 in
+    let rec f p =
+      match Sub.head p with
+      | Some ('`', p) ->
+          let rec loop m p =
+            if m = 0 then
+              Some (Buffer.contents b, p)
+            else begin
+              match Sub.head p with
+              | Some ('`', p) ->
+                  loop (pred m) p
+              | Some _ ->
+                  for _ = 1 to n - m do Buffer.add_char b '`' done;
+                  f p
+              | None ->
+                  None
+            end
+          in
+          loop (pred n) p
+      | Some (c, p) ->
+          Buffer.add_char b c;
+          f p
+      | None ->
+          None
+    in
+    f p
+
+  let f p =
+    let b = Buffer.create 18 in
+    let rec f acc p =
+      match Sub.head p with
+      | Some ('\\', p) ->
+          begin match Sub.head p with
+          | Some (c, p) ->
+              Buffer.add_char b c;
+              f acc p
+          | None ->
+              assert false
+          end
+      | Some ('`', p) ->
+          let rec loop n p =
+            match Sub.head p with
+            | Some ('`', p) ->
+                loop (succ n) p
+            | Some _ ->
+                begin match code n p with
+                | Some (s, p) ->
+                    let acc =
+                      if Buffer.length b > 0 then
+                        let s = Buffer.contents b in
+                        (Buffer.clear b; Text s :: acc)
+                      else
+                        acc
+                    in
+                    f (Code s :: acc) p
+                | None ->
+                    Buffer.add_string b (String.make n '`');
+                    f acc p
+                end
+            | None ->
+                Buffer.add_string b (String.make n '`');
+                f acc p
+          in
+          loop 1 p
+      (* | Some ('<', p) -> *)
+      (*     begin match autolink p with *)
+      (*     | Some (x, p) -> *)
+      (*         f (Url x :: acc) p *)
+      (*     | None -> *)
+      (*         begin match html_tag p with *)
+      (*         | Some x -> *)
+      (*             f (Html x :: acc) p *)
+      (*         | None -> *)
+      (*             f acc p *)
+      (*         end *)
+      (*     end *)
+      | Some (c, p) ->
+          Buffer.add_char b c;
+          f acc p
+      | None ->
+          let acc=
+            if Buffer.length b > 0 then
+              Text (Buffer.contents b) :: acc
+            else
+              acc
+          in
+          List.rev acc
+    in
+    f [] p
+end

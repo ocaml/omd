@@ -28,8 +28,6 @@ let rec map ~f = function
   | Code_block _ as x -> x
   | Html_block _ as x -> x
 
-module Sub = Auxlex.Sub
-
 module Parser = struct
   type block = string t
   type blocks = block list
