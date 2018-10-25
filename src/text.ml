@@ -1541,7 +1541,7 @@ module P = struct
             end
           in
           loop (pred n) q
-      | (' ' | '\t' | '\n' | '\r' | '\011' | '\012'), p ->
+      | (' ' | '\t' | '\010'..'\013'), p ->
           f (if prev_ws = Start then Start else Ws) p
       | c, p ->
           if prev_ws = Ws then Buffer.add_char b ' ';
@@ -1580,7 +1580,7 @@ module P = struct
     | q -> q
     | exception Fail -> g q
 
-  let nop q =
+  let nop _ q =
     q
 
   let maybe f =
@@ -1599,18 +1599,32 @@ module P = struct
   let tag_name =
     letter >>> list let_dig_hyp
 
+  let span ?(min = 0) ?(max = max_int) f s p =
+    let rec loop q =
+      if q >= String.length s || q - p >= max || not (f s.[q]) then begin
+        if q - p < min then raise Fail;
+        q
+      end else
+        loop (succ q)
+    in
+    loop p
+
+  let is_ws = function
+    | ' ' | '\t' | '\010'..'\013' -> true
+    | _ -> false
+
   let whitespace =
-    span (function ' ' -> true | _ -> false)
+    span is_ws
 
   let nonempty_whitespace =
-    span ~min:1 (function ' ' -> true | _ -> false)
+    span ~min:1 is_ws
 
   let attribute_name =
     span ~min:1 ~max:1 (function 'a'..'z' | 'A'..'Z' | '_' | ':' -> true | _ -> false) >>>
     span (function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-' -> true | _ -> false)
 
   let unquoted_attribute_value =
-    span ~min:1 (function ' ' | ... -> false | _ -> true)
+    span ~min:1 (function ' ' | '"' | '\'' | '=' | '<' | '>' | '`' -> false | _ -> true)
 
   let single_quoted_attribute_value =
     char '\'' >>> span (function '\'' -> false | _ -> true) >>> char '\''
@@ -1662,7 +1676,7 @@ module P = struct
         else begin
           match get s q with
           | ('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-'), q ->
-              loop (succ n) q
+              loop (succ n) s q
           | _ ->
               q
         end
