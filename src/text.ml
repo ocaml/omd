@@ -1575,10 +1575,10 @@ module P = struct
   let nonempty_list f =
     f >>> list f
 
-  let (|||) f g q =
-    match f q with
+  let (|||) f g s q =
+    match f s q with
     | q -> q
-    | exception Fail -> g q
+    | exception Fail -> g s q
 
   let nop _ q =
     q
@@ -1591,14 +1591,6 @@ module P = struct
     | ('a'..'z' | 'A'..'Z'), q -> q
     | _ -> raise Fail
 
-  let let_dig_hyp s q =
-    match get s q with
-    | ('a'..'z' | 'A'..'Z' | '0'..'9' | '-'), q -> q
-    | _ -> raise Fail
-
-  let tag_name =
-    letter >>> list let_dig_hyp
-
   let span ?(min = 0) ?(max = max_int) f s p =
     let rec loop q =
       if q >= String.length s || q - p >= max || not (f s.[q]) then begin
@@ -1608,6 +1600,23 @@ module P = struct
         loop (succ q)
     in
     loop p
+
+  let str t s p =
+    if String.length t + p > String.length s then raise Fail;
+    let rec loop q =
+      if q >= String.length t then p + q
+      else if t.[q] <> s.[q + p] then raise Fail
+      else loop (succ q)
+    in
+    loop 0
+
+  let let_dig_hyp s q =
+    match get s q with
+    | ('a'..'z' | 'A'..'Z' | '0'..'9' | '-'), q -> q
+    | _ -> raise Fail
+
+  let tag_name =
+    letter >>> list let_dig_hyp
 
   let is_ws = function
     | ' ' | '\t' | '\010'..'\013' -> true
@@ -1642,7 +1651,81 @@ module P = struct
     nonempty_whitespace >>> attribute_name >>> maybe attribute_value_specification
 
   let open_tag =
-    tag_name >>> list attribute >>> whitespace >>> maybe (char '/') >>> char '>'
+    char '<' >>> tag_name >>> list attribute >>> whitespace >>> maybe (char '/') >>> char '>'
+
+  let closing_tag =
+    str "</" >>> tag_name >>> whitespace >>> char '>'
+
+  let html_comment =
+    let text s q =
+      let rec loop seen_dash q =
+        match get s q with
+        | '-', q ->
+            begin match get s q with
+            | '-', q ->
+                begin match get s q with
+                | '>', q -> if seen_dash then raise Fail; q
+                | _ -> raise Fail
+                end
+            | _ -> loop true q
+            end
+        | _, q -> loop false q
+      in
+      match get s q with
+      | '>', _ -> raise Fail
+      | '-', q ->
+          begin match get s q with
+          | '>', _ -> raise Fail
+          | _, q -> loop true q
+          end
+      | _, q -> loop false q
+    in
+    str "<!--" >>> text
+
+  let processing_instruction =
+    let text s q =
+      let rec loop q =
+        match get s q with
+        | '?', q ->
+            begin match get s q with
+            | '>', q -> q
+            | _, q -> loop q
+            end
+        | _, q -> loop q
+      in
+      loop q
+    in
+    str "<?" >>> text
+
+  let declaration =
+    str "<!" >>> span ~min:1 (function 'A'..'Z' -> true | _ -> false) >>> nonempty_whitespace >>> span (function '>' -> false | _ -> true) >>> char '>'
+
+  let cdata_section =
+    let text s q =
+      let rec loop q =
+        match get s q with
+        | ']', q ->
+            begin match get s q with
+            | ']', q ->
+                begin match get s q with
+                | '>', q -> q
+                | _, q -> loop q
+                end
+            | _, q -> loop q
+            end
+        | _, q -> loop q
+      in
+      loop q
+    in
+    str "<![CDATA[" >>> text
+
+  let html_tag s p =
+    let q =
+      (open_tag ||| closing_tag |||
+       html_comment ||| processing_instruction ||| declaration ||| cdata_section) s p
+    in
+    let x = String.sub s p (q - p) in
+    Html x, q
 
   let email =
     let atext_or_dot s q =
@@ -1663,10 +1746,25 @@ module P = struct
         | ('a'..'z' | 'A'..'Z' | '0'..'9'), q -> q
         | _ -> raise Fail
       in
-      let ldh_str = nonempty_list let_dig_hyp in
-      let_dig >>> maybe (maybe ldh_str >>> let_dig)
+      let rec loop seen_hyp s q =
+        match get s q with
+        | ('a'..'z' | 'A'..'Z' | '0'..'9'), q -> loop false s q
+        | '-', q -> loop true s q
+        | _ -> if seen_hyp then raise Fail else q
+      in
+      let_dig >>> loop false
     in
     nonempty_list atext_or_dot >>> char '@' >>> separated_nonempty_list (char '.') label
+
+  let email s pos =
+    let pos = char '<' s pos in
+    let q = email s pos in
+    match get s q with
+    | '>', q1 ->
+        let x = String.sub s pos (q - pos) in
+        Url (x, Text x, x), q1
+    | _ ->
+        raise Fail
 
   let autolink s pos =
     let scheme =
@@ -1683,25 +1781,21 @@ module P = struct
       in
       letter >>> letter >>> loop 2
     in
-    let uri q =
-      let q = scheme s q in
-      match get s q with
-      | ':', q ->
-          let rec loop q =
-            match get s q with
-            | ('\x00' .. '\x1F' | '\x7F' | '\x80'..'\x9F'
-              | ' ' | '<' | '>'), _ -> q
-            | _, q -> loop q
-            | exception Fail -> q
-          in
-          loop q
-      | _ ->
-          raise Fail
+    let uri =
+      let f = function
+        | '\x00'..'\x1F' | '\x7F' | '\x80'..'\x9F' | ' ' | '<' | '>' -> false
+        | _ -> true
+      in
+      scheme >>> char ':' >>> span f
     in
-    let q = match uri pos with exception Fail -> email s pos | q -> q in
+    let pos = char '<' s pos in
+    let q = uri s pos in
     match get s q with
-    | '>', q1 -> String.sub s pos (q - pos), q1
-    | _ -> raise Fail
+    | '>', q1 ->
+        let x = String.sub s pos (q - pos) in
+        Url (x, Text x, x), q1
+    | _ ->
+        raise Fail
 
   let f pos =
     let b = Buffer.create 18 in
@@ -1742,17 +1836,13 @@ module P = struct
                 f acc s pos
           in
           loop 1 pos
-      | '<', pos ->
-          begin match autolink s pos with
+      | '<', q ->
+          begin match (autolink ||| email ||| html_tag) s pos with
           | x, q ->
-              f (Url (x, Text x, x) :: text acc) s q
+              f (x :: text acc) s q
           | exception Fail ->
               Buffer.add_char b '<';
-              f acc s pos
-              (* begin match html_tag p with *)
-              (* | Some x -> *)
-              (*     f (Html x :: acc) p *)
-              (* | None -> *)
+              f acc s q
           end
       | c, p ->
           Buffer.add_char b c;
