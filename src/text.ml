@@ -1550,36 +1550,88 @@ module P = struct
     in
     f Start pos
 
-  let char s c q =
+  let char c s q =
     let c1, q = get s q in
     if c = c1 then q else raise Fail
 
-  let nonempty_separated_list sep f q =
-    let rec loop q =
-      match sep q with
-      | q -> loop (f q)
-      | exception Fail -> q
+  let (>>>) f g s q =
+    g s (f s q)
+
+  let list ?(min = 0) ?(max = max_int) f s q =
+    let rec loop n q =
+      if n >= max then
+        q
+      else begin
+        match f s q with
+        | q -> loop (succ n) q
+        | exception Fail -> if n < min then raise Fail else q
+      end
     in
-    loop (f q)
+    loop 0 q
 
-  let nonempty_list f q =
-    let rec loop q =
-      match f q with
-      | q -> loop q
-      | exception Fail -> q
-    in
-    loop q
+  let separated_nonempty_list sep f =
+    f >>> list (sep >>> f)
 
-  let seq f g q =
-    g (f q)
+  let nonempty_list f =
+    f >>> list f
 
-  let maybe f q =
+  let (|||) f g q =
     match f q with
     | q -> q
-    | exception Fail -> q
+    | exception Fail -> g q
 
-  let email s q =
-    let atext_or_dot q =
+  let nop q =
+    q
+
+  let maybe f =
+    f ||| nop
+
+  let letter s q =
+    match get s q with
+    | ('a'..'z' | 'A'..'Z'), q -> q
+    | _ -> raise Fail
+
+  let let_dig_hyp s q =
+    match get s q with
+    | ('a'..'z' | 'A'..'Z' | '0'..'9' | '-'), q -> q
+    | _ -> raise Fail
+
+  let tag_name =
+    letter >>> list let_dig_hyp
+
+  let whitespace =
+    span (function ' ' -> true | _ -> false)
+
+  let nonempty_whitespace =
+    span ~min:1 (function ' ' -> true | _ -> false)
+
+  let attribute_name =
+    span ~min:1 ~max:1 (function 'a'..'z' | 'A'..'Z' | '_' | ':' -> true | _ -> false) >>>
+    span (function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-' -> true | _ -> false)
+
+  let unquoted_attribute_value =
+    span ~min:1 (function ' ' | ... -> false | _ -> true)
+
+  let single_quoted_attribute_value =
+    char '\'' >>> span (function '\'' -> false | _ -> true) >>> char '\''
+
+  let double_quoted_attribute_value =
+    char '"' >>> span (function '"' -> false | _ -> true) >>> char '"'
+
+  let attribute_value =
+    unquoted_attribute_value ||| single_quoted_attribute_value ||| double_quoted_attribute_value
+
+  let attribute_value_specification =
+    whitespace >>> char '=' >>> whitespace >>> attribute_value
+
+  let attribute =
+    nonempty_whitespace >>> attribute_name >>> maybe attribute_value_specification
+
+  let open_tag =
+    tag_name >>> list attribute >>> whitespace >>> maybe (char '/') >>> char '>'
+
+  let email =
+    let atext_or_dot s q =
       match get s q with
       | ('a'..'z' | 'A'..'Z' | '0'..'9'
         | '!' | '#' | '$' | '%'
@@ -1591,37 +1643,20 @@ module P = struct
       | _ ->
           raise Fail
     in
-    let label q =
-      let let_dig q =
+    let label =
+      let let_dig s q =
         match get s q with
         | ('a'..'z' | 'A'..'Z' | '0'..'9'), q -> q
         | _ -> raise Fail
       in
-      let ldh_str q =
-        let let_dig_hyp q =
-          match get s q with
-          | ('a'..'z' | 'A'..'Z' | '0'..'9' | '-'), q -> q
-          | _ -> raise Fail
-        in
-        nonempty_list let_dig_hyp q
-      in
-      seq let_dig (maybe (seq (maybe ldh_str) let_dig)) q
+      let ldh_str = nonempty_list let_dig_hyp in
+      let_dig >>> maybe (maybe ldh_str >>> let_dig)
     in
-    let q = nonempty_list atext_or_dot q in
-    match get s q with
-    | '@', q ->
-        nonempty_separated_list (char s '.') label q
-    | _ ->
-        raise Fail
+    nonempty_list atext_or_dot >>> char '@' >>> separated_nonempty_list (char '.') label
 
   let autolink s pos =
-    let scheme q =
-      let letter q =
-        match get s q with
-        | ('a'..'z' | 'A'..'Z'), q -> q
-        | _ -> raise Fail
-      in
-      let rec loop n q =
+    let scheme =
+      let rec loop n s q =
         if n > 32 then
           q
         else begin
@@ -1632,10 +1667,10 @@ module P = struct
               q
         end
       in
-      q |> letter |> letter |> loop 2
+      letter >>> letter >>> loop 2
     in
     let uri q =
-      let q = scheme q in
+      let q = scheme s q in
       match get s q with
       | ':', q ->
           let rec loop q =

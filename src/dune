@@ -11,3 +11,7 @@
  (public_name omd)
  (modules simple_main)
  (libraries omd))
+
+(alias
+ (name default)
+ (deps simple_main.exe))
