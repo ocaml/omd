@@ -1,11 +1,34 @@
 {
-let buf = Buffer.create 37
+type html =
+  | Closing_tag
+  | Open_tag
+  | Comment
+  | Processing_instruction
+  | Declaration
+  | CDATA_section
 
-let add_char c =
+type t =
+  | Html of html * string
+  | Text of string
+  | Email of string
+  | Url of string
+  | Code_span of string
+  | Bang_left_bracket
+  | Left_bracket
+  | Right_bracket
+  | Strong of int
+  | Emph of int
+  | Hard_break
+  | Soft_break
+
+let add_char buf c =
   Buffer.add_char buf c
 
-let add_string s =
-  Buffer.add_string b s
+let add_string buf s =
+  Buffer.add_string buf s
+
+let int_of_entity _ =
+  failwith "int_of_entity"
 
 let decode_entity s =
   match s.[1], s.[2] with
@@ -16,10 +39,10 @@ let decode_entity s =
   | _ ->
       int_of_entity (String.sub s 1 (String.length s - 2))
 
-let add_entity e =
-  Buffer.add_utf_8 buf (decode_entity e)
+let add_entity buf e =
+  Buffer.add_utf_8_uchar buf (Uchar.of_int (decode_entity e))
 
-let text acc =
+let text buf acc =
   if Buffer.length buf = 0 then
     acc
   else begin
@@ -30,12 +53,42 @@ let text acc =
 
 let lexeme_length lexbuf =
   Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
+
+let add_lexeme buf lexbuf =
+  Buffer.add_string buf (Lexing.lexeme lexbuf)
+
+let copy_lexbuf
+    { Lexing.refill_buff; lex_buffer; lex_buffer_len; lex_abs_pos;
+      lex_start_pos; lex_curr_pos; lex_last_pos; lex_last_action;
+      lex_eof_reached; lex_mem; lex_start_p; lex_curr_p }
+  =
+  { Lexing.refill_buff; lex_buffer; lex_buffer_len; lex_abs_pos;
+    lex_start_pos; lex_curr_pos; lex_last_pos; lex_last_action;
+    lex_eof_reached; lex_mem; lex_start_p; lex_curr_p }
+
+let raw_html inline f acc buf0 lexbuf =
+  let lexbuf0 = copy_lexbuf lexbuf in
+  let buf = Buffer.create 17 in
+  add_lexeme buf lexbuf;
+  match f buf lexbuf with
+  | kind ->
+      inline (Html (kind, Buffer.contents buf) :: text buf0 acc) buf0 lexbuf
+  | exception _ ->
+      add_lexeme buf0 lexbuf0;
+      inline acc buf0 lexbuf0
+
+let code inline f acc buf0 lexbuf =
+  let lexbuf0 = copy_lexbuf lexbuf in
+  let buf = Buffer.create 17 in
+  match f buf lexbuf with
+  | () ->
+      inline (Code_span (Buffer.contents buf) :: text buf0 acc) buf0 lexbuf
+  | exception _ ->
+      add_lexeme buf0 lexbuf0;
+      inline acc buf0 lexbuf0
 }
 
 let ws = [' ''\t''\010'-'\013']
-let letter = ['a'-'z''A'-'Z']
-let digit = ['0'-'9']
-let let_dig = letter | digit
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
 let double_quoted_attribute_value = '"' [^'"']* '"'
@@ -44,7 +97,7 @@ let attribute_value_specification = ws* '=' ws* attribute_value
 let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
 let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
-let open_tag = '<' tag_name attribute+ ws* '/'? '>'
+let open_tag = '<' tag_name attribute* ws* '/'? '>'
 let closing_tag = "</" tag_name ws* '>'
 let email = ['a'-'z''A'-'Z''0'-'9''.''!''#''$''%''&''\'''*''+''/''=''?''^''_''`''{''|''}''~''-']+ '@'
             ['a'-'z''A'-'Z''0'-'9'](['a'-'z''A'-'Z''0'-'9''-']['a'-'z''A'-'Z''0'-'9'])?
@@ -56,100 +109,78 @@ let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
-rule inline acc = parse
-  | closing_tag         { inline (Html (Lexing.lexeme lexbuf) :: text acc) lexbuf }
-  | open_tag            { open_tag lexbuf }
-  | "<!--"              { let buf = Buffer.create 17 in
-                          Buffer.add_string buf (Lexing.lexeme lexbuf);
-                          html_comment (text acc) true buf lexbuf }
-  | "<?"                { let buf = Buffer.create 17 in
-                          Buffer.add_string buf (Lexing.lexeme lexbuf);
-                          processing_instruction (text acc) buf lexbuf }
-  | "<!" ['A'-'Z']+     { let buf = Buffer.create 17 in
-                          Buffer.add_string buf (Lexing.lexeme lexbuf);
-                          declaration (text buf) lexbuf }
-  | "<![CDATA["         { let buf = Buffer.create 17 in
-                          Buffer.add_string buf (Lexing.lexeme lexbuf);
-                          cdata_section (text buf) lexbuf }
-  | '<' email '>'       { let buf = Buffer.create 17 in (* FIXME *)
-                          Buffer.add_buffer buf (Lexing.lexeme lexbuf);
-                          email (text acc) buf lexbuf }
-  | '<' uri '>'         { }
-  | (' ' ' '+ | '\\') '\n' ws*       { } (* HARDBREAK *)
-  | '\n'                { } (* SOFTBREAK *)
-  | '\\' _ as c         { add_char c; inline acc lexbuf }
-  | entity as e         { add_entity e; inline acc lexbuf }
-  | '`'+                { code_span (text acc) true false (lexeme_length lexbuf) (Buffer.create 17) lexbuf }
-  | '*'+                { }
-  | '_'+                { }
-  | _ as c              { add_char c; inline acc lexbuf }
-  | eof                 { }
+rule inline acc buf = parse
+  | closing_tag         { inline (Html (Closing_tag, Lexing.lexeme lexbuf) :: text buf acc) buf lexbuf }
+  | open_tag            { inline (Html (Open_tag, Lexing.lexeme lexbuf) :: text buf acc) buf lexbuf }
+  | "<!--"              { raw_html inline (html_comment true) acc buf lexbuf }
+  | "<?"                { raw_html inline processing_instruction acc buf lexbuf }
+  | "<!" ['A'-'Z']+     { raw_html inline declaration acc buf lexbuf }
+  | "<![CDATA["         { raw_html inline cdata_section acc buf lexbuf }
+  | '<' (email as x) '>'  { inline (Email x :: text buf acc) buf lexbuf }
+  | '<' (uri as x) '>'         { inline (Url x :: text buf acc) buf lexbuf }
+  | (' ' ' '+ | '\\') '\n' ws*       { inline (Hard_break :: text buf acc) buf lexbuf }
+  | '\n'                { inline (Soft_break :: text buf acc) buf lexbuf }
+  | '\\' (_ as c)         { add_char buf c;
+                          inline acc buf lexbuf }
+  | entity as e         { add_entity buf e;
+                          inline acc buf lexbuf }
+  | '`'+                { code inline (code_span true false (lexeme_length lexbuf))
+                            acc buf lexbuf }
+  | '*'+                { inline (Strong (lexeme_length lexbuf) :: text buf acc) buf lexbuf }
+  | '_'+                { inline (Emph (lexeme_length lexbuf) :: text buf acc) buf lexbuf }
+  | "!["                { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
+  | '['                 { inline (Left_bracket :: text buf acc) buf lexbuf }
+  | ']'                 { inline (Right_bracket :: text buf acc) buf lexbuf }
+  | _ as c              { add_char buf c;
+                          inline acc buf lexbuf }
+  | eof                 { List.rev (text buf acc) }
 
-and code_span acc start seen_ws n buf = parse
-  | '`'+          { if lexeme_length lexbuf = n then
-                      inline (Code_span (Buffer.contents buf) :: acc) lexbuf
-                    else begin
-                      if not start && seen_ws then Buffer.add_char buf ' ';
-                      Buffer.add_string buf (Lexing.lexeme lexbuf);
-                      code_span acc false false n buf lexbuf
+and code_span start seen_ws n buf = parse
+  | '`'+          { if lexeme_length lexbuf <> n then begin
+                      if not start && seen_ws then add_char buf ' ';
+                      add_lexeme buf lexbuf;
+                      code_span false false n buf lexbuf
                     end }
-  | ws+           { code_span acc start true n buf lexbuf }
+  | ws+           { code_span start true n buf lexbuf }
   | _ as c        { if not start && seen_ws then Buffer.add_char buf ' ';
-                    Buffer.add_char buf c;
-                    code_span false acc false false n buf lexbuf }
+                    add_char buf c;
+                    code_span false false n buf lexbuf }
 
-(* and open_tag = parse *)
-(*   | ... *)
-(*   | entity { } *)
-
-and html_comment acc start buf = parse
+and html_comment start buf = parse
   | "--->"      { raise Exit }
-  | "-->"       { Buffer.add_string buf (Lexing.lexeme lexbuf);
-                  inline (Html_comment (Buffer.contents buf) :: acc) lexbuf }
+  | "-->"       { add_lexeme buf lexbuf; Comment }
   | "--"        { raise Exit }
   | ">" | "->"  { if start then raise Exit;
-                  Buffer.add_string buf (Lexing.lexeme lexbuf);
-                  html_comment acc false lexbuf }
+                  add_lexeme buf lexbuf;
+                  html_comment false buf lexbuf }
   | entity as e { add_entity buf e;
-                  html_comment acc false buf lexbuf }
-  | _ as c      { Buffer.add_char buf c;
-                  html_comment acc false buf lexbuf }
+                  html_comment false buf lexbuf }
+  | _ as c      { add_char buf c;
+                  html_comment false buf lexbuf }
 
-and processing_instruction acc buf = parse
-  | "?>"        { Buffer.add_string buf (Lexing.lexeme lexbuf);
-                  inline (Html (Buffer.contents buf) :: acc) lexbuf }
+and processing_instruction buf = parse
+  | "?>"        { add_lexeme buf lexbuf; Processing_instruction }
   | entity as e { add_entity buf e;
-                  processing_instruction acc buf lexbuf }
-  | _ as c      { Buffer.add_char buf c;
+                  processing_instruction buf lexbuf }
+  | _ as c      { add_char buf c;
                   processing_instruction buf lexbuf }
 
-and declaration acc buf = parse
-  | '>'         { Buffer.add_char buf c;
-                  inline (Html (Buffer.contents buf) :: acc) lexbuf }
+and declaration buf = parse
+  | '>' as c    { add_char buf c; Declaration }
   | entity as e { add_entity buf e;
-                  declaration acc buf lexbuf }
-  | _ as c      { Buffer.add_char buf c;
-                  declaration acc buf lexbuf }
+                  declaration buf lexbuf }
+  | _ as c      { add_char buf c;
+                  declaration buf lexbuf }
 
 and cdata_section buf = parse
-  | "]]>"       { Buffer.add_string buf (Lexing.lexeme lexbuf);
-                  inline (Html (Buffer.contents buf) :: acc) lexbuf }
+  | "]]>"       { add_lexeme buf lexbuf; CDATA_section }
   | entity as e { add_entity buf e;
                   cdata_section buf lexbuf }
-  | _ as c      { Buffer.add_char buf c;
+  | _ as c      { add_char buf c;
                   cdata_section buf lexbuf }
 
-(* and email acc buf = parse *)
-(*   | '@' ['a'-'z''A'-'Z''0'-'9'](['a'-'z''A'-'Z''0'-'9''-']['a'-'z''A'-'Z''0'-'9'])? *)
-(*         ('.'['a'-'z''A'-'Z''0'-'9'](['a'-'z''A'-'Z''0'-'9''-']['a'-'z''A'-'Z''0'-'9'])?)* as s '>' *)
-(*                 { Buffer.add_string buf s; *)
-(*                   inline (Url (Buffer.contents buf) :: acc) lexbuf } *)
-(*   | entity as e { add_entity buf e; *)
-(*                   email acc buf lexbuf } *)
-(*   | ['a'-'z''A'-'Z''0'-'9''.''!''#''$''%''&''\'''*''+''/''=''?''^''_''`''{''|''}''~''-'] as c *)
-(*                 { Buffer.add_char buf c; *)
-(*                   email acc buf lexbuf } *)
-
-(* and uri = parse *)
-(*   | ... *)
-(*   | entity      { add_entity } *)
+{
+let parse s =
+  let lexbuf = Lexing.from_string s in
+  inline [] (Buffer.create 17) lexbuf
+}

@@ -1,9 +1,9 @@
-(ocamllex auxlex)
+(ocamllex auxlex htmllex)
 
 (library
  (name omd)
  (public_name omd)
- (modules sub block text lexer parser representation backend omd utils auxlex)
+ (modules htmllex sub block text lexer parser representation backend omd utils auxlex)
  (libraries bigarray))
 
 (executable
