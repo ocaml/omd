@@ -16,8 +16,8 @@ type t =
   | Bang_left_bracket
   | Left_bracket
   | Right_bracket
-  | Strong of int
-  | Emph of int
+  | Strong of bool * bool * int
+  (* | Emph of int *)
   | Hard_break
   | Soft_break
 
@@ -86,9 +86,25 @@ let code inline f acc buf0 lexbuf =
   | exception _ ->
       add_lexeme buf0 lexbuf0;
       inline acc buf0 lexbuf0
+
+let is_ws = function
+  | ' ' | '\t' | '\010'..'\013' -> true
+  | _ -> false
+
+let is_punct = function
+  | '!' | '"' | '#' | '$' | '%'
+  | '&' | '\'' | '(' | ')' | '*' | '+'
+  | ',' | '-' | '.' | '/' | ':' | ';'
+  | '<' | '=' | '>' | '?' | '@' | '['
+  | '\\' | ']' | '^' | '_' | '`' | '{'
+  | '|' | '}' | '~' -> true
+  | _ -> false
 }
 
 let ws = [' ''\t''\010'-'\013']
+(* let non_ws = [^' ''\t''\010'-'\013'] *)
+(* let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\''']''^''_''`''{''|''}''~'] *)
+let nl = '\n' | "\r\n" | '\r'
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
 let double_quoted_attribute_value = '"' [^'"']* '"'
@@ -110,30 +126,32 @@ let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
 rule inline acc buf = parse
-  | closing_tag         { inline (Html (Closing_tag, Lexing.lexeme lexbuf) :: text buf acc) buf lexbuf }
-  | open_tag            { inline (Html (Open_tag, Lexing.lexeme lexbuf) :: text buf acc) buf lexbuf }
-  | "<!--"              { raw_html inline (html_comment true) acc buf lexbuf }
-  | "<?"                { raw_html inline processing_instruction acc buf lexbuf }
-  | "<!" ['A'-'Z']+     { raw_html inline declaration acc buf lexbuf }
-  | "<![CDATA["         { raw_html inline cdata_section acc buf lexbuf }
-  | '<' (email as x) '>'  { inline (Email x :: text buf acc) buf lexbuf }
-  | '<' (uri as x) '>'         { inline (Url x :: text buf acc) buf lexbuf }
-  | (' ' ' '+ | '\\') '\n' ws*       { inline (Hard_break :: text buf acc) buf lexbuf }
-  | '\n'                { inline (Soft_break :: text buf acc) buf lexbuf }
-  | '\\' (_ as c)         { add_char buf c;
-                          inline acc buf lexbuf }
-  | entity as e         { add_entity buf e;
-                          inline acc buf lexbuf }
-  | '`'+                { code inline (code_span true false (lexeme_length lexbuf))
-                            acc buf lexbuf }
-  | '*'+                { inline (Strong (lexeme_length lexbuf) :: text buf acc) buf lexbuf }
-  | '_'+                { inline (Emph (lexeme_length lexbuf) :: text buf acc) buf lexbuf }
-  | "!["                { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
-  | '['                 { inline (Left_bracket :: text buf acc) buf lexbuf }
-  | ']'                 { inline (Right_bracket :: text buf acc) buf lexbuf }
-  | _ as c              { add_char buf c;
-                          inline acc buf lexbuf }
-  | eof                 { List.rev (text buf acc) }
+  | closing_tag as s          { inline (Html (Closing_tag, s) :: text buf acc) buf lexbuf }
+  | open_tag as s             { inline (Html (Open_tag, s) :: text buf acc) buf lexbuf }
+  | "<!--"                    { raw_html inline (html_comment true) acc buf lexbuf }
+  | "<?"                      { raw_html inline processing_instruction acc buf lexbuf }
+  | "<!" ['A'-'Z']+           { raw_html inline declaration acc buf lexbuf }
+  | "<![CDATA["               { raw_html inline cdata_section acc buf lexbuf }
+  | '<' (email as x) '>'      { inline (Email x :: text buf acc) buf lexbuf }
+  | '<' (uri as x) '>'        { inline (Url x :: text buf acc) buf lexbuf }
+  | (' ' ' '+ | '\\') nl ws*  { inline (Hard_break :: text buf acc) buf lexbuf }
+  | nl                        { inline (Soft_break :: text buf acc) buf lexbuf }
+  | '\\' (_ as c)             { add_char buf c; inline acc buf lexbuf }
+  | entity as e               { add_entity buf e; inline acc buf lexbuf }
+  | '`'+                      { code inline (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
+  | ('*'+|'_'+ as r)
+      { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
+        let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
+          Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
+        let is_left = not (is_ws post) && (not (is_punct post) || is_ws pre || is_punct pre) in
+        let is_right = not (is_ws pre) && (not (is_punct pre) || is_ws post || is_punct post) in
+        let acc = Strong (is_left, is_right, String.length r) :: text buf acc in
+        inline acc buf lexbuf }
+  | "!["                      { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
+  | '['                       { inline (Left_bracket :: text buf acc) buf lexbuf }
+  | ']'                       { inline (Right_bracket :: text buf acc) buf lexbuf }
+  | _ as c                    { add_char buf c; inline acc buf lexbuf }
+  | eof                       { List.rev (text buf acc) }
 
 and code_span start seen_ws n buf = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin
