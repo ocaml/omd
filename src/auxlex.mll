@@ -70,9 +70,10 @@ and is_atx_heading = parse
     { None }
 
 and is_fenced_code = parse
-  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws* ([^'`'' ''\t''\010'-'\013']* as info) [^'`']* eof
-      { let q = if delim.[0] = '~' then Tilde else Backtick in
-        Some (String.length ind, String.length delim, q, String.trim info) }
+  | (sp3 as ind) ("```" '`'* as delim) ws* ([^'`'' ''\t''\010'-'\013']* as info) [^'`']* eof
+      { Some (String.length ind, String.length delim, Backtick, String.trim info) }
+  | (sp3 as ind) ("~~~" '~'* as delim) ws* ([^' ''\t''\010'-'\013']* as info)
+      { Some (String.length ind, String.length delim, Tilde, String.trim info) }
   | _ | eof
     { None }
 
