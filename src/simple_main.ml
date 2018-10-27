@@ -25,9 +25,8 @@ let main () =
   Arg.parse (Arg.align spec) (fun s -> input := s :: !input) "omd [options] [inputfile1 .. inputfileN] [options]";
   let output = if !output = "" then stdout else open_out_bin !output in
   let process ic =
-    let module T = Inline.Make (Inline.Default_env (struct end)) in
     let md = Block.of_channel ic in
-    let md = List.map (Block.map ~f:(fun s -> T.parse (Lexer.lex s))) md in
+    let md = List.map (Block.map Inline.parse) md in
     if !sexp then
       Format.eprintf "@[<v>%a@]@."
         (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Inline.print)) md

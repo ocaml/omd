@@ -16,19 +16,28 @@ type emph =
   | Star
   | Underscore
 
-type t =
-  | Html of html * string
+type r =
+  | Cat of r list
   | Text of string
-  | Email of string
-  | Url of string
-  | Code_span of string
+  | Emph of r
+  | Bold of r
+  | Code of string
+  | Hard_break
+  | Soft_break
+  | Url of r * string * string option
+  | Html of string
+  | Img of string * string * string
+
+let cat = function
+  | [] -> Text ""
+  | [x] -> x
+  | l -> Cat l
+
+type t =
   | Bang_left_bracket
   | Left_bracket
   | Emph of delim * delim * emph * int
-  | Hard_break
-  | Soft_break
-  | Link of t list * string * string option
-  | REmph of bool * t list
+  | R of r
 
 let left_flanking = function
   | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
@@ -81,7 +90,7 @@ let text buf acc =
   else begin
     let s = Buffer.contents buf in
     Buffer.clear buf;
-    Text s :: acc
+    R (Text s) :: acc
   end
 
 let lexeme_length lexbuf =
@@ -104,8 +113,8 @@ let raw_html inline f acc buf0 lexbuf =
   let buf = Buffer.create 17 in
   add_lexeme buf lexbuf;
   match f buf lexbuf with
-  | kind ->
-      inline (Html (kind, Buffer.contents buf) :: text buf0 acc) buf0 lexbuf
+  | () ->
+      inline (R (Html (Buffer.contents buf)) :: text buf0 acc) buf0 lexbuf
   | exception _ ->
       add_lexeme buf0 lexbuf0;
       inline acc buf0 lexbuf0
@@ -115,7 +124,7 @@ let code inline f acc buf0 lexbuf =
   let buf = Buffer.create 17 in
   match f buf lexbuf with
   | () ->
-      inline (Code_span (Buffer.contents buf) :: text buf0 acc) buf0 lexbuf
+      inline (R (Code (Buffer.contents buf)) :: text buf0 acc) buf0 lexbuf
   | exception _ ->
       add_lexeme buf0 lexbuf0;
       inline acc buf0 lexbuf0
@@ -138,23 +147,34 @@ let protect f lexbuf =
   | exception _ ->
       Error lexbuf0
 
-let rec parse_emph = function
-  | Emph (pre, _, q1, n1) as x :: xs as all when is_opener x ->
+let to_r = function
+  | Bang_left_bracket -> Text "!["
+  | Left_bracket -> Text "["
+  | Emph (_, _, Star, n) -> Text (String.make n '*')
+  | Emph (_, _, Underscore, n) -> Text (String.make n '_')
+  | R x -> x
+
+let rec parse_emph : t list -> r list = function
+  | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
       let rec loop acc = function
         | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
-            let is_strong = n1 >= 2 && n2 >= 2 in
             let xs = if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs in
-            let r = REmph (is_strong, parse_emph (List.rev acc)) :: xs in
+            let r =
+              if n1 >= 2 && n2 >= 2 then
+                R (Bold (cat (parse_emph (List.rev acc)))) :: xs
+              else
+                R (Emph (cat (parse_emph (List.rev acc)))) :: xs
+            in
             let r = if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r in
             parse_emph r
         | x :: xs ->
             loop (x :: acc) xs
         | [] ->
-            all
+            to_r x :: List.rev_map to_r acc
       in
       loop [] xs
   | x :: xs ->
-      x :: parse_emph xs
+      to_r x :: parse_emph xs
   | [] ->
       []
 }
@@ -185,16 +205,16 @@ let dest = [^' ''\t''\010'-'\013']+
 let title = '"' [^'"']* '"'
 
 rule inline acc buf = parse
-  | closing_tag as s          { inline (Html (Closing_tag, s) :: text buf acc) buf lexbuf }
-  | open_tag as s             { inline (Html (Open_tag, s) :: text buf acc) buf lexbuf }
+  | closing_tag as s          { inline (R (Html s) :: text buf acc) buf lexbuf }
+  | open_tag as s             { inline (R (Html s) :: text buf acc) buf lexbuf }
   | "<!--"                    { raw_html inline (html_comment true) acc buf lexbuf }
   | "<?"                      { raw_html inline processing_instruction acc buf lexbuf }
   | "<!" ['A'-'Z']+           { raw_html inline declaration acc buf lexbuf }
   | "<![CDATA["               { raw_html inline cdata_section acc buf lexbuf }
-  | '<' (email as x) '>'      { inline (Email x :: text buf acc) buf lexbuf }
-  | '<' (uri as x) '>'        { inline (Url x :: text buf acc) buf lexbuf }
-  | (' ' ' '+ | '\\') nl ws*  { inline (Hard_break :: text buf acc) buf lexbuf }
-  | nl                        { inline (Soft_break :: text buf acc) buf lexbuf }
+  | '<' (email as x) '>'      { inline (R (Url (Text x, "mailto:" ^ x, None)) :: text buf acc) buf lexbuf }
+  | '<' (uri as x) '>'        { inline (R (Url (Text x, x, None)) :: text buf acc) buf lexbuf }
+  | (' ' ' '+ | '\\') nl ws*  { inline (R Hard_break :: text buf acc) buf lexbuf }
+  | nl                        { inline (R Soft_break :: text buf acc) buf lexbuf }
   | '\\' (_ as c)             { add_char buf c; inline acc buf lexbuf }
   | entity as e               { add_entity buf e; inline acc buf lexbuf }
   | '`'+                      { code inline (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
@@ -211,7 +231,7 @@ rule inline acc buf = parse
       let rec loop xs = function
         | Left_bracket :: acc' ->
            begin match protect link_destination lexbuf with
-           | Ok (uri, title) -> inline (Link (parse_emph xs, uri, title) :: acc') buf lexbuf
+           | Ok (uri, title) -> inline (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline acc buf lexbuf
            end
@@ -239,7 +259,7 @@ and code_span start seen_ws n buf = parse
 
 and html_comment start buf = parse
   | "--->"      { raise Exit }
-  | "-->"       { add_lexeme buf lexbuf; Comment }
+  | "-->"       { add_lexeme buf lexbuf }
   | "--"        { raise Exit }
   | ">" | "->"  { if start then raise Exit;
                   add_lexeme buf lexbuf;
@@ -250,21 +270,21 @@ and html_comment start buf = parse
                   html_comment false buf lexbuf }
 
 and processing_instruction buf = parse
-  | "?>"        { add_lexeme buf lexbuf; Processing_instruction }
+  | "?>"        { add_lexeme buf lexbuf }
   | entity as e { add_entity buf e;
                   processing_instruction buf lexbuf }
   | _ as c      { add_char buf c;
                   processing_instruction buf lexbuf }
 
 and declaration buf = parse
-  | '>' as c    { add_char buf c; Declaration }
+  | '>' as c    { add_char buf c }
   | entity as e { add_entity buf e;
                   declaration buf lexbuf }
   | _ as c      { add_char buf c;
                   declaration buf lexbuf }
 
 and cdata_section buf = parse
-  | "]]>"       { add_lexeme buf lexbuf; CDATA_section }
+  | "]]>"       { add_lexeme buf lexbuf }
   | entity as e { add_entity buf e;
                   cdata_section buf lexbuf }
   | _ as c      { add_char buf c;

@@ -19,7 +19,7 @@ type 'a t =
   | Code_block of string * string option
   | Html_block of string
 
-val map: f:('a -> 'b) -> 'a t -> 'b t
+val map: ('a -> 'b) -> 'a t -> 'b t
 
 module Parser : sig
   type blocks
