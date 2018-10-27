@@ -7,6 +7,11 @@ type html =
   | Declaration
   | CDATA_section
 
+type delim =
+  | Ws
+  | Punct
+  | Other
+
 type t =
   | Html of html * string
   | Text of string
@@ -15,8 +20,7 @@ type t =
   | Code_span of string
   | Bang_left_bracket
   | Left_bracket
-  (* | Right_bracket *)
-  | Strong of bool * bool * int
+  | Strong of delim * delim * int
   (* | Emph of int *)
   | Hard_break
   | Soft_break
@@ -88,18 +92,15 @@ let code inline f acc buf0 lexbuf =
       add_lexeme buf0 lexbuf0;
       inline acc buf0 lexbuf0
 
-let is_ws = function
-  | ' ' | '\t' | '\010'..'\013' -> true
-  | _ -> false
-
-let is_punct = function
+let classify_delim = function
   | '!' | '"' | '#' | '$' | '%'
   | '&' | '\'' | '(' | ')' | '*' | '+'
   | ',' | '-' | '.' | '/' | ':' | ';'
   | '<' | '=' | '>' | '?' | '@' | '['
   | '\\' | ']' | '^' | '_' | '`' | '{'
-  | '|' | '}' | '~' -> true
-  | _ -> false
+  | '|' | '}' | '~' -> Punct
+  | ' ' | '\t' | '\010'..'\013' -> Ws
+  | _ -> Other
 
 let protect f lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
@@ -155,9 +156,7 @@ rule inline acc buf = parse
       { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
         let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
           Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
-        let is_left = not (is_ws post) && (not (is_punct post) || is_ws pre || is_punct pre) in
-        let is_right = not (is_ws pre) && (not (is_punct pre) || is_ws post || is_punct post) in
-        let acc = Strong (is_left, is_right, String.length r) :: text buf acc in
+        let acc = Strong (classify_delim pre, classify_delim post, String.length r) :: text buf acc in
         inline acc buf lexbuf }
   | "!["                      { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
   | '['                       { inline (Left_bracket :: text buf acc) buf lexbuf }
