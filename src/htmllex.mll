@@ -139,18 +139,18 @@ let protect f lexbuf =
       Error lexbuf0
 
 let rec parse_emph = function
-  | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
+  | Emph (pre, _, q1, n1) as x :: xs as all when is_opener x ->
       let rec loop acc = function
         | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
             let is_strong = n1 >= 2 && n2 >= 2 in
             let xs = if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs in
-            let r = REmph (is_strong, List.rev acc) :: xs in
+            let r = REmph (is_strong, parse_emph (List.rev acc)) :: xs in
             let r = if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r in
-            if n1 > 2 || n2 > 2 then parse_emph r else r
+            parse_emph r
         | x :: xs ->
             loop (x :: acc) xs
         | [] ->
-            x :: List.rev acc
+            all
       in
       loop [] xs
   | x :: xs ->
@@ -221,7 +221,7 @@ rule inline acc buf = parse
       loop [] (text buf acc)
      }
   | _ as c                    { add_char buf c; inline acc buf lexbuf }
-  | eof                       { List.rev (text buf acc) }
+  | eof                       { parse_emph (List.rev (text buf acc)) }
 
 and link_destination = parse
   | ws* (dest as d) (ws+ (title as t))? ws* ')' { d, t }
