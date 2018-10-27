@@ -28,19 +28,31 @@ type t =
   | Hard_break
   | Soft_break
   | Link of t list * string * string option
+  | REmph of bool * t list
 
-(* let left_flanking = function *)
-(*   | Strong (_, Other, _) | Strong ((Ws | Punct), Punct, _) -> true *)
-(*   | _ -> false *)
+let left_flanking = function
+  | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
+  | _ -> false
 
-(* let right_flanking = function *)
-(*   | Strong (Other, _, _) | Strong (Punct, (Ws | Punct), _) -> true *)
-(*   | _ -> false *)
+let right_flanking = function
+  | Emph (Other, _, _, _) | Emph (Punct, (Ws | Punct), _, _) -> true
+  | _ -> false
 
-(* let is_opener = left_flanking *)
+let is_opener = function
+  | Emph (pre, _, Underscore, _) as x ->
+      left_flanking x && (not (right_flanking x) || pre = Punct)
+  | Emph (_, _, Star, _) as x ->
+      left_flanking x
+  | _ ->
+      false
 
-(* let is_closer =  *)
-(*   |  *)
+let is_closer = function
+  | Emph (_, post, Underscore, _) as x ->
+      right_flanking x && (not (left_flanking x) || post = Punct)
+  | Emph (_, _, Star, _) as x ->
+      right_flanking x
+  | _ ->
+      false
 
 let add_char buf c =
   Buffer.add_char buf c
@@ -126,19 +138,28 @@ let protect f lexbuf =
   | exception _ ->
       Error lexbuf0
 
-(* let parse_emph = function *)
-(*   | Strong _ as x :: xs when is_opener x -> *)
-(*       let rec loop = function *)
-(*         | Strong _ as x :: xs when is_closer x -> *)
-(*             let is_strong = ... in *)
-(*             Emph () :: xs *)
-(*       in *)
-(*       loop xs *)
+let rec parse_emph = function
+  | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
+      let rec loop acc = function
+        | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
+            let is_strong = n1 >= 2 && n2 >= 2 in
+            let xs = if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs in
+            let r = REmph (is_strong, List.rev acc) :: xs in
+            let r = if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r in
+            if n1 > 2 || n2 > 2 then parse_emph r else r
+        | x :: xs ->
+            loop (x :: acc) xs
+        | [] ->
+            x :: List.rev acc
+      in
+      loop [] xs
+  | x :: xs ->
+      x :: parse_emph xs
+  | [] ->
+      []
 }
 
 let ws = [' ''\t''\010'-'\013']
-(* let non_ws = [^' ''\t''\010'-'\013'] *)
-(* let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\''']''^''_''`''{''|''}''~'] *)
 let nl = '\n' | "\r\n" | '\r'
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
@@ -190,7 +211,7 @@ rule inline acc buf = parse
       let rec loop xs = function
         | Left_bracket :: acc' ->
            begin match protect link_destination lexbuf with
-           | Ok (uri, title) -> inline (Link (xs, uri, title) :: acc') buf lexbuf
+           | Ok (uri, title) -> inline (Link (parse_emph xs, uri, title) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline acc buf lexbuf
            end
