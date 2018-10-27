@@ -3,6 +3,10 @@ type list_item_kind =
   | Ordered of int
   | Bullet of char
 
+type fenced_code_kind =
+  | Tilde
+  | Backtick
+
 let tags =
   [ "address"; "aside"; "base"; "basefont"; "blockquote";
     "body"; "caption"; "center"; "col"; "colgroup"; "dd";
@@ -67,7 +71,8 @@ and is_atx_heading = parse
 
 and is_fenced_code = parse
   | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws* ([^' ''\t']* as info)
-      { Some (String.length ind, String.length delim, info) }
+      { let q = if delim.[0] = '~' then Tilde else Backtick in
+        Some (String.length ind, String.length delim, q, info) }
   | _ | eof
     { None }
 
@@ -133,10 +138,10 @@ let is_atx_heading s =
 let is_fenced_code s =
   is_fenced_code (Sub.lexbuf s)
 
-let is_fenced_code_closing num s =
+let is_fenced_code_closing num q s =
   match is_fenced_code s with
-  | Some (_, num', "") ->
-      num' >= num
+  | Some (_, num', q1, "") ->
+      num' >= num && q = q1
   | _ ->
       false
 
@@ -163,7 +168,7 @@ type line_kind =
   | Lthematic_break
   | Latx_heading of int * string
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * string
+  | Lfenced_code of int * int * fenced_code_kind * string
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of list_kind * int * Sub.t
@@ -192,8 +197,8 @@ let classify_line (s : Sub.t) =
                     Latx_heading (n, s)
                 | None ->
                     begin match is_fenced_code s with
-                    | Some (ind, num, info) ->
-                        Lfenced_code (ind, num, info)
+                    | Some (ind, num, q, info) ->
+                        Lfenced_code (ind, num, q, info)
                     | None ->
                         begin match is_html_opening s with
                         | Some (can_interrupt_par, kind) ->

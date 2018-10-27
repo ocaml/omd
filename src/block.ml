@@ -36,7 +36,7 @@ module Parser = struct
     | Rblockquote of t
     | Rlist of List_kind.t * List_style.t * bool * int * blocks list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * string * string list
+    | Rfenced_code of int * int * Auxlex.fenced_code_kind * string * string list
     | Rindented_code of string list
     | Rhtml of Auxlex.html_kind * string list
     | Rempty
@@ -57,9 +57,9 @@ module Parser = struct
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         Paragraph (concat (List.map String.trim l)) :: blocks
-    | Rfenced_code (_, _, info, []) ->
+    | Rfenced_code (_, _, _, info, []) ->
         Code_block (info, None) :: blocks
-    | Rfenced_code (_, _, info, l) ->
+    | Rfenced_code (_, _, _, info, l) ->
         Code_block (info, Some (concat l)) :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
@@ -87,8 +87,8 @@ module Parser = struct
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Latx_heading (n, s) ->
         {blocks = Heading (n, s) :: blocks; next = Rempty}
-    | Rempty, Lfenced_code (ind, num, info) ->
-        {blocks; next = Rfenced_code (ind, num, info, [])}
+    | Rempty, Lfenced_code (ind, num, q, info) ->
+        {blocks; next = Rfenced_code (ind, num, q, info, [])}
     | Rempty, Lhtml (_, kind) ->
         process {blocks; next = Rhtml (kind, [])} s
     | Rempty, Lindented_code s ->
@@ -104,9 +104,9 @@ module Parser = struct
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
-    | Rfenced_code (_, num, _, _), Lfenced_code (_, num', "") when num' >= num ->
+    | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, "") when num' >= num && q = q1 ->
         {blocks = close {blocks; next}; next = Rempty}
-    | Rfenced_code (ind, num, info, lines), _ ->
+    | Rfenced_code (ind, num, q, info, lines), _ ->
         let s =
           let ind = min (Auxlex.indent s) ind in
           if ind > 0 then
@@ -114,7 +114,7 @@ module Parser = struct
           else
             s
         in
-        {blocks; next = Rfenced_code (ind, num, info, Sub.to_string s :: lines)}
+        {blocks; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines)}
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
