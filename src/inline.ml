@@ -15,8 +15,8 @@ type t =
   | Emph of t
   | Bold of t
   | Code of string
-  | Br
-  | NL
+  | Hard_break
+  | Soft_break
   | Url of href * t * title
   | Ref of name * string * fallback
   | Img_ref of name * alt * fallback
@@ -44,9 +44,9 @@ let rec print ppf = function
       F.fprintf ppf "@[<1>(bold@ %a)@]" print x
   | Code x ->
       F.fprintf ppf "@[<1>(code@ %S)@]" x
-  | Br ->
+  | Hard_break ->
       F.pp_print_string ppf "br"
-  | NL ->
+  | Soft_break ->
       F.pp_print_string ppf "NL"
   | Url (url, _, _) ->
       F.fprintf ppf "@[<1>(url@ %S)@]" url
@@ -92,7 +92,7 @@ let rec html_of_md b md =
         Buffer.add_string b "<code>";
         Buffer.add_string b (htmlentities ~md:false c);
         Buffer.add_string b "</code>"
-    | Br ->
+    | Hard_break ->
         Buffer.add_string b "<br/>"
     | Raw s ->
         Buffer.add_string b s
@@ -110,7 +110,7 @@ let rec html_of_md b md =
         Buffer.add_string b ">";
         html_of_md b s;
         Buffer.add_string b "</a>"
-    | NL ->
+    | Soft_break ->
         Buffer.add_string b "\n"
   in
   loop md
@@ -210,7 +210,7 @@ let rec markdown_of_md md =
         Printf.bprintf b "%s" c;
         if c.[String.length c - 1] = '`' then Buffer.add_char b ' ';
         Printf.bprintf b "%s" (String.make n '`')
-    | Br ->
+    | Hard_break ->
         Buffer.add_string b "<br />"
     | Raw s ->
         Buffer.add_string b s
@@ -221,7 +221,7 @@ let rec markdown_of_md md =
           bprintf b "[%s](%s)" (markdown_of_md s) href
         else
           bprintf b "[%s](%s \"%s\")" (markdown_of_md s) href title
-    | NL ->
+    | Soft_break ->
         if Buffer.length b = 1 ||
            (Buffer.length b > 1 &&
             not(Buffer.nth b (Buffer.length b - 1) = '\n' &&
@@ -788,12 +788,12 @@ struct
       | Delim (1, Newline) :: tl when not html ->
           if debug then
             eprintf "(OMD) 2 or more spaces before a newline, eat the newline\n%!";
-          Br :: r, [Delim (n, Space)], tl
+          Hard_break :: r, [Delim (n, Space)], tl
       | Delim (k, Newline) :: tl when not html && k >= 2 ->
           if debug then
             eprintf "(OMD) 2 or more spaces before a newline, eat 1 newline";
           let newlines = Delim (k-1, Newline) in
-          Br :: r, [Delim (n, Space)], newlines :: tl
+          Hard_break :: r, [Delim (n, Space)], newlines :: tl
       | _ ->
           assert (n > 1);
           Text (String.make n ' ') :: r, [Delim (n, Space)], lexemes
@@ -945,7 +945,7 @@ struct
     (* backslashes *)
     | _, Delim (1, Backslash) :: Delim (n, Newline) :: tl ->
         assert (n >= 0); (* \\n\n\n\n... *)
-        main_impl_rev ~html (Br :: r) [Delim (1, Backslash); Delim (1, Newline)] (delim (n-1) Newline tl)
+        main_impl_rev ~html (Hard_break :: r) [Delim (1, Backslash); Delim (1, Newline)] (delim (n-1) Newline tl)
     | _, Delim (1, Backslash) :: Delim (n, (Backquote|Star|Underscore|Obrace|Cbrace|Obracket|Cbracket|Oparenthesis|Cparenthesis|Plus|Minus|Dot|Exclamation|Hash|Greaterthan|Lessthan as d)) :: tl ->
         assert (n >= 0);
         main_impl_rev ~html (Text (String.make 1 (L.char_of_delim d)) :: r) [Delim (1, Backslash); Delim (1, d)] (delim (n-1) d tl)
@@ -993,7 +993,7 @@ struct
 
     (* newline at the end *)
     | _, [Delim (1, Newline)] ->
-        NL :: r
+        Soft_break :: r
 
     (* named html entity *)
     | _, Delim (1, Ampersand) :: ((Word w :: (Delim (n, Semicolon) as s) :: tl) as tl2) ->
@@ -1353,9 +1353,9 @@ struct
 
     (* line breaks *)
     | _, Delim (1, Newline) :: tl ->
-        main_impl_rev ~html (NL :: r) [Delim (1, Newline)] tl
+        main_impl_rev ~html (Soft_break :: r) [Delim (1, Newline)] tl
     | _, Delim (_, Newline) :: tl (* n >= 2 *) ->
-        main_impl_rev ~html (NL :: NL :: r) [Delim (1, Newline)] tl
+        main_impl_rev ~html (Soft_break :: Soft_break :: r) [Delim (1, Newline)] tl
 
     (* [ *)
     | _, (Delim (1, Obracket) as t) :: tl ->

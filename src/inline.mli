@@ -4,8 +4,8 @@ type t =
   | Emph of t
   | Bold of t
   | Code of string
-  | Br
-  | NL
+  | Hard_break
+  | Soft_break
   | Url of href * t * title
   | Ref of name * string * fallback
   | Img_ref of name * alt * fallback
