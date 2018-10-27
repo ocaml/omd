@@ -12,6 +12,10 @@ type delim =
   | Punct
   | Other
 
+type emph =
+  | Star
+  | Underscore
+
 type t =
   | Html of html * string
   | Text of string
@@ -20,11 +24,23 @@ type t =
   | Code_span of string
   | Bang_left_bracket
   | Left_bracket
-  | Strong of delim * delim * int
-  (* | Emph of int *)
+  | Emph of delim * delim * emph * int
   | Hard_break
   | Soft_break
   | Link of t list * string * string option
+
+(* let left_flanking = function *)
+(*   | Strong (_, Other, _) | Strong ((Ws | Punct), Punct, _) -> true *)
+(*   | _ -> false *)
+
+(* let right_flanking = function *)
+(*   | Strong (Other, _, _) | Strong (Punct, (Ws | Punct), _) -> true *)
+(*   | _ -> false *)
+
+(* let is_opener = left_flanking *)
+
+(* let is_closer =  *)
+(*   |  *)
 
 let add_char buf c =
   Buffer.add_char buf c
@@ -109,6 +125,15 @@ let protect f lexbuf =
       Ok x
   | exception _ ->
       Error lexbuf0
+
+(* let parse_emph = function *)
+(*   | Strong _ as x :: xs when is_opener x -> *)
+(*       let rec loop = function *)
+(*         | Strong _ as x :: xs when is_closer x -> *)
+(*             let is_strong = ... in *)
+(*             Emph () :: xs *)
+(*       in *)
+(*       loop xs *)
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -156,7 +181,8 @@ rule inline acc buf = parse
       { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
         let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
           Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
-        let acc = Strong (classify_delim pre, classify_delim post, String.length r) :: text buf acc in
+        let e = if r.[0] = '*' then Star else Underscore in
+        let acc = Emph (classify_delim pre, classify_delim post, e, String.length r) :: text buf acc in
         inline acc buf lexbuf }
   | "!["                      { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
   | '['                       { inline (Left_bracket :: text buf acc) buf lexbuf }
