@@ -31,7 +31,7 @@ let attribute_value_specification = ws* '=' ws* attribute_value
 let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
 let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
-let open_tag = '<' tag_name attribute+ ws* '/'? '>'
+let open_tag = '<' tag_name attribute* ws* '/'? '>'
 let closing_tag = "</" tag_name ws* '>'
 
 rule is_thematic_break = parse
