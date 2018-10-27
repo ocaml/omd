@@ -3,7 +3,7 @@
 (library
  (name omd)
  (public_name omd)
- (modules htmllex sub block text lexer parser representation backend omd utils auxlex)
+ (modules htmllex sub block inline lexer parser representation backend omd utils auxlex)
  (libraries bigarray))
 
 (executable
