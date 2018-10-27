@@ -15,11 +15,12 @@ type t =
   | Code_span of string
   | Bang_left_bracket
   | Left_bracket
-  | Right_bracket
+  (* | Right_bracket *)
   | Strong of bool * bool * int
   (* | Emph of int *)
   | Hard_break
   | Soft_break
+  | Link of t list * string * string option
 
 let add_char buf c =
   Buffer.add_char buf c
@@ -99,6 +100,14 @@ let is_punct = function
   | '\\' | ']' | '^' | '_' | '`' | '{'
   | '|' | '}' | '~' -> true
   | _ -> false
+
+let protect f lexbuf =
+  let lexbuf0 = copy_lexbuf lexbuf in
+  match f lexbuf with
+  | x ->
+      Ok x
+  | exception _ ->
+      Error lexbuf0
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -125,6 +134,9 @@ let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
+let dest = [^' ''\t''\010'-'\013']+
+let title = '"' [^'"']* '"'
+
 rule inline acc buf = parse
   | closing_tag as s          { inline (Html (Closing_tag, s) :: text buf acc) buf lexbuf }
   | open_tag as s             { inline (Html (Open_tag, s) :: text buf acc) buf lexbuf }
@@ -149,9 +161,24 @@ rule inline acc buf = parse
         inline acc buf lexbuf }
   | "!["                      { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
   | '['                       { inline (Left_bracket :: text buf acc) buf lexbuf }
-  | ']'                       { inline (Right_bracket :: text buf acc) buf lexbuf }
+  | ']''('                       {
+      let rec loop xs = function
+        | Left_bracket :: acc' ->
+           begin match protect link_destination lexbuf with
+           | Ok (uri, title) -> inline (Link (xs, uri, title) :: acc') buf lexbuf
+           | Error lexbuf ->
+               add_lexeme buf lexbuf; inline acc buf lexbuf
+           end
+        | x :: acc' -> loop (x :: xs) acc'
+        | [] -> add_lexeme buf lexbuf; inline acc buf lexbuf
+      in
+      loop [] (text buf acc)
+     }
   | _ as c                    { add_char buf c; inline acc buf lexbuf }
   | eof                       { List.rev (text buf acc) }
+
+and link_destination = parse
+  | ws* (dest as d) (ws+ (title as t))? ws* ')' { d, t }
 
 and code_span start seen_ws n buf = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin
