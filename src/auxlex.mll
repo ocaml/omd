@@ -70,9 +70,9 @@ and is_atx_heading = parse
     { None }
 
 and is_fenced_code = parse
-  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ws* ([^' ''\t']* as info)
+  | (sp3 as ind) ("~~~" '~'* | "```" '`'* as delim) ([^'`']* as info) eof
       { let q = if delim.[0] = '~' then Tilde else Backtick in
-        Some (String.length ind, String.length delim, q, info) }
+        Some (String.length ind, String.length delim, q, String.trim info) }
   | _ | eof
     { None }
 
