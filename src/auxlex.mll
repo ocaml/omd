@@ -31,8 +31,6 @@ let attribute_value_specification = ws* '=' ws* attribute_value
 let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
 let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
-let open_tag = '<' tag_name attribute* ws* '/'? '>'
-let closing_tag = "</" tag_name ws* '>'
 
 rule is_thematic_break = parse
   | sp3 '*' ws* '*' (ws* '*')+ ws* eof
@@ -83,29 +81,33 @@ and is_setext_underline = parse
   | _ | eof { None }
 
 and is_html_opening = parse
-  | sp3 "<!--"
-      { Some (true, `Contains ["-->"]) }
-  | sp3 "<?"
-      { Some (true, `Contains ["?>"]) }
-  | sp3 "<!"
-      { Some (true, `Contains [">"]) }
-  | sp3 "<![CDATA["
-      { Some (true, `Contains ["]]>"]) }
-  | sp3 ("<script" | "<pre" | "<style") (ws | '>' | eof)
-      { Some (true, `Contains ["</script>"; "</pre>"; "</style>"]) }
-  | sp3 ('<' | "</") (tag_name as tag) (ws | eof | '>' | "/>")
-      { if List.mem (String.lowercase_ascii tag) tags then
-          Some (true, `Blank)
-        else
-          None }
-  | sp3 (open_tag | closing_tag) ws* eof
-      { Some (false, `Blank) }
-  | _ | eof
-      { None }
+  | sp3 '<' { html0 lexbuf }
+  | _ | eof { None }
+
+and html0 = parse
+  | '?'                                           { Some (true, `Contains ["?>"]) }
+  | "!--"                                         { Some (true, `Contains ["-->"]) }
+  | '!'                                           { Some (true, `Contains [">"]) }
+  | "![CDATA["                                    { Some (true, `Contains ["]]>"]) }
+  | '/' (tag_name as t)                           { html_closing t lexbuf }
+  | ("script" | "pre" | "style") (ws | '>' | eof) { Some (true, `Contains ["</script>"; "</pre>"; "</style>"]) }
+  | tag_name as t                                 { html_open t lexbuf }
+  | _ | eof                                       { None }
+
+and html_open t = parse
+  | ws | eof | '/'? '>'                           { if List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else None }
+  | (attribute* as a) ws* '/'? '>' ws* eof        { if a = "" && List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else Some (false, `Blank) }
+  | _                                             { None }
+
+and html_closing t = parse
+  | ws* '>' ws* eof                               { Some (false, `Blank) }
+  | ws | eof | '>'                                { if List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else None }
+  | _                                             { None }
 
 and remove_trailing_hashes b = parse
   | ' ' '#'+ ws* eof | eof { Buffer.contents b }
   | _ as c { Buffer.add_char b c; remove_trailing_hashes b lexbuf }
+
 {
 let is_thematic_break s =
   is_thematic_break (Sub.lexbuf s)
