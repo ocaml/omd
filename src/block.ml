@@ -56,7 +56,12 @@ module Parser = struct
     | Rlist (kind, style, _, _, closed_items, state) ->
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
-        Paragraph (concat (List.map String.trim l)) :: blocks
+        let s = concat (List.map String.trim l) in
+        let _defs, off = Auxlex.link_def [] (Lexing.from_string s) in
+        let s = String.sub s off (String.length s - off) in
+        (* List.iter (fun (text, dst, _) -> Printf.eprintf "t=%s d=%S\n%!" text dst) defs; *)
+        (* Printf.eprintf "s=%S\n%!" s; *)
+        Paragraph s :: blocks
     | Rfenced_code (_, _, _, info, []) ->
         Code_block (info, None) :: blocks
     | Rfenced_code (_, _, _, info, l) ->
