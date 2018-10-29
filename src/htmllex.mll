@@ -188,7 +188,10 @@ let rec parse_emph : t list -> r list = function
 let rec normalize_label = function
   | Cat l -> String.concat "" (List.map normalize_label l)
   | Text s -> s
-  | _ -> assert false
+  | _ -> ""
+  (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
+  (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
+  (* | Code s -> "`" ^ s ^ "`" *)
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -239,10 +242,10 @@ rule inline defs acc buf = parse
         inline defs acc buf lexbuf }
   | "!["                      { inline defs (Bang_left_bracket :: text buf acc) buf lexbuf }
   | '['                       { inline defs (Left_bracket :: text buf acc) buf lexbuf }
-  | ']''('                       {
+  | ']''('                 {
       let rec loop xs = function
         | Left_bracket :: acc' ->
-           let f lexbuf = let r = link_dest_and_title lexbuf in link_end lexbuf; r in
+           let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
            | Ok (uri, title) ->
                inline defs (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
@@ -274,11 +277,18 @@ rule inline defs acc buf = parse
   | _ as c                    { add_char buf c; inline defs acc buf lexbuf }
   | eof                       { parse_emph (List.rev (text buf acc)) }
 
-and link_dest_and_title = parse
-  | ws* (dest as d) (ws+ (title as t))? ws* { d, t }
+and link_dest = parse
+  | ws* (dest as d) ws+ (['\'''"''('] as c) { d, link_title c (Buffer.create 17) lexbuf (* FIXME handle exception *) }
+  | ws* (dest as d) { d, None }
+
+and link_title d buf = parse
+  | '\\' (_ as c)   { add_char buf c; link_title d buf lexbuf }
+  | ['\'''"'')'] as c { if c = d then Some (Buffer.contents buf)
+                      else (add_char buf c; link_title d buf lexbuf) }
+  | _ as c { add_char buf c; link_title d buf lexbuf }
 
 and link_end = parse
-  | ')' { () }
+  | ws* ')' { () }
 
 and code_span start seen_ws n buf = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin

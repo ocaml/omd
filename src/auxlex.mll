@@ -127,7 +127,7 @@ and link_def acc = parse
   | sp3 '['
       { let f lexbuf =
           let text = link_label (Buffer.create 17) lexbuf in
-          let d, t = Htmllex.link_dest_and_title lexbuf in
+          let d, t = Htmllex.link_dest lexbuf in
           text, d, t
         in
         match Htmllex.protect f lexbuf with
