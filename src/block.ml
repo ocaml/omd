@@ -95,7 +95,7 @@ module Parser = struct
         {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
         {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], process empty s)}
-    | Rempty, (Lsetext_heading _ | Lparagraph _) ->
+    | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, (Lempty | Llist_item _ (* TODO non empty first line *)
                     | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
@@ -163,7 +163,7 @@ module Parser = struct
               end
           | Rparagraph (_ :: _ as lines) ->
               begin match Auxlex.classify_line s with
-              | Auxlex.Lparagraph _ | Lsetext_heading (1, _) | Lhtml (false, _) ->
+              | Auxlex.Lparagraph | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None

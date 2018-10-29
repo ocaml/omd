@@ -1,11 +1,47 @@
 {
-type list_item_kind =
-  | Ordered of int
-  | Bullet of char
+let lexeme_length lexbuf =
+  Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
+
+type list_kind =
+  | Ordered
+  | Unordered
+
+type html_kind =
+  | Hcontains of string list
+  | Hblank
 
 type fenced_code_kind =
   | Tilde
   | Backtick
+
+module R = struct
+  type list_item_kind =
+    | Ordered of int
+    | Bullet of char
+
+  type t =
+    | Lempty
+    | Lblockquote of int
+    | Lthematic_break
+    | Latx_heading of int * string
+    | Lsetext_heading of int * int
+    | Lfenced_code of int * int * fenced_code_kind * string
+    | Lhtml of bool * html_kind
+    | Llist_item of list_item_kind * int
+    | Lparagraph
+end
+
+type line_kind =
+  | Lempty
+  | Lblockquote of Sub.t
+  | Lthematic_break
+  | Latx_heading of int * string
+  | Lsetext_heading of int * int
+  | Lfenced_code of int * int * fenced_code_kind * string
+  | Lindented_code of Sub.t
+  | Lhtml of bool * html_kind
+  | Llist_item of list_kind * int * Sub.t
+  | Lparagraph
 
 let tags =
   [ "address"; "aside"; "base"; "basefont"; "blockquote";
@@ -32,205 +68,165 @@ let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
 let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
 
-rule is_thematic_break = parse
+rule line = parse
+  | ws* eof { R.Lempty }
+  | sp3 '>' { Lblockquote (lexeme_length lexbuf) }
+  | sp3 ('='+ as s) ws* eof { Lsetext_heading (1, String.length s) }
+  | sp3 ('-'+ as s) ws* eof { Lsetext_heading (2, String.length s) }
   | sp3 '*' ws* '*' (ws* '*')+ ws* eof
   | sp3 '_' ws* '_' (ws* '_')+ ws* eof
-  | sp3 '-' ws* '-' (ws* '-')+ ws* eof { true }
-  | _ | eof { false }
+  | sp3 '-' ws* '-' (ws* '-')+ ws* eof { Lthematic_break }
+  | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx) (ws _* as title)? eof
+    { let title = match title with None -> "" | Some s -> s in
+      let title = String.trim (remove_trailing_hashes (Buffer.create (String.length title)) (Lexing.from_string title)) in
+      Latx_heading (String.length atx, title) }
+  | (sp3 as ind) ("```" '`'* as delim) ws* ([^'`'' ''\t''\010'-'\013']* as info) [^'`']* eof
+      { Lfenced_code (String.length ind, String.length delim, Backtick, String.trim info) }
+  | (sp3 as ind) ("~~~" '~'* as delim) ws* ([^' ''\t''\010'-'\013']* as info)
+      { Lfenced_code (String.length ind, String.length delim, Tilde, String.trim info) }
+  | sp3 '<'
+      { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
+  | sp3 (['+''-''*'] as marker) as l [' ''\t']
+      { Llist_item (R.Bullet marker, String.length l) }
+  | sp3 (['0'-'9']+ as num) ('.' | ')') as l [' ''\t']
+      { Llist_item (R.Ordered (int_of_string num), String.length l) }
+  | _
+      { Lparagraph }
 
 and is_empty = parse
   | ws* eof { true }
   | _ { false }
 
-and is_blockquote = parse
-  | sp3 '>' { Some (String.length (Lexing.lexeme lexbuf)) }
-  | _ | eof { None }
-
-and is_list_item = parse
-  | sp3 (['+''-''*'] as marker)
-      { Some (Bullet marker, String.length (Lexing.lexeme lexbuf)) }
-  | sp3 (['0'-'9']+ as num) ('.' | ')')
-      { Some (Ordered (int_of_string num), String.length (Lexing.lexeme lexbuf)) }
-  | _ | eof
-      { None }
-
-and indent acc = parse
-  | ' ' { indent (acc + 1) lexbuf }
-  | '\t' { indent (acc + 4) lexbuf }
+and count_indent acc = parse
+  | ' ' { count_indent (acc + 1) lexbuf }
+  | '\t' { count_indent (acc + 4) lexbuf }
   | _ | eof { acc }
 
-and is_atx_heading = parse
-  | sp3 ("#" | "##" | "###" | "####" | "#####" | "######" as atx) (ws _* as title)? eof
-    { let title = match title with None -> "" | Some s -> s in
-      let title = String.trim (remove_trailing_hashes (Buffer.create (String.length title)) (Lexing.from_string title)) in
-      Some (String.length atx, title) }
-  | _ | eof
-    { None }
-
-and is_fenced_code = parse
-  | (sp3 as ind) ("```" '`'* as delim) ws* ([^'`'' ''\t''\010'-'\013']* as info) [^'`']* eof
-      { Some (String.length ind, String.length delim, Backtick, String.trim info) }
-  | (sp3 as ind) ("~~~" '~'* as delim) ws* ([^' ''\t''\010'-'\013']* as info)
-      { Some (String.length ind, String.length delim, Tilde, String.trim info) }
-  | _ | eof
-    { None }
-
-and is_setext_underline = parse
-  | sp3 ('='+ as s) ws* eof { Some (1, String.length s) }
-  | sp3 ('-'+ as s) ws* eof { Some (2, String.length s) }
-  | _ | eof { None }
-
-and is_html_opening = parse
-  | sp3 '<' { html0 lexbuf }
-  | _ | eof { None }
-
 and html0 = parse
-  | '?'                                           { Some (true, `Contains ["?>"]) }
-  | "!--"                                         { Some (true, `Contains ["-->"]) }
-  | '!'                                           { Some (true, `Contains [">"]) }
-  | "![CDATA["                                    { Some (true, `Contains ["]]>"]) }
+  | '?'                                           { (true, Hcontains ["?>"]) }
+  | "!--"                                         { (true, Hcontains ["-->"]) }
+  | '!'                                           { (true, Hcontains [">"]) }
+  | "![CDATA["                                    { (true, Hcontains ["]]>"]) }
   | '/' (tag_name as t)                           { html_closing t lexbuf }
-  | ("script" | "pre" | "style") (ws | '>' | eof) { Some (true, `Contains ["</script>"; "</pre>"; "</style>"]) }
+  | ("script" | "pre" | "style") (ws | '>' | eof) { (true, Hcontains ["</script>"; "</pre>"; "</style>"]) }
   | tag_name as t                                 { html_open t lexbuf }
-  | _ | eof                                       { None }
 
 and html_open t = parse
-  | ws | eof | '/'? '>'                           { if List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else None }
-  | (attribute* as a) ws* '/'? '>' ws* eof        { if a = "" && List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else Some (false, `Blank) }
-  | _                                             { None }
+  | ws | eof | '/'? '>'                           { if List.mem (String.lowercase_ascii t) tags then (true, Hblank) else raise Exit }
+  | (attribute* as a) ws* '/'? '>' ws* eof        { if a = "" && List.mem (String.lowercase_ascii t) tags then (true, Hblank) else (false, Hblank) }
 
 and html_closing t = parse
-  | ws* '>' ws* eof                               { Some (false, `Blank) }
-  | ws | eof | '>'                                { if List.mem (String.lowercase_ascii t) tags then Some (true, `Blank) else None }
-  | _                                             { None }
+  | ws* '>' ws* eof                               { (false, Hblank) }
+  | ws | eof | '>'                                { if List.mem (String.lowercase_ascii t) tags then (true, Hblank) else raise Exit }
 
 and remove_trailing_hashes b = parse
   | ' ' '#'+ ws* eof | eof { Buffer.contents b }
   | _ as c { Buffer.add_char b c; remove_trailing_hashes b lexbuf }
 
 {
-let is_thematic_break s =
-  is_thematic_break (Sub.lexbuf s)
-
 let is_empty s =
   is_empty (Sub.lexbuf s)
 
-let is_blockquote s =
-  is_blockquote (Sub.lexbuf s)
-
 let indent s =
-  indent 0 (Sub.lexbuf s)
+  count_indent 0 (Sub.lexbuf s)
 
-let is_list_item s =
-  match is_list_item (Sub.lexbuf s) with
-  | Some (k, off) ->
-      let n = indent (Sub.offset off s) in
-      if n > 0 then
-        if n <= 4 then
-          Some (k, off + n)
-        else
-          Some (k, off + 1)
-      else
-        None
-  | None ->
-      None
-
-let is_atx_heading s =
-  is_atx_heading (Sub.lexbuf s)
-
-let is_fenced_code s =
-  is_fenced_code (Sub.lexbuf s)
-
-let is_fenced_code_closing num q s =
-  match is_fenced_code s with
-  | Some (_, num', q1, "") ->
-      num' >= num && q = q1
-  | _ ->
-      false
-
-let is_html_opening s =
-  is_html_opening (Sub.lexbuf s)
+(* let is_fenced_code_closing num q s = *)
+(*   match is_fenced_code s with *)
+(*   | Some (_, num', q1, "") -> *)
+(*       num' >= num && q = q1 *)
+(*   | _ -> *)
+(*       false *)
 
 let is_indented_code s =
   indent s >= 4
 
-let is_setext_underline s =
-  is_setext_underline (Sub.lexbuf s)
+let classify_line s =
+  match line (Sub.lexbuf s) with
+  | R.Lblockquote n ->
+      let s = Sub.offset n s in
+      let s = if indent s > 0 then Sub.offset 1 s else s in
+      Lblockquote s
+  | Lparagraph ->
+      if indent s >= 4 then
+        Lindented_code (Sub.offset 4 s)
+      else
+        Lparagraph
+  | Llist_item (kind, off) ->
+      let off =
+        let n = indent (Sub.offset off s) in
+        (* if n > 0 then *)
+          if n <= 4 then
+            off + n
+          else
+            off + 1
+      in
+      let kind =
+        match kind with
+        | Bullet _ -> Unordered
+        | Ordered _ -> Ordered
+      in
+      Llist_item (kind, off, Sub.offset off s)
+  | Lempty -> Lempty
+  | Lthematic_break -> Lthematic_break
+  | Latx_heading (n, s) -> Latx_heading (n, s)
+  | Lsetext_heading (n, m) -> Lsetext_heading (n, m)
+  | Lfenced_code (a, b, k, s) -> Lfenced_code (a, b, k, s)
+  | Lhtml (p, k) -> Lhtml (p, k)
 
-type list_kind =
-  | Ordered
-  | Unordered
-
-type html_kind =
-  | Hcontains of string list
-  | Hblank
-
-type line_kind =
-  | Lempty
-  | Lblockquote of Sub.t
-  | Lthematic_break
-  | Latx_heading of int * string
-  | Lsetext_heading of int * int
-  | Lfenced_code of int * int * fenced_code_kind * string
-  | Lindented_code of Sub.t
-  | Lhtml of bool * html_kind
-  | Llist_item of list_kind * int * Sub.t
-  | Lparagraph of Sub.t
-
-let classify_line (s : Sub.t) =
-  if is_empty s then
-    Lempty
-  else begin
-    match is_blockquote s with
-    | Some n ->
-        let s = Sub.offset n s in
-        let s = if indent s > 0 then Sub.offset 1 s else s in
-        Lblockquote s
-    | None ->
-        begin match is_setext_underline s with
-        | Some (n, l) ->
-            Lsetext_heading (n, l)
-        | None ->
-            begin match is_thematic_break s with
-            | true ->
-                Lthematic_break
-            | false ->
-                begin match is_atx_heading s with
-                | Some (n, s) ->
-                    Latx_heading (n, s)
-                | None ->
-                    begin match is_fenced_code s with
-                    | Some (ind, num, q, info) ->
-                        Lfenced_code (ind, num, q, info)
-                    | None ->
-                        begin match is_html_opening s with
-                        | Some (can_interrupt_par, kind) ->
-                            let kind =
-                              match kind with
-                              | `Contains l -> Hcontains l
-                              | `Blank -> Hblank
-                            in
-                            Lhtml (can_interrupt_par, kind)
-                        | None ->
-                            if indent s >= 4 then
-                              Lindented_code (Sub.offset 4 s)
-                            else begin
-                              match is_list_item s with
-                              | Some (kind, indent) ->
-                                  let kind =
-                                    match kind with
-                                    | Bullet _ -> Unordered
-                                    | Ordered _ -> Ordered
-                                  in
-                                  Llist_item (kind, indent, Sub.offset indent s)
-                              | None ->
-                                  Lparagraph s
-                            end
-                        end
-                    end
-                end
-            end
-        end
-  end
+(* let classify_line (s : Sub.t) = *)
+(*   if is_empty s then *)
+(*     Lempty *)
+(*   else begin *)
+(*     match is_blockquote s with *)
+(*     | Some n -> *)
+(*         let s = Sub.offset n s in *)
+(*         let s = if indent s > 0 then Sub.offset 1 s else s in *)
+(*         Lblockquote s *)
+(*     | None -> *)
+(*         begin match is_setext_underline s with *)
+(*         | Some (n, l) -> *)
+(*             Lsetext_heading (n, l) *)
+(*         | None -> *)
+(*             begin match is_thematic_break s with *)
+(*             | true -> *)
+(*                 Lthematic_break *)
+(*             | false -> *)
+(*                 begin match is_atx_heading s with *)
+(*                 | Some (n, s) -> *)
+(*                     Latx_heading (n, s) *)
+(*                 | None -> *)
+(*                     begin match is_fenced_code s with *)
+(*                     | Some (ind, num, q, info) -> *)
+(*                         Lfenced_code (ind, num, q, info) *)
+(*                     | None -> *)
+(*                         begin match is_html_opening s with *)
+(*                         | Some (can_interrupt_par, kind) -> *)
+(*                             let kind = *)
+(*                               match kind with *)
+(*                               | `Contains l -> Hcontains l *)
+(*                               | `Blank -> Hblank *)
+(*                             in *)
+(*                             Lhtml (can_interrupt_par, kind) *)
+(*                         | None -> *)
+(*                             if indent s >= 4 then *)
+(*                               Lindented_code (Sub.offset 4 s) *)
+(*                             else begin *)
+(*                               match is_list_item s with *)
+(*                               | Some (kind, indent) -> *)
+(*                                   let kind = *)
+(*                                     match kind with *)
+(*                                     | Bullet _ -> Unordered *)
+(*                                     | Ordered _ -> Ordered *)
+(*                                   in *)
+(*                                   Llist_item (kind, indent, Sub.offset indent s) *)
+(*                               | None -> *)
+(*                                   Lparagraph s *)
+(*                             end *)
+(*                         end *)
+(*                     end *)
+(*                 end *)
+(*             end *)
+(*         end *)
+(*   end *)
 
 }
