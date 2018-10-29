@@ -66,7 +66,7 @@ module Parser = struct
         let s = String.sub s off (String.length s - off) in
         (* List.iter (fun (text, dst, _) -> Printf.eprintf "t=%s d=%S\n%!" text dst) defs; *)
         (* Printf.eprintf "s=%S\n%!" s; *)
-        Paragraph s :: blocks
+        if String.trim s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, _, info, []) ->
         Code_block (info, None) :: blocks
     | Rfenced_code (_, _, _, info, l) ->

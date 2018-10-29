@@ -91,15 +91,15 @@ let rec html_of_md b md =
     | Html body ->
         Buffer.add_string b body
     | Url (s, href, title) ->
-        Buffer.add_string b "<a href='";
+        Buffer.add_string b "<a href=\"";
         Buffer.add_string b (htmlentities ~md:true href);
-        Buffer.add_string b "'";
+        Buffer.add_string b "\"";
         begin match title with
         | None -> ()
         | Some title ->
-            Buffer.add_string b " title='";
+            Buffer.add_string b " title=\"";
             Buffer.add_string b (htmlentities ~md:true title);
-            Buffer.add_string b "'"
+            Buffer.add_string b "\""
         end;
         Buffer.add_string b ">";
         html_of_md b s;
