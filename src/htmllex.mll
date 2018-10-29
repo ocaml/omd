@@ -201,8 +201,8 @@ let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
-let dest = [^' ''\t''\010'-'\013']+
-let title = '"' [^'"']* '"'
+let dest = [^' ''\t''\010'-'\013'')']+
+let title = '"' [^'"'')']* '"'
 
 rule inline acc buf = parse
   | closing_tag as s          { inline (R (Html s) :: text buf acc) buf lexbuf }
@@ -230,8 +230,10 @@ rule inline acc buf = parse
   | ']''('                       {
       let rec loop xs = function
         | Left_bracket :: acc' ->
-           begin match protect link_destination lexbuf with
-           | Ok (uri, title) -> inline (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
+           let f lexbuf = let r = link_dest_and_title lexbuf in link_end lexbuf; r in
+           begin match protect f lexbuf with
+           | Ok (uri, title) ->
+               inline (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline acc buf lexbuf
            end
@@ -243,8 +245,11 @@ rule inline acc buf = parse
   | _ as c                    { add_char buf c; inline acc buf lexbuf }
   | eof                       { parse_emph (List.rev (text buf acc)) }
 
-and link_destination = parse
-  | ws* (dest as d) (ws+ (title as t))? ws* ')' { d, t }
+and link_dest_and_title = parse
+  | ws* (dest as d) (ws+ (title as t))? ws* { d, t }
+
+and link_end = parse
+  | ')' { () }
 
 and code_span start seen_ws n buf = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin
