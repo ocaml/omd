@@ -189,6 +189,7 @@ let rec normalize_label = function
   | Cat l -> String.concat "" (List.map normalize_label l)
   | Text s -> s
   | _ -> ""
+  (* | _ -> "" *)
   (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
   (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
   (* | Code s -> "`" ^ s ^ "`" *)
