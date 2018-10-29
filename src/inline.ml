@@ -232,6 +232,13 @@ let cat = function
   | [x] -> x
   | l -> Cat l
 
-let parse s =
+type link_def = Htmllex.link_def =
+  {
+    label: string;
+    destination: string;
+    title: string option;
+  }
+
+let parse defs s =
   let lexbuf = Lexing.from_string s in
-  cat (Htmllex.inline [] (Buffer.create 17) lexbuf)
+  cat (Htmllex.inline defs [] (Buffer.create 17) lexbuf)

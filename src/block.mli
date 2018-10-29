@@ -27,11 +27,11 @@ module Parser : sig
 
   val empty : t
   val process : t -> string -> t
-  val finish : t -> blocks
+  val finish : t -> Inline.link_def list * blocks
 end with type blocks := string t list
 
 val to_html : (Buffer.t -> 'a -> unit) -> 'a t list -> string
 
-val of_channel : in_channel -> string t list
+val of_channel : in_channel -> Inline.link_def list * string t list
 
 val print : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit

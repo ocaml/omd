@@ -18,4 +18,11 @@ val print : Format.formatter -> t -> unit
 val html_of_md : Buffer.t -> t -> unit
 val markdown_of_md : t -> string
 
-val parse : string -> t
+type link_def =
+  {
+    label: string;
+    destination: string;
+    title: string option;
+  }
+
+val parse : link_def list -> string -> t

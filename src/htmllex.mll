@@ -7,6 +7,13 @@ type html =
   | Declaration
   | CDATA_section
 
+type link_def =
+  {
+    label: string;
+    destination: string;
+    title: string option;
+  }
+
 type delim =
   | Ws
   | Punct
@@ -177,6 +184,11 @@ let rec parse_emph : t list -> r list = function
       to_r x :: parse_emph xs
   | [] ->
       []
+
+let rec normalize_label = function
+  | Cat l -> String.concat "" (List.map normalize_label l)
+  | Text s -> s
+  | _ -> assert false
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -204,45 +216,62 @@ let entity = sym_entity | dec_entity | hex_entity
 let dest = [^' ''\t''\010'-'\013'')']+
 let title = '"' [^'"'')']* '"'
 
-rule inline acc buf = parse
-  | closing_tag as s          { inline (R (Html s) :: text buf acc) buf lexbuf }
-  | open_tag as s             { inline (R (Html s) :: text buf acc) buf lexbuf }
-  | "<!--"                    { raw_html inline (html_comment true) acc buf lexbuf }
-  | "<?"                      { raw_html inline processing_instruction acc buf lexbuf }
-  | "<!" ['A'-'Z']+           { raw_html inline declaration acc buf lexbuf }
-  | "<![CDATA["               { raw_html inline cdata_section acc buf lexbuf }
-  | '<' (email as x) '>'      { inline (R (Url (Text x, "mailto:" ^ x, None)) :: text buf acc) buf lexbuf }
-  | '<' (uri as x) '>'        { inline (R (Url (Text x, x, None)) :: text buf acc) buf lexbuf }
-  | (' ' ' '+ | '\\') nl ws*  { inline (R Hard_break :: text buf acc) buf lexbuf }
-  | nl                        { inline (R Soft_break :: text buf acc) buf lexbuf }
-  | '\\' (_ as c)             { add_char buf c; inline acc buf lexbuf }
-  | entity as e               { add_entity buf e; inline acc buf lexbuf }
-  | '`'+                      { code inline (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
+rule inline defs acc buf = parse
+  | closing_tag as s          { inline defs (R (Html s) :: text buf acc) buf lexbuf }
+  | open_tag as s             { inline defs (R (Html s) :: text buf acc) buf lexbuf }
+  | "<!--"                    { raw_html (inline defs) (html_comment true) acc buf lexbuf }
+  | "<?"                      { raw_html (inline defs) processing_instruction acc buf lexbuf }
+  | "<!" ['A'-'Z']+           { raw_html (inline defs) declaration acc buf lexbuf }
+  | "<![CDATA["               { raw_html (inline defs) cdata_section acc buf lexbuf }
+  | '<' (email as x) '>'      { inline defs (R (Url (Text x, "mailto:" ^ x, None)) :: text buf acc) buf lexbuf }
+  | '<' (uri as x) '>'        { inline defs (R (Url (Text x, x, None)) :: text buf acc) buf lexbuf }
+  | (' ' ' '+ | '\\') nl ws*  { inline defs (R Hard_break :: text buf acc) buf lexbuf }
+  | nl                        { inline defs (R Soft_break :: text buf acc) buf lexbuf }
+  | '\\' (_ as c)             { add_char buf c; inline defs acc buf lexbuf }
+  | entity as e               { add_entity buf e; inline defs acc buf lexbuf }
+  | '`'+                      { code (inline defs) (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
   | ('*'+|'_'+ as r)
       { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
         let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
           Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
         let e = if r.[0] = '*' then Star else Underscore in
         let acc = Emph (classify_delim pre, classify_delim post, e, String.length r) :: text buf acc in
-        inline acc buf lexbuf }
-  | "!["                      { inline (Bang_left_bracket :: text buf acc) buf lexbuf }
-  | '['                       { inline (Left_bracket :: text buf acc) buf lexbuf }
+        inline defs acc buf lexbuf }
+  | "!["                      { inline defs (Bang_left_bracket :: text buf acc) buf lexbuf }
+  | '['                       { inline defs (Left_bracket :: text buf acc) buf lexbuf }
   | ']''('                       {
       let rec loop xs = function
         | Left_bracket :: acc' ->
            let f lexbuf = let r = link_dest_and_title lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
            | Ok (uri, title) ->
-               inline (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
+               inline defs (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
            | Error lexbuf ->
-               add_lexeme buf lexbuf; inline acc buf lexbuf
+               add_lexeme buf lexbuf; inline defs acc buf lexbuf
            end
         | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme buf lexbuf; inline acc buf lexbuf
+        | [] -> add_lexeme buf lexbuf; inline defs acc buf lexbuf
       in
       loop [] (text buf acc)
      }
-  | _ as c                    { add_char buf c; inline acc buf lexbuf }
+  | ']' "[]"?
+     {
+      let rec loop xs = function
+        | Left_bracket :: acc' ->
+           let label = cat (parse_emph xs) in
+           let s = normalize_label label in
+           begin match List.find_opt (fun {label; _} -> label = s) defs with
+           | Some {destination; title; _} ->
+               inline defs (R (Url (label, destination, title)) :: acc') buf lexbuf
+           | None ->
+               add_lexeme buf lexbuf; inline defs acc buf lexbuf
+           end
+        | x :: acc' -> loop (x :: xs) acc'
+        | [] -> add_lexeme buf lexbuf; inline defs acc buf lexbuf
+      in
+      loop [] (text buf acc)
+     }
+  | _ as c                    { add_char buf c; inline defs acc buf lexbuf }
   | eof                       { parse_emph (List.rev (text buf acc)) }
 
 and link_dest_and_title = parse
@@ -296,7 +325,7 @@ and cdata_section buf = parse
                   cdata_section buf lexbuf }
 
 {
-let parse s =
+let parse defs s =
   let lexbuf = Lexing.from_string s in
-  inline [] (Buffer.create 17) lexbuf
+  inline defs [] (Buffer.create 17) lexbuf
 }
