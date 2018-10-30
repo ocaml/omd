@@ -11,10 +11,6 @@ type fenced_code_kind =
   | Backtick
 
 module R = struct
-  type list_item_kind =
-    | Ordered of int
-    | Bullet of char
-
   type t =
     | Lempty
     | Lblockquote of int
@@ -23,7 +19,7 @@ module R = struct
     | Lsetext_heading of int * int
     | Lfenced_code of int * int * fenced_code_kind * string
     | Lhtml of bool * html_kind
-    | Llist_item of list_item_kind * int
+    | Llist_item of Ast.list_kind * int
     | Lparagraph
 end
 
@@ -83,9 +79,9 @@ rule line = parse
   | sp3 '<'
       { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
   | sp3 (['+''-''*'] as marker) as l [' ''\t']
-      { Llist_item (R.Bullet marker, String.length l) }
+      { Llist_item (Ast.Unordered marker, String.length l) }
   | sp3 (['0'-'9']+ as num) ('.' | ')') as l [' ''\t']
-      { Llist_item (R.Ordered (int_of_string num), String.length l) }
+      { Llist_item (Ast.Ordered (int_of_string num), String.length l) }
   | _
       { Lparagraph }
 
@@ -148,11 +144,6 @@ let classify_line s =
             off + n
           else
             off + 1
-      in
-      let kind : Ast.list_kind =
-        match kind with
-        | Bullet _ -> Unordered
-        | Ordered _ -> Ordered
       in
       Llist_item (kind, off, Sub.offset off s)
   | Lempty -> Lempty

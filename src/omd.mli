@@ -1,8 +1,8 @@
 (** A markdown parser in OCaml. *)
 
 type list_kind =
-  | Ordered
-  | Unordered
+  | Ordered of int
+  | Unordered of char
 
 type list_style =
   | Loose

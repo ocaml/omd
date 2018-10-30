@@ -124,7 +124,7 @@ let process (r, state) s =
             style
         in
         {blocks; next = Rlist (kind, style, false, ind, items, loop state s)}
-    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
+    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when Ast.same_list_kind kind kind' ->
         let style = if prev_empty then Loose else style in
         {blocks; next = Rlist (kind, style, false, ind, finish r state :: items, loop empty s)}
     | (Rlist _ | Rblockquote _), _ ->
@@ -183,14 +183,17 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
         Buffer.add_string b "</p>"
     | List (kind, style, l) ->
         Buffer.add_string b
-          (match kind with Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
+          (match kind with
+           | Ordered 1 -> "<ol>\n"
+           | Ordered n -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
+           | Unordered _ -> "<ul>\n");
         List.iter (fun x ->
             Buffer.add_string b "<li>";
             let _ = List.fold_left (li style) false x in
             Buffer.add_string b "</li>\n"
           ) l;
         Buffer.add_string b
-          (match kind with Ordered -> "</ol>" | Unordered -> "</ul>")
+          (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
     | Code_block ("", None) ->
         Buffer.add_string b "<pre><code></code></pre>"
     | Code_block (info, None) ->

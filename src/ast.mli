@@ -1,6 +1,6 @@
 type list_kind =
-  | Ordered
-  | Unordered
+  | Ordered of int
+  | Unordered of char
 
 type list_style =
   | Loose
@@ -16,6 +16,8 @@ type 'a block =
   | Html_block of string
 
 val map : ('a -> 'b) -> 'a block -> 'b block
+
+val same_list_kind : list_kind -> list_kind -> bool
 
 type inline =
   | Cat of inline list

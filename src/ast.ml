@@ -1,6 +1,12 @@
 type list_kind =
-  | Ordered
-  | Unordered
+  | Ordered of int
+  | Unordered of char
+
+let same_list_kind k1 k2 =
+  match k1, k2 with
+  | Ordered _, Ordered _ -> true
+  | Unordered c1, Unordered c2 -> c1 = c2
+  | _ -> false
 
 type list_style =
   | Loose
