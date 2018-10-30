@@ -152,6 +152,9 @@ let rec parse_emph : t list -> Ast.inline list = function
       to_r x :: parse_emph xs
   | [] ->
       []
+
+let backtrack lexbuf n =
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -175,8 +178,6 @@ let sym_entity = '&' ['a'-'z''A'-'Z']+ ';'
 let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
-
-let dest = [^' ''\t''\010'-'\013'')']+
 
 rule inline defs acc buf = parse
   | closing_tag as s          { inline defs (R (Html s) :: text buf acc) buf lexbuf }
@@ -237,8 +238,23 @@ rule inline defs acc buf = parse
   | eof                       { parse_emph (List.rev (text buf acc)) }
 
 and link_dest = parse
-  | ws* (dest as d) ws+ (['\'''"''('] as c) { d, link_title c (Buffer.create 17) lexbuf (* FIXME handle exception *) }
-  | ws* (dest as d) { d, None }
+  | ws* '<' { link_dest1 (Buffer.create 17) lexbuf }
+  | ws* { link_dest2 0 (Buffer.create 17) lexbuf }
+
+and link_dest1 buf = parse
+  | '>' ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
+  | '>' ws* { Buffer.contents buf, None }
+  | ws | '<' { failwith "link_dest1 ws" }
+  | '\\' (_ as c) { add_char buf c; link_dest1 buf lexbuf }
+  | _ as c { add_char buf c; link_dest1 buf lexbuf }
+
+and link_dest2 n buf = parse
+  | ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
+  | ['\x00'-'\x1F''\x7F'] { Buffer.contents buf, None }
+  | '\\' (_ as c) { add_char buf c; link_dest2 n buf lexbuf }
+  | '(' as c { add_char buf c; link_dest2 (succ n) buf lexbuf }
+  | ')' as c { if n > 0 then (add_char buf c; link_dest2 (pred n) buf lexbuf) else (backtrack lexbuf 1; Buffer.contents buf, None) }
+  | _ as c { add_char buf c; link_dest2 n buf lexbuf }
 
 and link_title d buf = parse
   | '\\' (_ as c)   { add_char buf c; link_title d buf lexbuf }
