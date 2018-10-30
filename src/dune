@@ -5,13 +5,3 @@
  (public_name omd)
  (modules ast htmllex sub block inline omd utils auxlex)
  (libraries bigarray))
-
-(executable
- (name simple_main)
- (public_name omd)
- (modules simple_main)
- (libraries omd))
-
-(alias
- (name default)
- (deps simple_main.exe))
