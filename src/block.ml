@@ -18,7 +18,7 @@ and t_ =
   }
 
 type t =
-  Inline.link_def list list * t_
+  Ast.link_def list list * t_
 
 let concat l = String.concat "\n" (List.rev l)
 
@@ -32,7 +32,7 @@ let rec close r {blocks; next} =
       let s = concat (List.map String.trim l) in
       let defs, off = Auxlex.link_def [] (Lexing.from_string s) in
       r := List.map (fun (label, destination, title) ->
-          {Inline.label; destination; title}) defs :: !r;
+          {label; destination; title}) defs :: !r;
       let s = String.sub s off (String.length s - off) in
       (* List.iter (fun (text, dst, _) -> Printf.eprintf "t=%s d=%S\n%!" text dst) defs; *)
       (* Printf.eprintf "s=%S\n%!" s; *)

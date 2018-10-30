@@ -213,18 +213,6 @@ let rec markdown_of_md md =
   (* if debug then eprintf "(OMD) markdown_of_md(%S) => %S\n%!" (sexpr_of_md md) res; *)
   res
 
-let cat = function
-  | [] -> Text ""
-  | [x] -> x
-  | l -> Cat l
-
-type link_def = Htmllex.link_def =
-  {
-    label: string;
-    destination: string;
-    title: string option;
-  }
-
 let parse defs s =
   let lexbuf = Lexing.from_string s in
   cat (Htmllex.inline defs [] (Buffer.create 17) lexbuf)

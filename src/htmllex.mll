@@ -1,11 +1,4 @@
 {
-type link_def =
-  {
-    label: string;
-    destination: string;
-    title: string option;
-  }
-
 type delim =
   | Ws
   | Punct
@@ -230,7 +223,7 @@ rule inline defs acc buf = parse
         | Left_bracket :: acc' ->
            let label = Ast.cat (parse_emph xs) in
            let s = Ast.normalize_label label in
-           begin match List.find_opt (fun {label; _} -> label = s) defs with
+           begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some {destination; title; _} ->
                inline defs (R (Url (label, destination, title)) :: acc') buf lexbuf
            | None ->

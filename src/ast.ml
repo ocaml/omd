@@ -51,3 +51,10 @@ let rec normalize_label = function
   (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
   (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
   (* | Code s -> "`" ^ s ^ "`" *)
+
+type link_def =
+  {
+    label: string;
+    destination: string;
+    title: string option;
+  }
