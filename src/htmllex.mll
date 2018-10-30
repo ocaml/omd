@@ -140,6 +140,7 @@ rule inline defs acc buf = parse
      }
   | ']' "[]"?
      {
+      let acc = text buf acc in
       let rec loop xs = function
         | Inline.Left_bracket :: acc' ->
            let label = Ast.cat (Inline.parse_emph xs) in
@@ -153,7 +154,7 @@ rule inline defs acc buf = parse
         | x :: acc' -> loop (x :: xs) acc'
         | [] -> add_lexeme buf lexbuf; inline defs acc buf lexbuf
       in
-      loop [] (text buf acc)
+      loop [] acc
      }
   | _ as c                    { add_char buf c; inline defs acc buf lexbuf }
   | eof                       { Inline.parse_emph (List.rev (text buf acc)) }

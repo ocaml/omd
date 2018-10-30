@@ -149,8 +149,6 @@ let htmlentities ?(md = false) s =
           Buffer.add_char b c
       | '"' ->
           Buffer.add_string b "&quot;"
-      | '\'' ->
-          Buffer.add_string b "&#39;"
       | '&' ->
           if md then
             begin try
