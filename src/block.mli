@@ -1,11 +1,9 @@
-module Parser : sig
-  type blocks
-  type t
+type blocks = string Ast.block list
+type t
 
-  val empty : t
-  val process : t -> string -> t
-  val finish : t -> Inline.link_def list * blocks
-end with type blocks := string Ast.block list
+val empty : t
+val process : t -> string -> t
+val finish : t -> Inline.link_def list * blocks
 
 val to_html : (Buffer.t -> 'a -> unit) -> 'a Ast.block list -> string
 
