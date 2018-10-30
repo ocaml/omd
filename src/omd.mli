@@ -1,7 +1,7 @@
 (** A markdown parser in OCaml. *)
 
 type list_kind =
-  | Ordered of int
+  | Ordered of int * char
   | Unordered of char
 
 type list_style =

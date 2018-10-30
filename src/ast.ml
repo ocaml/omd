@@ -1,10 +1,10 @@
 type list_kind =
-  | Ordered of int
+  | Ordered of int * char
   | Unordered of char
 
 let same_list_kind k1 k2 =
   match k1, k2 with
-  | Ordered _, Ordered _ -> true
+  | Ordered (_, c1), Ordered (_, c2)
   | Unordered c1, Unordered c2 -> c1 = c2
   | _ -> false
 

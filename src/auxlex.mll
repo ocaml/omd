@@ -80,8 +80,8 @@ rule line = parse
       { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
   | sp3 (['+''-''*'] as marker) as l [' ''\t']
       { Llist_item (Ast.Unordered marker, String.length l) }
-  | sp3 (['0'-'9']+ as num) ('.' | ')') as l [' ''\t']
-      { Llist_item (Ast.Ordered (int_of_string num), String.length l) }
+  | sp3 (['0'-'9']+ as num) ('.' | ')' as d) as l [' ''\t']
+      { Llist_item (Ast.Ordered (int_of_string num, d), String.length l) }
   | _
       { Lparagraph }
 

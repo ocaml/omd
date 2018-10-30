@@ -79,7 +79,7 @@ let process (r, state) s =
         {blocks; next = Rlist (kind, Tight, false, indent, [], loop empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
-    | Rparagraph _, (Lempty | Llist_item ((Ordered 1 | Unordered _), _, _) (* TODO non empty first line *)
+    | Rparagraph _, (Lempty | Llist_item ((Ordered (1, _) | Unordered _), _, _) (* TODO non empty first line *)
                     | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         loop {blocks = close r {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
@@ -184,8 +184,8 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
     | List (kind, style, l) ->
         Buffer.add_string b
           (match kind with
-           | Ordered 1 -> "<ol>\n"
-           | Ordered n -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
+           | Ordered (1, _) -> "<ol>\n"
+           | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
            | Unordered _ -> "<ul>\n");
         List.iter (fun x ->
             Buffer.add_string b "<li>";
