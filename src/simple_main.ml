@@ -1,8 +1,4 @@
-open Omd
-
-module E = Parser.Default_env(struct end)
-
-let sexp = ref false
+(* let sexp = ref false *)
 
 let main () =
   let input = ref [] in
@@ -10,8 +6,8 @@ let main () =
   let spec =
     let open Arg in
     [
-      "-sexp", Set sexp,
-      " Emit sexp";
+      (* "-sexp", Set sexp, *)
+      (* " Emit sexp"; *)
       "-o", Set_string output,
       " file.html Specify the output file (default is stdout).";
 
@@ -25,16 +21,14 @@ let main () =
   Arg.parse (Arg.align spec) (fun s -> input := s :: !input) "omd [options] [inputfile1 .. inputfileN] [options]";
   let output = if !output = "" then stdout else open_out_bin !output in
   let process ic =
-    let defs, md = Block.of_channel ic in
-    let md = List.map (Ast.map (Inline.parse defs)) md in
-    if !sexp then
-      Format.eprintf "@[<v>%a@]@."
-        (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Inline.print)) md
-    else begin
-      let html = Block.to_html Inline.html_of_md md in
-      output_string output html;
-      flush output
-    end
+    let md = Omd.of_channel ic in
+    (* if !sexp then *)
+    (*   Format.eprintf "@[<v>%a@]@." *)
+    (*     (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Inline.print)) md *)
+    (* else begin *)
+    let html = Omd.to_html md in
+    output_string output html;
+    flush output
     (* if false && Utils.debug then *)
     (*   print_endline (Backend.sexpr_of_md (Omd.Parser.default_parse (preprocess(Lexer.lex (Buffer.contents b))))) *)
   in
@@ -52,9 +46,9 @@ let () =
   try
     main ()
   with
-  | Utils.Error msg when not Utils.debug ->
-      Printf.eprintf "(OMD) Error: %s\n" msg;
-      exit 1
   | Sys_error msg ->
       Printf.eprintf "Error: %s\n" msg;
+      exit 1
+  | exn ->
+      Printf.eprintf "Error: %s\n" (Printexc.to_string exn);
       exit 1
