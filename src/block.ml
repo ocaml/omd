@@ -79,7 +79,7 @@ let process (r, state) s =
         {blocks; next = Rlist (kind, Tight, false, indent, [], loop empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
-    | Rparagraph _, (Lempty | Llist_item _ (* TODO non empty first line *)
+    | Rparagraph _, (Lempty | Llist_item ((Ordered 1 | Unordered _), _, _) (* TODO non empty first line *)
                     | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         loop {blocks = close r {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
