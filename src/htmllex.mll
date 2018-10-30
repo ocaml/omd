@@ -1,12 +1,4 @@
 {
-type html =
-  | Closing_tag
-  | Open_tag
-  | Comment
-  | Processing_instruction
-  | Declaration
-  | CDATA_section
-
 type link_def =
   {
     label: string;
