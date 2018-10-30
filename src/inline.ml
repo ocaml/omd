@@ -142,7 +142,7 @@ let rec html_of_md b md =
         Buffer.add_string b (Utils.htmlentities ~md:false c);
         Buffer.add_string b "</code>"
     | Hard_break ->
-        Buffer.add_string b "<br/>"
+        Buffer.add_string b "<br />\n"
     | Html body ->
         Buffer.add_string b body
     | Url (s, href, title) ->
