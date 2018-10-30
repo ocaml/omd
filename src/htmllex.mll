@@ -177,7 +177,6 @@ let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
 let dest = [^' ''\t''\010'-'\013'')']+
-let title = '"' [^'"'')']* '"'
 
 rule inline defs acc buf = parse
   | closing_tag as s          { inline defs (R (Html s) :: text buf acc) buf lexbuf }
