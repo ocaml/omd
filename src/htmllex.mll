@@ -23,28 +23,11 @@ type emph =
   | Star
   | Underscore
 
-type r =
-  | Cat of r list
-  | Text of string
-  | Emph of r
-  | Bold of r
-  | Code of string
-  | Hard_break
-  | Soft_break
-  | Url of r * string * string option
-  | Html of string
-  | Img of string * string * string
-
-let cat = function
-  | [] -> Text ""
-  | [x] -> x
-  | l -> Cat l
-
 type t =
   | Bang_left_bracket
   | Left_bracket
   | Emph of delim * delim * emph * int
-  | R of r
+  | R of Ast.inline
 
 let left_flanking = function
   | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
@@ -154,23 +137,23 @@ let protect f lexbuf =
   | exception _ ->
       Error lexbuf0
 
-let to_r = function
+let to_r : _ -> Ast.inline = function
   | Bang_left_bracket -> Text "!["
   | Left_bracket -> Text "["
   | Emph (_, _, Star, n) -> Text (String.make n '*')
   | Emph (_, _, Underscore, n) -> Text (String.make n '_')
   | R x -> x
 
-let rec parse_emph : t list -> r list = function
+let rec parse_emph : t list -> Ast.inline list = function
   | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
       let rec loop acc = function
         | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
             let xs = if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs in
             let r =
               if n1 >= 2 && n2 >= 2 then
-                R (Bold (cat (parse_emph (List.rev acc)))) :: xs
+                R (Bold (Ast.cat (parse_emph (List.rev acc)))) :: xs
               else
-                R (Emph (cat (parse_emph (List.rev acc)))) :: xs
+                R (Emph (Ast.cat (parse_emph (List.rev acc)))) :: xs
             in
             let r = if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r in
             parse_emph r
@@ -184,15 +167,6 @@ let rec parse_emph : t list -> r list = function
       to_r x :: parse_emph xs
   | [] ->
       []
-
-let rec normalize_label = function
-  | Cat l -> String.concat "" (List.map normalize_label l)
-  | Text s -> s
-  | _ -> ""
-  (* | _ -> "" *)
-  (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
-  (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
-  (* | Code s -> "`" ^ s ^ "`" *)
 }
 
 let ws = [' ''\t''\010'-'\013']
@@ -249,7 +223,7 @@ rule inline defs acc buf = parse
            let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
            | Ok (uri, title) ->
-               inline defs (R (Url (cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
+               inline defs (R (Url (Ast.cat (parse_emph xs), uri, title)) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline defs acc buf lexbuf
            end
@@ -262,8 +236,8 @@ rule inline defs acc buf = parse
      {
       let rec loop xs = function
         | Left_bracket :: acc' ->
-           let label = cat (parse_emph xs) in
-           let s = normalize_label label in
+           let label = Ast.cat (parse_emph xs) in
+           let s = Ast.normalize_label label in
            begin match List.find_opt (fun {label; _} -> label = s) defs with
            | Some {destination; title; _} ->
                inline defs (R (Url (label, destination, title)) :: acc') buf lexbuf

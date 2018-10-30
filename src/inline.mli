@@ -1,22 +1,7 @@
-type t =
-  | Cat of t list
-  | Text of string
-  | Emph of t
-  | Bold of t
-  | Code of string
-  | Hard_break
-  | Soft_break
-  | Url of t * string * string option
-  (* | Ref of string * string *)
-  (* | Img_ref of string * string *)
-  | Html of string
-  (* | Raw of string *)
-  | Img of string * string * string
+val print : Format.formatter -> Ast.inline -> unit
 
-val print : Format.formatter -> t -> unit
-
-val html_of_md : Buffer.t -> t -> unit
-val markdown_of_md : t -> string
+val html_of_md : Buffer.t -> Ast.inline -> unit
+val markdown_of_md : Ast.inline -> string
 
 type link_def =
   {
@@ -25,4 +10,4 @@ type link_def =
     title: string option;
   }
 
-val parse : link_def list -> string -> t
+val parse : link_def list -> string -> Ast.inline

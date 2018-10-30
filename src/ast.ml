@@ -23,3 +23,31 @@ let rec map f = function
   | Heading (i, x) -> Heading (i, f x)
   | Code_block _ as x -> x
   | Html_block _ as x -> x
+
+type inline =
+  | Cat of inline list
+  | Text of string
+  | Emph of inline
+  | Bold of inline
+  | Code of string
+  | Hard_break
+  | Soft_break
+  | Url of inline * string * string option
+  (* | Ref of string * string *)
+  (* | Img_ref of string * string *)
+  | Html of string
+  | Img of string * string * string
+
+let cat = function
+  | [] -> Text ""
+  | [x] -> x
+  | l -> Cat l
+
+let rec normalize_label = function
+  | Cat l -> String.concat "" (List.map normalize_label l)
+  | Text s -> s
+  | _ -> ""
+  (* | _ -> "" *)
+  (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
+  (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
+  (* | Code s -> "`" ^ s ^ "`" *)
