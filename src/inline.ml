@@ -104,8 +104,6 @@ let rec html_of_md b md =
   let rec loop = function
     | Cat l ->
         List.iter loop l
-    (* | Ref(_, _) | Img_ref (_, _) -> *)
-    (*     loop (fallback#to_t) *)
     | Img (alt, src, title) ->
         Buffer.add_string b "<img src=\"";
         Buffer.add_string b (Utils.htmlentities ~md:true src);
@@ -135,8 +133,6 @@ let rec html_of_md b md =
         Buffer.add_string b "</code>"
     | Hard_break ->
         Buffer.add_string b "<br/>"
-    (* | Raw s -> *)
-    (*     Buffer.add_string b s *)
     | Html body ->
         Buffer.add_string b body
     | Url (s, href, title) ->
@@ -207,13 +203,10 @@ let escape_markdown_characters s =
   Buffer.contents b
 
 let rec markdown_of_md md =
-  (* if debug then eprintf "(OMD) markdown_of_md(%S)\n%!" (sexpr_of_md md); *)
   let b = Buffer.create 64 in
   let rec loop = function
     | Cat l ->
         List.iter loop l
-    (* | Ref (_, _, fallback) | Img_ref (_, _, fallback) -> *)
-    (*     loop (Raw (fallback#to_string)) *)
     | Img (alt, src, title) ->
         Printf.bprintf b "![%s](%s \"%s\")" alt src title
     | Text t ->
@@ -255,8 +248,6 @@ let rec markdown_of_md md =
         Printf.bprintf b "%s" (String.make n '`')
     | Hard_break ->
         Buffer.add_string b "<br />"
-    (* | Raw s -> *)
-    (*     Buffer.add_string b s *)
     | Html body ->
         Buffer.add_string b body
     | Url (s, href, None) ->
@@ -273,5 +264,4 @@ let rec markdown_of_md md =
   in
   loop md;
   let res = Buffer.contents b in
-  (* if debug then eprintf "(OMD) markdown_of_md(%S) => %S\n%!" (sexpr_of_md md) res; *)
   res
