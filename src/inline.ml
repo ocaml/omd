@@ -67,14 +67,24 @@ let rec parse_emph = function
   | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
       let rec loop acc = function
         | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
-            let xs = if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs in
+            let xs =
+              if n1 >= 2 && n2 >= 2 then
+                if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs
+              else
+                if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
+            in
             let r =
               if n1 >= 2 && n2 >= 2 then
                 R (Bold (Ast.cat (parse_emph (List.rev acc)))) :: xs
               else
                 R (Emph (Ast.cat (parse_emph (List.rev acc)))) :: xs
             in
-            let r = if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r in
+            let r =
+              if n1 >= 2 && n2 >= 2 then
+                if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r
+              else
+                if n1 > 1 then Emph (pre, Punct, q1, n1-1) :: r else r
+            in
             parse_emph r
         | x :: xs ->
             loop (x :: acc) xs
