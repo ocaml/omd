@@ -3,5 +3,4 @@
 (library
  (name omd)
  (public_name omd)
- (modules ast htmllex sub block inline omd utils auxlex)
  (libraries bigarray))
