@@ -11,7 +11,7 @@ type t = inline block list
 
 let of_channel ic =
   let defs, md = Block.of_channel ic in
-  List.map (Ast.map (Inline.parse defs)) md
+  List.map (Ast.map (Htmllex.parse defs)) md
 
 let to_html doc =
   Block.to_html Inline.html_of_md doc
