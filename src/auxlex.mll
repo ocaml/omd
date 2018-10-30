@@ -119,26 +119,6 @@ and remove_trailing_hashes b = parse
   | ' ' '#'+ ws* eof | eof { Buffer.contents b }
   | _ as c { Buffer.add_char b c; remove_trailing_hashes b lexbuf }
 
-and link_def acc = parse
-  | sp3 '['
-      { let f lexbuf =
-          let text = link_label (Buffer.create 17) lexbuf in
-          let d, t = Htmllex.link_dest lexbuf in
-          text, d, t
-        in
-        match Htmllex.protect f lexbuf with
-        | Ok x ->
-            link_def (x :: acc) lexbuf
-        | Error lexbuf ->
-            List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
-  | _ | eof
-    { List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
-
-and link_label buf = parse
-  | '\\' (_ as c) { Buffer.add_char buf c; link_label buf lexbuf }
-  | ']' ':' { Buffer.contents buf }
-  | _ as c { Buffer.add_char buf c; link_label buf lexbuf }
-
 {
 let is_empty s =
   is_empty (Sub.lexbuf s)

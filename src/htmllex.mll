@@ -78,6 +78,7 @@ let backtrack lexbuf n =
 }
 
 let ws = [' ''\t''\010'-'\013']
+let sp3 = ' ' (' ' ' '?)?
 let nl = '\n' | "\r\n" | '\r'
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
@@ -228,6 +229,26 @@ and cdata_section buf = parse
                   cdata_section buf lexbuf }
   | _ as c      { add_char buf c;
                   cdata_section buf lexbuf }
+
+and link_def acc = parse
+  | sp3 '['
+      { let f lexbuf =
+          let text = link_label (Buffer.create 17) lexbuf in
+          let d, t = link_dest lexbuf in
+          text, d, t
+        in
+        match protect f lexbuf with
+        | Ok x ->
+            link_def (x :: acc) lexbuf
+        | Error lexbuf ->
+            List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
+  | _ | eof
+    { List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
+
+and link_label buf = parse
+  | '\\' (_ as c) { Buffer.add_char buf c; link_label buf lexbuf }
+  | ']' ':' { Buffer.contents buf }
+  | _ as c { Buffer.add_char buf c; link_label buf lexbuf }
 
 {
 let parse defs s =

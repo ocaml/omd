@@ -30,7 +30,7 @@ let rec close r {blocks; next} =
       List (kind, style, List.rev (finish r state :: closed_items)) :: blocks
   | Rparagraph l ->
       let s = concat (List.map String.trim l) in
-      let defs, off = Auxlex.link_def [] (Lexing.from_string s) in
+      let defs, off = Htmllex.link_def [] (Lexing.from_string s) in
       r := List.map (fun (label, destination, title) ->
           {label; destination; title}) defs :: !r;
       let s = String.sub s off (String.length s - off) in
