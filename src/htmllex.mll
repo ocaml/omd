@@ -171,7 +171,8 @@ and link_dest1 buf = parse
   | _ as c { add_char buf c; link_dest1 buf lexbuf }
 
 and link_dest2 n buf = parse
-  | ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
+  | ws* eof { if Buffer.length buf > 0 then Buffer.contents buf, None else failwith "link_dest2" }
+  | ws+ (['\'''"''('] as d)  { if Buffer.length buf > 0 then Buffer.contents buf, link_title d (Buffer.create 17) lexbuf else failwith "link_dest2" }
   | ['\x00'-'\x1F''\x7F'] { Buffer.contents buf, None }
   | '\\' (_ as c) { add_char buf c; link_dest2 n buf lexbuf }
   | '(' as c { add_char buf c; link_dest2 (succ n) buf lexbuf }
