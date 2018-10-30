@@ -6,36 +6,9 @@
 (***********************************************************************)
 
 open Printf
-open Utils
 open Ast
 
 module F = Format
-
-let rec print ppf = function
-  | Cat l ->
-      F.pp_print_list ~pp_sep:F.pp_print_space print ppf l
-  | Text s ->
-      F.fprintf ppf "%S" s
-  | Emph x ->
-      F.fprintf ppf "@[<1>(emph@ %a)@]" print x
-  | Bold x ->
-      F.fprintf ppf "@[<1>(bold@ %a)@]" print x
-  | Code x ->
-      F.fprintf ppf "@[<1>(code@ %S)@]" x
-  | Hard_break ->
-      F.pp_print_string ppf "br"
-  | Soft_break ->
-      F.pp_print_string ppf "NL"
-  | Url (_, url, _) ->
-      F.fprintf ppf "@[<1>(url@ %S)@]" url
-  (* | Ref (_, s) | Img_ref (_, s) -> *)
-  (*     F.fprintf ppf "@[<1>(ref@ %S)@]" s *)
-  | Html html ->
-      F.fprintf ppf "@[<1>(html@ %S)@]" html
-  (* | Raw s -> *)
-  (*     F.fprintf ppf "%S" s *)
-  | Img (_, src, _) ->
-      F.fprintf ppf "@[<1>(img@ %S)@]" src
 
 let rec html_of_md b md =
   let rec loop = function
@@ -45,19 +18,19 @@ let rec html_of_md b md =
     (*     loop (fallback#to_t) *)
     | Img (alt, src, title) ->
         Buffer.add_string b "<img src=\"";
-        Buffer.add_string b (htmlentities ~md:true src);
+        Buffer.add_string b (Utils.htmlentities ~md:true src);
         Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (htmlentities ~md:true alt);
+        Buffer.add_string b (Utils.htmlentities ~md:true alt);
         Buffer.add_string b "\" ";
         if title <> "" then begin
           Buffer.add_string b " title='";
-          Buffer.add_string b (htmlentities ~md:true title);
+          Buffer.add_string b (Utils.htmlentities ~md:true title);
           Buffer.add_string b "' "
         end;
         Buffer.add_string b "/>"
     | Text t ->
         (* Buffer.add_string b t; *)
-        Buffer.add_string b (htmlentities ~md:true t)
+        Buffer.add_string b (Utils.htmlentities ~md:true t)
     | Emph md ->
         Buffer.add_string b "<em>";
         loop md;
@@ -68,7 +41,7 @@ let rec html_of_md b md =
         Buffer.add_string b "</strong>"
     | Code c ->
         Buffer.add_string b "<code>";
-        Buffer.add_string b (htmlentities ~md:false c);
+        Buffer.add_string b (Utils.htmlentities ~md:false c);
         Buffer.add_string b "</code>"
     | Hard_break ->
         Buffer.add_string b "<br/>"
@@ -78,13 +51,13 @@ let rec html_of_md b md =
         Buffer.add_string b body
     | Url (s, href, title) ->
         Buffer.add_string b "<a href=\"";
-        Buffer.add_string b (htmlentities ~md:true href);
+        Buffer.add_string b (Utils.htmlentities ~md:true href);
         Buffer.add_string b "\"";
         begin match title with
         | None -> ()
         | Some title ->
             Buffer.add_string b " title=\"";
-            Buffer.add_string b (htmlentities ~md:true title);
+            Buffer.add_string b (Utils.htmlentities ~md:true title);
             Buffer.add_string b "\""
         end;
         Buffer.add_string b ">";

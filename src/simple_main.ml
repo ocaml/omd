@@ -1,13 +1,9 @@
-(* let sexp = ref false *)
-
 let main () =
   let input = ref [] in
   let output = ref "" in
   let spec =
     let open Arg in
     [
-      (* "-sexp", Set sexp, *)
-      (* " Emit sexp"; *)
       "-o", Set_string output,
       " file.html Specify the output file (default is stdout).";
 
@@ -22,10 +18,6 @@ let main () =
   let output = if !output = "" then stdout else open_out_bin !output in
   let process ic =
     let md = Omd.of_channel ic in
-    (* if !sexp then *)
-    (*   Format.eprintf "@[<v>%a@]@." *)
-    (*     (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Inline.print)) md *)
-    (* else begin *)
     let html = Omd.to_html md in
     output_string output html;
     flush output
