@@ -78,7 +78,7 @@ let backtrack lexbuf n =
 }
 
 let ws = [' ''\t''\010'-'\013']
-let sp3 = ' ' (' ' ' '?)?
+let sp3 = (' ' (' ' ' '?)?)?
 let nl = '\n' | "\r\n" | '\r'
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
@@ -165,7 +165,7 @@ and link_dest = parse
 and link_dest1 buf = parse
   | '>' ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
   | '>' ws* { Buffer.contents buf, None }
-  | ws | '<' { failwith "link_dest1 ws" }
+  | nl | '<' { failwith "link_dest1 ws" }
   | '\\' (_ as c) { add_char buf c; link_dest1 buf lexbuf }
   | _ as c { add_char buf c; link_dest1 buf lexbuf }
 

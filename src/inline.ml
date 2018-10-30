@@ -87,6 +87,19 @@ let rec parse_emph = function
   | [] ->
       []
 
+let percent_encode s =
+  let b = Buffer.create (String.length s) in
+  String.iter (function
+      | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
+      | '@' | '&' | '=' | '+' | '$' | ',' | '/' | '?'
+      | '#' | '[' | ']'
+      | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' as c ->
+          Buffer.add_char b c
+      | _ as c ->
+          Printf.bprintf b "%%%2x" (Char.code c)
+    ) s;
+  Buffer.contents b
+
 let rec html_of_md b md =
   let rec loop = function
     | Cat l ->
@@ -128,7 +141,7 @@ let rec html_of_md b md =
         Buffer.add_string b body
     | Url (s, href, title) ->
         Buffer.add_string b "<a href=\"";
-        Buffer.add_string b (Utils.htmlentities ~md:true href);
+        Buffer.add_string b (percent_encode href);
         Buffer.add_string b "\"";
         begin match title with
         | None -> ()
