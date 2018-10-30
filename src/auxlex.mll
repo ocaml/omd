@@ -2,10 +2,6 @@
 let lexeme_length lexbuf =
   Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
 
-type list_kind =
-  | Ordered
-  | Unordered
-
 type html_kind =
   | Hcontains of string list
   | Hblank
@@ -40,7 +36,7 @@ type line_kind =
   | Lfenced_code of int * int * fenced_code_kind * string
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
-  | Llist_item of list_kind * int * Sub.t
+  | Llist_item of Ast.list_kind * int * Sub.t
   | Lparagraph
 
 let tags =
@@ -173,7 +169,7 @@ let classify_line s =
           else
             off + 1
       in
-      let kind =
+      let kind : Ast.list_kind =
         match kind with
         | Bullet _ -> Unordered
         | Ordered _ -> Ordered

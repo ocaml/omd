@@ -12,6 +12,7 @@ module Parser = Parser
 module Lexer = Lexer
 module Block = Block
 module Inline = Inline
+module Ast = Ast
 
 include Representation
 include Backend

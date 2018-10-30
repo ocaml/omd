@@ -22,6 +22,7 @@ module Parser = Parser
 module Lexer = Lexer
 module Block = Block
 module Inline = Inline
+module Ast = Ast
 
 type t = element list
 (** Representation of a Markdown document.  *)

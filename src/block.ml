@@ -1,40 +1,12 @@
-module List_kind = struct
-  type t = Auxlex.list_kind =
-    | Ordered
-    | Unordered
-end
-
-module List_style = struct
-  type t =
-    | Loose
-    | Tight
-end
-
-type 'a t =
-  | Paragraph of 'a
-  | List of List_kind.t * List_style.t * 'a t list list
-  | Blockquote of 'a t list
-  | Thematic_break
-  | Heading of int * 'a
-  | Code_block of string * string option
-  | Html_block of string
-
-let rec map f = function
-  | Paragraph x -> Paragraph (f x)
-  | List (k, st, xs) -> List (k, st, List.map (List.map (map f)) xs)
-  | Blockquote xs -> Blockquote (List.map (map f) xs)
-  | Thematic_break -> Thematic_break
-  | Heading (i, x) -> Heading (i, f x)
-  | Code_block _ as x -> x
-  | Html_block _ as x -> x
+open Ast
 
 module Parser = struct
-  type block = string t
+  type nonrec block = string block
   type blocks = block list
 
   type container =
     | Rblockquote of t_
-    | Rlist of List_kind.t * List_style.t * bool * int * blocks list * t_
+    | Rlist of list_kind * list_style * bool * int * blocks list * t_
     | Rparagraph of string list
     | Rfenced_code of int * int * Auxlex.fenced_code_kind * string * string list
     | Rindented_code of string list
@@ -106,7 +78,7 @@ module Parser = struct
       | Rempty, Lindented_code s ->
           {blocks; next = Rindented_code [Sub.to_string s]}
       | Rempty, Llist_item (kind, indent, s) ->
-          {blocks; next = Rlist (kind, List_style.Tight, false, indent, [], loop empty s)}
+          {blocks; next = Rlist (kind, Tight, false, indent, [], loop empty s)}
       | Rempty, (Lsetext_heading _ | Lparagraph) ->
           {blocks; next = Rparagraph [Sub.to_string s]}
       | Rparagraph _, (Lempty | Llist_item _ (* TODO non empty first line *)
@@ -149,13 +121,13 @@ module Parser = struct
           let s = Sub.offset ind s in
           let style =
             if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
-              List_style.Loose
+              Loose
             else
               style
           in
           {blocks; next = Rlist (kind, style, false, ind, items, loop state s)}
       | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when kind = kind' ->
-          let style = if prev_empty then List_style.Loose else style in
+          let style = if prev_empty then Loose else style in
           {blocks; next = Rlist (kind, style, false, ind, finish r state :: items, loop empty s)}
       | (Rlist _ | Rblockquote _), _ ->
           let rec loop2 = function
@@ -202,7 +174,7 @@ module Parser = struct
     ([], empty)
 end
 
-let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a t -> unit = fun f b md ->
+let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit = fun f b md ->
   let rec loop = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>\n";
@@ -214,14 +186,14 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a t -> unit = fun f b
         Buffer.add_string b "</p>"
     | List (kind, style, l) ->
         Buffer.add_string b
-          (match kind with List_kind.Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
+          (match kind with Ordered -> "<ol>\n" | Unordered -> "<ul>\n");
         List.iter (fun x ->
             Buffer.add_string b "<li>";
             let _ = List.fold_left (li style) false x in
             Buffer.add_string b "</li>\n"
           ) l;
         Buffer.add_string b
-          (match kind with List_kind.Ordered -> "</ol>" | Unordered -> "</ul>")
+          (match kind with Ordered -> "</ol>" | Unordered -> "</ul>")
     | Code_block ("", None) ->
         Buffer.add_string b "<pre><code></code></pre>"
     | Code_block (info, None) ->
@@ -243,7 +215,7 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a t -> unit = fun f b
         Buffer.add_string b (Printf.sprintf "</h%d>" i)
   and li style prev_nl x =
     match x, style with
-    | Paragraph md, List_style.Tight ->
+    | Paragraph md, Tight ->
         f b md;
         false
     | _ ->

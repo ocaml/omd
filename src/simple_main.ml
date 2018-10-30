@@ -26,7 +26,7 @@ let main () =
   let output = if !output = "" then stdout else open_out_bin !output in
   let process ic =
     let defs, md = Block.of_channel ic in
-    let md = List.map (Block.map (Inline.parse defs)) md in
+    let md = List.map (Ast.map (Inline.parse defs)) md in
     if !sexp then
       Format.eprintf "@[<v>%a@]@."
         (Format.pp_print_list ~pp_sep:Format.pp_print_space (Block.print Inline.print)) md

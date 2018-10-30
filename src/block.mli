@@ -1,26 +1,3 @@
-module List_kind : sig
-  type t =
-    | Ordered
-    | Unordered
-end
-
-module List_style : sig
-  type t =
-    | Loose
-    | Tight
-end
-
-type 'a t =
-  | Paragraph of 'a
-  | List of List_kind.t * List_style.t * 'a t list list
-  | Blockquote of 'a t list
-  | Thematic_break
-  | Heading of int * 'a
-  | Code_block of string * string option
-  | Html_block of string
-
-val map: ('a -> 'b) -> 'a t -> 'b t
-
 module Parser : sig
   type blocks
   type t
@@ -28,10 +5,10 @@ module Parser : sig
   val empty : t
   val process : t -> string -> t
   val finish : t -> Inline.link_def list * blocks
-end with type blocks := string t list
+end with type blocks := string Ast.block list
 
-val to_html : (Buffer.t -> 'a -> unit) -> 'a t list -> string
+val to_html : (Buffer.t -> 'a -> unit) -> 'a Ast.block list -> string
 
-val of_channel : in_channel -> Inline.link_def list * string t list
+val of_channel : in_channel -> Inline.link_def list * string Ast.block list
 
-val print : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
+val print : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a Ast.block -> unit
