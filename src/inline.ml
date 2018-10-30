@@ -96,7 +96,7 @@ let percent_encode s =
       | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' as c ->
           Buffer.add_char b c
       | _ as c ->
-          Printf.bprintf b "%%%2x" (Char.code c)
+          Printf.bprintf b "%%%2X" (Char.code c)
     ) s;
   Buffer.contents b
 

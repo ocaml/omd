@@ -77,6 +77,7 @@ let backtrack lexbuf n =
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n
 }
 
+let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\\'']''^''_''`''{''|''}''~']
 let ws = [' ''\t''\010'-'\013']
 let sp3 = (' ' (' ' ' '?)?)?
 let nl = '\n' | "\r\n" | '\r'
@@ -111,7 +112,7 @@ rule inline defs acc buf = parse
   | '<' (uri as x) '>'        { inline defs (Inline.R (Url (Text x, x, None)) :: text buf acc) buf lexbuf }
   | (' ' ' '+ | '\\') nl ws*  { inline defs (Inline.R Hard_break :: text buf acc) buf lexbuf }
   | nl                        { inline defs (Inline.R Soft_break :: text buf acc) buf lexbuf }
-  | '\\' (_ as c)             { add_char buf c; inline defs acc buf lexbuf }
+  | '\\' (punct as c)             { add_char buf c; inline defs acc buf lexbuf }
   | entity as e               { add_entity buf e; inline defs acc buf lexbuf }
   | '`'+                      { code (inline defs) (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
   | ('*'+|'_'+ as r)
@@ -165,22 +166,22 @@ and link_dest = parse
 
 and link_dest1 buf = parse
   | '>' ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
-  | '>' ws* { Buffer.contents buf, None }
+  | '>' ws* eof { Buffer.contents buf, None }
   | nl | '<' { failwith "link_dest1 ws" }
-  | '\\' (_ as c) { add_char buf c; link_dest1 buf lexbuf }
+  | '\\' (punct as c) { add_char buf c; link_dest1 buf lexbuf }
   | _ as c { add_char buf c; link_dest1 buf lexbuf }
 
 and link_dest2 n buf = parse
   | ws* eof { if Buffer.length buf > 0 then Buffer.contents buf, None else failwith "link_dest2" }
   | ws+ (['\'''"''('] as d)  { if Buffer.length buf > 0 then Buffer.contents buf, link_title d (Buffer.create 17) lexbuf else failwith "link_dest2" }
   | ['\x00'-'\x1F''\x7F'] { Buffer.contents buf, None }
-  | '\\' (_ as c) { add_char buf c; link_dest2 n buf lexbuf }
+  | '\\' (punct as c) { add_char buf c; link_dest2 n buf lexbuf }
   | '(' as c { add_char buf c; link_dest2 (succ n) buf lexbuf }
   | ')' as c { if n > 0 then (add_char buf c; link_dest2 (pred n) buf lexbuf) else (backtrack lexbuf 1; Buffer.contents buf, None) }
   | _ as c { add_char buf c; link_dest2 n buf lexbuf }
 
 and link_title d buf = parse
-  | '\\' (_ as c)   { add_char buf c; link_title d buf lexbuf }
+  | '\\' (punct as c)   { add_char buf c; link_title d buf lexbuf }
   | ['\'''"'')'] as c { if c = d then Some (Buffer.contents buf)
                       else (add_char buf c; link_title d buf lexbuf) }
   | _ as c { add_char buf c; link_title d buf lexbuf }
@@ -248,7 +249,7 @@ and link_def acc = parse
     { List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
 
 and link_label buf = parse
-  | '\\' (_ as c) { Buffer.add_char buf c; link_label buf lexbuf }
+  | '\\' (punct as c) { Buffer.add_char buf c; link_label buf lexbuf }
   | ']' ':' { Buffer.contents buf }
   | _ as c { Buffer.add_char buf c; link_label buf lexbuf }
 
