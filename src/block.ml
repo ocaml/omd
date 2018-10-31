@@ -156,10 +156,11 @@ let process state s =
   process state (Sub.of_string s)
 
 let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit = fun f b md ->
+  let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
   let rec loop = function
     | Blockquote q ->
         Buffer.add_string b "<blockquote>\n";
-        List.iter (fun md -> loop md; Buffer.add_char b '\n') q;
+        iter_par (fun md -> loop md; Buffer.add_char b '\n') q;
         Buffer.add_string b "</blockquote>"
     | Paragraph md ->
         Buffer.add_string b "<p>";
@@ -204,6 +205,8 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
     | Paragraph md, Tight ->
         f b md;
         false
+    | Link_def _, _ ->
+        prev_nl
     | _ ->
         if not prev_nl then Buffer.add_char b '\n';
         loop x;
@@ -214,10 +217,12 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
 
 let to_html f mds =
   let b = Buffer.create 64 in
-  List.iter (fun md ->
-      to_html f b md;
-      (* FIXME *)
-      match md with Link_def _ -> () | _ -> Buffer.add_char b '\n') mds;
+  List.iter (function
+    | Link_def _ -> ()
+    | md ->
+        to_html f b md;
+        Buffer.add_char b '\n'
+    ) mds;
   Buffer.contents b
 
 let of_channel ic =
