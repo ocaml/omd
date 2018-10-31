@@ -91,15 +91,16 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
           ) l;
         Buffer.add_string b
           (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
-    | Code_block ("", None) ->
+    | Code_block ((None | Some (_, "")), None) ->
         Buffer.add_string b "<pre><code></code></pre>"
-    | Code_block (info, None) ->
+    | Code_block (Some (_, info), None) ->
         Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
-    | Code_block (lang, Some c) ->
-        if lang = "" then
-          Buffer.add_string b "<pre><code>"
-        else
-          Printf.bprintf b "<pre><code class=\"language-%s\">" lang;
+    | Code_block ((None | Some (_, "")), Some c) ->
+        Buffer.add_string b "<pre><code>";
+        Buffer.add_string b (Utils.htmlentities ~md:false c);
+        Buffer.add_string b "\n</code></pre>"
+    | Code_block (Some (_, info), Some c) ->
+        Printf.bprintf b "<pre><code class=\"language-%s\">" info;
         Buffer.add_string b (Utils.htmlentities ~md:false c);
         Buffer.add_string b "\n</code></pre>"
     | Thematic_break ->

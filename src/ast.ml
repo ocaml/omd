@@ -19,13 +19,17 @@ type 'a link_def =
     title: string option;
   }
 
+type fenced_code_kind =
+  | Tilde
+  | Backtick
+
 type 'a block =
   | Paragraph of 'a
   | List of list_kind * list_style * 'a block list list
   | Blockquote of 'a block list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of string * string option
+  | Code_block of (fenced_code_kind * string) option * string option
   | Html_block of string
   | Link_def of 'a link_def
 

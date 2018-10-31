@@ -6,7 +6,7 @@ type container =
   | Rblockquote of t
   | Rlist of list_kind * list_style * bool * int * blocks list * t
   | Rparagraph of string list
-  | Rfenced_code of int * int * Auxlex.fenced_code_kind * string * string list
+  | Rfenced_code of int * int * Ast.fenced_code_kind * string * string list
   | Rindented_code of string list
   | Rhtml of Auxlex.html_kind * string list
   | Rempty
@@ -31,13 +31,13 @@ let rec close {blocks; next} =
       let s = String.sub s off (String.length s - off) in
       let blocks = if String.trim s = "" then blocks else Paragraph s :: blocks in
       List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks
-  | Rfenced_code (_, _, _, info, []) ->
-      Code_block (info, None) :: blocks
-  | Rfenced_code (_, _, _, info, l) ->
-      Code_block (info, Some (concat l)) :: blocks
+  | Rfenced_code (_, _, kind, info, []) ->
+      Code_block (Some (kind, info), None) :: blocks
+  | Rfenced_code (_, _, kind, info, l) ->
+      Code_block (Some (kind, info), Some (concat l)) :: blocks
   | Rindented_code l -> (* TODO: trim from the right *)
       let rec loop = function "" :: l -> loop l | _ as l -> l in
-      Code_block ("", Some (concat (loop l))) :: blocks
+      Code_block (None, Some (concat (loop l))) :: blocks
   | Rhtml (_, l) ->
       Html_block (concat l) :: blocks
   | Rempty ->

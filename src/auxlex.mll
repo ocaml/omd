@@ -6,10 +6,6 @@ type html_kind =
   | Hcontains of string list
   | Hblank
 
-type fenced_code_kind =
-  | Tilde
-  | Backtick
-
 module R = struct
   type t =
     | Lempty
@@ -17,7 +13,7 @@ module R = struct
     | Lthematic_break
     | Latx_heading of int * string
     | Lsetext_heading of int * int
-    | Lfenced_code of int * int * fenced_code_kind * string
+    | Lfenced_code of int * int * Ast.fenced_code_kind * string
     | Lhtml of bool * html_kind
     | Llist_item of Ast.list_kind * int
     | Lparagraph
@@ -29,7 +25,7 @@ type line_kind =
   | Lthematic_break
   | Latx_heading of int * string
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * fenced_code_kind * string
+  | Lfenced_code of int * int * Ast.fenced_code_kind * string
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of Ast.list_kind * int * Sub.t
