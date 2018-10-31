@@ -25,11 +25,14 @@ type 'a block =
   | Html_block of string
   | Link_def of 'a link_def
 
+type emph_kind =
+  | Normal
+  | Strong
+
 type inline =
   | Concat of inline list
   | Text of string
-  | Emph of inline
-  | Bold of inline
+  | Emph of emph_kind * inline
   | Code of string
   | Hard_break
   | Soft_break

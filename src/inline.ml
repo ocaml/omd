@@ -74,10 +74,8 @@ let rec parse_emph = function
                 if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
             in
             let r =
-              if n1 >= 2 && n2 >= 2 then
-                R (Bold (Ast.concat (parse_emph (List.rev acc)))) :: xs
-              else
-                R (Emph (Ast.concat (parse_emph (List.rev acc)))) :: xs
+              let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
+              R (Emph (kind, Ast.concat (parse_emph (List.rev acc)))) :: xs
             in
             let r =
               if n1 >= 2 && n2 >= 2 then
@@ -129,11 +127,11 @@ let rec html_of_md b md =
     | Text t ->
         (* Buffer.add_string b t; *)
         Buffer.add_string b (Utils.htmlentities ~md:true t)
-    | Emph md ->
+    | Emph (Normal, md) ->
         Buffer.add_string b "<em>";
         loop md;
         Buffer.add_string b "</em>"
-    | Bold md ->
+    | Emph (Strong, md) ->
         Buffer.add_string b "<strong>";
         loop md;
         Buffer.add_string b "</strong>"
@@ -221,11 +219,11 @@ let rec markdown_of_md md =
         Printf.bprintf b "![%s](%s \"%s\")" alt src title
     | Text t ->
         Printf.bprintf b "%s" (escape_markdown_characters t)
-    | Emph md ->
+    | Emph (Normal, md) ->
         Buffer.add_string b "*";
         loop md;
         Buffer.add_string b "*"
-    | Bold md ->
+    | Emph (Strong, md) ->
         Buffer.add_string b "**";
         loop md;
         Buffer.add_string b "**"

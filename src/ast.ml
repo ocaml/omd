@@ -49,11 +49,14 @@ let extract_defs ast =
   in
   List.rev (List.fold_left loop [] ast)
 
+type emph_kind =
+  | Normal
+  | Strong
+
 type inline =
   | Concat of inline list
   | Text of string
-  | Emph of inline
-  | Bold of inline
+  | Emph of emph_kind * inline
   | Code of string
   | Hard_break
   | Soft_break
