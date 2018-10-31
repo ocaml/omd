@@ -102,6 +102,10 @@ let rec markdown_of_md md =
         Printf.bprintf b "[%s](%s)" (markdown_of_md label) destination
     | Url {label; destination; title = Some title} ->
         Printf.bprintf b "[%s](%s \"%s\")" (markdown_of_md label) destination title
+    | Url_ref (label, {Ast.label = label1; _}) ->
+        Printf.bprintf b "[%s][%s]" (markdown_of_md label) (markdown_of_md label1)
+    | Img_ref (label, {Ast.label = label1; _}) ->
+        Printf.bprintf b "![%s][%s]" (markdown_of_md label) (markdown_of_md label1)
     | Soft_break ->
         if Buffer.length b = 1 ||
            (Buffer.length b > 1 &&
@@ -111,5 +115,4 @@ let rec markdown_of_md md =
           Buffer.add_string b "\n"
   in
   loop md;
-  let res = Buffer.contents b in
-  res
+  Buffer.contents b

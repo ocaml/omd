@@ -4,7 +4,11 @@ type t =
   | Atom of string
   | List of t list
 
-let rec inline = function
+let rec link_def {label; destination; title} =
+  let title = match title with Some title -> [Atom title] | None -> [] in
+  List (Atom "link-def" :: inline label :: Atom destination :: title)
+
+and inline = function
   | Concat xs ->
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
@@ -17,12 +21,16 @@ let rec inline = function
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Url {label; _} ->
-      List [Atom "url"; inline label]
+  | Url def ->
+      List [Atom "url"; link_def def]
+  | Url_ref (label, def) ->
+      List [Atom "url-ref"; inline label; link_def def]
   | Html s ->
       List [Atom "html"; Atom s]
   | Img _ ->
       Atom "img"
+  | Img_ref (label, def) ->
+      List [Atom "img-ref"; inline label; link_def def]
 
 let rec block = function
   | Paragraph x ->

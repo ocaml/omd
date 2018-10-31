@@ -45,8 +45,8 @@ type inline =
   | Hard_break
   | Soft_break
   | Url of inline link_def
-  (* | Ref of string * string *)
-  (* | Img_ref of string * string *)
+  | Url_ref of inline * inline link_def
+  | Img_ref of inline * inline link_def
   | Html of string
   | Img of string * string * string
 
