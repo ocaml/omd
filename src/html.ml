@@ -67,7 +67,7 @@ let rec html_of_md b md =
   in
   loop md
 
-let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit = fun f b md ->
+let to_html b md =
   let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
   let rec loop = function
     | Blockquote q ->
@@ -76,7 +76,7 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
         Buffer.add_string b "</blockquote>"
     | Paragraph md ->
         Buffer.add_string b "<p>";
-        f b md;
+        html_of_md b md;
         Buffer.add_string b "</p>"
     | List (kind, style, l) ->
         Buffer.add_string b
@@ -109,14 +109,14 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
         Buffer.add_string b body
     | Heading (i, md) ->
         Buffer.add_string b (Printf.sprintf "<h%d>" i);
-        f b md;
+        html_of_md b md;
         Buffer.add_string b (Printf.sprintf "</h%d>" i)
     | Link_def _ ->
         ()
   and li style prev_nl x =
     match x, style with
     | Paragraph md, Tight ->
-        f b md;
+        html_of_md b md;
         false
     | Link_def _, _ ->
         prev_nl
@@ -128,12 +128,12 @@ let to_html : 'a. (Buffer.t -> 'a -> unit) -> Buffer.t -> 'a Ast.block -> unit =
   in
   loop md
 
-let to_html f mds =
+let to_html mds =
   let b = Buffer.create 64 in
   List.iter (function
     | Link_def _ -> ()
     | md ->
-        to_html f b md;
+        to_html b md;
         Buffer.add_char b '\n'
     ) mds;
   Buffer.contents b

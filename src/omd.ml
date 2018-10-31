@@ -20,7 +20,7 @@ let of_channel ic =
   List.map (Ast.map (Htmllex.parse defs)) md
 
 let to_html doc =
-  Html.to_html Html.html_of_md doc
+  Html.to_html doc
 
 (* let of_string = of_input Lexer.lex *)
 (* let of_bigarray = of_input Lexer.lex_bigarray *)
