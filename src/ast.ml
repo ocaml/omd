@@ -12,6 +12,13 @@ type list_style =
   | Loose
   | Tight
 
+type 'a link_def =
+  {
+    label: 'a;
+    destination: string;
+    title: string option;
+  }
+
 type 'a block =
   | Paragraph of 'a
   | List of list_kind * list_style * 'a block list list
@@ -20,6 +27,7 @@ type 'a block =
   | Heading of int * 'a
   | Code_block of string * string option
   | Html_block of string
+  | Link_def of 'a link_def
 
 let rec map f = function
   | Paragraph x -> Paragraph (f x)
@@ -29,6 +37,17 @@ let rec map f = function
   | Heading (i, x) -> Heading (i, f x)
   | Code_block _ as x -> x
   | Html_block _ as x -> x
+  | Link_def {label; destination; title} -> Link_def {label = f label; destination; title}
+
+let extract_defs ast =
+  let rec loop acc = function
+    | List (_, _, l) -> List.fold_left (List.fold_left loop) acc l
+    | Blockquote l -> List.fold_left loop acc l
+    | Paragraph _ | Thematic_break | Heading _
+    | Code_block _ | Html_block _ -> acc
+    | Link_def def -> def :: acc
+  in
+  List.rev (List.fold_left loop [] ast)
 
 type inline =
   | Cat of inline list
@@ -57,10 +76,3 @@ let rec normalize_label = function
   (* | Emph x -> "*" ^ normalize_label x ^ "*" *)
   (* | Bold x -> "**" ^ normalize_label x ^ "**" *)
   (* | Code s -> "`" ^ s ^ "`" *)
-
-type link_def =
-  {
-    label: string;
-    destination: string;
-    title: string option;
-  }

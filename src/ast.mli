@@ -6,6 +6,13 @@ type list_style =
   | Loose
   | Tight
 
+type 'a link_def =
+  {
+    label: 'a;
+    destination: string;
+    title: string option;
+  }
+
 type 'a block =
   | Paragraph of 'a
   | List of list_kind * list_style * 'a block list list
@@ -14,8 +21,11 @@ type 'a block =
   | Heading of int * 'a
   | Code_block of string * string option
   | Html_block of string
+  | Link_def of 'a link_def
 
 val map : ('a -> 'b) -> 'a block -> 'b block
+
+val extract_defs : 'a block list -> 'a link_def list
 
 val same_list_kind : list_kind -> list_kind -> bool
 
@@ -36,10 +46,3 @@ type inline =
 val cat : inline list -> inline
 
 val normalize_label : inline -> string
-
-type link_def =
-  {
-    label: string;
-    destination: string;
-    title: string option;
-  }

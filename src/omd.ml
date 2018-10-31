@@ -10,7 +10,8 @@ include Ast
 type t = inline block list
 
 let of_channel ic =
-  let defs, md = Block.of_channel ic in
+  let md = Block.of_channel ic in
+  let defs = Ast.extract_defs md in
   List.map (Ast.map (Htmllex.parse defs)) md
 
 let to_html doc =

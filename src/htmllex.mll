@@ -236,17 +236,17 @@ and cdata_section buf = parse
 and link_def acc = parse
   | sp3 '['
       { let f lexbuf =
-          let text = link_label (Buffer.create 17) lexbuf in
-          let d, t = link_dest lexbuf in
-          text, d, t
+          let label = link_label (Buffer.create 17) lexbuf in
+          let destination, title = link_dest lexbuf in
+          {Ast.label; destination; title}
         in
         match protect f lexbuf with
         | Ok x ->
             link_def (x :: acc) lexbuf
         | Error lexbuf ->
-            List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
+            acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
   | _ | eof
-    { List.rev acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
+    { acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
 
 and link_label buf = parse
   | '\\' (punct as c) { Buffer.add_char buf c; link_label buf lexbuf }

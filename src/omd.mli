@@ -8,6 +8,13 @@ type list_style =
   | Loose
   | Tight
 
+type 'a link_def =
+  {
+    label: 'a;
+    destination: string;
+    title: string option;
+  }
+
 type 'a block =
   | Paragraph of 'a
   | List of list_kind * list_style * 'a block list list
@@ -16,6 +23,7 @@ type 'a block =
   | Heading of int * 'a
   | Code_block of string * string option
   | Html_block of string
+  | Link_def of 'a link_def
 
 type inline =
   | Cat of inline list
