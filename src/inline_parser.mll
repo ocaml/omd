@@ -150,6 +150,7 @@ rule inline defs acc = parse
   | "!["                      { inline defs (Bang_left_bracket :: text acc) lexbuf }
   | '['                       { inline defs (Left_bracket :: text acc) lexbuf }
   | ']''('                 {
+      let acc = text acc in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
            let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
@@ -162,7 +163,7 @@ rule inline defs acc = parse
         | x :: acc' -> loop (x :: xs) acc'
         | [] -> add_lexeme lexbuf; inline defs acc lexbuf
       in
-      loop [] (text acc)
+      loop [] acc
      }
   | ']' "[]"?
      {
