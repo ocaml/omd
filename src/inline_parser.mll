@@ -110,8 +110,8 @@ rule inline defs acc buf = parse
   | "<?"                      { raw_html (inline defs) processing_instruction acc buf lexbuf }
   | "<!" ['A'-'Z']+           { raw_html (inline defs) declaration acc buf lexbuf }
   | "<![CDATA["               { raw_html (inline defs) cdata_section acc buf lexbuf }
-  | '<' (email as x) '>'      { inline defs (Pre.R (Url (Text x, "mailto:" ^ x, None)) :: text buf acc) buf lexbuf }
-  | '<' (uri as x) '>'        { inline defs (Pre.R (Url (Text x, x, None)) :: text buf acc) buf lexbuf }
+  | '<' (email as x) '>'      { inline defs (Pre.R (Url {Ast.label = Text x; destination = "mailto:" ^ x; title = None}) :: text buf acc) buf lexbuf }
+  | '<' (uri as x) '>'        { inline defs (Pre.R (Url {Ast.label = Text x; destination = x; title = None}) :: text buf acc) buf lexbuf }
   | (' ' ' '+ | '\\') nl ws*  { inline defs (Pre.R Hard_break :: text buf acc) buf lexbuf }
   | nl                        { inline defs (Pre.R Soft_break :: text buf acc) buf lexbuf }
   | '\\' (punct as c)             { add_char buf c; inline defs acc buf lexbuf }
@@ -131,8 +131,8 @@ rule inline defs acc buf = parse
         | Pre.Left_bracket :: acc' ->
            let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
-           | Ok (uri, title) ->
-               inline defs (Pre.R (Url (Inline.concat (Pre.parse_emph xs), uri, title)) :: acc') buf lexbuf
+           | Ok (destination, title) ->
+               inline defs (Pre.R (Url {Ast.label = Inline.concat (Pre.parse_emph xs); destination; title}) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline defs acc buf lexbuf
            end
@@ -150,7 +150,7 @@ rule inline defs acc buf = parse
            let s = Inline.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some {destination; title; _} ->
-               inline defs (Pre.R (Url (label, destination, title)) :: acc') buf lexbuf
+               inline defs (Pre.R (Url {Ast.label; destination; title}) :: acc') buf lexbuf
            | None ->
                add_lexeme buf lexbuf; inline defs acc buf lexbuf
            end

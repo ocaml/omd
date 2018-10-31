@@ -42,7 +42,7 @@ type inline =
   | Code of string
   | Hard_break
   | Soft_break
-  | Url of inline * string * string option
+  | Url of inline link_def
   (* | Ref of string * string *)
   (* | Img_ref of string * string *)
   | Html of string

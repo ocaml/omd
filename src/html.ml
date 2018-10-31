@@ -48,9 +48,9 @@ let rec html_of_md b md =
         Buffer.add_string b "<br />\n"
     | Html body ->
         Buffer.add_string b body
-    | Url (s, href, title) ->
+    | Url {label; destination; title} ->
         Buffer.add_string b "<a href=\"";
-        Buffer.add_string b (percent_encode href);
+        Buffer.add_string b (percent_encode destination);
         Buffer.add_string b "\"";
         begin match title with
         | None -> ()
@@ -60,7 +60,7 @@ let rec html_of_md b md =
             Buffer.add_string b "\""
         end;
         Buffer.add_string b ">";
-        html_of_md b s;
+        html_of_md b label;
         Buffer.add_string b "</a>"
     | Soft_break ->
         Buffer.add_string b "\n"

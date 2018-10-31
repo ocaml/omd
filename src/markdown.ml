@@ -98,10 +98,10 @@ let rec markdown_of_md md =
         Buffer.add_string b "<br />"
     | Html body ->
         Buffer.add_string b body
-    | Url (s, href, None) ->
-        Printf.bprintf b "[%s](%s)" (markdown_of_md s) href
-    | Url (s, href, Some title) ->
-        Printf.bprintf b "[%s](%s \"%s\")" (markdown_of_md s) href title
+    | Url {label; destination; title = None} ->
+        Printf.bprintf b "[%s](%s)" (markdown_of_md label) destination
+    | Url {label; destination; title = Some title} ->
+        Printf.bprintf b "[%s](%s \"%s\")" (markdown_of_md label) destination title
     | Soft_break ->
         if Buffer.length b = 1 ||
            (Buffer.length b > 1 &&

@@ -17,8 +17,8 @@ let rec inline = function
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Url (x, _, _) ->
-      List [Atom "url"; inline x]
+  | Url {label; _} ->
+      List [Atom "url"; inline label]
   | Html s ->
       List [Atom "html"; Atom s]
   | Img _ ->
