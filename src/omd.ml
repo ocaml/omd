@@ -10,14 +10,14 @@ include Ast
 type t = inline block list
 
 let of_channel ic =
-  let md = Block.of_channel ic in
-  let defs = Ast.extract_defs md in
+  let md = Block.Pre.of_channel ic in
+  let defs = Block.defs md in
   let defs =
     List.map (fun def ->
-        {def with label = Ast.normalize (Htmllex.parse [] def.label)}
+        {def with Ast.label = Inline.normalize (Htmllex.parse [] def.label)}
       ) defs
   in
-  List.map (Ast.map (Htmllex.parse defs)) md
+  List.map (Block.map (Htmllex.parse defs)) md
 
 let to_html doc =
   Html.to_html doc

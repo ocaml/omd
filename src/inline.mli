@@ -1,16 +1,28 @@
-type delim =
-  | Ws
-  | Punct
-  | Other
+open Ast
 
-type t =
-  | Bang_left_bracket
-  | Left_bracket
-  | Emph of delim * delim * Ast.emph_style * int
-  | R of Ast.inline
+type t = inline
 
-val is_opener : t -> bool
-val is_closer : t -> bool
-val classify_delim : char -> delim
+val concat : t list -> t
 
-val parse_emph : t list -> Ast.inline list
+val normalize : t -> t
+
+module Pre : sig
+  type inline
+
+  type delim =
+    | Ws
+    | Punct
+    | Other
+
+  type t =
+    | Bang_left_bracket
+    | Left_bracket
+    | Emph of delim * delim * emph_style * int
+    | R of inline
+
+  val is_opener : t -> bool
+  val is_closer : t -> bool
+  val classify_delim : char -> delim
+
+  val parse_emph : t list -> inline list
+end with type inline := t

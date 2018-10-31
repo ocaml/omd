@@ -1,8 +1,20 @@
-type blocks = string Ast.block list
-type t
+open Ast
 
-val empty : t
-val process : t -> string -> t
-val finish : t -> blocks
+val same_list_kind: list_kind -> list_kind -> bool
 
-val of_channel : in_channel -> string Ast.block list
+type 'a t = 'a block
+
+val map: ('a -> 'b) -> 'a t -> 'b t
+
+val defs: 'a t list -> 'a link_def list
+
+module Pre : sig
+  type block
+  type t
+
+  val empty : t
+  val process : t -> string -> t
+  val finish : t -> block list
+
+  val of_channel : in_channel -> block list
+end with type block := string t
