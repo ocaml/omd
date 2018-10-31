@@ -234,27 +234,3 @@ let of_channel ic =
         finish state
   in
   loop empty
-
-module F = Format
-
-let rec print f ppf = function
-  | Paragraph x ->
-      F.fprintf ppf "@[<1>(paragraph@ %a)@]" f x
-  | List (_, _, xs) ->
-      let pp ppf x = F.pp_print_list ~pp_sep:F.pp_print_space (print f) ppf x in
-      F.fprintf ppf "@[<1>(list@ %a)@]" (F.pp_print_list ~pp_sep:F.pp_print_space pp) xs
-  | Blockquote xs ->
-      F.fprintf ppf "@[<1>(blockquote@ %a)@]"
-        (F.pp_print_list ~pp_sep:F.pp_print_space (print f)) xs
-  | Thematic_break ->
-      F.pp_print_string ppf "thematic-break"
-  | Heading (i, x) ->
-      F.fprintf ppf "@[<1>(heading %d@ %a)@]" i f x
-  | Code_block (lang, None) ->
-      F.fprintf ppf "@[<1>(code:%s)@]" lang
-  | Code_block (lang, Some x) ->
-      F.fprintf ppf "@[<1>(code:%s %S)@]" lang x
-  | Html_block x ->
-      F.fprintf ppf "@[<1>(html %S)@]" x
-  | Link_def _ ->
-      F.fprintf ppf "@[<1>(link_def)@]"
