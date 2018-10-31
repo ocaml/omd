@@ -145,7 +145,7 @@ rule inline defs acc buf = parse
       let rec loop xs = function
         | Inline.Left_bracket :: acc' ->
            let label = Ast.concat (Inline.parse_emph xs) in
-           let s = Ast.normalize_label label in
+           let s = Ast.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some {destination; title; _} ->
                inline defs (Inline.R (Url (label, destination, title)) :: acc') buf lexbuf

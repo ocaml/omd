@@ -52,4 +52,4 @@ type inline =
 
 val concat : inline list -> inline
 
-val normalize_label : inline -> string
+val normalize : inline -> inline
