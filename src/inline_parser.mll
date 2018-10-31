@@ -77,6 +77,18 @@ let protect f lexbuf =
 
 let backtrack lexbuf n =
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n
+
+let peek_before c lexbuf =
+  if Lexing.lexeme_start lexbuf > 0 then
+    Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1)
+  else
+    c
+
+let peek_after c lexbuf =
+  if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
+    Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf)
+  else
+    c
 }
 
 let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\\'']''^''_''`''{''|''}''~']
@@ -118,11 +130,10 @@ rule inline defs acc buf = parse
   | entity as e               { add_entity buf e; inline defs acc buf lexbuf }
   | '`'+                      { code (inline defs) (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
   | ('*'+|'_'+ as r)
-      { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
-        let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
-          Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
+      { let pre = peek_before ' ' lexbuf |> Pre.classify_delim in
+        let post = peek_after ' ' lexbuf |> Pre.classify_delim in
         let e = if r.[0] = '*' then Ast.Star else Underscore in
-        let acc = Pre.Emph (Pre.classify_delim pre, Pre.classify_delim post, e, String.length r) :: text buf acc in
+        let acc = Pre.Emph (pre, post, e, String.length r) :: text buf acc in
         inline defs acc buf lexbuf }
   | "!["                      { inline defs (Bang_left_bracket :: text buf acc) buf lexbuf }
   | '['                       { inline defs (Left_bracket :: text buf acc) buf lexbuf }
