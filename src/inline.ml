@@ -75,9 +75,9 @@ let rec parse_emph = function
             in
             let r =
               if n1 >= 2 && n2 >= 2 then
-                R (Bold (Ast.cat (parse_emph (List.rev acc)))) :: xs
+                R (Bold (Ast.concat (parse_emph (List.rev acc)))) :: xs
               else
-                R (Emph (Ast.cat (parse_emph (List.rev acc)))) :: xs
+                R (Emph (Ast.concat (parse_emph (List.rev acc)))) :: xs
             in
             let r =
               if n1 >= 2 && n2 >= 2 then
@@ -112,7 +112,7 @@ let percent_encode s =
 
 let rec html_of_md b md =
   let rec loop = function
-    | Cat l ->
+    | Concat l ->
         List.iter loop l
     | Img (alt, src, title) ->
         Buffer.add_string b "<img src=\"";
@@ -215,7 +215,7 @@ let escape_markdown_characters s =
 let rec markdown_of_md md =
   let b = Buffer.create 64 in
   let rec loop = function
-    | Cat l ->
+    | Concat l ->
         List.iter loop l
     | Img (alt, src, title) ->
         Printf.bprintf b "![%s](%s \"%s\")" alt src title

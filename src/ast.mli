@@ -30,7 +30,7 @@ val extract_defs : 'a block list -> 'a link_def list
 val same_list_kind : list_kind -> list_kind -> bool
 
 type inline =
-  | Cat of inline list
+  | Concat of inline list
   | Text of string
   | Emph of inline
   | Bold of inline
@@ -43,6 +43,6 @@ type inline =
   | Html of string
   | Img of string * string * string
 
-val cat : inline list -> inline
+val concat : inline list -> inline
 
 val normalize_label : inline -> string

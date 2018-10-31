@@ -130,7 +130,7 @@ rule inline defs acc buf = parse
            let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
            | Ok (uri, title) ->
-               inline defs (Inline.R (Url (Ast.cat (Inline.parse_emph xs), uri, title)) :: acc') buf lexbuf
+               inline defs (Inline.R (Url (Ast.concat (Inline.parse_emph xs), uri, title)) :: acc') buf lexbuf
            | Error lexbuf ->
                add_lexeme buf lexbuf; inline defs acc buf lexbuf
            end
@@ -144,7 +144,7 @@ rule inline defs acc buf = parse
       let acc = text buf acc in
       let rec loop xs = function
         | Inline.Left_bracket :: acc' ->
-           let label = Ast.cat (Inline.parse_emph xs) in
+           let label = Ast.concat (Inline.parse_emph xs) in
            let s = Ast.normalize_label label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some {destination; title; _} ->
@@ -256,5 +256,5 @@ and link_label buf = parse
 {
 let parse defs s =
   let lexbuf = Lexing.from_string s in
-  Ast.cat (inline defs [] (Buffer.create 17) lexbuf)
+  Ast.concat (inline defs [] (Buffer.create 17) lexbuf)
 }

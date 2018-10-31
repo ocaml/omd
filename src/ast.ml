@@ -50,7 +50,7 @@ let extract_defs ast =
   List.rev (List.fold_left loop [] ast)
 
 type inline =
-  | Cat of inline list
+  | Concat of inline list
   | Text of string
   | Emph of inline
   | Bold of inline
@@ -63,13 +63,13 @@ type inline =
   | Html of string
   | Img of string * string * string
 
-let cat = function
+let concat = function
   | [] -> Text ""
   | [x] -> x
-  | l -> Cat l
+  | l -> Concat l
 
 let rec normalize_label = function
-  | Cat l -> String.concat "" (List.map normalize_label l)
+  | Concat l -> String.concat "" (List.map normalize_label l)
   | Text s -> s
   | _ -> ""
   (* | _ -> "" *)

@@ -26,7 +26,7 @@ type 'a block =
   | Link_def of 'a link_def
 
 type inline =
-  | Cat of inline list
+  | Concat of inline list
   | Text of string
   | Emph of inline
   | Bold of inline
