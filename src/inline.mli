@@ -3,14 +3,10 @@ type delim =
   | Punct
   | Other
 
-type emph =
-  | Star
-  | Underscore
-
 type t =
   | Bang_left_bracket
   | Left_bracket
-  | Emph of delim * delim * emph * int
+  | Emph of delim * delim * Ast.emph_style * int
   | R of Ast.inline
 
 val is_opener : t -> bool

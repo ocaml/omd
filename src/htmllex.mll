@@ -119,7 +119,7 @@ rule inline defs acc buf = parse
       { let pre = if Lexing.lexeme_start lexbuf > 0 then Bytes.get lexbuf.lex_buffer (Lexing.lexeme_start lexbuf - 1) else ' ' in
         let post = if Lexing.lexeme_end lexbuf < Bytes.length lexbuf.lex_buffer then
           Bytes.get lexbuf.lex_buffer (Lexing.lexeme_end lexbuf) else ' ' in
-        let e = if r.[0] = '*' then Inline.Star else Inline.Underscore in
+        let e = if r.[0] = '*' then Ast.Star else Ast.Underscore in
         let acc = Inline.Emph (Inline.classify_delim pre, Inline.classify_delim post, e, String.length r) :: text buf acc in
         inline defs acc buf lexbuf }
   | "!["                      { inline defs (Bang_left_bracket :: text buf acc) buf lexbuf }

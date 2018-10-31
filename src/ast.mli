@@ -33,10 +33,14 @@ type emph_kind =
   | Normal
   | Strong
 
+type emph_style =
+  | Star
+  | Underscore
+
 type inline =
   | Concat of inline list
   | Text of string
-  | Emph of emph_kind * inline
+  | Emph of emph_kind * emph_style * inline
   | Code of string
   | Hard_break
   | Soft_break

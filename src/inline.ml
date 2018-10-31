@@ -12,14 +12,10 @@ type delim =
   | Punct
   | Other
 
-type emph =
-  | Star
-  | Underscore
-
 type t =
   | Bang_left_bracket
   | Left_bracket
-  | Emph of delim * delim * emph * int
+  | Emph of delim * delim * Ast.emph_style * int
   | R of Ast.inline
 
 let left_flanking = function
@@ -75,7 +71,7 @@ let rec parse_emph = function
             in
             let r =
               let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-              R (Emph (kind, Ast.concat (parse_emph (List.rev acc)))) :: xs
+              R (Emph (kind, q1, Ast.concat (parse_emph (List.rev acc)))) :: xs
             in
             let r =
               if n1 >= 2 && n2 >= 2 then
@@ -127,11 +123,11 @@ let rec html_of_md b md =
     | Text t ->
         (* Buffer.add_string b t; *)
         Buffer.add_string b (Utils.htmlentities ~md:true t)
-    | Emph (Normal, md) ->
+    | Emph (Normal, _, md) ->
         Buffer.add_string b "<em>";
         loop md;
         Buffer.add_string b "</em>"
-    | Emph (Strong, md) ->
+    | Emph (Strong, _, md) ->
         Buffer.add_string b "<strong>";
         loop md;
         Buffer.add_string b "</strong>"
@@ -219,14 +215,16 @@ let rec markdown_of_md md =
         Printf.bprintf b "![%s](%s \"%s\")" alt src title
     | Text t ->
         Printf.bprintf b "%s" (escape_markdown_characters t)
-    | Emph (Normal, md) ->
-        Buffer.add_string b "*";
+    | Emph (Normal, q, md) ->
+        let delim = String.make 2 (match q with Star -> '*' | Underscore -> '_') in
+        Buffer.add_string b delim;
         loop md;
-        Buffer.add_string b "*"
-    | Emph (Strong, md) ->
-        Buffer.add_string b "**";
+        Buffer.add_string b delim
+    | Emph (Strong, q, md) ->
+        let delim = String.make 2 (match q with Star -> '*' | Underscore -> '_') in
+        Buffer.add_string b delim;
         loop md;
-        Buffer.add_string b "**"
+        Buffer.add_string b delim;
     | Code c ->
         let n = (* compute how many backquotes we need to use *)
           let filter (n:int) (s:int list) =
