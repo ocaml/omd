@@ -37,7 +37,7 @@ module Pre = struct
     | Rparagraph of string list
     | Rfenced_code of int * int * fenced_code_kind * string * string list
     | Rindented_code of string list
-    | Rhtml of Auxlex.html_kind * string list
+    | Rhtml of Block_parser.html_kind * string list
     | Rempty
 
   and t =
@@ -56,7 +56,7 @@ module Pre = struct
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         let s = concat (List.map String.trim l) in
-        let defs, off = Htmllex.link_def [] (Lexing.from_string s) in
+        let defs, off = Inline_parser.link_def [] (Lexing.from_string s) in
         let s = String.sub s off (String.length s - off) in
         let blocks = if String.trim s = "" then blocks else Paragraph s :: blocks in
         List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks
@@ -79,8 +79,8 @@ module Pre = struct
     {blocks = []; next = Rempty}
 
   let rec process {blocks; next} s =
-    match next, Auxlex.classify_line s with
-    | Rempty, Auxlex.Lempty ->
+    match next, Block_parser.classify_line s with
+    | Rempty, Block_parser.Lempty ->
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
@@ -111,7 +111,7 @@ module Pre = struct
         {blocks = close {blocks; next}; next = Rempty}
     | Rfenced_code (ind, num, q, info, lines), _ ->
         let s =
-          let ind = min (Auxlex.indent s) ind in
+          let ind = min (Block_parser.indent s) ind in
           if ind > 0 then
             Sub.offset ind s
           else
@@ -121,7 +121,7 @@ module Pre = struct
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
-        let n = min (Auxlex.indent s) 4 in
+        let n = min (Block_parser.indent s) 4 in
         let s = Sub.offset n s in
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code _, _ ->
@@ -136,7 +136,7 @@ module Pre = struct
         {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
-    | Rlist (kind, style, prev_empty, ind, items, state), _ when Auxlex.indent s >= ind ->
+    | Rlist (kind, style, prev_empty, ind, items, state), _ when Block_parser.indent s >= ind ->
         let s = Sub.offset ind s in
         let style =
           if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
@@ -165,8 +165,8 @@ module Pre = struct
                   None
               end
           | Rparagraph (_ :: _ as lines) ->
-              begin match Auxlex.classify_line s with
-              | Auxlex.Lparagraph | Lsetext_heading (1, _) | Lhtml (false, _) ->
+              begin match Block_parser.classify_line s with
+              | Block_parser.Lparagraph | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None

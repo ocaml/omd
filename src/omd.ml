@@ -14,10 +14,10 @@ let of_channel ic =
   let defs = Block.defs md in
   let defs =
     List.map (fun def ->
-        {def with Ast.label = Inline.normalize (Htmllex.parse [] def.label)}
+        {def with Ast.label = Inline.normalize (Inline_parser.parse [] def.label)}
       ) defs
   in
-  List.map (Block.map (Htmllex.parse defs)) md
+  List.map (Block.map (Inline_parser.parse defs)) md
 
 let to_html doc =
   Html.to_html doc
