@@ -91,73 +91,6 @@ let rec parse_emph = function
   | [] ->
       []
 
-let percent_encode s =
-  let b = Buffer.create (String.length s) in
-  String.iter (function
-      | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
-      | '@' | '&' | '=' | '+' | '$' | ',' | '/' | '?'
-      | '#' | '[' | ']'
-      | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' as c ->
-          Buffer.add_char b c
-      | _ as c ->
-          Printf.bprintf b "%%%2X" (Char.code c)
-    ) s;
-  Buffer.contents b
-
-let rec html_of_md b md =
-  let rec loop = function
-    | Concat l ->
-        List.iter loop l
-    | Img (alt, src, title) ->
-        Buffer.add_string b "<img src=\"";
-        Buffer.add_string b (Utils.htmlentities ~md:true src);
-        Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (Utils.htmlentities ~md:true alt);
-        Buffer.add_string b "\" ";
-        if title <> "" then begin
-          Buffer.add_string b " title='";
-          Buffer.add_string b (Utils.htmlentities ~md:true title);
-          Buffer.add_string b "' "
-        end;
-        Buffer.add_string b "/>"
-    | Text t ->
-        (* Buffer.add_string b t; *)
-        Buffer.add_string b (Utils.htmlentities ~md:true t)
-    | Emph (Normal, _, md) ->
-        Buffer.add_string b "<em>";
-        loop md;
-        Buffer.add_string b "</em>"
-    | Emph (Strong, _, md) ->
-        Buffer.add_string b "<strong>";
-        loop md;
-        Buffer.add_string b "</strong>"
-    | Code c ->
-        Buffer.add_string b "<code>";
-        Buffer.add_string b (Utils.htmlentities ~md:false c);
-        Buffer.add_string b "</code>"
-    | Hard_break ->
-        Buffer.add_string b "<br />\n"
-    | Html body ->
-        Buffer.add_string b body
-    | Url (s, href, title) ->
-        Buffer.add_string b "<a href=\"";
-        Buffer.add_string b (percent_encode href);
-        Buffer.add_string b "\"";
-        begin match title with
-        | None -> ()
-        | Some title ->
-            Buffer.add_string b " title=\"";
-            Buffer.add_string b (Utils.htmlentities ~md:true title);
-            Buffer.add_string b "\""
-        end;
-        Buffer.add_string b ">";
-        html_of_md b s;
-        Buffer.add_string b "</a>"
-    | Soft_break ->
-        Buffer.add_string b "\n"
-  in
-  loop md
-
 let escape_markdown_characters s =
   let b = Buffer.create (String.length s * 2) in
   for i = 0 to String.length s - 1 do
@@ -271,3 +204,5 @@ let rec markdown_of_md md =
   loop md;
   let res = Buffer.contents b in
   res
+
+let () = ignore [markdown_of_md]

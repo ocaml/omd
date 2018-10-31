@@ -14,7 +14,3 @@ val is_closer : t -> bool
 val classify_delim : char -> delim
 
 val parse_emph : t list -> Ast.inline list
-
-val html_of_md : Buffer.t -> Ast.inline -> unit
-val markdown_of_md : Ast.inline -> string
-(* val parse : Ast.link_def list -> string -> Ast.inline *)
