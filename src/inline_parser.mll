@@ -1,11 +1,19 @@
 {
 module Pre = Inline.Pre
 
-let add_char buf c =
-  Buffer.add_char buf c
+let strbuf =
+  Buffer.create 101
 
-let add_string buf s =
-  Buffer.add_string buf s
+let buf () =
+  let s = Buffer.contents strbuf in
+  Buffer.clear strbuf;
+  s
+
+let add_char c =
+  Buffer.add_char strbuf c
+
+let add_string s =
+  Buffer.add_string strbuf s
 
 let int_of_entity _ =
   failwith "int_of_entity"
@@ -19,23 +27,20 @@ let decode_entity s =
   | _ ->
       int_of_entity (String.sub s 1 (String.length s - 2))
 
-let add_entity buf e =
-  Buffer.add_utf_8_uchar buf (Uchar.of_int (decode_entity e))
+let add_entity e =
+  Buffer.add_utf_8_uchar strbuf (Uchar.of_int (decode_entity e))
 
-let text buf acc =
-  if Buffer.length buf = 0 then
+let text acc =
+  if Buffer.length strbuf = 0 then
     acc
-  else begin
-    let s = Buffer.contents buf in
-    Buffer.clear buf;
-    Pre.R (Text s) :: acc
-  end
+  else
+    Pre.R (Text (buf ())) :: acc
 
 let lexeme_length lexbuf =
   Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
 
-let add_lexeme buf lexbuf =
-  Buffer.add_string buf (Lexing.lexeme lexbuf)
+let add_lexeme lexbuf =
+  add_string (Lexing.lexeme lexbuf)
 
 let copy_lexbuf
     { Lexing.refill_buff; lex_buffer; lex_buffer_len; lex_abs_pos;
@@ -46,33 +51,35 @@ let copy_lexbuf
     lex_start_pos; lex_curr_pos; lex_last_pos; lex_last_action;
     lex_eof_reached; lex_mem; lex_start_p; lex_curr_p }
 
-let raw_html inline f acc buf0 lexbuf =
+let raw_html inline f acc lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
-  let buf = Buffer.create 17 in
-  add_lexeme buf lexbuf;
-  match f buf lexbuf with
+  add_lexeme lexbuf;
+  match f lexbuf with
   | () ->
-      inline (Pre.R (Html (Buffer.contents buf)) :: text buf0 acc) buf0 lexbuf
+      inline (Pre.R (Html (buf ())) :: acc) lexbuf
   | exception _ ->
-      add_lexeme buf0 lexbuf0;
-      inline acc buf0 lexbuf0
+      Buffer.clear strbuf;
+      add_lexeme lexbuf0;
+      inline acc lexbuf0
 
-let code inline f acc buf0 lexbuf =
+let code inline f acc lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
-  let buf = Buffer.create 17 in
-  match f buf lexbuf with
+  match f lexbuf with
   | () ->
-      inline (Pre.R (Code (Buffer.contents buf)) :: text buf0 acc) buf0 lexbuf
+      inline (Pre.R (Code (buf ())) :: acc) lexbuf
   | exception _ ->
-      add_lexeme buf0 lexbuf0;
-      inline acc buf0 lexbuf0
+      Buffer.clear strbuf;
+      add_lexeme lexbuf0;
+      inline acc lexbuf0
 
 let protect f lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
+  Buffer.clear strbuf;
   match f lexbuf with
   | x ->
       Ok x
   | exception _ ->
+      Buffer.clear strbuf;
       Error lexbuf0
 
 let backtrack lexbuf n =
@@ -115,141 +122,149 @@ let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
 
-rule inline defs acc buf = parse
-  | closing_tag as s          { inline defs (Pre.R (Html s) :: text buf acc) buf lexbuf }
-  | open_tag as s             { inline defs (Pre.R (Html s) :: text buf acc) buf lexbuf }
-  | "<!--"                    { raw_html (inline defs) (html_comment true) acc buf lexbuf }
-  | "<?"                      { raw_html (inline defs) processing_instruction acc buf lexbuf }
-  | "<!" ['A'-'Z']+           { raw_html (inline defs) declaration acc buf lexbuf }
-  | "<![CDATA["               { raw_html (inline defs) cdata_section acc buf lexbuf }
-  | '<' (email as x) '>'      { inline defs (Pre.R (Url {Ast.label = Text x; destination = "mailto:" ^ x; title = None}) :: text buf acc) buf lexbuf }
-  | '<' (uri as x) '>'        { inline defs (Pre.R (Url {Ast.label = Text x; destination = x; title = None}) :: text buf acc) buf lexbuf }
-  | (' ' ' '+ | '\\') nl ws*  { inline defs (Pre.R Hard_break :: text buf acc) buf lexbuf }
-  | nl                        { inline defs (Pre.R Soft_break :: text buf acc) buf lexbuf }
-  | '\\' (punct as c)             { add_char buf c; inline defs acc buf lexbuf }
-  | entity as e               { add_entity buf e; inline defs acc buf lexbuf }
-  | '`'+                      { code (inline defs) (code_span true false (lexeme_length lexbuf)) acc buf lexbuf }
+rule inline defs acc = parse
+  | closing_tag as s          { inline defs (Pre.R (Html s) :: text acc) lexbuf }
+  | open_tag as s             { inline defs (Pre.R (Html s) :: text acc) lexbuf }
+  | "<!--"                    { let acc = text acc in
+                                raw_html (inline defs) (html_comment true) acc lexbuf }
+  | "<?"                      { let acc = text acc in
+                                raw_html (inline defs) processing_instruction acc lexbuf }
+  | "<!" ['A'-'Z']+           { let acc = text acc in
+                                raw_html (inline defs) declaration acc lexbuf }
+  | "<![CDATA["               { let acc = text acc in
+                                raw_html (inline defs) cdata_section acc lexbuf }
+  | '<' (email as x) '>'      { inline defs (Pre.R (Url {Ast.label = Text x; destination = "mailto:" ^ x; title = None}) :: text acc) lexbuf }
+  | '<' (uri as x) '>'        { inline defs (Pre.R (Url {Ast.label = Text x; destination = x; title = None}) :: text acc) lexbuf }
+  | (' ' ' '+ | '\\') nl ws*  { inline defs (Pre.R Hard_break :: text acc) lexbuf }
+  | nl                        { inline defs (Pre.R Soft_break :: text acc) lexbuf }
+  | '\\' (punct as c)             { add_char c; inline defs acc lexbuf }
+  | entity as e               { add_entity e; inline defs acc lexbuf }
+  | '`'+                      { let acc = text acc in
+                                code (inline defs) (code_span true false (lexeme_length lexbuf)) acc lexbuf }
   | ('*'+|'_'+ as r)
       { let pre = peek_before ' ' lexbuf |> Pre.classify_delim in
         let post = peek_after ' ' lexbuf |> Pre.classify_delim in
         let e = if r.[0] = '*' then Ast.Star else Underscore in
-        let acc = Pre.Emph (pre, post, e, String.length r) :: text buf acc in
-        inline defs acc buf lexbuf }
-  | "!["                      { inline defs (Bang_left_bracket :: text buf acc) buf lexbuf }
-  | '['                       { inline defs (Left_bracket :: text buf acc) buf lexbuf }
+        let acc = Pre.Emph (pre, post, e, String.length r) :: text acc in
+        inline defs acc lexbuf }
+  | "!["                      { inline defs (Bang_left_bracket :: text acc) lexbuf }
+  | '['                       { inline defs (Left_bracket :: text acc) lexbuf }
   | ']''('                 {
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
            let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
            begin match protect f lexbuf with
            | Ok (destination, title) ->
-               inline defs (Pre.R (Url {Ast.label = Inline.concat (Pre.parse_emph xs); destination; title}) :: acc') buf lexbuf
+               inline defs (Pre.R (Url {Ast.label = Inline.concat (Pre.parse_emph xs); destination; title}) :: acc') lexbuf
            | Error lexbuf ->
-               add_lexeme buf lexbuf; inline defs acc buf lexbuf
+               add_lexeme lexbuf; inline defs acc lexbuf
            end
         | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme buf lexbuf; inline defs acc buf lexbuf
+        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
       in
-      loop [] (text buf acc)
+      loop [] (text acc)
      }
   | ']' "[]"?
      {
-      let acc = text buf acc in
+      let acc = text acc in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
            let label = Inline.concat (Pre.parse_emph xs) in
            let s = Inline.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
-               inline defs (Pre.R (Url_ref (label, def)) :: acc') buf lexbuf
+               inline defs (Pre.R (Url_ref (label, def)) :: acc') lexbuf
            | None ->
-               add_lexeme buf lexbuf; inline defs acc buf lexbuf
+               add_lexeme lexbuf; inline defs acc lexbuf
            end
         | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme buf lexbuf; inline defs acc buf lexbuf
+        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
       in
       loop [] acc
      }
-  | _ as c                    { add_char buf c; inline defs acc buf lexbuf }
-  | eof                       { Pre.parse_emph (List.rev (text buf acc)) }
+  | _ as c                    { add_char c; inline defs acc lexbuf }
+  | eof                       { Pre.parse_emph (List.rev (text acc)) }
 
 and link_dest = parse
-  | ws* '<' { link_dest1 (Buffer.create 17) lexbuf }
-  | ws* { link_dest2 0 (Buffer.create 17) lexbuf }
+  | ws* '<' { link_dest1 lexbuf }
+  | ws* { link_dest2 0 lexbuf }
 
-and link_dest1 buf = parse
-  | '>' ws+ (['\'''"''('] as d)  { Buffer.contents buf, link_title d (Buffer.create 17) lexbuf }
-  | '>' ws* eof { Buffer.contents buf, None }
+and link_dest1 = parse
+  | '>' ws+ (['\'''"''('] as d)  { let dest = buf () in
+                                   dest, link_title d lexbuf }
+  | '>' ws* eof { buf (), None }
   | nl | '<' { failwith "link_dest1 ws" }
-  | '\\' (punct as c) { add_char buf c; link_dest1 buf lexbuf }
-  | _ as c { add_char buf c; link_dest1 buf lexbuf }
+  | '\\' (punct as c) { add_char c; link_dest1 lexbuf }
+  | _ as c { add_char c; link_dest1 lexbuf }
 
-and link_dest2 n buf = parse
-  | ws* eof { if Buffer.length buf > 0 then Buffer.contents buf, None else failwith "link_dest2" }
-  | ws+ (['\'''"''('] as d)  { if Buffer.length buf > 0 then Buffer.contents buf, link_title d (Buffer.create 17) lexbuf else failwith "link_dest2" }
-  | ['\x00'-'\x1F''\x7F'] { Buffer.contents buf, None }
-  | '\\' (punct as c) { add_char buf c; link_dest2 n buf lexbuf }
-  | '(' as c { add_char buf c; link_dest2 (succ n) buf lexbuf }
-  | ')' as c { if n > 0 then (add_char buf c; link_dest2 (pred n) buf lexbuf) else (backtrack lexbuf 1; Buffer.contents buf, None) }
-  | _ as c { add_char buf c; link_dest2 n buf lexbuf }
+and link_dest2 n = parse
+  | ws* eof { if Buffer.length strbuf > 0 then buf (), None else failwith "link_dest2" }
+  | ws+ (['\'''"''('] as d)  { if Buffer.length strbuf > 0 then
+                               let dest = buf () in
+                               dest, link_title d lexbuf else failwith "link_dest2" }
+  | ['\x00'-'\x1F''\x7F'] { buf (), None }
+  | '\\' (punct as c) { add_char c; link_dest2 n lexbuf }
+  | '(' as c { add_char c; link_dest2 (succ n) lexbuf }
+  | ')' as c { if n > 0 then (add_char c; link_dest2 (pred n) lexbuf) else (backtrack lexbuf 1; buf (), None) }
+  | _ as c { add_char c; link_dest2 n lexbuf }
 
-and link_title d buf = parse
-  | '\\' (punct as c)   { add_char buf c; link_title d buf lexbuf }
-  | ['\'''"'')'] as c { if c = d then Some (Buffer.contents buf)
-                      else (add_char buf c; link_title d buf lexbuf) }
-  | _ as c { add_char buf c; link_title d buf lexbuf }
+and link_title d = parse
+  | '\\' (punct as c)   { add_char c; link_title d lexbuf }
+  | ['\'''"'')'] as c { if c = d then Some (buf ())
+                      else (add_char c; link_title d lexbuf) }
+  | _ as c { add_char c; link_title d lexbuf }
 
 and link_end = parse
   | ws* ')' { () }
 
-and code_span start seen_ws n buf = parse
+and code_span start seen_ws n = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin
-                      if not start && seen_ws then add_char buf ' ';
-                      add_lexeme buf lexbuf;
-                      code_span false false n buf lexbuf
+                      if not start && seen_ws then add_char ' ';
+                      add_lexeme lexbuf;
+                      code_span false false n lexbuf
                     end }
-  | ws+           { code_span start true n buf lexbuf }
-  | _ as c        { if not start && seen_ws then Buffer.add_char buf ' ';
-                    add_char buf c;
-                    code_span false false n buf lexbuf }
+  | ws+           { code_span start true n lexbuf }
+  | _ as c        { if not start && seen_ws then add_char ' ';
+                    add_char c;
+                    code_span false false n lexbuf }
 
-and html_comment start buf = parse
+and html_comment start = parse
   | "--->"      { raise Exit }
-  | "-->"       { add_lexeme buf lexbuf }
+  | "-->"       { add_lexeme lexbuf }
   | "--"        { raise Exit }
   | ">" | "->"  { if start then raise Exit;
-                  add_lexeme buf lexbuf;
-                  html_comment false buf lexbuf }
-  | entity as e { add_entity buf e;
-                  html_comment false buf lexbuf }
-  | _ as c      { add_char buf c;
-                  html_comment false buf lexbuf }
+                  add_lexeme lexbuf;
+                  html_comment false lexbuf }
+  | entity as e { add_entity e;
+                  html_comment false lexbuf }
+  | _ as c      { add_char c;
+                  html_comment false lexbuf }
 
-and processing_instruction buf = parse
-  | "?>"        { add_lexeme buf lexbuf }
-  | entity as e { add_entity buf e;
-                  processing_instruction buf lexbuf }
-  | _ as c      { add_char buf c;
-                  processing_instruction buf lexbuf }
+and processing_instruction = parse
+  | "?>"        { add_lexeme lexbuf }
+  | entity as e { add_entity e;
+                  processing_instruction lexbuf }
+  | _ as c      { add_char c;
+                  processing_instruction lexbuf }
 
-and declaration buf = parse
-  | '>' as c    { add_char buf c }
-  | entity as e { add_entity buf e;
-                  declaration buf lexbuf }
-  | _ as c      { add_char buf c;
-                  declaration buf lexbuf }
+and declaration = parse
+  | '>' as c    { add_char c }
+  | entity as e { add_entity e;
+                  declaration lexbuf }
+  | _ as c      { add_char c;
+                  declaration lexbuf }
 
-and cdata_section buf = parse
-  | "]]>"       { add_lexeme buf lexbuf }
-  | entity as e { add_entity buf e;
-                  cdata_section buf lexbuf }
-  | _ as c      { add_char buf c;
-                  cdata_section buf lexbuf }
+and cdata_section = parse
+  | "]]>"       { add_lexeme lexbuf }
+  | entity as e { add_entity e;
+                  cdata_section lexbuf }
+  | _ as c      { add_char c;
+                  cdata_section lexbuf }
 
 and link_def acc = parse
   | sp3 '['
       { let f lexbuf =
-          let label = link_label (Buffer.create 17) lexbuf in
+          let label = link_label lexbuf in
           let destination, title = link_dest lexbuf in
           {Ast.label; destination; title}
         in
@@ -261,13 +276,13 @@ and link_def acc = parse
   | _ | eof
     { acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
 
-and link_label buf = parse
-  | '\\' (punct as c) { Buffer.add_char buf c; link_label buf lexbuf }
-  | ']' ':' { Buffer.contents buf }
-  | _ as c { Buffer.add_char buf c; link_label buf lexbuf }
+and link_label = parse
+  | '\\' (punct as c) { add_char c; link_label lexbuf }
+  | ']' ':' { buf () }
+  | _ as c { add_char c; link_label lexbuf }
 
 {
 let parse defs s =
   let lexbuf = Lexing.from_string s in
-  Inline.concat (inline defs [] (Buffer.create 17) lexbuf)
+  Inline.concat (inline defs [] lexbuf)
 }
