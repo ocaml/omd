@@ -48,6 +48,21 @@ module Pre = struct
 
   let concat l = String.concat "\n" (List.rev l)
 
+  let trim_left s =
+    let rec loop i =
+      if i >= String.length s then
+        i
+      else begin
+        match s.[i] with
+        | ' ' | '\t' ->
+            loop (succ i)
+        | _ ->
+            i
+      end
+    in
+    let i = loop 0 in
+    if i > 0 then String.sub s i (String.length s - i) else s
+
   let rec close {blocks; next} =
     match next with
     | Rblockquote state ->
@@ -55,11 +70,11 @@ module Pre = struct
     | Rlist (kind, style, _, _, closed_items, state) ->
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
-        let s = concat (List.map String.trim l) in
+        let s = concat (List.map trim_left l) in
         let defs, off = Inline_parser.link_def [] (Lexing.from_string s) in
-        let s = String.sub s off (String.length s - off) in
+        let s = String.sub s off (String.length s - off) |> String.trim in
         let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
-        if String.trim s = "" then blocks else Paragraph s :: blocks
+        if s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, kind, info, []) ->
         Code_block (Some (kind, info), None) :: blocks
     | Rfenced_code (_, _, kind, info, l) ->
