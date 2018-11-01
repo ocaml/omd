@@ -1,4 +1,4 @@
-(ocamllex block_parser inline_parser)
+(ocamllex block_parser inline_parser link_parser)
 
 (library
  (name omd)

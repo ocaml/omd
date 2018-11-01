@@ -51,6 +51,18 @@ let copy_lexbuf
     lex_start_pos; lex_curr_pos; lex_last_pos; lex_last_action;
     lex_eof_reached; lex_mem; lex_start_p; lex_curr_p }
 
+let set_lexbuf lexbuf0 lexbuf =
+  lexbuf.Lexing.lex_buffer <- lexbuf0.Lexing.lex_buffer;
+  lexbuf.Lexing.lex_buffer_len <- lexbuf0.Lexing.lex_buffer_len;
+  lexbuf.Lexing.lex_start_pos <- lexbuf0.Lexing.lex_start_pos;
+  lexbuf.Lexing.lex_curr_pos <- lexbuf0.Lexing.lex_curr_pos;
+  lexbuf.Lexing.lex_last_pos <- lexbuf0.Lexing.lex_last_pos;
+  lexbuf.Lexing.lex_last_action <- lexbuf0.Lexing.lex_last_action;
+  lexbuf.Lexing.lex_eof_reached <- lexbuf0.Lexing.lex_eof_reached;
+  lexbuf.Lexing.lex_mem <- lexbuf0.Lexing.lex_mem;
+  lexbuf.Lexing.lex_start_p <- lexbuf0.Lexing.lex_start_p;
+  lexbuf.Lexing.lex_curr_p <- lexbuf0.Lexing.lex_curr_p
+
 let raw_html inline f acc lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
   add_lexeme lexbuf;
@@ -101,7 +113,7 @@ let peek_after c lexbuf =
 let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\\'']''^''_''`''{''|''}''~']
 let ws = [' ''\t''\010'-'\013']
 let sp3 = (' ' (' ' ' '?)?)?
-let nl = '\n' | "\r\n" | '\r'
+let nl = '\n' | '\r'
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
 let double_quoted_attribute_value = '"' [^'"']* '"'
@@ -153,7 +165,7 @@ rule inline defs acc = parse
       let acc = text acc in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
-           let f lexbuf = let r = link_dest lexbuf in link_end lexbuf; r in
+           let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
            begin match protect f lexbuf with
            | Ok (destination, title) ->
                inline defs (Pre.R (Url {Ast.label = Inline.concat (Pre.parse_emph xs); destination; title}) :: acc') lexbuf
@@ -185,38 +197,6 @@ rule inline defs acc = parse
      }
   | _ as c                    { add_char c; inline defs acc lexbuf }
   | eof                       { Pre.parse_emph (List.rev (text acc)) }
-
-and link_dest = parse
-  | ws* '<' { link_dest1 lexbuf }
-  | ws* { link_dest2 0 lexbuf }
-
-and link_dest1 = parse
-  | '>' ws+ (['\'''"''('] as d)  { let dest = buf () in
-                                   dest, link_title d lexbuf }
-  | '>' ws* eof { buf (), None }
-  | nl | '<' { failwith "link_dest1 ws" }
-  | '\\' (punct as c) { add_char c; link_dest1 lexbuf }
-  | _ as c { add_char c; link_dest1 lexbuf }
-
-and link_dest2 n = parse
-  | ws* eof { if Buffer.length strbuf > 0 then buf (), None else failwith "link_dest2" }
-  | ws+ (['\'''"''('] as d)  { if Buffer.length strbuf > 0 then
-                               let dest = buf () in
-                               dest, link_title d lexbuf else failwith "link_dest2" }
-  | ['\x00'-'\x1F''\x7F'] { buf (), None }
-  | '\\' (punct as c) { add_char c; link_dest2 n lexbuf }
-  | '(' as c { add_char c; link_dest2 (succ n) lexbuf }
-  | ')' as c { if n > 0 then (add_char c; link_dest2 (pred n) lexbuf) else (backtrack lexbuf 1; buf (), None) }
-  | _ as c { add_char c; link_dest2 n lexbuf }
-
-and link_title d = parse
-  | '\\' (punct as c)   { add_char c; link_title d lexbuf }
-  | ['\'''"'')'] as c { if c = d then Some (buf ())
-                      else (add_char c; link_title d lexbuf) }
-  | _ as c { add_char c; link_title d lexbuf }
-
-and link_end = parse
-  | ws* ')' { () }
 
 and code_span start seen_ws n = parse
   | '`'+          { if lexeme_length lexbuf <> n then begin
@@ -264,23 +244,13 @@ and cdata_section = parse
 
 and link_def acc = parse
   | sp3 '['
-      { let f lexbuf =
-          let label = link_label lexbuf in
-          let destination, title = link_dest lexbuf in
-          {Ast.label; destination; title}
-        in
-        match protect f lexbuf with
+      { match protect Link_parser.definition lexbuf with
         | Ok x ->
             link_def (x :: acc) lexbuf
         | Error lexbuf ->
             acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
   | _ | eof
     { acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
-
-and link_label = parse
-  | '\\' (punct as c) { add_char c; link_label lexbuf }
-  | ']' ':' { buf () }
-  | _ as c { add_char c; link_label lexbuf }
 
 {
 let parse defs s =
