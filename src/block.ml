@@ -33,7 +33,7 @@ module Pre = struct
 
   type container =
     | Rblockquote of t
-    | Rlist of list_kind * list_style * bool * int * block list list * bool (* empty line start *) * t
+    | Rlist of list_kind * list_style * bool * int * block list list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * fenced_code_kind * string * string list
     | Rindented_code of string list
@@ -67,7 +67,7 @@ module Pre = struct
     match next with
     | Rblockquote state ->
         Blockquote (finish state) :: blocks
-    | Rlist (kind, style, _, _, closed_items, _, state) ->
+    | Rlist (kind, style, _, _, closed_items, state) ->
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
@@ -112,8 +112,7 @@ module Pre = struct
     | Rempty, Lindented_code s ->
         {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
-        let starts_empty = Block_parser.is_empty s in
-        {blocks; next = Rlist (kind, Tight, false, indent, [], starts_empty, process empty s)}
+        {blocks; next = Rlist (kind, Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Block_parser.is_empty s1) ->
@@ -152,11 +151,11 @@ module Pre = struct
         {blocks; next = Rhtml (k, Sub.to_string s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
-    | Rlist (kind, style, _, ind, items, starts_empty, state), Lempty ->
-        {blocks; next = Rlist (kind, style, true, ind, items, starts_empty, process state s)}
-    | Rlist (_, _, true, ind, _, true, {blocks = []; next = Rempty}), _ when Block_parser.indent s >= ind ->
+    | Rlist (kind, style, _, ind, items, state), Lempty ->
+        {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
+    | Rlist (_, _, true, ind, _, {blocks = []; next = Rempty}), _ when Block_parser.indent s >= ind ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rlist (kind, style, prev_empty, ind, items, starts_empty, state), _ when Block_parser.indent s >= ind ->
+    | Rlist (kind, style, prev_empty, ind, items, state), _ when Block_parser.indent s >= ind ->
         let s = Sub.offset ind s in
         let style =
           if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
@@ -164,23 +163,16 @@ module Pre = struct
           else
             style
         in
-        {blocks; next = Rlist (kind, style, false, ind, items, starts_empty, process state s)}
-    | Rlist (kind, style, prev_empty, _, items, starts_empty, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
-        let style =
-          match state with
-          | {blocks = []; next = Rempty} ->
-              if prev_empty && starts_empty then Loose else style
-          | _ ->
-              if prev_empty then Loose else style
-        in
-        let starts_empty = Block_parser.is_empty s in
-        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, starts_empty, process empty s)}
+        {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
+    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
+        let style = if prev_empty then Loose else style in
+        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
-          | Rlist (kind, style, prev_empty, ind, items, starts_empty, {blocks; next}) ->
+          | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
               begin match loop next with
               | Some next ->
-                  Some (Rlist (kind, style, prev_empty, ind, items, starts_empty, {blocks; next}))
+                  Some (Rlist (kind, style, prev_empty, ind, items, {blocks; next}))
               | None ->
                   None
               end

@@ -12,7 +12,7 @@ and inline = function
   | Concat xs ->
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
-      List [Atom "text"; Atom s]
+      Atom s
   | Emph (_, _, x) ->
       List [Atom "emph"; inline x]
   | Code _ ->
