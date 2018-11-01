@@ -1,4 +1,15 @@
 {
+let strbuf =
+  Buffer.create 101
+
+let add_char c =
+  Buffer.add_char strbuf c
+
+let get_buf () =
+  let s = Buffer.contents strbuf in
+  Buffer.clear strbuf;
+  s
+
 let lexeme_length lexbuf =
   Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
 
@@ -48,6 +59,8 @@ let ws = [' ''\t''\n''\r''\011''\012']
 let sp3 = (' ' (' ' ' '?)?)?
 let dig = ['0'-'9']
 
+let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\\'']''^''_''`''{''|''}''~']
+
 let unquoted_attribute_value = [^' ''\t''\n''\r''\011''\012''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
 let double_quoted_attribute_value = '"' [^'"']* '"'
@@ -73,9 +86,11 @@ rule line = parse
       let title = String.trim (remove_trailing_hashes (Buffer.create (String.length title)) (Lexing.from_string title)) in
       Latx_heading (String.length atx, title) }
   | (sp3 as ind) ("```" '`'* as delim) ws* ([^'`'' ''\t''\010'-'\013']* as info) [^'`']* eof
-      { Lfenced_code (String.length ind, String.length delim, Backtick, String.trim info) }
+      { let info = info_string (Lexing.from_string info) in
+        Lfenced_code (String.length ind, String.length delim, Backtick, info) }
   | (sp3 as ind) ("~~~" '~'* as delim) ws* ([^' ''\t''\010'-'\013']* as info)
-      { Lfenced_code (String.length ind, String.length delim, Tilde, String.trim info) }
+      { let info = info_string (Lexing.from_string info) in
+        Lfenced_code (String.length ind, String.length delim, Tilde, info) }
   | sp3 '<'
       { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
   | sp3 (['+''-''*'] as marker) as l ([' ''\t'] | eof)
@@ -84,6 +99,11 @@ rule line = parse
       { Llist_item (Ast.Ordered (int_of_string num, d), String.length l) }
   | _
       { Lparagraph }
+
+and info_string = parse
+  | '\\' (punct as c) { add_char c; info_string lexbuf }
+  | _ as c            { add_char c; info_string lexbuf }
+  | eof               { get_buf () }
 
 and is_empty = parse
   | ws* eof { true }
