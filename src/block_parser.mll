@@ -78,9 +78,9 @@ rule line = parse
       { Lfenced_code (String.length ind, String.length delim, Tilde, String.trim info) }
   | sp3 '<'
       { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
-  | sp3 (['+''-''*'] as marker) as l [' ''\t']
+  | sp3 (['+''-''*'] as marker) as l ([' ''\t'] | eof)
       { Llist_item (Ast.Unordered marker, String.length l) }
-  | sp3 (list_item_num as num) ('.' | ')' as d) as l [' ''\t']
+  | sp3 (list_item_num as num) ('.' | ')' as d) as l ([' ''\t'] | eof)
       { Llist_item (Ast.Ordered (int_of_string num, d), String.length l) }
   | _
       { Lparagraph }

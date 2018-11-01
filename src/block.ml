@@ -116,9 +116,10 @@ module Pre = struct
         {blocks; next = Rlist (kind, Tight, prev_empty, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
-    | Rparagraph _, (Lempty | Llist_item ((Ordered (1, _) | Unordered _), _, _) (* TODO non empty first line *)
-                    | Lblockquote _ |Lthematic_break | Latx_heading _
-                    | Lfenced_code _ | Lhtml (true, _)) ->
+    | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Block_parser.is_empty s1) ->
+        process {blocks = close {blocks; next}; next = Rempty} s
+    | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
+                    | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
