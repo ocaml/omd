@@ -64,6 +64,8 @@ val of_channel : in_channel -> t
 val to_html: (* ?pindent:bool -> ?nl2br:bool -> *) t -> string
 (** Translate markdown representation into raw HTML. *)
 
+val to_sexp: t -> string
+
 (* val to_markdown: t -> string *)
 (** Translate markdown representation into textual markdown. *)
 

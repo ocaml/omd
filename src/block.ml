@@ -58,8 +58,8 @@ module Pre = struct
         let s = concat (List.map String.trim l) in
         let defs, off = Inline_parser.link_def [] (Lexing.from_string s) in
         let s = String.sub s off (String.length s - off) in
-        let blocks = if String.trim s = "" then blocks else Paragraph s :: blocks in
-        List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks
+        let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
+        if String.trim s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, kind, info, []) ->
         Code_block (Some (kind, info), None) :: blocks
     | Rfenced_code (_, _, kind, info, l) ->

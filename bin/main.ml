@@ -1,3 +1,16 @@
+type format =
+  | Sexp
+  | Html
+  | Markdown
+
+let fmt = ref Html
+
+let convert ast =
+  match !fmt with
+  | Html -> Omd.to_html ast
+  | Sexp -> Omd.to_sexp ast
+  | Markdown -> assert false
+
 let main () =
   let input = ref [] in
   let output = ref "" in
@@ -6,6 +19,8 @@ let main () =
     [
       "-o", Set_string output,
       " file.html Specify the output file (default is stdout).";
+
+      "-sexp", Unit (fun () -> fmt := Sexp), " sexp";
 
       "--", Rest(fun s -> input := s :: !input),
       " Consider all remaining arguments as input file names.";
@@ -18,11 +33,8 @@ let main () =
   let output = if !output = "" then stdout else open_out_bin !output in
   let process ic =
     let md = Omd.of_channel ic in
-    let html = Omd.to_html md in
-    output_string output html;
+    output_string output (convert md);
     flush output
-    (* if false && Utils.debug then *)
-    (*   print_endline (Backend.sexpr_of_md (Omd.Parser.default_parse (preprocess(Lexer.lex (Buffer.contents b))))) *)
   in
   if !input = [] then
     process stdin

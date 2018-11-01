@@ -47,8 +47,11 @@ let rec block = function
       Atom "code"
   | Html_block s ->
       List [Atom "html"; Atom s]
-  | Link_def _ ->
-      List [Atom "link-def"]
+  | Link_def {label; destination; _} ->
+      List [Atom "link-def"; inline label; Atom destination]
+
+let create ast =
+  List (List.map block ast)
 
 let rec print ppf = function
   | Atom s ->

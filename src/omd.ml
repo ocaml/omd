@@ -22,6 +22,9 @@ let of_channel ic =
 let to_html doc =
   Html.to_html doc
 
+let to_sexp ast =
+  Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
+
 (* let of_string = of_input Lexer.lex *)
 (* let of_bigarray = of_input Lexer.lex_bigarray *)
 
