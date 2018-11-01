@@ -63,6 +63,7 @@ rule line = parse
   | ws* eof { R.Lempty }
   | sp3 '>' { Lblockquote (lexeme_length lexbuf) }
   | sp3 ('='+ as s) ws* eof { Lsetext_heading (1, String.length s) }
+  | sp3 ('-' as marker) as l ws* eof  { Llist_item (Ast.Unordered marker, String.length l) }
   | sp3 ('-'+ as s) ws* eof { Lsetext_heading (2, String.length s) }
   | sp3 '*' ws* '*' (ws* '*')+ ws* eof
   | sp3 '_' ws* '_' (ws* '_')+ ws* eof
@@ -139,7 +140,7 @@ let classify_line s =
       let off =
         let n = indent (Sub.offset off s) in
         (* if n > 0 then *)
-          if n <= 4 then
+          if 0 < n && n <= 4 then
             off + n
           else
             off + 1

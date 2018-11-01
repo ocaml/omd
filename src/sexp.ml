@@ -43,8 +43,14 @@ let rec block = function
       Atom "thematic-break"
   | Heading (n, x) ->
       List [Atom "heading"; Atom (string_of_int n); inline x]
-  | Code_block _ ->
-      Atom "code"
+  | Code_block (None, Some s) ->
+      List [Atom "indented-code"; Atom s]
+  | Code_block (None, None) ->
+      List [Atom "indented-code"]
+  | Code_block (Some _, Some s) ->
+      List [Atom "fenced-code"; Atom s]
+  | Code_block (Some _, None) ->
+      List [Atom "fenced-code"]
   | Html_block s ->
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
@@ -53,7 +59,23 @@ let rec block = function
 let create ast =
   List (List.map block ast)
 
+let needs_quotes s =
+  let rec loop i =
+    if i >= String.length s then
+      false
+    else begin
+      match s.[i] with
+      | ' ' | '\t' | '\x00'..'\x1F' | '\x7F'..'\x9F' ->
+          true
+      | _ ->
+          loop (succ i)
+    end
+  in
+  loop 0
+
 let rec print ppf = function
+  | Atom s when needs_quotes s ->
+      Format.fprintf ppf "%S" s
   | Atom s ->
       Format.pp_print_string ppf s
   | List l ->
