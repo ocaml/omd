@@ -101,7 +101,8 @@ module Pre = struct
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, (Lempty | Llist_item ((Ordered (1, _) | Unordered _), _, _) (* TODO non empty first line *)
-                    | Lthematic_break | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
+                    | Lblockquote _ |Lthematic_break | Latx_heading _
+                    | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
