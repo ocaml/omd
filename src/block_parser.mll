@@ -46,6 +46,7 @@ let tags =
 
 let ws = [' ''\t''\n''\r''\011''\012']
 let sp3 = (' ' (' ' ' '?)?)?
+let dig = ['0'-'9']
 
 let unquoted_attribute_value = [^' ''\t''\n''\r''\011''\012''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
@@ -55,6 +56,8 @@ let attribute_value_specification = ws* '=' ws* attribute_value
 let attribute_name = ['a'-'z''A'-'Z''_'':']['a'-'z''A'-'Z''0'-'9''_''.'':''-']*
 let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
+let list_item_num =
+  dig (dig (dig (dig (dig (dig (dig (dig dig?)?)?)?)?)?)?)?
 
 rule line = parse
   | ws* eof { R.Lempty }
@@ -76,7 +79,7 @@ rule line = parse
       { match html0 lexbuf with (p, stop) -> Lhtml (p, stop) | exception _ -> Lparagraph }
   | sp3 (['+''-''*'] as marker) as l [' ''\t']
       { Llist_item (Ast.Unordered marker, String.length l) }
-  | sp3 (['0'-'9']+ as num) ('.' | ')' as d) as l [' ''\t']
+  | sp3 (list_item_num as num) ('.' | ')' as d) as l [' ''\t']
       { Llist_item (Ast.Ordered (int_of_string num, d), String.length l) }
   | _
       { Lparagraph }
