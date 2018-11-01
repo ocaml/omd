@@ -123,15 +123,18 @@ and title_with_ws_for_reference = parse
 and ws_eol = parse
   | sp* (nl | eof) { () }
 
+and title2 = parse
+  | ('"' | '\'' | '(' as c)
+      { let s = title1 c lexbuf in
+        ws_eol lexbuf; Some s }
+
 and title_with_ws_for_definition = parse
-  | (sp* nl sp*) ('"' | '\'' | '(' as c)
-      { let title1 lexbuf = let s = title1 c lexbuf in ws_eol lexbuf; s in
-        protect None (fun lexbuf -> Some (title1 lexbuf)) lexbuf }
-  | sp* nl | sp* eof
+  | sp* nl sp*
+      { protect None title2 lexbuf }
+  | sp* eof
       { None }
-  | sp+ ('"' | '\'' | '(' as c)
-      { let title1 lexbuf = let s = title1 c lexbuf in ws_eol lexbuf; s in
-        Some (title1 lexbuf) }
+  | sp+
+      { title2 lexbuf }
 
 and definition_label = parse
   | '\\' (punct as c) { add_char c; definition_label lexbuf }
