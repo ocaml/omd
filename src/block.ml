@@ -182,7 +182,8 @@ module Pre = struct
               end
           | Rparagraph (_ :: _ as lines) ->
               begin match Block_parser.classify_line s with
-              | Block_parser.Lparagraph | Lsetext_heading (1, _) | Lhtml (false, _) ->
+              | Block_parser.Lparagraph | Lindented_code _
+              | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
                   None
