@@ -150,6 +150,8 @@ module Pre = struct
         {blocks; next = Rhtml (k, Sub.to_string s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
+    | Rlist (_, _, true, _, _, _), Lempty ->
+        {blocks = close {blocks; next}; next = Rempty}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, ind, items, state), _ when Block_parser.indent s >= ind ->
@@ -163,7 +165,8 @@ module Pre = struct
         {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
         let style = if prev_empty then Loose else style in
-        {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
+        let prev_empty = Block_parser.is_empty s in
+        {blocks; next = Rlist (kind, style, prev_empty, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function
           | Rlist (kind, style, prev_empty, ind, items, {blocks; next}) ->
