@@ -157,13 +157,23 @@ module Pre = struct
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rlist (kind, style, prev_empty, ind, items, state), _ when Block_parser.indent s >= ind ->
         let s = Sub.offset ind s in
+        let state = process state s in
         let style =
-          if prev_empty && state.next = Rempty && List.length state.blocks > 0 then
+          let rec new_block = function
+            | Rblockquote {blocks = []; next}
+            | Rlist (_, _, _, _, _, {blocks = []; next}) -> new_block next
+            | Rparagraph [_]
+            | Rfenced_code (_, _, _, _, [])
+            | Rindented_code [_]
+            | Rhtml (_, [_]) -> true
+            | _ -> false
+          in
+          if prev_empty && new_block state.next then
             Loose
           else
             style
         in
-        {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
+        {blocks; next = Rlist (kind, style, false, ind, items, state)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
         let style = if prev_empty then Loose else style in
         {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
