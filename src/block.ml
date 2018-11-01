@@ -112,7 +112,8 @@ module Pre = struct
     | Rempty, Lindented_code s ->
         {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
-        {blocks; next = Rlist (kind, Tight, false, indent, [], process empty s)}
+        let prev_empty = Block_parser.is_empty s in
+        {blocks; next = Rlist (kind, Tight, prev_empty, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, (Lempty | Llist_item ((Ordered (1, _) | Unordered _), _, _) (* TODO non empty first line *)
@@ -150,7 +151,7 @@ module Pre = struct
         {blocks; next = Rhtml (k, Sub.to_string s :: lines)}
     | Rblockquote state, Lblockquote s ->
         {blocks; next = Rblockquote (process state s)}
-    | Rlist (_, _, true, _, _, _), Lempty ->
+    | Rlist (_, _, true, _, _, {blocks = []; next = Rempty}), Lempty ->
         {blocks = close {blocks; next}; next = Rempty}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
@@ -164,7 +165,13 @@ module Pre = struct
         in
         {blocks; next = Rlist (kind, style, false, ind, items, process state s)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
-        let style = if prev_empty then Loose else style in
+        let style =
+          match state with
+          | {blocks = []; next = Rempty} ->
+              style
+          | _ ->
+              if prev_empty then Loose else style
+        in
         let prev_empty = Block_parser.is_empty s in
         {blocks; next = Rlist (kind, style, prev_empty, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
