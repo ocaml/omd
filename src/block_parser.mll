@@ -138,9 +138,10 @@ let classify_line s =
         Lparagraph
   | Llist_item (kind, off) ->
       let off =
-        let n = indent (Sub.offset off s) in
+        let s = Sub.offset off s in
+        let n = indent s in
         (* if n > 0 then *)
-          if 0 < n && n <= 4 then
+          if 0 < n && n <= 4 && not (is_empty s) then
             off + n
           else
             off + 1
