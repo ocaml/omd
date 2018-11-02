@@ -126,9 +126,6 @@ module Pre = struct
   let rec parse_emph = function
     | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
         let rec loop acc = function
-          | Emph _ as x :: xs1 as xs when is_opener x ->
-              let xs' = parse_emph xs in
-              if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
           | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
               let xs =
                 if n1 >= 2 && n2 >= 2 then
@@ -147,6 +144,9 @@ module Pre = struct
                 if n1 > 1 then Emph (pre, Punct, q1, n1-1) :: r else r
               in
               r
+          | Emph _ as x :: xs1 as xs when is_opener x ->
+              let xs' = parse_emph xs in
+              if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
           | x :: xs ->
               loop (x :: acc) xs
           | [] ->
