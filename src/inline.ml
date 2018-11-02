@@ -126,6 +126,9 @@ module Pre = struct
   let rec parse_emph = function
     | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
         let rec loop acc = function
+          | Emph _ as x :: xs1 as xs when is_opener x ->
+              let xs' = parse_emph xs in
+              if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
           | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
               let xs =
                 if n1 >= 2 && n2 >= 2 then
@@ -135,7 +138,7 @@ module Pre = struct
               in
               let r =
                 let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph (kind, q1, concat (parse_emph (List.rev acc)))) :: xs
+                R (Emph (kind, q1, concat (List.map to_r (parse_emph (List.rev acc))))) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then
@@ -143,15 +146,15 @@ module Pre = struct
                 else
                 if n1 > 1 then Emph (pre, Punct, q1, n1-1) :: r else r
               in
-              parse_emph r
+              r
           | x :: xs ->
               loop (x :: acc) xs
           | [] ->
-              to_r x :: List.rev_map to_r acc
+              x :: List.rev acc
         in
         loop [] xs
     | x :: xs ->
-        to_r x :: parse_emph xs
+        x :: parse_emph xs
     | [] ->
         []
 end

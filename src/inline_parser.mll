@@ -183,7 +183,7 @@ rule inline defs acc = parse
            let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
            begin match protect f lexbuf with
            | Ok (destination, title) ->
-               inline defs (Pre.R (Url {Ast.label = Inline.concat (Pre.parse_emph xs); destination; title}) :: acc') lexbuf
+               inline defs (Pre.R (Url {Ast.label = Inline.concat Pre.(List.map to_r (parse_emph xs)); destination; title}) :: acc') lexbuf
            | Error lexbuf ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
@@ -197,7 +197,7 @@ rule inline defs acc = parse
       let acc = text acc in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
-           let label = Inline.concat (Pre.parse_emph xs) in
+           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
            let s = Inline.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
@@ -211,7 +211,7 @@ rule inline defs acc = parse
       loop [] acc
      }
   | _ as c                    { add_char c; inline defs acc lexbuf }
-  | eof                       { Pre.parse_emph (List.rev (text acc)) }
+  | eof                       { List.map Pre.to_r (Pre.parse_emph (List.rev (text acc))) }
 
 and code_span n = parse
   | '`'+          { if lexeme_length lexbuf <> n then
