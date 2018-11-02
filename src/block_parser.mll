@@ -5,6 +5,28 @@ let strbuf =
 let add_char c =
   Buffer.add_char strbuf c
 
+let add_string s =
+  Buffer.add_string strbuf s
+
+let add_entity e =
+  match e.[1] with
+  | '#' ->
+      let num =
+        match e.[2] with
+        | 'x' | 'X' ->
+            Scanf.sscanf e "&#%_[xX]%x;" (fun num -> num)
+        | _ ->
+            Scanf.sscanf e "&#%d;" (fun num -> num)
+      in
+      let uch = if num <> 0 && Uchar.is_valid num then Uchar.of_int num else Uchar.rep in
+      Buffer.add_utf_8_uchar strbuf uch
+  | _ ->
+      let name = String.sub e 1 (String.length e - 2) in
+      begin match Entities.f name with
+      | [] -> add_string e
+      | _ :: _ as cps -> List.iter (Buffer.add_utf_8_uchar strbuf) cps
+      end
+
 let get_buf () =
   let s = Buffer.contents strbuf in
   Buffer.clear strbuf;
@@ -58,6 +80,9 @@ let tags =
 let ws = [' ''\t''\n''\r''\011''\012']
 let sp3 = (' ' (' ' ' '?)?)?
 let dig = ['0'-'9']
+let hex = dig | ['a'-'f''A'-'F']
+let dig8 = dig (dig (dig (dig (dig (dig (dig dig?)?)?)?)?)?)?
+let hex8 = hex (hex (hex (hex (hex (hex (hex hex?)?)?)?)?)?)?
 
 let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@''[''\\'']''^''_''`''{''|''}''~']
 
@@ -71,6 +96,10 @@ let attribute = ws+ attribute_name attribute_value_specification?
 let tag_name = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''-']*
 let list_item_num =
   dig (dig (dig (dig (dig (dig (dig (dig dig?)?)?)?)?)?)?)?
+let sym_entity = '&' ['a'-'z''A'-'Z''0'-'9']+ ';'
+let dec_entity = "&#" dig8 ';'
+let hex_entity = "&#" ['x''X'] hex8 ';'
+let entity = sym_entity | dec_entity | hex_entity
 
 rule line = parse
   | ws* eof { R.Lempty }
@@ -102,6 +131,7 @@ rule line = parse
 
 and info_string = parse
   | '\\' (punct as c) { add_char c; info_string lexbuf }
+  | entity as e       { add_entity e; info_string lexbuf }
   | _ as c            { add_char c; info_string lexbuf }
   | eof               { get_buf () }
 
