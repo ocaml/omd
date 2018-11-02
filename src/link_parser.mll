@@ -165,7 +165,8 @@ and title_with_ws_for_definition = parse
 
 and definition_label = parse
   | '\\' (punct as c) { add_char c; definition_label lexbuf }
-  | ']' ':' { get_buf () }
+  | ']' ':' { let s = get_buf () in
+              if String.trim s = "" then failwith "definition_label empty"; s }
   | _ as c { add_char c; definition_label lexbuf }
 
 {
