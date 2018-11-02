@@ -15,20 +15,24 @@ let add_char c =
 let add_string s =
   Buffer.add_string strbuf s
 
-let int_of_entity _ =
-  failwith "int_of_entity"
-
-let decode_entity s =
-  match s.[1], s.[2] with
-  | '#', ('x' | 'X') ->
-      int_of_string ("0x" ^ String.sub s 3 (String.length s - 4))
-  | '#', _ ->
-      int_of_string (String.sub s 2 (String.length s - 3))
-  | _ ->
-      int_of_entity (String.sub s 1 (String.length s - 2))
-
 let add_entity e =
-  Buffer.add_utf_8_uchar strbuf (Uchar.of_int (decode_entity e))
+  match e.[1] with
+  | '#' ->
+      let num =
+        match e.[2] with
+        | 'x' | 'X' ->
+            Scanf.sscanf e "&#%_[xX]%x;" (fun num -> num)
+        | _ ->
+            Scanf.sscanf e "&#%d;" (fun num -> num)
+      in
+      let uch = if num <> 0 && Uchar.is_valid num then Uchar.of_int num else Uchar.rep in
+      Buffer.add_utf_8_uchar strbuf uch
+  | _ ->
+      let name = String.sub e 1 (String.length e - 2) in
+      begin match Entities.f name with
+      | [] -> add_string e
+      | _ :: _ as cps -> List.iter (Buffer.add_utf_8_uchar strbuf) cps
+      end
 
 let text acc =
   if Buffer.length strbuf = 0 then
@@ -129,7 +133,7 @@ let email = ['a'-'z''A'-'Z''0'-'9''.''!''#''$''%''&''\'''*''+''/''=''?''^''_''`'
             ('.'['a'-'z''A'-'Z''0'-'9'](['a'-'z''A'-'Z''0'-'9''-']['a'-'z''A'-'Z''0'-'9'])?)*
 let scheme = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''+''-''.']+
 let uri = scheme ':' [^' ''\t''\010'-'\013''<''>''\x00'-'\x1F''\x7F''\x80'-'\x9F']*
-let sym_entity = '&' ['a'-'z''A'-'Z']+ ';'
+let sym_entity = '&' ['a'-'z''A'-'Z''0'-'9']+ ';'
 let dec_entity = "&#" ['0'-'9']+ ';'
 let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
 let entity = sym_entity | dec_entity | hex_entity
