@@ -163,7 +163,7 @@ rule inline defs acc = parse
   | '<' (email as x) '>'      { inline defs (Pre.R (Url {Ast.label = Text x; destination = "mailto:" ^ x; title = None}) :: text acc) lexbuf }
   | '<' (uri as x) '>'        { inline defs (Pre.R (Url {Ast.label = Text x; destination = x; title = None}) :: text acc) lexbuf }
   | (' ' ' '+ | '\\') nl ws*  { inline defs (Pre.R Hard_break :: text acc) lexbuf }
-  | nl                        { inline defs (Pre.R Soft_break :: text acc) lexbuf }
+  | ws* nl ws*                { inline defs (Pre.R Soft_break :: text acc) lexbuf }
   | '\\' (punct as c)             { add_char c; inline defs acc lexbuf }
   | entity as e               { add_entity e; inline defs acc lexbuf }
   | '`'+                      { let acc = text acc in
