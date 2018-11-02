@@ -4,7 +4,7 @@ let percent_encode s =
   let b = Buffer.create (String.length s) in
   String.iter (function
       | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
-      | '@' | '=' | '+' | '$' | ',' | '/' | '?'
+      | '@' | '=' | '+' | '$' | ',' | '/' | '?' | '%'
       | '#' | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' as c ->
           Buffer.add_char b c
       | '&' ->
@@ -24,7 +24,6 @@ let rec html_of_md b md =
     | Concat l ->
         List.iter loop l
     | Text t ->
-        (* Buffer.add_string b t; *)
         Buffer.add_string b (Utils.htmlentities t)
     | Emph (Normal, _, md) ->
         Buffer.add_string b "<em>";
