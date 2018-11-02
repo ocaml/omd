@@ -48,7 +48,7 @@ type inline =
   | Url_ref of inline * inline link_def
   | Img_ref of inline * inline link_def
   | Html of string
-  | Img of string * string * string
+  | Img of inline link_def
 
 type t = inline block list
 (** A markdown document *)

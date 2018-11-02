@@ -17,19 +17,6 @@ let rec html_of_md b md =
   let rec loop = function
     | Concat l ->
         List.iter loop l
-    | Img_ref _ -> assert false
-    | Img (alt, src, title) ->
-        Buffer.add_string b "<img src=\"";
-        Buffer.add_string b (Utils.htmlentities src);
-        Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (Utils.htmlentities alt);
-        Buffer.add_string b "\" ";
-        if title <> "" then begin
-          Buffer.add_string b " title='";
-          Buffer.add_string b (Utils.htmlentities title);
-          Buffer.add_string b "' "
-        end;
-        Buffer.add_string b "/>"
     | Text t ->
         (* Buffer.add_string b t; *)
         Buffer.add_string b (Utils.htmlentities t)
@@ -63,6 +50,20 @@ let rec html_of_md b md =
         Buffer.add_string b ">";
         html_of_md b label;
         Buffer.add_string b "</a>"
+    | Img {label; destination; title} | Img_ref (label, {destination; title; _}) ->
+        Buffer.add_string b "<img src=\"";
+        Buffer.add_string b (percent_encode destination);
+        Buffer.add_string b "\" alt=\"";
+        Buffer.add_string b (Utils.htmlentities (Markdown.markdown_of_md label));
+        Buffer.add_string b "\"";
+        begin match title with
+        | None -> ()
+        | Some title ->
+            Buffer.add_string b " title=\"";
+            Buffer.add_string b (Utils.htmlentities title);
+            Buffer.add_string b "\""
+        end;
+        Buffer.add_string b " />"
     | Soft_break ->
         Buffer.add_string b "\n"
   in

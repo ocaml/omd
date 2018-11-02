@@ -53,8 +53,6 @@ let rec markdown_of_md md =
   let rec loop = function
     | Concat l ->
         List.iter loop l
-    | Img (alt, src, title) ->
-        Printf.bprintf b "![%s](%s \"%s\")" alt src title
     | Text t ->
         Printf.bprintf b "%s" (escape_markdown_characters t)
     | Emph (Normal, q, md) ->
@@ -100,8 +98,12 @@ let rec markdown_of_md md =
         Buffer.add_string b body
     | Url {label; destination; title = None} ->
         Printf.bprintf b "[%s](%s)" (markdown_of_md label) destination
+    | Img {label; destination; title = None} ->
+        Printf.bprintf b "![%s](%s)" (markdown_of_md label (* FIXME *)) destination
     | Url {label; destination; title = Some title} ->
         Printf.bprintf b "[%s](%s \"%s\")" (markdown_of_md label) destination title
+    | Img {label; destination; title = Some title} ->
+        Printf.bprintf b "![%s](%s \"%s\")" (markdown_of_md label (* FIXME *)) destination title
     | Url_ref (label, {Ast.label = label1; _}) ->
         Printf.bprintf b "[%s][%s]" (markdown_of_md label) (markdown_of_md label1)
     | Img_ref (label, {Ast.label = label1; _}) ->

@@ -187,6 +187,14 @@ rule inline defs acc = parse
            | Error lexbuf ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
+        | Pre.Bang_left_bracket :: acc' ->
+           let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
+           begin match protect f lexbuf with
+           | Ok (destination, title) ->
+               inline defs (Pre.R (Img {Ast.label = Inline.concat Pre.(List.map to_r (parse_emph xs)); destination; title}) :: acc') lexbuf
+           | Error lexbuf ->
+               add_lexeme lexbuf; inline defs acc lexbuf
+           end
         | x :: acc' -> loop (x :: xs) acc'
         | [] -> add_lexeme lexbuf; inline defs acc lexbuf
       in
@@ -202,6 +210,15 @@ rule inline defs acc = parse
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
                inline defs (Pre.R (Url_ref (label, def)) :: acc') lexbuf
+           | None ->
+               add_lexeme lexbuf; inline defs acc lexbuf
+           end
+        | Pre.Bang_left_bracket :: acc' ->
+           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           let s = Inline.normalize label in
+           begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+           | Some def ->
+               inline defs (Pre.R (Img_ref (label, def)) :: acc') lexbuf
            | None ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
