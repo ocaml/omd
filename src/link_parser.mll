@@ -167,6 +167,7 @@ and definition_label = parse
   | '\\' (punct as c) { add_char c; definition_label lexbuf }
   | ']' ':' { let s = get_buf () in
               if String.trim s = "" then failwith "definition_label empty"; s }
+  | '[' | ']' { failwith "definition_label brackets" }
   | _ as c { add_char c; definition_label lexbuf }
 
 {
