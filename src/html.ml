@@ -13,6 +13,11 @@ let percent_encode s =
     ) s;
   Buffer.contents b
 
+let text_of_inline ast =
+  let b = Buffer.create 101 in
+  Text.inline b ast;
+  Buffer.contents b
+
 let rec html_of_md b md =
   let rec loop = function
     | Concat l ->
@@ -54,7 +59,7 @@ let rec html_of_md b md =
         Buffer.add_string b "<img src=\"";
         Buffer.add_string b (percent_encode destination);
         Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (Utils.htmlentities (Markdown.markdown_of_md label));
+        Buffer.add_string b (Utils.htmlentities (text_of_inline label));
         Buffer.add_string b "\"";
         begin match title with
         | None -> ()

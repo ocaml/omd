@@ -2,6 +2,7 @@ type format =
   | Sexp
   | Html
   | Markdown
+  | Text
 
 let fmt = ref Html
 
@@ -9,7 +10,7 @@ let convert ast =
   match !fmt with
   | Html -> Omd.to_html ast
   | Sexp -> Omd.to_sexp ast
-  | Markdown -> assert false
+  | Markdown | Text -> assert false
 
 let main () =
   let input = ref [] in
