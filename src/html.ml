@@ -20,19 +20,19 @@ let rec html_of_md b md =
     | Img_ref _ -> assert false
     | Img (alt, src, title) ->
         Buffer.add_string b "<img src=\"";
-        Buffer.add_string b (Utils.htmlentities ~md:true src);
+        Buffer.add_string b (Utils.htmlentities src);
         Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (Utils.htmlentities ~md:true alt);
+        Buffer.add_string b (Utils.htmlentities alt);
         Buffer.add_string b "\" ";
         if title <> "" then begin
           Buffer.add_string b " title='";
-          Buffer.add_string b (Utils.htmlentities ~md:true title);
+          Buffer.add_string b (Utils.htmlentities title);
           Buffer.add_string b "' "
         end;
         Buffer.add_string b "/>"
     | Text t ->
         (* Buffer.add_string b t; *)
-        Buffer.add_string b (Utils.htmlentities ~md:true t)
+        Buffer.add_string b (Utils.htmlentities t)
     | Emph (Normal, _, md) ->
         Buffer.add_string b "<em>";
         loop md;
@@ -43,7 +43,7 @@ let rec html_of_md b md =
         Buffer.add_string b "</strong>"
     | Code c ->
         Buffer.add_string b "<code>";
-        Buffer.add_string b (Utils.htmlentities ~md:false c);
+        Buffer.add_string b (Utils.htmlentities c);
         Buffer.add_string b "</code>"
     | Hard_break ->
         Buffer.add_string b "<br />\n"
@@ -57,7 +57,7 @@ let rec html_of_md b md =
         | None -> ()
         | Some title ->
             Buffer.add_string b " title=\"";
-            Buffer.add_string b (Utils.htmlentities ~md:true title);
+            Buffer.add_string b (Utils.htmlentities title);
             Buffer.add_string b "\""
         end;
         Buffer.add_string b ">";
@@ -98,11 +98,11 @@ let to_html b md =
         Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
     | Code_block ((None | Some (_, "")), Some c) ->
         Buffer.add_string b "<pre><code>";
-        Buffer.add_string b (Utils.htmlentities ~md:false c);
+        Buffer.add_string b (Utils.htmlentities c);
         Buffer.add_string b "\n</code></pre>"
     | Code_block (Some (_, info), Some c) ->
         Printf.bprintf b "<pre><code class=\"language-%s\">" info;
-        Buffer.add_string b (Utils.htmlentities ~md:false c);
+        Buffer.add_string b (Utils.htmlentities c);
         Buffer.add_string b "\n</code></pre>"
     | Thematic_break ->
         Buffer.add_string b "<hr />"

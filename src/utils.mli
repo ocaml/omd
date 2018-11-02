@@ -76,7 +76,7 @@ val id_of_string : < mangle : string -> string; .. > -> string -> string
     [id_of_string] asks for an object rather than "just a
     function". *)
 
-val htmlentities : ?md:bool -> string -> string
+val htmlentities: string -> string
 (** [htmlentities s] returns a new string in which html-significant
     characters have been converted to html entities. For instance,
     "<Foo&Bar>" is converted to "&lt;Foo&amp;Bar&gt;". *)

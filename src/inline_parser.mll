@@ -118,6 +118,10 @@ let punct = ['!''"''#''$''%''&''\'''('')''*''+'',''-''.''/'':'';''<''=''>''?''@'
 let ws = [' ''\t''\010'-'\013']
 let sp3 = (' ' (' ' ' '?)?)?
 let nl = '\n' | '\r'
+let dig = ['0'-'9']
+let hex = dig | ['a'-'f''A'-'F']
+let dig8 = dig (dig (dig (dig (dig (dig (dig dig?)?)?)?)?)?)?
+let hex8 = hex (hex (hex (hex (hex (hex (hex hex?)?)?)?)?)?)?
 let unquoted_attribute_value = [^' ''\t''\010'-'\013''"''\'''=''<''>''`']+
 let single_quoted_attribute_value = '\'' [^'\'']* '\''
 let double_quoted_attribute_value = '"' [^'"']* '"'
@@ -134,8 +138,8 @@ let email = ['a'-'z''A'-'Z''0'-'9''.''!''#''$''%''&''\'''*''+''/''=''?''^''_''`'
 let scheme = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9''+''-''.']+
 let uri = scheme ':' [^' ''\t''\010'-'\013''<''>''\x00'-'\x1F''\x7F''\x80'-'\x9F']*
 let sym_entity = '&' ['a'-'z''A'-'Z''0'-'9']+ ';'
-let dec_entity = "&#" ['0'-'9']+ ';'
-let hex_entity = "&#" ['x''X'] ['0'-'9''a'-'f''A'-'F']+ ';'
+let dec_entity = "&#" dig8 ';'
+let hex_entity = "&#" ['x''X'] hex8 ';'
 let entity = sym_entity | dec_entity | hex_entity
 
 rule inline defs acc = parse

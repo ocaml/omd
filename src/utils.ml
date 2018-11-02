@@ -137,46 +137,17 @@ let id_of_string ids s =
     ids#mangle @@ String.sub s' 0 (last_trailing + 1)
 
 (* only convert when "necessary" *)
-let htmlentities ?(md = false) s =
-  let module Break = struct exception Break end in
-  let b = Buffer.create 64 in
+let htmlentities s =
+  let b = Buffer.create (String.length s) in
   let rec loop i =
-    if i = String.length s then
-      ()
+    if i >= String.length s then
+      Buffer.contents b
     else begin
       begin match s.[i] with
-      | ( '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' ) as c ->
-          Buffer.add_char b c
       | '"' ->
           Buffer.add_string b "&quot;"
       | '&' ->
-          if md then
-            begin try
-              begin match s.[i+1] with
-              | '#' ->
-                  let rec ff j =
-                    match s.[j] with
-                    | '0' .. '9' -> ff (succ j)
-                    | ';' -> ()
-                    | _ -> raise Break.Break
-                  in
-                  ff (i+2)
-              | 'A' .. 'Z' | 'a' .. 'z' ->
-                  let rec ff j =
-                    match s.[j] with
-                    | 'A' .. 'Z' | 'a' .. 'z' -> ff (succ j)
-                    | ';' -> ()
-                    | _ -> raise Break.Break
-                  in
-                  ff (i+2)
-              | _ -> raise Break.Break
-              end;
-              Buffer.add_string b "&"
-            with _ ->
-              Buffer.add_string b "&amp;"
-            end
-          else
-            Buffer.add_string b "&amp;"
+          Buffer.add_string b "&amp;"
       | '<' ->
           Buffer.add_string b "&lt;"
       | '>' ->
@@ -187,8 +158,7 @@ let htmlentities ?(md = false) s =
       loop (succ i)
     end
   in
-  loop 0;
-  Buffer.contents b
+  loop 0
 
 let minimalize_blanks s =
   let l = String.length s in
