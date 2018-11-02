@@ -78,11 +78,18 @@ let raw_html inline f acc lexbuf =
       add_lexeme lexbuf0;
       inline acc lexbuf0
 
+let code_trim s =
+  if String.trim s = "" then "" else
+  if String.length s >= 2 && s.[0] = ' ' && s.[String.length s - 1] = ' ' then
+    String.sub s 1 (String.length s - 2)
+  else
+    s
+
 let code inline f acc lexbuf =
   let lexbuf0 = copy_lexbuf lexbuf in
   match f lexbuf with
   | () ->
-      inline (Pre.R (Code (buf ())) :: acc) lexbuf
+      inline (Pre.R (Code (code_trim (buf ()))) :: acc) lexbuf
   | exception _ ->
       Buffer.clear strbuf;
       add_lexeme lexbuf0;
@@ -160,7 +167,7 @@ rule inline defs acc = parse
   | '\\' (punct as c)             { add_char c; inline defs acc lexbuf }
   | entity as e               { add_entity e; inline defs acc lexbuf }
   | '`'+                      { let acc = text acc in
-                                code (inline defs) (code_span true false (lexeme_length lexbuf)) acc lexbuf }
+                                code (inline defs) (code_span (lexeme_length lexbuf)) acc lexbuf }
   | ('*'+|'_'+ as r)
       { let pre = peek_before ' ' lexbuf |> Pre.classify_delim in
         let post = peek_after ' ' lexbuf |> Pre.classify_delim in
@@ -206,16 +213,11 @@ rule inline defs acc = parse
   | _ as c                    { add_char c; inline defs acc lexbuf }
   | eof                       { Pre.parse_emph (List.rev (text acc)) }
 
-and code_span start seen_ws n = parse
-  | '`'+          { if lexeme_length lexbuf <> n then begin
-                      if not start && seen_ws then add_char ' ';
-                      add_lexeme lexbuf;
-                      code_span false false n lexbuf
-                    end }
-  | ws+           { code_span start true n lexbuf }
-  | _ as c        { if not start && seen_ws then add_char ' ';
-                    add_char c;
-                    code_span false false n lexbuf }
+and code_span n = parse
+  | '`'+          { if lexeme_length lexbuf <> n then
+                      (add_lexeme lexbuf; code_span n lexbuf) }
+  | '\n' | '\r'   { add_char ' '; code_span n lexbuf }
+  | _ as c        { add_char c; code_span n lexbuf }
 
 and html_comment start = parse
   | "--->"      { raise Exit }
