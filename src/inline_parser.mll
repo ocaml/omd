@@ -227,6 +227,31 @@ rule inline defs acc = parse
       in
       loop [] acc
      }
+  | ']' '[' ([^']']+ as label) ']' {
+      let acc = text acc in
+      let s = Inline.concat (inline [] [] (Lexing.from_string label)) |> Inline.normalize in
+      let rec loop xs = function
+        | Pre.Left_bracket :: acc' ->
+           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+           | Some def ->
+               inline defs (Pre.R (Url_ref (label, def)) :: acc') lexbuf
+           | None ->
+               add_lexeme lexbuf; inline defs acc lexbuf
+           end
+        | Pre.Bang_left_bracket :: acc' ->
+           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+           | Some def ->
+               inline defs (Pre.R (Img_ref (label, def)) :: acc') lexbuf
+           | None ->
+               add_lexeme lexbuf; inline defs acc lexbuf
+           end
+        | x :: acc' -> loop (x :: xs) acc'
+        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
+      in
+      loop [] acc
+    }
   | _ as c                    { add_char c; inline defs acc lexbuf }
   | eof                       { List.map Pre.to_r (Pre.parse_emph (List.rev (text acc))) }
 
