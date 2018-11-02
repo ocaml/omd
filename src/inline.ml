@@ -143,7 +143,7 @@ module Pre = struct
                 else
                 if n1 > 1 then Emph (pre, Punct, q1, n1-1) :: r else r
               in
-              r
+              parse_emph r
           | Emph _ as x :: xs1 as xs when is_opener x ->
               let xs' = parse_emph xs in
               if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
