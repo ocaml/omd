@@ -178,7 +178,9 @@ rule inline defs acc = parse
   | '['                       { inline defs (Left_bracket :: text acc) lexbuf }
   | ']''('                 {
       let acc = text acc in
-      let rec loop xs = function
+      let rec loop seen_link xs = function
+        | Pre.Left_bracket :: _ when seen_link ->
+            add_lexeme lexbuf; inline defs acc lexbuf
         | Pre.Left_bracket :: acc' ->
            let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
            begin match protect f lexbuf with
@@ -195,15 +197,21 @@ rule inline defs acc = parse
            | Error lexbuf ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
-        | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
+        | Pre.R (Url _ | Url_ref _) as x :: acc' ->
+            loop true (x :: xs) acc'
+        | x :: acc' ->
+            loop seen_link (x :: xs) acc'
+        | [] ->
+            add_lexeme lexbuf; inline defs acc lexbuf
       in
-      loop [] acc
+      loop false [] acc
      }
   | ']' "[]"?
      {
       let acc = text acc in
-      let rec loop xs = function
+      let rec loop seen_link xs = function
+        | Pre.Left_bracket :: _ when seen_link ->
+            add_lexeme lexbuf; inline defs acc lexbuf
         | Pre.Left_bracket :: acc' ->
            let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
            let s = Inline.normalize label in
@@ -222,10 +230,14 @@ rule inline defs acc = parse
            | None ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
-        | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
+        | Pre.R (Url _ | Url_ref _) as x :: acc' ->
+            loop true (x :: xs) acc'
+        | x :: acc' ->
+            loop seen_link (x :: xs) acc'
+        | [] ->
+            add_lexeme lexbuf; inline defs acc lexbuf
       in
-      loop [] acc
+      loop false [] acc
      }
   | ']' '[' ([^']']+ as lab) ']' {
       let acc = text acc in
