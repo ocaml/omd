@@ -227,9 +227,9 @@ rule inline defs acc = parse
       in
       loop [] acc
      }
-  | ']' '[' ([^']']+ as label) ']' {
+  | ']' '[' ([^']']+ as lab) ']' {
       let acc = text acc in
-      let s = Inline.concat (inline [] [] (Lexing.from_string label)) |> Inline.normalize in
+      let s = Inline.concat (inline [] [] (Lexing.from_string lab)) |> Inline.normalize in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
            let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
@@ -237,7 +237,9 @@ rule inline defs acc = parse
            | Some def ->
                inline defs (Pre.R (Url_ref (label, def)) :: acc') lexbuf
            | None ->
-               add_lexeme lexbuf; inline defs acc lexbuf
+               add_char ']';
+               backtrack lexbuf (String.length lab + 2);
+               inline defs acc lexbuf
            end
         | Pre.Bang_left_bracket :: acc' ->
            let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
@@ -247,8 +249,10 @@ rule inline defs acc = parse
            | None ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
-        | x :: acc' -> loop (x :: xs) acc'
-        | [] -> add_lexeme lexbuf; inline defs acc lexbuf
+        | x :: acc' ->
+            loop (x :: xs) acc'
+        | [] ->
+            add_lexeme lexbuf; inline defs acc lexbuf
       in
       loop [] acc
     }
