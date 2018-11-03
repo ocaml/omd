@@ -3,4 +3,4 @@
 (library
  (name omd)
  (public_name omd)
- (libraries bigarray))
+ (libraries bigarray uchar))
