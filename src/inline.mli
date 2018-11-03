@@ -26,6 +26,5 @@ module Pre : sig
   val is_closer: t -> bool
   val classify_delim: char -> delim
 
-  val parse_emph: t list -> t list
-  val to_r: t -> inline
+  val parse_emph: t list -> inline
 end with type inline := t

@@ -185,9 +185,9 @@ rule inline defs acc = parse
            let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
            begin match protect f lexbuf with
            | Ok (destination, title) ->
-               inline defs (Pre.R (Url {Ast.label = Inline.concat Pre.(List.map to_r (parse_emph xs)); destination; title}) :: acc') lexbuf
+               inline defs (Pre.R (Url {Ast.label = Pre.parse_emph xs; destination; title}) :: acc') lexbuf
            | Error lexbuf ->
-               let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+               let label = Pre.parse_emph xs in
                let s = Inline.normalize label in
                begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
                | Some def ->
@@ -201,7 +201,7 @@ rule inline defs acc = parse
            let f lexbuf = Link_parser.destination_and_title_for_reference lexbuf in
            begin match protect f lexbuf with
            | Ok (destination, title) ->
-               inline defs (Pre.R (Img {Ast.label = Inline.concat Pre.(List.map to_r (parse_emph xs)); destination; title}) :: acc') lexbuf
+               inline defs (Pre.R (Img {Ast.label = Pre.parse_emph xs; destination; title}) :: acc') lexbuf
            | Error lexbuf ->
                add_lexeme lexbuf; inline defs acc lexbuf
            end
@@ -221,7 +221,7 @@ rule inline defs acc = parse
         | Pre.Left_bracket :: _ when seen_link ->
             add_lexeme lexbuf; inline defs acc lexbuf
         | Pre.Left_bracket :: acc' ->
-           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           let label = Pre.parse_emph xs in
            let s = Inline.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
@@ -230,7 +230,7 @@ rule inline defs acc = parse
                add_lexeme lexbuf; inline defs acc lexbuf
            end
         | Pre.Bang_left_bracket :: acc' ->
-           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           let label = Pre.parse_emph xs in
            let s = Inline.normalize label in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
@@ -249,10 +249,10 @@ rule inline defs acc = parse
      }
   | ']' '[' ([^']']+ as lab) ']' {
       let acc = text acc in
-      let s = Inline.concat (inline [] [] (Lexing.from_string lab)) |> Inline.normalize in
+      let s = inline [] [] (Lexing.from_string lab) |> Inline.normalize in
       let rec loop xs = function
         | Pre.Left_bracket :: acc' ->
-           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           let label = Pre.parse_emph xs in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
                inline defs (Pre.R (Url_ref (label, def)) :: acc') lexbuf
@@ -262,7 +262,7 @@ rule inline defs acc = parse
                inline defs acc lexbuf
            end
         | Pre.Bang_left_bracket :: acc' ->
-           let label = Inline.concat (List.map Pre.to_r (Pre.parse_emph xs)) in
+           let label = Pre.parse_emph xs in
            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
            | Some def ->
                inline defs (Pre.R (Img_ref (label, def)) :: acc') lexbuf
@@ -277,7 +277,7 @@ rule inline defs acc = parse
       loop [] acc
     }
   | _ as c                    { add_char c; inline defs acc lexbuf }
-  | eof                       { List.map Pre.to_r (Pre.parse_emph (List.rev (text acc))) }
+  | eof                       { Pre.parse_emph (List.rev (text acc)) }
 
 and code_span n = parse
   | '`'+          { if lexeme_length lexbuf <> n then
@@ -327,9 +327,3 @@ and link_def acc = parse
             acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
   | _ | eof
     { acc, lexbuf.Lexing.lex_curr_pos - lexeme_length lexbuf }
-
-{
-let parse defs s =
-  let lexbuf = Lexing.from_string s in
-  Inline.concat (inline defs [] lexbuf)
-}

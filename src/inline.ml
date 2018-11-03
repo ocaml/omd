@@ -157,4 +157,7 @@ module Pre = struct
         x :: parse_emph xs
     | [] ->
         []
+
+  let parse_emph xs =
+    concat (List.map to_r (parse_emph xs))
 end
