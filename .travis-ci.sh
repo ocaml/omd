@@ -41,7 +41,7 @@ case "$TARGET" in
       rm -rf ~/.opam
       opam init --disable-sandboxing
       eval $(opam config env)
-      opam install dune
+      opam install dune uchar
       rm -rf ~/.opam-start
       mv ~/.opam ~/.opam-start
     fi
