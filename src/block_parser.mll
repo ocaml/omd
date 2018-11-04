@@ -27,17 +27,7 @@ let add_entity e =
       | _ :: _ as cps -> List.iter (Buffer.add_utf_8_uchar strbuf) cps
       end
 
-let get_buf () =
-  let s = Buffer.contents strbuf in
-  Buffer.clear strbuf;
-  s
-
-let lexeme_length lexbuf =
-  Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
-
-type html_kind =
-  | Hcontains of string list
-  | Hblank
+open Block_parser2
 
 module R = struct
   type t =
@@ -52,17 +42,13 @@ module R = struct
     | Lparagraph
 end
 
-type line_kind =
-  | Lempty
-  | Lblockquote of Sub.t
-  | Lthematic_break
-  | Latx_heading of int * string
-  | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Ast.fenced_code_kind * string
-  | Lindented_code of Sub.t
-  | Lhtml of bool * html_kind
-  | Llist_item of Ast.list_kind * int * Sub.t
-  | Lparagraph
+let get_buf () =
+  let s = Buffer.contents strbuf in
+  Buffer.clear strbuf;
+  s
+
+let lexeme_length lexbuf =
+  Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf
 
 let tags =
   [ "address"; "aside"; "base"; "basefont"; "blockquote";

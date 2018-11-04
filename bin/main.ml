@@ -56,4 +56,5 @@ let () =
       exit 1
   | exn ->
       Printf.eprintf "Error: %s\n" (Printexc.to_string exn);
+      Printexc.print_backtrace stderr;
       exit 1

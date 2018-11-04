@@ -37,7 +37,7 @@ module Pre = struct
     | Rparagraph of string list
     | Rfenced_code of int * int * fenced_code_kind * string * string list
     | Rindented_code of string list
-    | Rhtml of Block_parser.html_kind * string list
+    | Rhtml of Block_parser2.html_kind * string list
     | Rempty
 
   and t =
@@ -93,9 +93,12 @@ module Pre = struct
   let empty =
     {blocks = []; next = Rempty}
 
+  let classify_line s =
+    Block_parser2.parse s
+
   let rec process {blocks; next} s =
-    match next, Block_parser.classify_line s with
-    | Rempty, Block_parser.Lempty ->
+    match next, classify_line s with
+    | Rempty, Block_parser2.Lempty ->
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
@@ -194,8 +197,8 @@ module Pre = struct
                   None
               end
           | Rparagraph (_ :: _ as lines) ->
-              begin match Block_parser.classify_line s with
-              | Block_parser.Lparagraph | Lindented_code _
+              begin match classify_line s with
+              | Block_parser2.Lparagraph | Lindented_code _
               | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->
