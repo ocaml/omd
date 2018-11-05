@@ -68,11 +68,22 @@ let tail ?rev s =
       {base; off; len = pred len}
 
 let heads n s =
+  if n < 0 then invalid_arg "heads";
   let rec loop n s =
-    if n = 0 || length s = 0 then [], s
-    else let x = head s in let l, s = loop (pred n) (tail s) in x :: l, s
+    if n = 0 || length s = 0 then []
+    else match head s with
+      | Some c -> c :: loop (pred n) (tail s)
+      | None -> []
   in
-  loop n
+  loop n s
+
+let tails n s =
+  if n < 0 then invalid_arg "tails";
+  let rec loop n s =
+    if n = 0 then s
+    else loop (pred n) (tail s)
+  in
+  loop n s
 
 let is_empty s =
   length s = 0

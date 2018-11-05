@@ -31,6 +31,11 @@ let sp3 s =
       end
   | Some _ | None -> 0, s
 
+exception Fail
+
+let (|||) p1 p2 s =
+  try p1 s with Fail -> p2 s
+
 let rec ws ?rev s =
   match Sub.head ?rev s with
   | Some (' ' | '\t' | '\010'..'\013') -> ws ?rev (Sub.tail ?rev s)
@@ -39,17 +44,24 @@ let rec ws ?rev s =
 let is_empty s =
   Sub.is_empty (ws s)
 
-let thematic_break c s =
-  let rec loop n s =
-    match Sub.head s with
-    | Some c1 when c = c1 ->
-        loop (succ n) (ws (Sub.tail s))
-    | Some _ ->
-        false
-    | None ->
-        n >= 3
-  in
-  loop 0 s
+let thematic_break s =
+  match Sub.head s with
+  | Some ('*' | '_' | '-' as c) ->
+      let rec loop n s =
+        match Sub.head s with
+        | Some c1 when c = c1 ->
+            loop (succ n) (Sub.tail s)
+        | Some (' ' | '\t' | '\010'..'\013') ->
+            loop n (Sub.tail s)
+        | Some _ ->
+            raise Fail
+        | None ->
+            if n < 3 then raise Fail;
+            Lthematic_break
+      in
+      loop 1 (Sub.tail s)
+  | Some _ | None ->
+      raise Fail
 
 let setext_heading s =
   match Sub.head s with
@@ -58,39 +70,37 @@ let setext_heading s =
         match Sub.head s with
         | Some c1 when c = c1 ->
             loop (succ n) (Sub.tail s)
-        | Some _ ->
-            if Sub.is_empty (ws s) then Some n else None
-        | None ->
-            Some n
+        | Some _ | None ->
+            if not (Sub.is_empty (ws s)) then raise Fail;
+            if c = '-' && n = 1 then raise Fail; (* can be interpreted as an empty list item *)
+            Lsetext_heading ((if c = '-' then 2 else 1), n)
       in
       loop 1 (Sub.tail s)
   | Some _ | None ->
-      None
+      raise Fail
 
 let atx_heading s =
   let rec loop n s =
-    if n > 6 then None
-    else begin
-      match Sub.head s with
-      | Some '#' ->
-          loop (succ n) (Sub.tail s)
-      | Some (' ' | '\t' | '\010'..'\013') ->
-          let s = ws ~rev:() (ws s) in
-          let rec loop t =
-            match Sub.head ~rev:() t with
-            | Some '#' ->
-                loop (Sub.tail ~rev:() t)
-            | Some (' ' | '\t' | '\010'..'\013') | None ->
-                ws ~rev:() t
-            | Some _ ->
-                s
-          in
-          Some (n, loop s)
-      | Some _ ->
-          None
-      | None ->
-          Some (n, s)
-    end
+    if n > 6 then raise Fail;
+    match Sub.head s with
+    | Some '#' ->
+        loop (succ n) (Sub.tail s)
+    | Some (' ' | '\t' | '\010'..'\013') ->
+        let s = ws ~rev:() (ws s) in
+        let rec loop t =
+          match Sub.head ~rev:() t with
+          | Some '#' ->
+              loop (Sub.tail ~rev:() t)
+          | Some (' ' | '\t' | '\010'..'\013') | None ->
+              ws ~rev:() t
+          | Some _ ->
+              s
+        in
+        Latx_heading (n, Sub.to_string (loop s))
+    | Some _ ->
+        raise Fail
+    | None ->
+        Latx_heading (n, Sub.to_string s)
   in
   loop 0 s
 
@@ -105,7 +115,7 @@ let split_first s =
   in
   loop 0 s
 
-let code_block s =
+let fenced_code ind s =
   match Sub.head s with
   | Some ('`' | '~' as c) ->
       let rec loop n s =
@@ -113,19 +123,17 @@ let code_block s =
         | Some c1 when c = c1 ->
             loop (succ n) (Sub.tail s)
         | Some _ | None ->
-            if n < 3 then None
-            else begin
-              let s, t = split_first s in
-              let f = function '`' -> true | _ -> false in
-              if c = '`' && (Sub.exists f s || Sub.exists f t) then
-                None
-              else
-                Some (n, s)
-            end
+            if n < 3 then raise Fail;
+            let s, t = split_first s in
+            let f = function '`' -> true | _ -> false in
+            if c = '`' && (Sub.exists f s || Sub.exists f t) then
+              raise Fail;
+            let c = if c = '`' then Backtick else Tilde in
+            Lfenced_code (ind, n, c, Sub.to_string s)
       in
       loop 1 (Sub.tail s)
   | Some _ | None ->
-      None
+      raise Fail
 
 let indent s =
   let rec loop n s =
@@ -139,41 +147,38 @@ let indent s =
   in
   loop 0 s
 
-let unordered_list_item s =
+let unordered_list_item ind s =
   match Sub.head s with
   | Some ('+' | '-' | '*' as c) ->
       let s = Sub.tail s in
       if is_empty s then
-        Some (Unordered c, 2, s)
+        Llist_item (Unordered c, 2 + ind, s)
       else
         let n = indent s in
-        if n = 0 then None
-        else begin
-          let n = if n <= 4 then n else 1 in
-          Some (Unordered c, n + 1, Sub.offset n s)
-        end
+        if n = 0 then raise Fail;
+        let n = if n <= 4 then n else 1 in
+        Llist_item (Unordered c, n + 1 + ind, Sub.offset n s)
   | Some _ | None ->
-      None
+      raise Fail
 
-let ordered_list_item s =
+let ordered_list_item ind s =
   let rec loop n m s =
     match Sub.head s with
     | Some ('0'..'9' as c) ->
-        if n >= 9 then None
-        else loop (succ n) (m * 10 + Char.code c - Char.code '0') (Sub.tail s)
+        if n >= 9 then raise Fail;
+        loop (succ n) (m * 10 + Char.code c - Char.code '0') (Sub.tail s)
     | Some ('.' | ')' as c) ->
         let s = Sub.tail s in
         if is_empty s then
-          Some (Ordered (m, c), n + 1, s)
-        else
-          let ind = indent s in
-          if ind = 0 then None
-          else begin
-            let ind = if ind <= 4 then ind else 1 in
-            Some (Ordered (m, c), n + ind, Sub.offset ind s)
-          end
+          Llist_item (Ordered (m, c), n + 1 + ind, s)
+        else begin
+          let ind' = indent s in
+          if ind' = 0 then raise Fail;
+          let ind' = if ind' <= 4 then ind' else 1 in
+          Llist_item (Ordered (m, c), n + ind + ind' + 1, Sub.offset ind' s)
+        end
     | Some _ | None ->
-        None
+        raise Fail
   in
   loop 0 0 s
 
@@ -187,9 +192,9 @@ let tag_name s0 =
         | Some _ | None ->
             Sub.to_string (Sub.sub s0 ~len), s
       in
-      Some (loop 1 (Sub.tail s0))
+      loop 1 (Sub.tail s0)
   | Some _ | None ->
-      None
+      raise Fail
 
 let known_tags =
   [ "address"; "aside"; "base"; "basefont"; "blockquote";
@@ -203,160 +208,176 @@ let known_tags =
     "section"; "source"; "summary"; "table"; "tbody";
     "td"; "tfoot"; "th"; "thead"; "title"; "tr"; "track"; "ul" ]
 
-let known_tag s =
-  List.mem (String.lowercase_ascii s) known_tags
+let special_tags =
+  [ "script"; "pre"; "style" ]
 
-(* let html_closing tag s = *)
-(*   let has_ws = *)
-(*     match Sub.head s with Some (' ' | '\t' | '\010'..'\013') | None -> true | Some _ -> false *)
-(*   in *)
-(*   let s = ws s in *)
-(*   match Sub.head s with *)
-(*   | Some '>' -> *)
-(*       if is_empty (Sub.tail s) then *)
-(*         Some (false, Hblank) *)
-(*       else if known_tag tag then *)
-(*         Some (true, Hblank) *)
-(*       else *)
-(*         None *)
-(*   | Some _ | None -> *)
-(*       if has_ws && known_tag tag then *)
-(*         Some (true, Hblank) *)
-(*       else *)
-(*         None *)
+let known_tag s =
+  let s = String.lowercase_ascii s in
+  List.mem s known_tags
+
+let special_tag s =
+  let s = String.lowercase_ascii s in
+  List.mem s special_tags
+
+let closing_tag s =
+  let s = ws s in
+  match Sub.head s with
+  | Some '>' ->
+      if not (is_empty (Sub.tail s)) then raise Fail;
+      Lhtml (false, Hblank)
+  | Some _ | None ->
+      raise Fail
+
+let special_tag tag s =
+  if not (special_tag tag) then raise Fail;
+  match Sub.head s with
+  | Some (' ' | '\t' | '\010'..'\013' | '>') | None ->
+      Lhtml (true, Hcontains ["</script>"; "</pre>"; "</style>"])
+  | Some _ ->
+      raise Fail
+
+let known_tag tag s =
+  if not (known_tag tag) then raise Fail;
+  match Sub.heads 2 s with
+  | (' ' | '\t' | '\010'..'\013') :: _
+  | [] | '>' :: _ | '/' :: '>' :: _ -> Lhtml (true, Hblank)
+  | _ -> raise Fail
+
+let ws1 s =
+  match Sub.head s with
+  | Some (' ' | '\t' | '\010'..'\013') ->
+      ws s
+  | Some _ | None ->
+      raise Fail
+
+let attribute_name s =
+  match Sub.head s with
+  | Some ('a'..'z' | 'A'..'Z' | '_' | ':') ->
+      let rec loop s =
+        match Sub.head s with
+        | Some ('a'..'z' | 'A'..'Z' | '_' | '.' | ':' | '0'..'9') ->
+            loop (Sub.tail s)
+        | Some _ | None ->
+            s
+      in
+      loop s
+  | Some _ | None ->
+      raise Fail
+
+let attribute_value s =
+  match Sub.head s with
+  | Some ('\'' | '"' as c) ->
+      let rec loop s =
+        match Sub.head s with
+        | Some c1 when c = c1 ->
+            Sub.tail s
+        | Some _ ->
+            loop (Sub.tail s)
+        | None ->
+            raise Fail
+      in
+      loop (Sub.tail s)
+  | Some _ ->
+      let rec loop first s =
+        match Sub.head s with
+        | Some (' ' | '\t' | '\010'..'\013' | '"' | '\'' | '=' | '<' | '>' | '`')
+        | None ->
+            if first then raise Fail;
+            s
+        | Some _ ->
+            loop false (Sub.tail s)
+      in
+      loop true s
+  | None ->
+      raise Fail
 
 let attribute s =
   let s = ws1 s in
+  let s = attribute_name s in
+  let s = ws s in
   match Sub.head s with
+  | Some '=' ->
+      let s = ws (Sub.tail s) in
+      attribute_value s
+  | Some _ | None ->
+      s
 
-let html_open tag s =
-  match Sub.heads 2 s with
-  | ([] | (' ' | '\t' | '\010'..'\013') :: _ | '/' :: '>' :: _ | '>' :: _), _ ->
-      if known_tag tag then Some (true, Hblank) else None
-  | _ ->
-      let al, s = list attribute s in
-      let s = ws s in
-      begin match Sub.heads 2 s with
-      | ('/' :: '>' :: _ | '>' :: _), s ->
-          if is_blank s then
-            Some (a = [] && known_tag tag, Hblank)
-          else
-            None
-      | _ ->
-          None
-      end
+let attributes s =
+  let rec loop s =
+    match attribute s with
+    | s -> loop s
+    | exception Fail -> s
+  in
+  loop s
+
+let open_tag s =
+  let s = attributes s in
+  let s = ws s in
+  let n =
+    match Sub.heads 2 s with
+    | '/' :: '>' :: _ -> 2
+    | '>' :: _ -> 1
+    | _ -> raise Fail
+  in
+  if not (is_empty (Sub.tails n s)) then raise Fail;
+  Lhtml (false, Hblank)
 
 let raw_html s =
   match Sub.heads 10 s with
-  | '<' :: '?' :: _, _ ->
-      Some (true, Hcontains ["?>"])
-  | '<' :: '!' :: '-' :: '-' :: _, _ ->
-      Some (true, Hcontains ["-->"])
-  | '<' :: '!' :: '[' :: 'C' :: 'D' :: 'A' :: 'T' :: 'A' :: '[' :: _, _ ->
-      Some (true, Hcontains ["]]>"])
-  | '<' :: '!' :: _, _ ->
-      Some (true, Hcontains [">"])
-  | '<' :: '/' :: _, s ->
-      begin match tag_name (Sub.tail s) with
-      | Some (tag, s) ->
-          html_closing tag s
-      | None ->
-          None
-      end
-  | '<' :: _, s ->
-      begin match tag_name s with
-      | Some (tag, s) ->
-          html_open tag s
-      | None ->
-          None
-      end
+  | '<' :: '?' :: _ ->
+      Lhtml (true, Hcontains ["?>"])
+  | '<' :: '!' :: '-' :: '-' :: _ ->
+      Lhtml (true, Hcontains ["-->"])
+  | '<' :: '!' :: '[' :: 'C' :: 'D' :: 'A' :: 'T' :: 'A' :: '[' :: _ ->
+      Lhtml (true, Hcontains ["]]>"])
+  | '<' :: '!' :: _ ->
+      Lhtml (true, Hcontains [">"])
+  | '<' :: '/' :: _ ->
+      let tag, s = tag_name (Sub.tails 2 s) in
+      (known_tag tag ||| closing_tag) s
+  | '<' :: _ ->
+      let tag, s = tag_name (Sub.tails 1 s) in
+      (special_tag tag ||| known_tag tag ||| open_tag) s
   | _ ->
-      None
+      raise Fail
+
+let blank s =
+  if not (is_empty s) then raise Fail;
+  Lempty
+
+let indented_code ind s =
+  if indent s + ind < 4 then raise Fail;
+  Lindented_code (Sub.offset (4 - ind) s)
 
 let parse s0 =
   let ind, s = sp3 s0 in
   match Sub.head s with
   | Some '>' ->
-      let n = ind + 1 in
-      let s = Sub.offset n s in
+      let s = Sub.offset 1 s in
       let s = if indent s > 0 then Sub.offset 1 s else s in
       Lblockquote s
   | Some '=' ->
-      begin match setext_heading s with
-      | Some m ->
-          Lsetext_heading (1, m)
-      | None ->
-          Lparagraph
-      end
-  | Some ('-' as c) ->
-      begin match setext_heading s with
-      | Some m ->
-          Lsetext_heading (2, m)
-      | None ->
-          if thematic_break c s then
-            Lthematic_break
-          else begin
-            match unordered_list_item s with
-            | Some (k, n, s) ->
-                Llist_item (k, n + ind, s)
-            | None ->
-                Lparagraph
-          end
-      end
-  | Some ('_' as c) ->
-      if thematic_break c s then Lthematic_break else Lparagraph
+      setext_heading s
+  | Some '-' ->
+      (setext_heading ||| thematic_break ||| unordered_list_item ind) s
+  | Some ('_') ->
+      thematic_break s
   | Some '#' ->
-      begin match atx_heading s with
-      | Some (n, s) ->
-          Latx_heading (n, Sub.to_string s)
-      | None ->
-          Lparagraph
-      end
-  | Some ('~' | '`' as c) ->
-      begin match code_block s with
-      | Some (n, s) ->
-          let c = if c = '~' then Tilde else Backtick in
-          Lfenced_code (ind, n, c, Sub.to_string s)
-      | None ->
-          Lparagraph
-      end
+      atx_heading s
+  | Some ('~' | '`') ->
+      fenced_code ind s
   | Some '<' ->
-      begin match raw_html s with
-      | Some (p, s) ->
-          Lhtml (p, s)
-      | None ->
-          Lparagraph
-      end
-  | Some ('*' as c) ->
-      if thematic_break c s then
-        Lthematic_break
-      else begin
-        match unordered_list_item s with
-        | Some (k, n, s) ->
-            Llist_item (k, n + ind, s)
-        | None ->
-            Lparagraph
-      end
+      raw_html s
+  | Some '*' ->
+      (thematic_break ||| unordered_list_item ind) s
   | Some '+' ->
-      begin match unordered_list_item s  with
-      | Some (k, n, s) ->
-          Llist_item (k, n + ind, s)
-      | None ->
-          Lparagraph
-      end
+      unordered_list_item ind s
   | Some ('0'..'9') ->
-      begin match ordered_list_item s with
-      | Some (k, n, s) ->
-          Llist_item (k, n + ind, s)
-      | None ->
-          Lparagraph
-      end
+      ordered_list_item ind s
   | Some _ ->
-      if is_empty s then
-        Lempty
-      else if indent s0 >= 4 then
-        Lindented_code (Sub.offset 4 s0)
-      else
-        Lparagraph
+      (blank ||| indented_code ind) s
   | None ->
       Lempty
+
+let parse s0 =
+  try parse s0 with Fail -> Lparagraph
