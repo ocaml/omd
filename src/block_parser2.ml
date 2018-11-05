@@ -177,6 +177,102 @@ let ordered_list_item s =
   in
   loop 0 0 s
 
+let tag_name s0 =
+  match Sub.head s0 with
+  | Some ('a'..'z' | 'A'..'Z') ->
+      let rec loop len s =
+        match Sub.head s with
+        | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '-') ->
+            loop (succ len) (Sub.tail s)
+        | Some _ | None ->
+            Sub.to_string (Sub.sub s0 ~len), s
+      in
+      Some (loop 1 (Sub.tail s0))
+  | Some _ | None ->
+      None
+
+let known_tags =
+  [ "address"; "aside"; "base"; "basefont"; "blockquote";
+    "body"; "caption"; "center"; "col"; "colgroup"; "dd";
+    "details"; "dialog"; "dir"; "div"; "dl"; "dt";
+    "fieldset"; "figcaption"; "figure"; "footer"; "form";
+    "frame"; "frameset"; "h1"; "h2"; "h3"; "h4"; "h5";
+    "h6"; "head"; "header"; "hr"; "html"; "iframe"; "legend";
+    "li"; "link"; "main"; "menu"; "menuitem"; "meta"; "nav";
+    "noframes"; "ol"; "optgroup"; "option"; "p"; "param";
+    "section"; "source"; "summary"; "table"; "tbody";
+    "td"; "tfoot"; "th"; "thead"; "title"; "tr"; "track"; "ul" ]
+
+let known_tag s =
+  List.mem (String.lowercase_ascii s) known_tags
+
+(* let html_closing tag s = *)
+(*   let has_ws = *)
+(*     match Sub.head s with Some (' ' | '\t' | '\010'..'\013') | None -> true | Some _ -> false *)
+(*   in *)
+(*   let s = ws s in *)
+(*   match Sub.head s with *)
+(*   | Some '>' -> *)
+(*       if is_empty (Sub.tail s) then *)
+(*         Some (false, Hblank) *)
+(*       else if known_tag tag then *)
+(*         Some (true, Hblank) *)
+(*       else *)
+(*         None *)
+(*   | Some _ | None -> *)
+(*       if has_ws && known_tag tag then *)
+(*         Some (true, Hblank) *)
+(*       else *)
+(*         None *)
+
+let attribute s =
+  let s = ws1 s in
+  match Sub.head s with
+
+let html_open tag s =
+  match Sub.heads 2 s with
+  | ([] | (' ' | '\t' | '\010'..'\013') :: _ | '/' :: '>' :: _ | '>' :: _), _ ->
+      if known_tag tag then Some (true, Hblank) else None
+  | _ ->
+      let al, s = list attribute s in
+      let s = ws s in
+      begin match Sub.heads 2 s with
+      | ('/' :: '>' :: _ | '>' :: _), s ->
+          if is_blank s then
+            Some (a = [] && known_tag tag, Hblank)
+          else
+            None
+      | _ ->
+          None
+      end
+
+let raw_html s =
+  match Sub.heads 10 s with
+  | '<' :: '?' :: _, _ ->
+      Some (true, Hcontains ["?>"])
+  | '<' :: '!' :: '-' :: '-' :: _, _ ->
+      Some (true, Hcontains ["-->"])
+  | '<' :: '!' :: '[' :: 'C' :: 'D' :: 'A' :: 'T' :: 'A' :: '[' :: _, _ ->
+      Some (true, Hcontains ["]]>"])
+  | '<' :: '!' :: _, _ ->
+      Some (true, Hcontains [">"])
+  | '<' :: '/' :: _, s ->
+      begin match tag_name (Sub.tail s) with
+      | Some (tag, s) ->
+          html_closing tag s
+      | None ->
+          None
+      end
+  | '<' :: _, s ->
+      begin match tag_name s with
+      | Some (tag, s) ->
+          html_open tag s
+      | None ->
+          None
+      end
+  | _ ->
+      None
+
 let parse s0 =
   let ind, s = sp3 s0 in
   match Sub.head s with
@@ -224,8 +320,13 @@ let parse s0 =
       | None ->
           Lparagraph
       end
-  (* | Some '<' -> *)
-  (*     ... *)
+  | Some '<' ->
+      begin match raw_html s with
+      | Some (p, s) ->
+          Lhtml (p, s)
+      | None ->
+          Lparagraph
+      end
   | Some ('*' as c) ->
       if thematic_break c s then
         Lthematic_break

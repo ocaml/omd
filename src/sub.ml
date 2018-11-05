@@ -67,6 +67,13 @@ let tail ?rev s =
   | Some (), {base; off; len} ->
       {base; off; len = pred len}
 
+let heads n s =
+  let rec loop n s =
+    if n = 0 || length s = 0 then [], s
+    else let x = head s in let l, s = loop (pred n) (tail s) in x :: l, s
+  in
+  loop n
+
 let is_empty s =
   length s = 0
 
