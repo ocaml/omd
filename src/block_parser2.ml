@@ -104,16 +104,99 @@ let atx_heading s =
   in
   loop 0 s
 
-let split_first s =
-  let s = ws s in
-  let rec loop len t =
-    match Sub.head t with
+let is_punct = function
+  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')'
+  | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<'
+  | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^' | '_'
+  | '`' | '{' | '|' | '}' | '~' -> true
+  | _ -> false
+
+let entity s =
+  match Sub.heads 2 s with
+  | '#' :: ('x' | 'X') :: _ ->
+      let rec loop m n s =
+        if m > 8 then raise Fail;
+        match Sub.head s with
+        | Some ('a'..'f' as c) ->
+            loop (succ m) (n * 16 + Char.code c - Char.code 'a' + 10) (Sub.tail s)
+        | Some ('A'..'F' as c) ->
+            loop (succ m) (n * 16 + Char.code c - Char.code 'A' + 10) (Sub.tail s)
+        | Some ('0'..'9' as c) ->
+            loop (succ m) (n * 16 + Char.code c - Char.code '0') (Sub.tail s)
+        | Some ';' ->
+            if m = 0 then raise Fail;
+            let u = if n = 0 || not (Uchar.is_valid n) then Uchar.rep else Uchar.of_int n in
+            [u], Sub.tail s
+        | Some _ | None ->
+            raise Fail
+      in
+      loop 0 0 (Sub.tails 2 s)
+  | '#' :: _ ->
+      let rec loop m n s =
+        if m > 8 then raise Fail;
+        match Sub.head s with
+        | Some ('0'..'9' as c) ->
+            loop (succ m) (n * 10 + Char.code c - Char.code '0') (Sub.tail s)
+        | Some ';' ->
+            if m = 0 then raise Fail;
+            let u = if n = 0 || not (Uchar.is_valid n) then Uchar.rep else Uchar.of_int n in
+            [u], Sub.tail s
+        | Some _ | None ->
+            raise Fail
+      in
+      loop 0 0 (Sub.tail s)
+  | ('a'..'z' | 'A'..'Z') :: _ ->
+      let rec loop len t =
+        match Sub.head t with
+        | Some ('a'..'z' | 'A'..'Z' | '0'..'9') ->
+            loop (succ len) (Sub.tail t)
+        | Some ';' ->
+            let name = Sub.to_string (Sub.sub ~len s) in
+            begin match Entities.f name with
+            | [] -> raise Fail
+            | cps -> cps, Sub.tail t
+            end
+        | Some _ | None ->
+            raise Fail
+      in
+      loop 1 (Sub.tail s)
+  | _ ->
+      raise Fail
+
+let info_string c s =
+  let buf = Buffer.create 17 in
+  let rec loop s =
+    match Sub.head s with
     | Some (' ' | '\t' | '\010'..'\013') | None ->
-        Sub.sub ~len s, t
-    | Some _ ->
-        loop (succ len) (Sub.tail t)
+        if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then raise Fail;
+        Buffer.contents buf
+    | Some '`' when c = '`' ->
+        raise Fail
+    | Some ('\\' as c) ->
+        let s = Sub.tail s in
+        begin match Sub.head s with
+        | Some c when is_punct c ->
+            Buffer.add_char buf c;
+            loop (Sub.tail s)
+        | Some _ | None ->
+            Buffer.add_char buf c;
+            loop s
+        end
+    | Some ('&' as c) ->
+        let s = Sub.tail s in
+        begin match entity s with
+        | (ul, s) ->
+            List.iter (Buffer.add_utf_8_uchar buf) ul;
+            loop s
+        | exception Fail ->
+            Buffer.add_char buf c;
+            loop s
+        end
+    | Some c ->
+        Buffer.add_char buf c;
+        loop (Sub.tail s)
   in
-  loop 0 s
+  loop (ws s)
 
 let fenced_code ind s =
   match Sub.head s with
@@ -124,12 +207,9 @@ let fenced_code ind s =
             loop (succ n) (Sub.tail s)
         | Some _ | None ->
             if n < 3 then raise Fail;
-            let s, t = split_first s in
-            let f = function '`' -> true | _ -> false in
-            if c = '`' && (Sub.exists f s || Sub.exists f t) then
-              raise Fail;
+            let s = info_string c s in
             let c = if c = '`' then Backtick else Tilde in
-            Lfenced_code (ind, n, c, Sub.to_string s)
+            Lfenced_code (ind, n, c, s)
       in
       loop 1 (Sub.tail s)
   | Some _ | None ->
