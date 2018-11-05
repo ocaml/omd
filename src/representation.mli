@@ -24,7 +24,7 @@ type element =
   | Hr
   | NL
   | Url of href * t * title
-  | Ref of ref_container * name * string * fallback
+  | Ref of ref_container * name * t * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of name * (string * string option) list * t
   | Html_block of name * (string * string option) list * t

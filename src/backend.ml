@@ -209,7 +209,7 @@ let rec html_and_headers_of_md
             begin match rc#get_ref name with
             | Some (href, title) ->
                 loop indent
-                  (Url (htmlentities ~md:true href, [Text(text)], htmlentities ~md:true title) :: tl)
+                  (Url (htmlentities ~md:true href, text, htmlentities ~md:true title) :: tl)
             | None ->
                 loop indent (fallback#to_t);
                 loop indent tl
@@ -563,7 +563,7 @@ let rec sexpr_of_md md =
         Buffer.add_string b ")";
         loop tl
     | Ref (_rc, name, text, _) :: tl ->
-        bprintf b "(Ref %S %S)" name text;
+        bprintf b "(Ref %S %S)" name (sexpr_of_md text);
         loop tl
     | Img_ref (_rc, name, alt, _) :: tl ->
         bprintf b "(Img_ref %S %S)" name alt;

@@ -1094,10 +1094,12 @@ struct
         | [], remains ->
             let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
             let id = L.string_of_tokens text in (* implicit anchor *)
-            Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
+            let contents = main_loop [] [] text in
+            Some (Ref (rc, id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
         | id, remains ->
             let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
-            Some(Ref (rc, L.string_of_tokens id, L.string_of_tokens text, fallback) :: r, [Delim (1, Cbracket)], remains)
+            let contents = main_loop [] [] text in
+            Some(Ref (rc, L.string_of_tokens id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
       end
     in
     let maybe_nonregular_ref l =
@@ -1107,7 +1109,8 @@ struct
         raise Premature_ending; (* <-- ill-placed open bracket *)
       let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
       let id = L.string_of_tokens text in (* implicit anchor *)
-      Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
+      let contents = main_loop [] [] text in
+      Some (Ref (rc, id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
     in
     let maybe_def l =
       match read_until_cbracket ~bq:true l with
