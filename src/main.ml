@@ -365,7 +365,7 @@ let main () =
       "-LHTMLi", Unit(fun () -> list_html_tags ~inline:true; exit 0),
       " List all known inline HTML tags";
 
-      "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0),
+      "-version", Unit(fun () -> print_endline "This is version dev."; exit 0),
       " Print version.";
 
       "-VS", Set_string(verbatim_start),
