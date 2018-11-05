@@ -1077,10 +1077,6 @@ struct
     (* So it could be a reference or a link definition. *)
     let maybe_ref l =
       let text, remains = read_until_cbracket ~bq:true l in
-      (* check that there is no ill-placed open bracket *)
-      if (try ignore(read_until_obracket ~bq:true text); true
-          with Premature_ending -> false) then
-        raise Premature_ending; (* <-- ill-placed open bracket *)
       let blank, remains = read_until_obracket ~bq:true remains in
       (* check that there are no unwanted characters between CB and OB. *)
       if eat (let flag = ref true in
@@ -1090,14 +1086,20 @@ struct
               | _ -> false) blank <> [] then
         raise Premature_ending (* <-- not a regular reference *)
       else begin
+        let contents = main_loop [] [] text in
+        if (* if [contents] contains a link, we stop here! *)
+          let _ =
+            visit (function Url _ -> raise Premature_ending| _ -> None) contents
+          in false
+        then raise Premature_ending;
         match read_until_cbracket ~bq:true remains with
         | [], remains ->
             let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
             let id = L.string_of_tokens text in (* implicit anchor *)
-            Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
+            Some (Ref (rc, id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
         | id, remains ->
             let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
-            Some(Ref (rc, L.string_of_tokens id, L.string_of_tokens text, fallback) :: r, [Delim (1, Cbracket)], remains)
+            Some(Ref (rc, L.string_of_tokens id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
       end
     in
     let maybe_nonregular_ref l =
@@ -1107,7 +1109,8 @@ struct
         raise Premature_ending; (* <-- ill-placed open bracket *)
       let fallback = extract_fallback main_loop remains (Delim (1, Obracket) :: l) in
       let id = L.string_of_tokens text in (* implicit anchor *)
-      Some (Ref (rc, id, id, fallback) :: r, [Delim (1, Cbracket)], remains)
+      let contents = main_loop [] [] text in
+      Some (Ref (rc, id, contents, fallback) :: r, [Delim (1, Cbracket)], remains)
     in
     let maybe_def l =
       match read_until_cbracket ~bq:true l with

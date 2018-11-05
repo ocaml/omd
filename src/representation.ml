@@ -53,7 +53,7 @@ type element =
   | Hr
   | NL
   | Url of href * t * title
-  | Ref of ref_container * name * string * fallback
+  | Ref of ref_container * name * t * fallback
   | Img_ref of ref_container * name * alt * fallback
   | Html of name * (string * string option) list * t
   | Html_block of name * (string * string option) list * t
@@ -145,6 +145,27 @@ let rec loose_compare t1 t2 = match t1,t2 with
 
   | Ref (ref_container1, name1, x1, fallback1)::tl1,
     Ref (ref_container2, name2, x2, fallback2)::tl2
+    ->
+      (match compare name1 name2, loose_compare x1 x2 with
+       | 0, 0 ->
+           let cff =
+             if fallback1#to_string = fallback2#to_string then
+               0
+             else
+               loose_compare (fallback1#to_t) (fallback2#to_t)
+           in
+           if cff = 0 then
+             match
+               compare (ref_container1#get_all) (ref_container2#get_all)
+             with
+             | 0 -> loose_compare tl1 tl2
+             | i -> i
+           else
+             cff
+       |  0, 1 | 1,  0 ->  1
+       | -1, 0 | 0, -1 -> -1
+       | _ -> 1)
+
   | Img_ref (ref_container1, name1, x1, fallback1)::tl1,
     Img_ref (ref_container2, name2, x2, fallback2)::tl2
     ->
