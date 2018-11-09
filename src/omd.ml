@@ -3,7 +3,8 @@ include Ast
 type t = inline block list
 
 let parse_inline defs s =
-  Inline_parser.inline defs [] (Lexing.from_string s)
+  (* Inline_parser.inline defs [] (Lexing.from_string s) *)
+  Block_parser2.inline defs (Block_parser2.P.of_string s)
 
 let of_channel ic =
   let md = Block.Pre.of_channel ic in
