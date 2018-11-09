@@ -595,6 +595,7 @@ let entity buf st =
       advance 1 st;
       begin match peek st with
       | 'x' | 'X' ->
+          advance 1 st;
           let rec aux n m =
             if n > 8 then Buffer.add_string buf (pop_mark st)
             else begin
@@ -717,6 +718,157 @@ let normalize s =
   in
   loop true false 0
 
+let tag_name st =
+  match peek st with
+  | 'a'..'z' | 'A'..'Z' ->
+      push_mark st;
+      advance 1 st;
+      let rec loop () =
+        match peek st with
+        | 'a'..'z' | 'A'..'Z' | '0'..'9' | '-' ->
+            advance 1 st; loop ()
+        | _ ->
+            pop_mark st
+        | exception Fail ->
+            pop_mark st
+      in
+      loop ()
+  | _ ->
+      raise Fail
+
+let closing_tag st =
+  if next st <> '<' then raise Fail;
+  if next st <> '/' then raise Fail;
+  let name = tag_name st in
+  ws st;
+  if next st <> '>' then raise Fail;
+  name
+
+let list p st =
+  let rec loop acc =
+    match protect p st with
+    | r -> loop (r :: acc)
+    | exception Fail -> List.rev acc
+  in
+  loop []
+
+let single_quoted_attribute st =
+  if next st <> '\'' then raise Fail;
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | '\'' ->
+        advance 1 st; Buffer.contents buf
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
+let double_quoted_attribute st =
+  if next st <> '"' then raise Fail;
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | '"' ->
+        advance 1 st; Buffer.contents buf
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
+let unquoted_attribute st =
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | ' ' | '\t' | '\010'..'\013' | '"' | '\'' | '=' | '<' | '>' | '`' ->
+        if Buffer.length buf = 0 then raise Fail;
+        Buffer.contents buf
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
+let attribute_value st =
+  match peek st with
+  | '\'' -> single_quoted_attribute st
+  | '"' -> double_quoted_attribute st
+  | _ -> unquoted_attribute st
+
+let attribute_name st =
+  match peek st with
+  | 'a'..'z' | 'A'..'Z' | '_' | ':' ->
+      push_mark st;
+      advance 1 st;
+      let rec loop () =
+        match peek st with
+        | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-' ->
+            advance 1 st; loop ()
+        | _ ->
+            pop_mark st
+        | exception Fail ->
+            pop_mark st
+      in
+      loop ()
+  | _ ->
+      raise Fail
+
+let option p st =
+  match protect p st with
+  | r -> Some r
+  | exception Fail -> None
+
+let attribute_value_specification =
+  ws >>> char '=' >>> ws >>> attribute_value
+
+let attribute st =
+  ws1 st;
+  let name = attribute_name st in
+  let value = option attribute_value_specification st in
+  name, value
+
+let open_tag st =
+  if next st <> '<' then raise Fail;
+  let name = tag_name st in
+  let attributes = list attribute st in
+  ws st;
+  begin match peek st with
+  | '/' -> advance 1 st
+  | _ -> ()
+  end;
+  if next st <> '>' then raise Fail;
+  (name, attributes)
+
+let html_comment st =
+  if next st <> '<' then raise Fail;
+  if next st <> '!' then raise Fail;
+  if next st <> '-' then raise Fail;
+  if next st <> '-' then raise Fail;
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | '-' as c ->
+        advance 1 st;
+        begin match peek st with
+        | '-' ->
+            advance 1 st;
+            if next st <> '>' then raise Fail;
+            Buffer.contents buf
+        | _ ->
+            advance 1 st; Buffer.add_char buf c; loop ()
+        end
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
 let inline _defs st =
   let buf = Buffer.create 0 in
   let get_buf () =
@@ -732,8 +884,23 @@ let inline _defs st =
   in
   let rec loop acc st =
     match peek st with
-    | '<' ->
-        assert false
+    | '<' as c ->
+        begin match protect closing_tag st with
+        | tag ->
+            loop (Pre.R (Html (Printf.sprintf "</%s>" tag)) :: text acc) st
+        | exception Fail ->
+            begin match protect open_tag st with
+            | tag, _attributes ->
+                loop (Pre.R (Html (Printf.sprintf "<%s ...>" tag)) :: text acc) st
+            | exception Fail ->
+                begin match protect html_comment st with
+                | comment ->
+                    loop (Pre.R (Html (Printf.sprintf "<!--%s-->" comment)) :: text acc) st
+                | exception Fail ->
+                    advance 1 st; Buffer.add_char buf c; loop acc st
+                end
+            end
+        end
     | ' ' as c ->
         advance 1 st;
         begin match protect (ws' >>> char '\n' >>> ws') st with
