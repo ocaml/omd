@@ -461,3 +461,279 @@ let parse s0 =
 
 let parse s0 =
   try parse s0 with Fail -> Lparagraph
+
+module P : sig
+  type state
+  type 'a t = state -> 'a
+
+  exception Fail
+
+  val peek: char t
+  val advance: int -> unit t
+  val char: char -> unit t
+  val next: char t
+  val accumulate: char option t -> string t
+  val try_bind: 'a t -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+  val (>>=): 'a t -> ('a -> 'b t) -> 'b t
+  val fail: 'a t
+  val return: 'a -> 'a t
+  val (|||): 'a t -> 'a t -> 'a t
+  val ws: unit t
+  val ws1: unit t
+  val (>>>): unit t -> 'a t -> 'a t
+  val (<<<): 'a t -> unit t -> 'a t
+
+  val copy_state: state -> state
+end = struct
+  type state =
+    {
+      mutable str: string;
+      mutable pos: int;
+    }
+
+  let copy_state {str; pos} =
+    {str; pos}
+
+  let restore_state st {str; pos} =
+    st.str <- str;
+    st.pos <- pos
+
+  type 'a t =
+    state -> 'a
+
+  exception Fail
+
+  let char c st =
+    if st.pos >= String.length st.str then raise Fail;
+    if st.str.[st.pos] <> c then raise Fail
+
+  let next st =
+    if st.pos >= String.length st.str then
+      raise Fail
+    else
+      let c = st.str.[st.pos] in (st.pos <- succ st.pos; c)
+
+  let peek st =
+    if st.pos >= String.length st.str then
+      raise Fail
+    else
+      st.str.[st.pos]
+
+  let advance n st =
+    assert (n >= 0);
+    let n = min (String.length st.str - st.pos) n in
+    st.pos <- st.pos + n
+
+  let return c _ = c
+  let (>>=) p f st = f (p st) st
+
+  let accumulate p =
+    let b = Buffer.create 17 in
+    let rec loop () =
+      p >>= function
+      | Some c -> Buffer.add_char b c; loop ()
+      | None -> return (Buffer.contents b)
+    in
+    loop ()
+
+  let protect p st =
+    let st' = copy_state st in
+    try p st with e -> restore_state st st'; raise e
+
+  let try_bind p f q st =
+    match protect p st with
+    | r -> f r st
+    | exception e -> q e st
+
+  let fail _ =
+    raise Fail
+
+  let (|||) p1 p2 st =
+    try protect p1 st with Fail -> p2 st
+
+  let rec ws st =
+    match next st with
+    | ' ' | '\t' | '\010'..'\013' -> ws st
+    | _ -> ()
+    | exception _ -> ()
+
+  let ws1 st =
+    match next st with
+    | ' ' | '\t' | '\010'..'\013' -> ws st
+    | _ -> fail st
+
+  let (>>>) p q st =
+    p st; q st
+
+  let (<<<) p q st =
+    let x = p st in
+    q st; x
+end
+
+open P
+
+let is_empty st =
+  let st = copy_state st in
+  try
+    let rec loop () =
+      match next st with
+      | ' ' | '\t' | '\010'..'\013' -> loop ()
+      | _ -> false
+    in
+    loop ()
+  with Fail ->
+    true
+
+module Pre = Inline.Pre
+
+let inline defs st =
+  let buf = Buffer.create 0 in
+  let get_buf () =
+    let s = Buffer.contents buf in
+    Buffer.clear buf;
+    s
+  in
+  let text acc =
+    if Buffer.length buf = 0 then
+      acc
+    else
+      Pre.R (Text (get_buf ())) :: acc
+  in
+  let rec loop acc st =
+    match peek st with
+    | '<' ->
+        assert false
+    | ' ' as c ->
+        let st0 = copy_state st in
+        begin match (ws1 >>> char '\n' >>> ws) st with
+        | () ->
+            loop (Pre.R Hard_break :: text acc) st
+        | exception Fail ->
+            Buffer.add_char buf c; loop acc st0
+        end
+    | '\\' ->
+        advance 1 st;
+        begin match next st with
+        | '\n' ->
+            loop (Pre.R Hard_break :: text acc) st
+        | c when is_punct c ->
+            Buffer.add_char buf c; loop acc st
+        | c ->
+            Buffer.add_char buf '\\'; Buffer.add_char buf c; loop acc st
+        | exception End_of_file ->
+            Buffer.add_char buf '\\'; loop acc st
+        end
+    | '!' as c ->
+        advance 1 st;
+        begin match peek st with
+        | '[' ->
+            advance 1 st; loop (Bang_left_bracket :: text acc) st
+        | _ ->
+            Buffer.add_char buf c; loop acc st
+        | exception Fail ->
+            Buffer.add_char buf c; loop acc st
+        end
+    | '&' as c ->
+        advance 1 st;
+        begin match peek st with
+        | '#' ->
+            advance 1 st;
+            begin match peek st with
+            | 'x' | 'X' ->
+                let rec aux n m =
+                  match peek st with (* FIXME max 8 chars *)
+                  | '0'..'9' ->
+                      advance 1 st;
+                      aux (succ n) (m * 16 + Char.code c - Char.code '0')
+                  | 'a'..'f' ->
+                      advance 1 st;
+                      aux (succ n) (m * 16 + Char.code c - Char.code 'a' + 10)
+                  | 'A'..'F' ->
+                      advance 1 st;
+                      aux (succ n) (m * 16 + Char.code c - Char.code 'A' + 10)
+                  | ';' ->
+                      advance 1 st;
+                      let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
+                      Buffer.add_utf_8_uchar buf u;
+                      loop acc st
+                  | _ ->
+                      assert false (* add partial lexeme *)
+                  | exception Fail ->
+                      assert false (* add partial lexeme *)
+                in
+                aux 0 0
+            | '0'..'9' ->
+                let rec aux n m =
+                  match peek st with (* FIXME max 8 chars *)
+                  | '0'..'9' ->
+                      advance 1 st;
+                      aux (succ n) (m * 10 + Char.code c - Char.code '0')
+                  | ';' ->
+                      advance 1 st;
+                      let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
+                      Buffer.add_utf_8_uchar buf u;
+                      loop acc st
+                  | _ ->
+                      assert false (* add partial lexeme *)
+                  | exception Fail ->
+                      assert false (* add partial lexeme *)
+                in
+                aux 0 0
+            | _ ->
+                Buffer.add_string buf "&#"; loop acc st
+            | exception Fail ->
+                Buffer.add_string buf "&#"; loop acc st
+            end
+        | '0'..'9' | 'a'..'z' | 'A'..'9' ->
+            let b = Buffer.create 7 in
+            let rec aux () =
+              match peek st with
+              | '0'..'9' | 'a'..'z' | 'A'..'Z' as c ->
+                  advance 1 st; Buffer.add_char b c; aux ()
+              | ';' ->
+                  advance 1 st;
+                  let name = Buffer.contents b in
+                  begin match Entities.f name with
+                  | [] -> (* add partial lexeme *) assert false
+                  | _ :: _ as cps -> List.iter (Buffer.add_utf_8_uchar buf) cps
+                  end;
+                  loop acc st
+              | _ ->
+                  assert false (* add partial lexeme *)
+              | exception Fail ->
+                  assert false (* add partial lexeme *)
+            in
+            aux ()
+        | _ ->
+            Buffer.add_char buf c; loop acc st
+        | exception Fail ->
+            Buffer.add_char buf c; loop acc st
+        end
+    | '[' ->
+        advance 1 st; loop (Left_bracket :: text acc) st
+    | ']' ->
+        advance 1 st;
+        begin match peek st with
+        | '(' ->
+            ...
+        end
+    | '*' | '_' as c ->
+        let pre = peek_before ' ' st |> Pre.classify_delim in
+        let f post n st =
+          let post = post |> Pre.classify_delim in
+          let e = if c = '*' then Ast.Star else Underscore in
+          loop (Pre.Emph (pre, post, e, n) :: text acc) st
+        in
+        let rec aux n =
+          match peek st with
+          | c1 when c1 = c -> advance 1 st; aux (succ n)
+          | c1 -> f c1 n st
+          | exception End_of_file -> f ' ' n st
+        in
+        aux 0
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop acc st
+    | exception Fail ->
+        Pre.parse_emph (List.rev (text acc))
+  in
+  loop [] st
