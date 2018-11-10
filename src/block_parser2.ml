@@ -561,7 +561,7 @@ end = struct
 
   let ws1 st =
     match peek st with
-    | ' ' | '\t' | '\010'..'\013' -> advance 1 st
+    | ' ' | '\t' | '\010'..'\013' -> advance 1 st; ws st
     | _ -> raise Fail
 
   let (>>>) p q st =
@@ -869,6 +869,98 @@ let html_comment st =
   in
   loop ()
 
+let processing_instruction st =
+  if next st <> '<' then raise Fail;
+  if next st <> '?' then raise Fail;
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | '?' as c ->
+        advance 1 st;
+        begin match peek st with
+        | '>' ->
+            advance 1 st; Buffer.contents buf
+        | _ ->
+            Buffer.add_char buf c; loop ()
+        end
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
+let cdata_section st =
+  if next st <> '<' then raise Fail;
+  if next st <> '!' then raise Fail;
+  if next st <> '[' then raise Fail;
+  if next st <> 'C' then raise Fail;
+  if next st <> 'D' then raise Fail;
+  if next st <> 'A' then raise Fail;
+  if next st <> 'T' then raise Fail;
+  if next st <> 'A' then raise Fail;
+  if next st <> '[' then raise Fail;
+  let buf = Buffer.create 17 in
+  let rec loop () =
+    match peek st with
+    | ']' as c ->
+        advance 1 st;
+        begin match peek st with
+        | ']' as c1 ->
+            advance 1 st;
+            begin match peek st with
+            | '>' ->
+                advance 1 st;
+                Buffer.contents buf
+            | _ ->
+                Buffer.add_char buf c; Buffer.add_char buf c1; loop ()
+            end
+        | _ ->
+            Buffer.add_char buf c; loop ()
+        end
+    | '&' ->
+        entity buf st; loop ()
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop ()
+  in
+  loop ()
+
+let declaration st =
+  if next st <> '<' then raise Fail;
+  if next st <> '!' then raise Fail;
+  match peek st with
+  | 'A'..'Z' ->
+      push_mark st;
+      let rec loop () =
+        match peek st with
+        | 'A'..'Z' ->
+            advance 1 st; loop ()
+        | ' ' | '\t' | '\010'..'\013' ->
+            let name = pop_mark st in
+            ws1 st;
+            let buf = Buffer.create 17 in
+            let rec loop () =
+              match peek st with
+              | '>' ->
+                  advance 1 st;
+                  name, Buffer.contents buf
+              | '&' ->
+                  entity buf st; loop ()
+              | _ as c ->
+                  advance 1 st; Buffer.add_char buf c; loop ()
+              | exception e ->
+                  ignore (pop_mark st);
+                  raise e
+            in
+            loop ()
+        | _ ->
+            ignore (pop_mark st);
+            raise Fail
+      in
+      loop ()
+  | _ ->
+      raise Fail
+
 let inline _defs st =
   let buf = Buffer.create 0 in
   let get_buf () =
@@ -897,7 +989,22 @@ let inline _defs st =
                 | comment ->
                     loop (Pre.R (Html (Printf.sprintf "<!--%s-->" comment)) :: text acc) st
                 | exception Fail ->
-                    advance 1 st; Buffer.add_char buf c; loop acc st
+                    begin match protect declaration st with
+                    | x, y ->
+                        loop (Pre.R (Html (Printf.sprintf "<!%s %s>" x y)) :: text acc) st
+                    | exception Fail ->
+                        begin match protect cdata_section st with
+                        | x ->
+                            loop (Pre.R (Html (Printf.sprintf "<![CDATA[%s]]>" x)) :: text acc) st
+                        | exception Fail ->
+                            begin match protect processing_instruction st with
+                            | x ->
+                                loop (Pre.R (Html (Printf.sprintf "<?%s?>" x)) :: text acc) st
+                            | exception Fail ->
+                                advance 1 st; Buffer.add_char buf c; loop acc st
+                            end
+                        end
+                    end
                 end
             end
         end
