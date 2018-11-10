@@ -3,16 +3,13 @@ include Ast
 type t = inline block list
 
 let parse_inline defs s =
-  (* Inline_parser.inline defs [] (Lexing.from_string s) *)
-  Block_parser2.inline defs (Block_parser2.P.of_string s)
+  Parser.inline defs (Parser.P.of_string s)
 
 let of_channel ic =
   let md = Block.Pre.of_channel ic in
   let defs = Block.defs md in
   let defs =
-    List.map (fun def ->
-        {def with Ast.label = Inline.normalize (parse_inline [] def.label)}
-      ) defs
+    List.map (fun def -> {def with Ast.label = Parser.normalize def.label}) defs
   in
   List.map (Block.map (parse_inline defs)) md
 

@@ -27,7 +27,7 @@ type 'a block =
   | Heading of int * 'a
   | Code_block of (fenced_code_kind * string) option * string option
   | Html_block of string
-  | Link_def of 'a link_def
+  | Link_def of string link_def
 
 type emph_kind =
   | Normal
@@ -45,8 +45,8 @@ type inline =
   | Hard_break
   | Soft_break
   | Url of inline link_def
-  | Url_ref of inline * inline link_def
-  | Img_ref of inline * inline link_def
+  | Url_ref of inline * string link_def
+  | Img_ref of inline * string link_def
   | Html of string
   | Img of inline link_def
 

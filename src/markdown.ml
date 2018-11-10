@@ -99,9 +99,9 @@ let rec inline b = function
   | Img {label; destination; title = Some title} ->
       Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title
   | Url_ref (label, {Ast.label = label1; _}) ->
-      Printf.bprintf b "[%a][%a]" inline label inline label1
+      Printf.bprintf b "[%a][%s]" inline label label1
   | Img_ref (label, {Ast.label = label1; _}) ->
-      Printf.bprintf b "![%a][%a]" inline label inline label1
+      Printf.bprintf b "![%a][%s]" inline label label1
   | Soft_break ->
       if Buffer.length b = 1 ||
          (Buffer.length b > 1 &&

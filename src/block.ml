@@ -14,9 +14,7 @@ let rec map f = function
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
   | Heading (i, x) -> Heading (i, f x)
-  | Code_block _ as x -> x
-  | Html_block _ as x -> x
-  | Link_def {label; destination; title} -> Link_def {label = f label; destination; title}
+  | Code_block _ | Html_block _ | Link_def _ as x -> x
 
 let defs ast =
   let rec loop acc = function
@@ -37,7 +35,7 @@ module Pre = struct
     | Rparagraph of string list
     | Rfenced_code of int * int * fenced_code_kind * string * string list
     | Rindented_code of string list
-    | Rhtml of Block_parser2.html_kind * string list
+    | Rhtml of Parser.html_kind * string list
     | Rempty
 
   and t =
@@ -71,7 +69,7 @@ module Pre = struct
         List (kind, style, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
-        let defs, off = Inline_parser.link_def [] (Lexing.from_string s) in
+        let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
         let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
         if s = "" then blocks else Paragraph s :: blocks
@@ -94,11 +92,11 @@ module Pre = struct
     {blocks = []; next = Rempty}
 
   let classify_line s =
-    Block_parser2.parse s
+    Parser.parse s
 
   let rec process {blocks; next} s =
     match next, classify_line s with
-    | Rempty, Block_parser2.Lempty ->
+    | Rempty, Parser.Lempty ->
         {blocks; next = Rempty}
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
@@ -118,7 +116,7 @@ module Pre = struct
         {blocks; next = Rlist (kind, Tight, false, indent, [], process empty s)}
     | Rempty, (Lsetext_heading _ | Lparagraph) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
-    | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Block_parser.is_empty s1) ->
+    | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
@@ -131,7 +129,7 @@ module Pre = struct
         {blocks = close {blocks; next}; next = Rempty}
     | Rfenced_code (ind, num, q, info, lines), _ ->
         let s =
-          let ind = min (Block_parser.indent s) ind in
+          let ind = min (Parser.indent s) ind in
           if ind > 0 then
             Sub.offset ind s
           else
@@ -141,7 +139,7 @@ module Pre = struct
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
-        let n = min (Block_parser.indent s) 4 in
+        let n = min (Parser.indent s) 4 in
         let s = Sub.offset n s in
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code _, _ ->
@@ -156,9 +154,9 @@ module Pre = struct
         {blocks; next = Rblockquote (process state s)}
     | Rlist (kind, style, _, ind, items, state), Lempty ->
         {blocks; next = Rlist (kind, style, true, ind, items, process state s)}
-    | Rlist (_, _, true, ind, _, {blocks = []; next = Rempty}), _ when Block_parser.indent s >= ind ->
+    | Rlist (_, _, true, ind, _, {blocks = []; next = Rempty}), _ when Parser.indent s >= ind ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rlist (kind, style, prev_empty, ind, items, state), _ when Block_parser.indent s >= ind ->
+    | Rlist (kind, style, prev_empty, ind, items, state), _ when Parser.indent s >= ind ->
         let s = Sub.offset ind s in
         let state = process state s in
         let style =
@@ -198,7 +196,7 @@ module Pre = struct
               end
           | Rparagraph (_ :: _ as lines) ->
               begin match classify_line s with
-              | Block_parser2.Lparagraph | Lindented_code _
+              | Parser.Lparagraph | Lindented_code _
               | Lsetext_heading (1, _) | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ ->

@@ -6,7 +6,7 @@ type 'a t = 'a block
 
 val map: ('a -> 'b) -> 'a t -> 'b t
 
-val defs: 'a t list -> 'a link_def list
+val defs: 'a t list -> string link_def list
 
 module Pre : sig
   type block
