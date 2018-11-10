@@ -472,6 +472,7 @@ module P : sig
   val push_mark: state -> unit
   val pop_mark: state -> string
   val peek: char t
+  val peek_opt: char option t
   val pos: state -> int
   val advance: int -> unit t
   val char: char -> unit t
@@ -535,6 +536,12 @@ end = struct
       raise Fail
     else
       st.str.[st.pos]
+
+  let peek_opt st =
+    if st.pos >= String.length st.str then
+      None
+    else
+      Some st.str.[st.pos]
 
   let pos st =
     st.pos
@@ -920,8 +927,7 @@ let cdata_section st =
             advance 1 st;
             begin match peek st with
             | '>' ->
-                advance 1 st;
-                Buffer.contents buf
+                advance 1 st; Buffer.contents buf
             | _ ->
                 Buffer.add_char buf c; Buffer.add_char buf c1; loop ()
             end
@@ -1026,26 +1032,22 @@ let rec inline defs st =
         | exception Fail ->
             Buffer.add_char buf c; loop acc st
         end
-    | '\\' ->
+    | '\\' as c ->
         advance 1 st;
-        begin match next st with
-        | '\n' ->
-            loop (Pre.R Hard_break :: text acc) st
-        | c when is_punct c ->
+        begin match peek_opt st with
+        | Some '\n' ->
+            advance 1 st; loop (Pre.R Hard_break :: text acc) st
+        | Some c when is_punct c ->
+            advance 1 st; Buffer.add_char buf c; loop acc st
+        | Some _ | None ->
             Buffer.add_char buf c; loop acc st
-        | c ->
-            Buffer.add_char buf '\\'; Buffer.add_char buf c; loop acc st
-        | exception End_of_file ->
-            Buffer.add_char buf '\\'; loop acc st
         end
     | '!' as c ->
         advance 1 st;
-        begin match peek st with
-        | '[' ->
+        begin match peek_opt st with
+        | Some '[' ->
             advance 1 st; loop (Bang_left_bracket :: text acc) st
-        | _ ->
-            Buffer.add_char buf c; loop acc st
-        | exception Fail ->
+        | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
     | '&' ->
@@ -1053,19 +1055,10 @@ let rec inline defs st =
     | '[' ->
         begin match protect link_label st with
         | lab1 ->
-            begin match peek st with
-            | '[' ->
+            begin match peek_opt st with
+            | Some '[' ->
                 assert false
-            | _ ->
-                let s = normalize lab1 in
-                begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
-                | Some def ->
-                    let txt = inline [] (of_string lab1) in
-                    loop (Pre.R (Url_ref (txt, def)) :: text acc) st
-                | None ->
-                    assert false
-                end
-            | exception Fail ->
+            | Some _ | None ->
                 let s = normalize lab1 in
                 begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
                 | Some def ->
