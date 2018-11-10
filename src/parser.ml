@@ -485,8 +485,10 @@ module P : sig
   val (<<<): 'a t -> unit t -> 'a t
   val protect: 'a t -> 'a t
   val copy_state: state -> state
+  val restore_state: state -> state -> unit
   val peek_before: char -> state -> char
   val peek_after: char -> state -> char
+  val pair: 'a t -> 'b t -> ('a * 'b) t
 end = struct
   type state =
     {
@@ -595,6 +597,11 @@ end = struct
   let (<<<) p q st =
     let x = p st in
     q st; x
+
+  let pair p q st =
+    let x = p st in
+    let y = q st in
+    x, y
 end
 
 open P
@@ -845,10 +852,13 @@ let attribute_name st =
   | _ ->
       raise Fail
 
-let option p st =
+let option d p st =
   match protect p st with
-  | r -> Some r
-  | exception Fail -> None
+  | r -> r
+  | exception Fail -> d
+
+let some p st =
+  Some (p st)
 
 let attribute_value_specification =
   ws >>> char '=' >>> ws >>> attribute_value
@@ -856,7 +866,7 @@ let attribute_value_specification =
 let attribute st =
   ws1 st;
   let name = attribute_name st in
-  let value = option attribute_value_specification st in
+  let value = option None (some attribute_value_specification) st in
   name, value
 
 let open_tag st =
@@ -987,149 +997,6 @@ let declaration st =
   | _ ->
       raise Fail
 
-let rec inline defs st =
-  let buf = Buffer.create 0 in
-  let get_buf () =
-    let s = Buffer.contents buf in
-    Buffer.clear buf;
-    s
-  in
-  let text acc =
-    if Buffer.length buf = 0 then
-      acc
-    else
-      Pre.R (Text (get_buf ())) :: acc
-  in
-  let rec loop acc st =
-    match peek st with
-    | '<' as c ->
-        begin match protect closing_tag st with
-        | tag ->
-            loop (Pre.R (Html (Printf.sprintf "</%s>" tag)) :: text acc) st
-        | exception Fail ->
-            begin match protect open_tag st with
-            | tag, _attributes ->
-                loop (Pre.R (Html (Printf.sprintf "<%s ...>" tag)) :: text acc) st
-            | exception Fail ->
-                begin match protect html_comment st with
-                | comment ->
-                    loop (Pre.R (Html (Printf.sprintf "<!--%s-->" comment)) :: text acc) st
-                | exception Fail ->
-                    begin match protect declaration st with
-                    | x, y ->
-                        loop (Pre.R (Html (Printf.sprintf "<!%s %s>" x y)) :: text acc) st
-                    | exception Fail ->
-                        begin match protect cdata_section st with
-                        | x ->
-                            loop (Pre.R (Html (Printf.sprintf "<![CDATA[%s]]>" x)) :: text acc) st
-                        | exception Fail ->
-                            begin match protect processing_instruction st with
-                            | x ->
-                                loop (Pre.R (Html (Printf.sprintf "<?%s?>" x)) :: text acc) st
-                            | exception Fail ->
-                                advance 1 st; Buffer.add_char buf c; loop acc st
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    | ' ' as c ->
-        advance 1 st;
-        begin match protect (sp >>> char '\n' >>> sp) st with
-        | () ->
-            loop (Pre.R Hard_break :: text acc) st
-        | exception Fail ->
-            Buffer.add_char buf c; loop acc st
-        end
-    | '\\' as c ->
-        advance 1 st;
-        begin match peek_opt st with
-        | Some '\n' ->
-            advance 1 st; loop (Pre.R Hard_break :: text acc) st
-        | Some c when is_punct c ->
-            advance 1 st; Buffer.add_char buf c; loop acc st
-        | Some _ | None ->
-            Buffer.add_char buf c; loop acc st
-        end
-    | '!' as c ->
-        advance 1 st;
-        begin match peek_opt st with
-        | Some '[' ->
-            advance 1 st; loop (Bang_left_bracket :: text acc) st
-        | Some _ | None ->
-            Buffer.add_char buf c; loop acc st
-        end
-    | '&' ->
-        entity buf st; loop acc st
-    | '[' ->
-        begin match protect link_label st with
-        | lab ->
-            let lab' =
-              match peek_opt st with
-              | Some '[' ->
-                  if peek_after '\000' st = ']' then
-                    (advance 2 st; lab)
-                  else begin
-                    match protect link_label st with
-                    | lab -> lab
-                    | exception Fail -> lab
-                  end
-              | Some _ | None -> lab
-            in
-            let s = normalize lab' in
-            let lab = inline [] (of_string lab) in
-            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
-            | Some def ->
-                loop (Pre.R (Url_ref (lab, def)) :: text acc) st
-            | None ->
-                Buffer.add_char buf '[';
-                let acc = Pre.R lab :: text acc in
-                Buffer.add_char buf ']';
-                loop acc st
-            end
-        | exception Fail ->
-            advance 1 st; loop (Left_bracket :: text acc) st
-        end
-    | '*' | '_' as c ->
-        let pre = peek_before ' ' st in
-        let f post n st =
-          let pre = pre |> Pre.classify_delim in
-          let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Ast.Star else Underscore in
-          loop (Pre.Emph (pre, post, e, n) :: text acc) st
-        in
-        let rec aux n =
-          match peek_opt st with
-          | Some c1 when c1 = c -> advance 1 st; aux (succ n)
-          | Some c1 -> f c1 n st
-          | None -> f ' ' n st
-        in
-        aux 0
-    | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop acc st
-    | exception Fail ->
-        Pre.parse_emph (List.rev (text acc))
-  in
-  loop [] st
-
-let sp3 st =
-  match peek st with
-  | ' ' ->
-      advance 1 st;
-      begin match peek st with
-      | ' ' ->
-          advance 1 st;
-          begin match peek st with
-          | ' ' -> advance 1 st; 3
-          | _ -> 2
-          | exception Fail -> 2
-          end
-      | _ -> 1
-      | exception Fail -> 1
-      end
-  | _ -> 0
-  | exception Fail -> 0
 
 let link_destination st =
   let buf = Buffer.create 17 in
@@ -1233,6 +1100,197 @@ let link_title st =
   | _ ->
       raise Fail
 
+let rec inline defs st =
+  let buf = Buffer.create 0 in
+  let get_buf () =
+    let s = Buffer.contents buf in
+    Buffer.clear buf;
+    s
+  in
+  let text acc =
+    if Buffer.length buf = 0 then
+      acc
+    else
+      Pre.R (Text (get_buf ())) :: acc
+  in
+  let rec loop acc st =
+    match peek st with
+    | '<' as c ->
+        begin match protect closing_tag st with
+        | tag ->
+            loop (Pre.R (Html (Printf.sprintf "</%s>" tag)) :: text acc) st
+        | exception Fail ->
+            begin match protect open_tag st with
+            | tag, _attributes ->
+                loop (Pre.R (Html (Printf.sprintf "<%s ...>" tag)) :: text acc) st
+            | exception Fail ->
+                begin match protect html_comment st with
+                | comment ->
+                    loop (Pre.R (Html (Printf.sprintf "<!--%s-->" comment)) :: text acc) st
+                | exception Fail ->
+                    begin match protect declaration st with
+                    | x, y ->
+                        loop (Pre.R (Html (Printf.sprintf "<!%s %s>" x y)) :: text acc) st
+                    | exception Fail ->
+                        begin match protect cdata_section st with
+                        | x ->
+                            loop (Pre.R (Html (Printf.sprintf "<![CDATA[%s]]>" x)) :: text acc) st
+                        | exception Fail ->
+                            begin match protect processing_instruction st with
+                            | x ->
+                                loop (Pre.R (Html (Printf.sprintf "<?%s?>" x)) :: text acc) st
+                            | exception Fail ->
+                                advance 1 st; Buffer.add_char buf c; loop acc st
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    | ' ' as c ->
+        advance 1 st;
+        begin match protect (sp >>> char '\n' >>> sp) st with
+        | () ->
+            loop (Pre.R Hard_break :: text acc) st
+        | exception Fail ->
+            Buffer.add_char buf c; loop acc st
+        end
+    | '\\' as c ->
+        advance 1 st;
+        begin match peek_opt st with
+        | Some '\n' ->
+            advance 1 st; loop (Pre.R Hard_break :: text acc) st
+        | Some c when is_punct c ->
+            advance 1 st; Buffer.add_char buf c; loop acc st
+        | Some _ | None ->
+            Buffer.add_char buf c; loop acc st
+        end
+    | '!' as c ->
+        advance 1 st;
+        begin match peek_opt st with
+        | Some '[' ->
+            advance 1 st; loop (Bang_left_bracket :: text acc) st
+        | Some _ | None ->
+            Buffer.add_char buf c; loop acc st
+        end
+    | '&' ->
+        entity buf st; loop acc st
+    | ']' ->
+        advance 1 st;
+        let acc = text acc in
+        let rec aux seen_link xs = function
+          | Pre.Left_bracket :: _ when seen_link ->
+              Buffer.add_char buf ']'; loop acc st
+          | (Bang_left_bracket | Left_bracket as x) :: acc' ->
+              begin match peek_opt st with
+              | Some '(' ->
+                  begin match
+                    protect
+                      (char '(' >>>
+                       option ("", None)
+                         (pair link_destination (option None (ws1 >>> some link_title)))
+                       <<< ws <<< char ')') st
+                  with
+                  | destination, title ->
+                      let r =
+                        let label = Pre.parse_emph xs in
+                        if x = Bang_left_bracket then
+                          Img {Ast.label; destination; title}
+                        else
+                          Url {Ast.label; destination; title}
+                      in
+                      loop (Pre.R r :: acc') st
+                  | exception Fail ->
+                      Buffer.add_char buf ']'; loop acc st
+                  end
+              | Some '[' ->
+                  assert false
+              | Some _ | None ->
+                  Buffer.add_char buf ']'; loop acc st
+              end
+          | Pre.R (Url _ | Url_ref _) as x :: acc' ->
+              aux true (x :: xs) acc'
+          | x :: acc' ->
+              aux seen_link (x :: xs) acc'
+          | [] ->
+              Buffer.add_char buf ']'; loop acc st
+        in
+        aux false [] acc
+    | '[' ->
+        let st0 = copy_state st in
+        begin match protect link_label st with
+        | lab ->
+            let reflink lab' =
+              let s = normalize lab' in
+              let lab = inline [] (of_string lab) in
+              match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+              | Some def ->
+                  loop (Pre.R (Url_ref (lab, def)) :: text acc) st
+              | None ->
+                  Buffer.add_char buf '[';
+                  let acc = Pre.R lab :: text acc in
+                  Buffer.add_char buf ']';
+                  loop acc st
+            in
+            begin match peek_opt st with
+            | Some '[' ->
+                if peek_after '\000' st = ']' then
+                  (advance 2 st; reflink lab)
+                else begin
+                  match protect link_label st with
+                  | lab -> reflink lab
+                  | exception Fail -> reflink lab
+                end
+            | Some '(' ->
+                restore_state st st0; (* hack *)
+                advance 1 st;
+                loop (Left_bracket :: text acc) st
+            | Some _ | None ->
+                reflink lab
+            end
+        | exception Fail ->
+            advance 1 st; loop (Left_bracket :: text acc) st
+        end
+    | '*' | '_' as c ->
+        let pre = peek_before ' ' st in
+        let f post n st =
+          let pre = pre |> Pre.classify_delim in
+          let post = post |> Pre.classify_delim in
+          let e = if c = '*' then Ast.Star else Underscore in
+          loop (Pre.Emph (pre, post, e, n) :: text acc) st
+        in
+        let rec aux n =
+          match peek_opt st with
+          | Some c1 when c1 = c -> advance 1 st; aux (succ n)
+          | Some c1 -> f c1 n st
+          | None -> f ' ' n st
+        in
+        aux 0
+    | _ as c ->
+        advance 1 st; Buffer.add_char buf c; loop acc st
+    | exception Fail ->
+        Pre.parse_emph (List.rev (text acc))
+  in
+  loop [] st
+
+let sp3 st =
+  match peek st with
+  | ' ' ->
+      advance 1 st;
+      begin match peek st with
+      | ' ' ->
+          advance 1 st;
+          begin match peek st with
+          | ' ' -> advance 1 st; 3
+          | _ -> 2
+          | exception Fail -> 2
+          end
+      | _ -> 1
+      | exception Fail -> 1
+      end
+  | _ -> 0
+  | exception Fail -> 0
+
 let link_reference_definition st =
   let ws st =
     let rec loop seen_nl =
@@ -1254,7 +1312,7 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
-  let title = (option (ws1 >>> link_title) <<< sp <<< eol) st in
+  let title = (option None (ws1 >>> some link_title) <<< sp <<< eol) st in
   {Ast.label; destination; title}
 
 let link_reference_definitions st =
