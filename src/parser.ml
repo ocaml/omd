@@ -485,6 +485,7 @@ module P : sig
   val (<<<): 'a t -> unit t -> 'a t
   val protect: 'a t -> 'a t
   val copy_state: state -> state
+  val peek_before: char -> state -> char
 end = struct
   type state =
     {
@@ -542,6 +543,10 @@ end = struct
       None
     else
       Some st.str.[st.pos]
+
+  let peek_before c st =
+    if st.pos = 0 then c
+    else st.str.[st.pos - 1]
 
   let pos st =
     st.pos
@@ -1071,20 +1076,21 @@ let rec inline defs st =
         | exception Fail ->
             advance 1 st; loop (Left_bracket :: text acc) st
         end
-    (* | '*' | '_' as c -> *)
-    (*     let pre = peek_before ' ' st |> Pre.classify_delim in *)
-    (*     let f post n st = *)
-    (*       let post = post |> Pre.classify_delim in *)
-    (*       let e = if c = '*' then Ast.Star else Underscore in *)
-    (*       loop (Pre.Emph (pre, post, e, n) :: text acc) st *)
-    (*     in *)
-    (*     let rec aux n = *)
-    (*       match peek st with *)
-    (*       | c1 when c1 = c -> advance 1 st; aux (succ n) *)
-    (*       | c1 -> f c1 n st *)
-    (*       | exception End_of_file -> f ' ' n st *)
-    (*     in *)
-    (*     aux 0 *)
+    | '*' | '_' as c ->
+        let pre = peek_before ' ' st in
+        let f post n st =
+          let pre = pre |> Pre.classify_delim in
+          let post = post |> Pre.classify_delim in
+          let e = if c = '*' then Ast.Star else Underscore in
+          loop (Pre.Emph (pre, post, e, n) :: text acc) st
+        in
+        let rec aux n =
+          match peek_opt st with
+          | Some c1 when c1 = c -> advance 1 st; aux (succ n)
+          | Some c1 -> f c1 n st
+          | None -> f ' ' n st
+        in
+        aux 0
     | _ as c ->
         advance 1 st; Buffer.add_char buf c; loop acc st
     | exception Fail ->
