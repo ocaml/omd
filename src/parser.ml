@@ -479,7 +479,7 @@ module P : sig
   val next: char t
   val (|||): 'a t -> 'a t -> 'a t
   val ws: unit t
-  val ws': unit t
+  val sp: unit t
   val ws1: unit t
   val (>>>): unit t -> 'a t -> 'a t
   val (<<<): 'a t -> unit t -> 'a t
@@ -566,7 +566,7 @@ end = struct
     in
     try loop () with Fail -> ()
 
-  let ws' st =
+  let sp st =
     let rec loop () =
       match peek st with
       | ' ' | '\t' -> advance 1 st; loop ()
@@ -1026,7 +1026,7 @@ let rec inline defs st =
         end
     | ' ' as c ->
         advance 1 st;
-        begin match protect (ws' >>> char '\n' >>> ws') st with
+        begin match protect (sp >>> char '\n' >>> sp) st with
         | () ->
             loop (Pre.R Hard_break :: text acc) st
         | exception Fail ->
@@ -1233,7 +1233,7 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
-  let title = (option (ws1 >>> link_title) <<< ws' <<< eol) st in
+  let title = (option (ws1 >>> link_title) <<< sp <<< eol) st in
   {Ast.label; destination; title}
 
 let link_reference_definitions st =
