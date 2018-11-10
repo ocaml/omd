@@ -1065,35 +1065,19 @@ let rec inline defs st =
                 | None ->
                     assert false
                 end
+            | exception Fail ->
+                let s = normalize lab1 in
+                begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+                | Some def ->
+                    let txt = inline [] (of_string lab1) in
+                    loop (Pre.R (Url_ref (txt, def)) :: text acc) st
+                | None ->
+                    assert false
+                end
             end
         | exception Fail ->
             advance 1 st; loop (Left_bracket :: text acc) st
         end
-    (* | '[' -> *)
-    (*     begin match protect link_label st with *)
-    (*     | text -> *)
-    (*         begin match peek st with *)
-    (*         | '(' -> *)
-    (*             destination_and_title *)
-    (*         | '[' -> *)
-    (*             begin match protect link_label st with *)
-    (*             | label -> *)
-    (*                 let label' = normalize label in *)
-    (*                 begin match List.find_opt (fun {Ast.label; _} -> label = label') defs with *)
-    (*                 | Some def -> *)
-    (*                     let text = inline [] [] text in *)
-    (*                     loop (Pre.R (Url_ref (text, def)) :: text acc) st *)
-    (*                 | None -> *)
-
-    (*                 end *)
-    (*             | exception Fail -> *)
-    (*             end *)
-    (*         | _ | Fail -> *)
-    (*             look_up_and_check *)
-    (*         end *)
-    (*     | exception Fail -> *)
-    (*         advance 1 st; loop (Left_bracket :: text acc) st *)
-    (*     end *)
     (* | '*' | '_' as c -> *)
     (*     let pre = peek_before ' ' st |> Pre.classify_delim in *)
     (*     let f post n st = *)
@@ -1263,7 +1247,6 @@ let link_reference_definitions st =
   let rec loop acc =
     match protect link_reference_definition st with
     | def ->
-        Printf.eprintf "%S defined\n%!" def.Ast.label;
         loop (def :: acc)
     | exception Fail ->
         acc, pos st
