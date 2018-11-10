@@ -486,6 +486,7 @@ module P : sig
   val protect: 'a t -> 'a t
   val copy_state: state -> state
   val peek_before: char -> state -> char
+  val peek_after: char -> state -> char
 end = struct
   type state =
     {
@@ -547,6 +548,10 @@ end = struct
   let peek_before c st =
     if st.pos = 0 then c
     else st.str.[st.pos - 1]
+
+  let peek_after c st =
+    if st.pos + 1 >= String.length st.str then c
+    else st.str.[st.pos + 1]
 
   let pos st =
     st.pos
@@ -1059,19 +1064,29 @@ let rec inline defs st =
         entity buf st; loop acc st
     | '[' ->
         begin match protect link_label st with
-        | lab1 ->
-            begin match peek_opt st with
-            | Some '[' ->
-                assert false
-            | Some _ | None ->
-                let s = normalize lab1 in
-                begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
-                | Some def ->
-                    let txt = inline [] (of_string lab1) in
-                    loop (Pre.R (Url_ref (txt, def)) :: text acc) st
-                | None ->
-                    assert false
-                end
+        | lab ->
+            let lab' =
+              match peek_opt st with
+              | Some '[' ->
+                  if peek_after '\000' st = ']' then
+                    (advance 2 st; lab)
+                  else begin
+                    match protect link_label st with
+                    | lab -> lab
+                    | exception Fail -> lab
+                  end
+              | Some _ | None -> lab
+            in
+            let s = normalize lab' in
+            let lab = inline [] (of_string lab) in
+            begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+            | Some def ->
+                loop (Pre.R (Url_ref (lab, def)) :: text acc) st
+            | None ->
+                Buffer.add_char buf '[';
+                let acc = Pre.R lab :: text acc in
+                Buffer.add_char buf ']';
+                loop acc st
             end
         | exception Fail ->
             advance 1 st; loop (Left_bracket :: text acc) st
