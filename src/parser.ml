@@ -752,47 +752,57 @@ let normalize s =
   in
   loop true false 0
 
-let tag_name st =
+let tag_name buf st =
   match peek st with
-  | 'a'..'z' | 'A'..'Z' ->
-      push_mark st;
+  | 'a'..'z' | 'A'..'Z' as c ->
       advance 1 st;
+      Buffer.add_char buf c;
       let rec loop () =
-        match peek st with
-        | 'a'..'z' | 'A'..'Z' | '0'..'9' | '-' ->
-            advance 1 st; loop ()
-        | _ ->
-            pop_mark st
-        | exception Fail ->
-            pop_mark st
+        match peek_opt st with
+        | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '-' as c) ->
+            advance 1 st; Buffer.add_char buf c; loop ()
+        | Some _ | None -> ()
       in
       loop ()
   | _ ->
       raise Fail
 
+let ws_buf buf st =
+  let rec loop () =
+    match peek_opt st with
+    | Some (' ' | '\t' | '\010'..'\013' as c) ->
+        Buffer.add_char buf c; advance 1 st; loop ()
+    | Some _ | None ->
+        ()
+  in
+  loop ()
+
 let closing_tag st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
   if next st <> '/' then raise Fail;
-  let name = tag_name st in
-  ws st;
+  Buffer.add_string buf "</";
+  tag_name buf st;
+  ws_buf buf st;
   if next st <> '>' then raise Fail;
-  name
+  Buffer.add_char buf '>';
+  Buffer.contents buf
 
 let list p st =
-  let rec loop acc =
+  let rec loop () =
     match protect p st with
-    | r -> loop (r :: acc)
-    | exception Fail -> List.rev acc
+    | () -> loop ()
+    | exception Fail -> ()
   in
-  loop []
+  loop ()
 
-let single_quoted_attribute st =
+let single_quoted_attribute buf st =
   if next st <> '\'' then raise Fail;
-  let buf = Buffer.create 17 in
+  Buffer.add_char buf '\'';
   let rec loop () =
     match peek st with
     | '\'' ->
-        advance 1 st; Buffer.contents buf
+        advance 1 st; Buffer.add_char buf '\''
     | '&' ->
         entity buf st; loop ()
     | _ as c ->
@@ -800,13 +810,13 @@ let single_quoted_attribute st =
   in
   loop ()
 
-let double_quoted_attribute st =
+let double_quoted_attribute buf st =
   if next st <> '"' then raise Fail;
-  let buf = Buffer.create 17 in
+  Buffer.add_char buf '"';
   let rec loop () =
     match peek st with
     | '"' ->
-        advance 1 st; Buffer.contents buf
+        advance 1 st; Buffer.add_char buf '"'
     | '&' ->
         entity buf st; loop ()
     | _ as c ->
@@ -814,13 +824,11 @@ let double_quoted_attribute st =
   in
   loop ()
 
-let unquoted_attribute st =
-  let buf = Buffer.create 17 in
+let unquoted_attribute buf st =
   let rec loop () =
     match peek st with
     | ' ' | '\t' | '\010'..'\013' | '"' | '\'' | '=' | '<' | '>' | '`' ->
-        if Buffer.length buf = 0 then raise Fail;
-        Buffer.contents buf
+        if Buffer.length buf = 0 then raise Fail
     | '&' ->
         entity buf st; loop ()
     | _ as c ->
@@ -828,25 +836,23 @@ let unquoted_attribute st =
   in
   loop ()
 
-let attribute_value st =
+let attribute_value buf st =
   match peek st with
-  | '\'' -> single_quoted_attribute st
-  | '"' -> double_quoted_attribute st
-  | _ -> unquoted_attribute st
+  | '\'' -> single_quoted_attribute buf st
+  | '"' -> double_quoted_attribute buf st
+  | _ -> unquoted_attribute buf st
 
-let attribute_name st =
+let attribute_name buf st =
   match peek st with
-  | 'a'..'z' | 'A'..'Z' | '_' | ':' ->
-      push_mark st;
+  | 'a'..'z' | 'A'..'Z' | '_' | ':' as c ->
+      Buffer.add_char buf c;
       advance 1 st;
       let rec loop () =
-        match peek st with
-        | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-' ->
-            advance 1 st; loop ()
-        | _ ->
-            pop_mark st
-        | exception Fail ->
-            pop_mark st
+        match peek_opt st with
+        | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-' as c) ->
+            advance 1 st; Buffer.add_char buf c; loop ()
+        | Some _ | None ->
+            ()
       in
       loop ()
   | _ ->
@@ -860,33 +866,54 @@ let option d p st =
 let some p st =
   Some (p st)
 
-let attribute_value_specification =
-  ws >>> char '=' >>> ws >>> attribute_value
+let char_buf buf c st =
+  if next st <> c then raise Fail;
+  Buffer.add_char buf c
 
-let attribute st =
-  ws1 st;
-  let name = attribute_name st in
-  let value = option None (some attribute_value_specification) st in
-  name, value
+let attribute_value_specification buf =
+  ws_buf buf >>> char_buf buf '=' >>> ws_buf buf >>> attribute_value buf
+
+let ws1_buf buf st =
+  match peek_opt st with
+  | Some (' ' | '\t' | '\010'..'\013') ->
+      ws_buf buf st
+  | Some _ | None ->
+      raise Fail
+
+let attribute buf st =
+  attribute_name buf st;
+  option () (attribute_value_specification buf) st
 
 let open_tag st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
-  let name = tag_name st in
-  let attributes = list attribute st in
-  ws st;
+  Buffer.add_char buf '<';
+  tag_name buf st;
+  let rec loop () =
+    match ws1_buf buf st with
+    | exception Fail -> ()
+    | () ->
+        begin match protect (attribute buf) st with
+        | () -> loop ()
+        | exception Fail -> ()
+        end
+  in
+  loop ();
   begin match peek st with
-  | '/' -> advance 1 st
+  | '/' as c -> advance 1 st; Buffer.add_char buf c
   | _ -> ()
   end;
   if next st <> '>' then raise Fail;
-  (name, attributes)
+  Buffer.add_char buf '>';
+  Buffer.contents buf
 
 let html_comment st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
   if next st <> '!' then raise Fail;
   if next st <> '-' then raise Fail;
   if next st <> '-' then raise Fail;
-  let buf = Buffer.create 17 in
+  Buffer.add_string buf "<!--";
   let rec loop () =
     match peek st with
     | '-' as c ->
@@ -895,6 +922,7 @@ let html_comment st =
         | '-' ->
             advance 1 st;
             if next st <> '>' then raise Fail;
+            Buffer.add_string buf "-->";
             Buffer.contents buf
         | _ ->
             advance 1 st; Buffer.add_char buf c; loop ()
@@ -907,16 +935,17 @@ let html_comment st =
   loop ()
 
 let processing_instruction st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
   if next st <> '?' then raise Fail;
-  let buf = Buffer.create 17 in
+  Buffer.add_string buf "<?";
   let rec loop () =
     match peek st with
     | '?' as c ->
         advance 1 st;
         begin match peek st with
         | '>' ->
-            advance 1 st; Buffer.contents buf
+            advance 1 st; Buffer.add_string buf "?>"; Buffer.contents buf
         | _ ->
             Buffer.add_char buf c; loop ()
         end
@@ -928,6 +957,7 @@ let processing_instruction st =
   loop ()
 
 let cdata_section st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
   if next st <> '!' then raise Fail;
   if next st <> '[' then raise Fail;
@@ -937,7 +967,7 @@ let cdata_section st =
   if next st <> 'T' then raise Fail;
   if next st <> 'A' then raise Fail;
   if next st <> '[' then raise Fail;
-  let buf = Buffer.create 17 in
+  Buffer.add_string buf "<![CDATA[";
   let rec loop () =
     match peek st with
     | ']' as c ->
@@ -947,7 +977,7 @@ let cdata_section st =
             advance 1 st;
             begin match peek st with
             | '>' ->
-                advance 1 st; Buffer.contents buf
+                advance 1 st; Buffer.add_string buf "]]>"; Buffer.contents buf
             | _ ->
                 Buffer.add_char buf c; Buffer.add_char buf c1; loop ()
             end
@@ -962,35 +992,29 @@ let cdata_section st =
   loop ()
 
 let declaration st =
+  let buf = Buffer.create 17 in
   if next st <> '<' then raise Fail;
   if next st <> '!' then raise Fail;
+  Buffer.add_string buf "<!";
   match peek st with
   | 'A'..'Z' ->
-      push_mark st;
       let rec loop () =
         match peek st with
-        | 'A'..'Z' ->
-            advance 1 st; loop ()
+        | 'A'..'Z' as c ->
+            advance 1 st; Buffer.add_char buf c; loop ()
         | ' ' | '\t' | '\010'..'\013' ->
-            let name = pop_mark st in
-            ws1 st;
-            let buf = Buffer.create 17 in
+            ws1_buf buf st;
             let rec loop () =
               match peek st with
-              | '>' ->
-                  advance 1 st;
-                  name, Buffer.contents buf
+              | '>' as c ->
+                  advance 1 st; Buffer.add_char buf c; Buffer.contents buf
               | '&' ->
                   entity buf st; loop ()
               | _ as c ->
                   advance 1 st; Buffer.add_char buf c; loop ()
-              | exception e ->
-                  ignore (pop_mark st);
-                  raise e
             in
             loop ()
         | _ ->
-            ignore (pop_mark st);
             raise Fail
       in
       loop ()
@@ -1100,6 +1124,17 @@ let link_title st =
   | _ ->
       raise Fail
 
+let space st =
+  match peek st with
+  | ' ' -> advance 1 st
+  | _ -> raise Fail
+
+let many p st =
+  try
+    while true do p st done
+  with Fail ->
+    ()
+
 let rec inline defs st =
   let buf = Buffer.create 0 in
   let get_buf () =
@@ -1116,45 +1151,59 @@ let rec inline defs st =
   let rec loop acc st =
     match peek st with
     | '<' as c ->
-        begin match protect closing_tag st with
+        begin match
+          protect (closing_tag ||| open_tag ||| html_comment |||
+                   declaration ||| cdata_section ||| processing_instruction) st
+        with
         | tag ->
-            loop (Pre.R (Html (Printf.sprintf "</%s>" tag)) :: text acc) st
+            loop (Pre.R (Html tag) :: text acc) st
         | exception Fail ->
-            begin match protect open_tag st with
-            | tag, _attributes ->
-                loop (Pre.R (Html (Printf.sprintf "<%s ...>" tag)) :: text acc) st
-            | exception Fail ->
-                begin match protect html_comment st with
-                | comment ->
-                    loop (Pre.R (Html (Printf.sprintf "<!--%s-->" comment)) :: text acc) st
-                | exception Fail ->
-                    begin match protect declaration st with
-                    | x, y ->
-                        loop (Pre.R (Html (Printf.sprintf "<!%s %s>" x y)) :: text acc) st
-                    | exception Fail ->
-                        begin match protect cdata_section st with
-                        | x ->
-                            loop (Pre.R (Html (Printf.sprintf "<![CDATA[%s]]>" x)) :: text acc) st
-                        | exception Fail ->
-                            begin match protect processing_instruction st with
-                            | x ->
-                                loop (Pre.R (Html (Printf.sprintf "<?%s?>" x)) :: text acc) st
-                            | exception Fail ->
-                                advance 1 st; Buffer.add_char buf c; loop acc st
-                            end
-                        end
-                    end
-                end
-            end
+            advance 1 st; Buffer.add_char buf c; loop acc st
         end
     | ' ' as c ->
         advance 1 st;
-        begin match protect (sp >>> char '\n' >>> sp) st with
-        | () ->
-            loop (Pre.R Hard_break :: text acc) st
-        | exception Fail ->
+        begin match peek_opt st with
+        | Some ' ' ->
+            begin match protect (many space >>> char '\n' >>> many space) st with
+            | () ->
+                loop (Pre.R Hard_break :: text acc) st
+            | exception Fail ->
+                advance 1 st;
+                Buffer.add_string buf "  "; loop acc st
+            end
+        | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
+    | '`' ->
+        let rec loop2 n =
+          match peek_opt st with
+          | Some '`' ->
+              loop2 (succ n)
+          | Some _ ->
+              let acc = text acc in
+              let buf = Buffer.create 17 in
+              let rec loop3 start seen_ws m =
+                if m = n then
+                  loop (Pre.R (Code (Buffer.contents buf)) :: acc) st
+                else begin
+                  match peek_opt st with
+                  | Some '`' ->
+                      loop3 false false (succ n)
+                  | Some (' ' | '\t' | '\010'..'\013') ->
+                      loop3 start true 0
+                  | Some c ->
+                      if not start && seen_ws then Buffer.add_char buf ' ';
+                      Buffer.add_char buf c;
+                      loop3 false false 0
+                  | None ->
+                      assert false
+                end
+              in
+              loop3 true false 0
+          | None ->
+              Buffer.add_string buf (String.make n '`'); loop acc st
+        in
+        loop2 0
     | '\\' as c ->
         advance 1 st;
         begin match peek_opt st with
