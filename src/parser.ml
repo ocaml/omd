@@ -830,20 +830,29 @@ let link_label st =
   if peek st <> '[' then raise Fail;
   advance 1 st;
   let buf = Buffer.create 17 in
-  let rec loop () =
+  let rec loop nonempty =
     match peek st with
     | ']' ->
         advance 1 st;
-        if Buffer.length buf = 0 then raise Fail;
+        if not nonempty then raise Fail;
         Buffer.contents buf
-    | '\\' ->
-        escape buf st; loop ()
+    | '\\' as c ->
+        advance 1 st; Buffer.add_char buf c;
+        begin match peek st with
+        | c when is_punct c ->
+            advance 1 st; Buffer.add_char buf c
+        | _ ->
+            ()
+        end;
+        loop true
     | '[' ->
         raise Fail
+    | ' ' | '\t' | '\010'..'\013' as c ->
+        advance 1 st; Buffer.add_char buf c; loop nonempty
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop ()
+        advance 1 st; Buffer.add_char buf c; loop true
   in
-  loop ()
+  loop false
 
 let normalize s =
   let buf = Buffer.create (String.length s) in
@@ -1309,6 +1318,12 @@ let autolink st =
   | _ ->
       raise Fail
 
+let inline_link =
+  char '(' >>>
+  option ("", None)
+    (pair link_destination (option None (ws1 >>> some link_title)))
+  <<< ws <<< char ')'
+
 let rec inline defs st =
   let buf = Buffer.create 0 in
   let get_buf () =
@@ -1323,19 +1338,20 @@ let rec inline defs st =
       Pre.R (Text (get_buf ())) :: acc
   in
   let rec reference_link kind acc st =
-    let st0 = copy_state st in
     match protect link_label st with
     | lab ->
+        let st1 = copy_state st in
+        let lab1 = inline [] (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          let lab = inline [] (of_string lab) in
           match List.find_opt (fun {Ast.label; _} -> label = s) defs with
           | Some def ->
-              loop (Pre.R (Ref (kind, lab, def)) :: text acc) st
+              loop (Pre.R (Ref (kind, lab1, def)) :: text acc) st
           | None ->
               Buffer.add_char buf '[';
-              let acc = Pre.R lab :: text acc in
+              let acc = Pre.R lab1 :: text acc in
               Buffer.add_char buf ']';
+              restore_state st st1;
               loop acc st
         in
         begin match peek_opt st with
@@ -1348,9 +1364,13 @@ let rec inline defs st =
               | exception Fail -> reflink lab
             end
         | Some '(' ->
-            restore_state st st0; (* hack *)
-            advance 1 st;
-            loop (Left_bracket kind :: text acc) st
+            begin match protect inline_link st with
+            | destination, title ->
+                let r = Link (kind, {Ast.label = lab1; destination; title}) in
+                loop (Pre.R r :: text acc) st
+            | exception Fail ->
+                reflink lab
+            end
         | Some _ | None ->
             reflink lab
         end
@@ -1467,13 +1487,7 @@ let rec inline defs st =
           | Left_bracket k :: acc' ->
               begin match peek_opt st with
               | Some '(' ->
-                  begin match
-                    protect
-                      (char '(' >>>
-                       option ("", None)
-                         (pair link_destination (option None (ws1 >>> some link_title)))
-                       <<< ws <<< char ')') st
-                  with
+                  begin match protect inline_link st with
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
@@ -1484,7 +1498,28 @@ let rec inline defs st =
                       Buffer.add_char buf ']'; loop acc st
                   end
               | Some '[' ->
-                  assert false
+                  let label = Pre.parse_emph xs in
+                  let st1 = copy_state st in
+                  begin match link_label st with
+                  | lab ->
+                      let s = normalize lab in
+                      begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+                      | Some def ->
+                          loop (Pre.R (Ref (k, label, def)) :: acc) st
+                      | None ->
+                          Buffer.add_char buf '[';
+                          let acc = Pre.R label :: text acc in
+                          Buffer.add_char buf ']';
+                          restore_state st st1;
+                          loop acc st
+                      end
+                  | exception Fail ->
+                      Buffer.add_char buf '[';
+                      let acc = Pre.R label :: text acc in
+                      Buffer.add_char buf ']';
+                      restore_state st st1;
+                      loop acc st
+                  end
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
