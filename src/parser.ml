@@ -1231,6 +1231,84 @@ let many p st =
   with Fail ->
     ()
 
+let scheme st =
+  match peek st with
+  | 'a'..'z' | 'A'..'Z' ->
+      let rec loop n =
+        if n < 32 then begin
+          match peek_opt st with
+          | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-') ->
+              advance 1 st; loop (succ n)
+          | Some _ | None ->
+              n
+        end else n
+      in
+      let n = loop 0 in
+      if n < 2 then raise Fail
+  | _ ->
+      raise Fail
+
+let absolute_uri st =
+  let p = pos st in
+  scheme st;
+  if next st <> ':' then raise Fail;
+  let rec loop () =
+    match peek_opt st with
+    | Some (' ' | '\t' | '\010'..'\013' | '\x00'..'\x1F' | '\x7F'..'\x9F' | '<' | '>') | None ->
+        let txt = range st p (pos st - p) in
+        txt, txt
+    | Some _ ->
+        advance 1 st; loop ()
+  in
+  loop ()
+
+let email_address st =
+  let p = pos st in
+  let rec loop n =
+    match peek st with
+    | 'a'..'z' | 'A'..'Z' | '0'..'9'
+    | '.' | '!' | '#' | '$' | '%' | '&' | '\'' | '*'
+    | '+' | '/' | '=' | '?' | '^' | '_' | '`' | '{' | '|'
+    | '}' | '~' | '-' ->
+        advance 1 st; loop (succ n)
+    | '@' ->
+        advance 1 st;
+        let label st =
+          let let_dig st =
+            match peek st with
+            | 'a'..'z' | 'A'..'Z' | '0'..'9' -> advance 1 st; false
+            | '-' -> advance 1 st; true
+            | _ -> raise Fail
+          in
+          if let_dig st then raise Fail;
+          let rec loop last =
+            match let_dig st with
+            | r ->
+                loop r
+            | exception Fail ->
+                if last then raise Fail
+          in
+          loop false
+        in
+        label st;
+        list (char '.' >>> label) st;
+        let txt = range st p (pos st - p) in
+        txt, "mailto:" ^ txt
+    | _ ->
+        raise Fail
+  in
+  loop 0
+
+let autolink st =
+  match peek st with
+  | '<' ->
+      advance 1 st;
+      let label, destination = (absolute_uri ||| email_address) st in
+      if next st <> '>' then raise Fail;
+      {Ast.label; destination; title = None}
+  | _ ->
+      raise Fail
+
 let rec inline defs st =
   let buf = Buffer.create 0 in
   let get_buf () =
@@ -1281,14 +1359,19 @@ let rec inline defs st =
   and loop acc st =
     match peek st with
     | '<' as c ->
-        begin match
-          protect (closing_tag ||| open_tag ||| html_comment |||
-                   declaration ||| cdata_section ||| processing_instruction) st
-        with
-        | tag ->
-            loop (Pre.R (Html tag) :: text acc) st
+        begin match protect autolink st with
+        | def ->
+            loop (Pre.R (Link (Url, {def with label = Text def.label})) :: text acc) st
         | exception Fail ->
-            advance 1 st; Buffer.add_char buf c; loop acc st
+          begin match
+            protect (closing_tag ||| open_tag ||| html_comment |||
+                     declaration ||| cdata_section ||| processing_instruction) st
+          with
+          | tag ->
+              loop (Pre.R (Html tag) :: text acc) st
+          | exception Fail ->
+              advance 1 st; Buffer.add_char buf c; loop acc st
+          end
         end
     | '\n' ->
         advance 1 st; sp st; loop (Pre.R Soft_break :: text acc) st
