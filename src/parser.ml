@@ -651,8 +651,11 @@ let entity buf st =
                   aux (succ n) (m * 16 + Char.code c - Char.code 'A' + 10)
               | ';' ->
                   advance 1 st;
-                  let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
-                  Buffer.add_utf_8_uchar buf u
+                  if n = 0 then
+                    Buffer.add_string buf (pop_mark st)
+                  else
+                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
+                    Buffer.add_utf_8_uchar buf u
               | _ ->
                   Buffer.add_string buf (pop_mark st)
               | exception Fail ->
@@ -670,8 +673,12 @@ let entity buf st =
                   aux (succ n) (m * 10 + Char.code c - Char.code '0')
               | ';' ->
                   advance 1 st;
-                  let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
-                  Buffer.add_utf_8_uchar buf u
+                  if n = 0 then
+                    Buffer.add_string buf (pop_mark st)
+                  else begin
+                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
+                    Buffer.add_utf_8_uchar buf u
+                  end
               | _ ->
                   Buffer.add_string buf (pop_mark st)
               | exception Fail ->
@@ -906,8 +913,8 @@ let single_quoted_attribute buf st =
     match peek st with
     | '\'' ->
         advance 1 st; Buffer.add_char buf '\''
-    | '&' ->
-        entity buf st; loop ()
+    (* | '&' -> *)
+    (*     entity buf st; loop () *)
     | _ as c ->
         advance 1 st; Buffer.add_char buf c; loop ()
   in
@@ -920,8 +927,8 @@ let double_quoted_attribute buf st =
     match peek st with
     | '"' ->
         advance 1 st; Buffer.add_char buf '"'
-    | '&' ->
-        entity buf st; loop ()
+    (* | '&' -> *)
+    (*     entity buf st; loop () *)
     | _ as c ->
         advance 1 st; Buffer.add_char buf c; loop ()
   in
@@ -932,8 +939,8 @@ let unquoted_attribute buf st =
     match peek st with
     | ' ' | '\t' | '\010'..'\013' | '"' | '\'' | '=' | '<' | '>' | '`' ->
         if Buffer.length buf = 0 then raise Fail
-    | '&' ->
-        entity buf st; loop ()
+    (* | '&' -> *)
+    (*     entity buf st; loop () *)
     | _ as c ->
         advance 1 st; Buffer.add_char buf c; loop ()
   in
@@ -1298,6 +1305,8 @@ let rec inline defs st =
         | exception Fail ->
             advance 1 st; Buffer.add_char buf c; loop acc st
         end
+    | '\n' ->
+        advance 1 st; sp st; loop (Pre.R Soft_break :: text acc) st
     | ' ' as c ->
         advance 1 st;
         begin match peek_opt st with
@@ -1309,6 +1318,8 @@ let rec inline defs st =
                 advance 1 st;
                 Buffer.add_string buf "  "; loop acc st
             end
+        | Some '\n' ->
+            loop acc st
         | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
