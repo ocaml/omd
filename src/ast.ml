@@ -35,6 +35,10 @@ type emph_style =
   | Star
   | Underscore
 
+type link_kind =
+  | Img
+  | Url
+
 type inline =
   | Concat of inline list
   | Text of string
@@ -42,8 +46,6 @@ type inline =
   | Code of string
   | Hard_break
   | Soft_break
-  | Url of inline link_def
-  | Url_ref of inline * string link_def
-  | Img_ref of inline * string link_def
+  | Link of link_kind * inline link_def
+  | Ref of link_kind * inline * string link_def
   | Html of string
-  | Img of inline link_def

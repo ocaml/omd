@@ -41,7 +41,7 @@ let rec html_of_md b md =
         Buffer.add_string b "<br />\n"
     | Html body ->
         Buffer.add_string b body
-    | Url {label; destination; title} | Url_ref (label, {destination; title; _}) ->
+    | Link (Url, {label; destination; title}) | Ref (Url, label, {destination; title; _}) ->
         Buffer.add_string b "<a href=\"";
         Buffer.add_string b (percent_encode destination);
         Buffer.add_string b "\"";
@@ -55,7 +55,7 @@ let rec html_of_md b md =
         Buffer.add_string b ">";
         html_of_md b label;
         Buffer.add_string b "</a>"
-    | Img {label; destination; title} | Img_ref (label, {destination; title; _}) ->
+    | Link (Img, {label; destination; title}) | Ref (Img, label, {destination; title; _}) ->
         Buffer.add_string b "<img src=\"";
         Buffer.add_string b (percent_encode destination);
         Buffer.add_string b "\" alt=\"";

@@ -474,6 +474,8 @@ module P : sig
   val peek: char t
   val peek_opt: char option t
   val pos: state -> int
+  val range: state -> int -> int -> string
+  val set_pos: state -> int -> unit
   val advance: int -> unit t
   val char: char -> unit t
   val next: char t
@@ -557,6 +559,12 @@ end = struct
 
   let pos st =
     st.pos
+
+  let range st pos n =
+    String.sub st.str pos n
+
+  let set_pos st pos =
+    st.pos <- pos
 
   let advance n st =
     assert (n >= 0);
@@ -704,7 +712,102 @@ let entity buf st =
   | exception Fail ->
       Buffer.add_string buf (pop_mark st)
 
-module Pre = Inline.Pre
+module Pre = struct
+  type delim =
+    | Ws
+    | Punct
+    | Other
+
+  type t =
+    | Bang_left_bracket
+    | Left_bracket of Ast.link_kind
+    | Emph of delim * delim * emph_style * int
+    | R of inline
+
+  let concat = function
+    | [x] -> x
+    | l -> Concat l
+
+  let left_flanking = function
+    | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
+    | _ -> false
+
+  let right_flanking = function
+    | Emph (Other, _, _, _) | Emph (Punct, (Ws | Punct), _, _) -> true
+    | _ -> false
+
+  let is_opener = function
+    | Emph (pre, _, Underscore, _) as x ->
+        left_flanking x && (not (right_flanking x) || pre = Punct)
+    | Emph (_, _, Star, _) as x ->
+        left_flanking x
+    | _ ->
+        false
+
+  let is_closer = function
+    | Emph (_, post, Underscore, _) as x ->
+        right_flanking x && (not (left_flanking x) || post = Punct)
+    | Emph (_, _, Star, _) as x ->
+        right_flanking x
+    | _ ->
+        false
+
+  let classify_delim = function
+    | '!' | '"' | '#' | '$' | '%'
+    | '&' | '\'' | '(' | ')' | '*' | '+'
+    | ',' | '-' | '.' | '/' | ':' | ';'
+    | '<' | '=' | '>' | '?' | '@' | '['
+    | '\\' | ']' | '^' | '_' | '`' | '{'
+    | '|' | '}' | '~' -> Punct
+    | ' ' | '\t' | '\010'..'\013' -> Ws
+    | _ -> Other
+
+  let to_r : _ -> inline = function
+    | Bang_left_bracket -> Text "!["
+    | Left_bracket Img -> Text "!["
+    | Left_bracket Url -> Text "["
+    | Emph (_, _, Star, n) -> Text (String.make n '*')
+    | Emph (_, _, Underscore, n) -> Text (String.make n '_')
+    | R x -> x
+
+  let rec parse_emph = function
+    | Emph (pre, _, q1, n1) as x :: xs when is_opener x ->
+        let rec loop acc = function
+          | Emph (_, post, q2, n2) as x :: xs when is_closer x && q1 = q2 ->
+              let xs =
+                if n1 >= 2 && n2 >= 2 then
+                  if n2 > 2 then Emph (Punct, post, q2, n2-2) :: xs else xs
+                else
+                if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
+              in
+              let r =
+                let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
+                R (Emph (kind, q1, concat (List.map to_r (parse_emph (List.rev acc))))) :: xs
+              in
+              let r =
+                if n1 >= 2 && n2 >= 2 then
+                  if n1 > 2 then Emph (pre, Punct, q1, n1-2) :: r else r
+                else
+                if n1 > 1 then Emph (pre, Punct, q1, n1-1) :: r else r
+              in
+              parse_emph r
+          | Emph _ as x :: xs1 as xs when is_opener x ->
+              let xs' = parse_emph xs in
+              if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
+          | x :: xs ->
+              loop (x :: acc) xs
+          | [] ->
+              x :: List.rev acc
+        in
+        loop [] xs
+    | x :: xs ->
+        x :: parse_emph xs
+    | [] ->
+        []
+
+  let parse_emph xs =
+    concat (List.map to_r (parse_emph xs))
+end
 
 let escape buf st =
   if next st <> '\\' then raise Fail;
@@ -746,7 +849,7 @@ let normalize s =
           loop start true (succ i)
       | _ as c ->
           if not start && seen_ws then Buffer.add_char buf ' ';
-          Buffer.add_char buf c;
+          Buffer.add_char buf (Char.lowercase_ascii c);
           loop false false (succ i)
     end
   in
@@ -925,7 +1028,7 @@ let html_comment st =
             Buffer.add_string buf "-->";
             Buffer.contents buf
         | _ ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            Buffer.add_char buf c; loop ()
         end
     | '&' ->
         entity buf st; loop ()
@@ -1045,8 +1148,9 @@ let link_destination st =
       let rec loop n =
         match peek st with
         | '(' as c ->
-            Buffer.add_char buf c; loop (succ n)
+            advance 1 st; Buffer.add_char buf c; loop (succ n)
         | ')' as c ->
+            advance 1 st;
             if n = 0 then begin
               if Buffer.length buf = 0 then raise Fail;
               Buffer.contents buf
@@ -1148,7 +1252,41 @@ let rec inline defs st =
     else
       Pre.R (Text (get_buf ())) :: acc
   in
-  let rec loop acc st =
+  let rec reference_link kind acc st =
+    let st0 = copy_state st in
+    match protect link_label st with
+    | lab ->
+        let reflink lab' =
+          let s = normalize lab' in
+          let lab = inline [] (of_string lab) in
+          match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+          | Some def ->
+              loop (Pre.R (Ref (kind, lab, def)) :: text acc) st
+          | None ->
+              Buffer.add_char buf '[';
+              let acc = Pre.R lab :: text acc in
+              Buffer.add_char buf ']';
+              loop acc st
+        in
+        begin match peek_opt st with
+        | Some '[' ->
+            if peek_after '\000' st = ']' then
+              (advance 2 st; reflink lab)
+            else begin
+              match protect link_label st with
+              | lab -> reflink lab
+              | exception Fail -> reflink lab
+            end
+        | Some '(' ->
+            restore_state st st0; (* hack *)
+            advance 1 st;
+            loop (Left_bracket kind :: text acc) st
+        | Some _ | None ->
+            reflink lab
+        end
+    | exception Fail ->
+        advance 1 st; loop (Left_bracket kind :: text acc) st
+  and loop acc st =
     match peek st with
     | '<' as c ->
         begin match
@@ -1175,29 +1313,46 @@ let rec inline defs st =
             Buffer.add_char buf c; loop acc st
         end
     | '`' ->
+        let pos = pos st in
         let rec loop2 n =
           match peek_opt st with
           | Some '`' ->
-              loop2 (succ n)
+              advance 1 st; loop2 (succ n)
           | Some _ ->
               let acc = text acc in
-              let buf = Buffer.create 17 in
+              let bufcode = Buffer.create 17 in
               let rec loop3 start seen_ws m =
-                if m = n then
-                  loop (Pre.R (Code (Buffer.contents buf)) :: acc) st
-                else begin
-                  match peek_opt st with
-                  | Some '`' ->
-                      loop3 false false (succ n)
-                  | Some (' ' | '\t' | '\010'..'\013') ->
-                      loop3 start true 0
-                  | Some c ->
-                      if not start && seen_ws then Buffer.add_char buf ' ';
-                      Buffer.add_char buf c;
+                match peek_opt st with
+                | Some '`' ->
+                    advance 1 st; loop3 start seen_ws (succ m)
+                | Some (' ' | '\t' | '\010'..'\013') ->
+                    if m = n then
+                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                    else begin
+                      if m > 0 then begin
+                        if not start && seen_ws then Buffer.add_char bufcode ' ';
+                        Buffer.add_string bufcode (String.make m '`');
+                      end;
+                      advance 1 st; loop3 (start && m = 0) true 0
+                    end
+                | Some c ->
+                    if m = n then
+                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                    else begin
+                      advance 1 st;
+                      if not start && seen_ws then Buffer.add_char bufcode ' ';
+                      if m > 0 then Buffer.add_string bufcode (String.make m '`');
+                      Buffer.add_char bufcode c;
                       loop3 false false 0
-                  | None ->
-                      assert false
-                end
+                    end
+                | None ->
+                    if m = n then
+                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                    else begin
+                      Buffer.add_string buf (range st pos n);
+                      set_pos st (pos + n);
+                      loop acc st
+                    end
               in
               loop3 true false 0
           | None ->
@@ -1218,7 +1373,7 @@ let rec inline defs st =
         advance 1 st;
         begin match peek_opt st with
         | Some '[' ->
-            advance 1 st; loop (Bang_left_bracket :: text acc) st
+            reference_link Img (text acc) st
         | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
@@ -1228,9 +1383,9 @@ let rec inline defs st =
         advance 1 st;
         let acc = text acc in
         let rec aux seen_link xs = function
-          | Pre.Left_bracket :: _ when seen_link ->
+          | Pre.Left_bracket Url :: _ when seen_link ->
               Buffer.add_char buf ']'; loop acc st
-          | (Bang_left_bracket | Left_bracket as x) :: acc' ->
+          | Left_bracket k :: acc' ->
               begin match peek_opt st with
               | Some '(' ->
                   begin match
@@ -1243,10 +1398,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        if x = Bang_left_bracket then
-                          Img {Ast.label; destination; title}
-                        else
-                          Url {Ast.label; destination; title}
+                        Link (k, {Ast.label; destination; title})
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1257,7 +1409,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Url _ | Url_ref _) as x :: acc' ->
+          | Pre.R (Link (Url, _) | Ref (Url, _, _)) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'
@@ -1266,40 +1418,7 @@ let rec inline defs st =
         in
         aux false [] acc
     | '[' ->
-        let st0 = copy_state st in
-        begin match protect link_label st with
-        | lab ->
-            let reflink lab' =
-              let s = normalize lab' in
-              let lab = inline [] (of_string lab) in
-              match List.find_opt (fun {Ast.label; _} -> label = s) defs with
-              | Some def ->
-                  loop (Pre.R (Url_ref (lab, def)) :: text acc) st
-              | None ->
-                  Buffer.add_char buf '[';
-                  let acc = Pre.R lab :: text acc in
-                  Buffer.add_char buf ']';
-                  loop acc st
-            in
-            begin match peek_opt st with
-            | Some '[' ->
-                if peek_after '\000' st = ']' then
-                  (advance 2 st; reflink lab)
-                else begin
-                  match protect link_label st with
-                  | lab -> reflink lab
-                  | exception Fail -> reflink lab
-                end
-            | Some '(' ->
-                restore_state st st0; (* hack *)
-                advance 1 st;
-                loop (Left_bracket :: text acc) st
-            | Some _ | None ->
-                reflink lab
-            end
-        | exception Fail ->
-            advance 1 st; loop (Left_bracket :: text acc) st
-        end
+        reference_link Url acc st
     | '*' | '_' as c ->
         let pre = peek_before ' ' st in
         let f post n st =
@@ -1361,8 +1480,12 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
-  let title = (option None (ws1 >>> some link_title) <<< sp <<< eol) st in
-  {Ast.label; destination; title}
+  match protect (ws1 >>> link_title <<< sp <<< eol) st with
+  | title ->
+      {Ast.label; destination; title = Some title}
+  | exception Fail ->
+      (sp >>> eol) st;
+      {Ast.label; destination; title = None}
 
 let link_reference_definitions st =
   let rec loop acc =

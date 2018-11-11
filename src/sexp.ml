@@ -24,15 +24,15 @@ and inline = function
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Url def ->
+  | Link (Url, def) ->
       List [Atom "url"; link_def inline def]
-  | Url_ref (label, def) ->
+  | Ref (Url, label, def) ->
       List [Atom "url-ref"; inline label; link_def atom def]
   | Html s ->
       List [Atom "html"; Atom s]
-  | Img _ ->
+  | Link (Img, _) ->
       Atom "img"
-  | Img_ref (label, def) ->
+  | Ref (Img, label, def) ->
       List [Atom "img-ref"; inline label; link_def atom def]
 
 let rec block = function

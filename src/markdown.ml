@@ -90,17 +90,17 @@ let rec inline b = function
       Buffer.add_string b "<br />"
   | Html body ->
       Buffer.add_string b body
-  | Url {label; destination; title = None} ->
+  | Link (Url, {label; destination; title = None}) ->
       Printf.bprintf b "[%a](%s)" inline label destination
-  | Img {label; destination; title = None} ->
+  | Link (Img, {label; destination; title = None}) ->
       Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination
-  | Url {label; destination; title = Some title} ->
+  | Link (Url, {label; destination; title = Some title}) ->
       Printf.bprintf b "[%a](%s \"%s\")" inline label destination title
-  | Img {label; destination; title = Some title} ->
+  | Link (Img, {label; destination; title = Some title}) ->
       Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title
-  | Url_ref (label, {Ast.label = label1; _}) ->
+  | Ref (Url, label, {Ast.label = label1; _}) ->
       Printf.bprintf b "[%a][%s]" inline label label1
-  | Img_ref (label, {Ast.label = label1; _}) ->
+  | Ref (Img, label, {Ast.label = label1; _}) ->
       Printf.bprintf b "![%a][%s]" inline label label1
   | Soft_break ->
       if Buffer.length b = 1 ||

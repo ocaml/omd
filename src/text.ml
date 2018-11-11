@@ -13,7 +13,7 @@ let rec inline b = function
       Buffer.add_char b '\n'
   | Html body ->
       Buffer.add_string b body
-  | Url {label; _} | Img {label; _} | Url_ref (label, _) | Img_ref (label, _) ->
+  | Link (_, {label; _}) | Ref (_, label, _) ->
       inline b label
 
 let block f b = function
