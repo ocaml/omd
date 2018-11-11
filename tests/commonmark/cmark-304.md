@@ -1,3 +1,1 @@
-[foo]
-
-[foo]: /bar\* "ti\*tle"
+&#X22; &#XD06; &#xcab;

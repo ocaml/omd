@@ -1,9 +1,3 @@
-<table>
-  <tr>
-    <td>
-           hi
-    </td>
-  </tr>
-</table>
-
-okay.
+ <div>
+  *hello*
+         <foo><a>

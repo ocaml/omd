@@ -1,1 +1,1 @@
-[link](/uri)
+[link](foo\(and\(bar\))

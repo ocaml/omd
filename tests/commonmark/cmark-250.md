@@ -1,5 +1,6 @@
-foo
-*
+  1.  A paragraph
+      with two lines.
 
-foo
-1.
+          indented code
+
+      > A block quote.

@@ -1,1 +1,1 @@
-[link \[bar](/uri)
+[foo <bar attr="](baz)">

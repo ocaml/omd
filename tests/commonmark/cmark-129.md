@@ -1,3 +1,4 @@
-<table><tr><td>
-foo
-</td></tr></table>
+<div></div>
+``` c
+int x = 33;
+```

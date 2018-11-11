@@ -1,1 +1,1 @@
-[link](/url "title")
+[link *foo **bar** `#`*](/uri)

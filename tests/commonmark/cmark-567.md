@@ -1,4 +1,1 @@
-![foo] 
-[]
-
-[foo]: /url "title"
+<irc://foo.bar:2233/baz>

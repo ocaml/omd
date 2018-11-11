@@ -1,2 +1,2 @@
-- <div>
-- foo
+<style>p{color:red;}</style>
+*foo*

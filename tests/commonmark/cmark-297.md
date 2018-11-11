@@ -1,2 +1,1 @@
-foo\
-bar
+<http://example.com?find=\*>

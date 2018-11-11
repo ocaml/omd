@@ -1,4 +1,3 @@
-<div></div>
-``` c
-int x = 33;
-```
+<a href="foo">
+*bar*
+</a>

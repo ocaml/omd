@@ -1,3 +1,1 @@
-![Foo]
-
-[foo]: /url "title"
+<http://../>

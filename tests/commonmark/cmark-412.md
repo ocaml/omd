@@ -1,1 +1,1 @@
-____foo__ bar__
+____ is not an empty strong emphasis

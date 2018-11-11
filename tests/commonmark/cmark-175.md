@@ -1,4 +1,2 @@
-[
-foo
-]: /url
-bar
+[foo]: /url
+"title" ok

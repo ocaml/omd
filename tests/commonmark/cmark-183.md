@@ -1,3 +1,5 @@
-[foo]
+aaa
+bbb
 
-> [foo]: /url
+ccc
+ddd

@@ -1,1 +1,3 @@
-<div><a href="bar">*foo*</a></div>
+<table><tr><td>
+foo
+</td></tr></table>

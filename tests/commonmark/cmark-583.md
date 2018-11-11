@@ -1,1 +1,1 @@
-<http://example.com/\[\>
+foo@bar.example.com

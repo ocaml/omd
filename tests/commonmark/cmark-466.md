@@ -1,1 +1,2 @@
-**a<http://foo.bar/?q=**>
+[link](<foo
+bar>)

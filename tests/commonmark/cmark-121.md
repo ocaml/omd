@@ -1,5 +1,3 @@
-<DIV CLASS="foo">
-
-*Markdown*
-
-</DIV>
+<div id="foo"
+  class="bar">
+</div>

@@ -1,5 +1,4 @@
-[foo]: /url 'title
-
-with blank line'
+[foo]:
+/url
 
 [foo]

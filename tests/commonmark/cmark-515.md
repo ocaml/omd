@@ -1,3 +1,5 @@
-[foo *bar][ref]
+[foo]: /url1
 
-[ref]: /uri
+[foo]: /url2
+
+[bar][foo]

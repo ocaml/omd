@@ -1,3 +1,3 @@
-# [Foo]
-[foo]: /url
-> bar
+[foo]
+
+> [foo]: /url

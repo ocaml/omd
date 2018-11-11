@@ -1,5 +1,1 @@
-<del>
-
-*foo*
-
-</del>
+<del>*foo*</del>

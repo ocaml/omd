@@ -1,3 +1,6 @@
->>> foo
-> bar
->>baz
+A paragraph
+with two lines.
+
+    indented code
+
+> A block quote.

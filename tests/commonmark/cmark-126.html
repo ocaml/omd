@@ -1,2 +1,2 @@
-<div class
-foo
+<div *???-&&&-<---
+*foo*

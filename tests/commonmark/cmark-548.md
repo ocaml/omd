@@ -1,3 +1,3 @@
-[foo](not a link)
+![foo *bar*][foobar]
 
-[foo]: /url1
+[FOOBAR]: train.jpg "train & tracks"

@@ -1,4 +1,3 @@
-[foo]
+[ΑΓΩ]: /φου
 
-[foo]: first
-[foo]: second
+[αγω]

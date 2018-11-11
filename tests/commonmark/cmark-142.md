@@ -1,4 +1,2 @@
-> <div>
-> foo
-
-bar
+- <div>
+- foo

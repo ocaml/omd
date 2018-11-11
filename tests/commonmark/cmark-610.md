@@ -1,1 +1,2 @@
-foo <![CDATA[>&<]]>
+*foo  
+bar*

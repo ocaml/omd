@@ -1,4 +1,4 @@
-<style
-  type="text/css">
+> <div>
+> foo
 
-foo
+bar

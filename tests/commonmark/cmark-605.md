@@ -1,2 +1,2 @@
-foo <!-- this is a
-comment - with hyphen -->
+foo  
+baz

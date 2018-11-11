@@ -1,3 +1,2 @@
- <div>
-  *hello*
-         <foo><a>
+</div>
+*foo*

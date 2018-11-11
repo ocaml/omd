@@ -1,2 +1,2 @@
-foo  
-baz
+<a href="foo  
+bar">

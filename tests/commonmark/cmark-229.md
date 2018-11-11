@@ -1,6 +1,1 @@
-- Foo
-
-      bar
-
-
-      baz
+1234567890. not ok

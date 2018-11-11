@@ -1,1 +1,3 @@
-![[[foo](uri1)](uri2)](uri3)
+[link \[bar][ref]
+
+[ref]: /uri

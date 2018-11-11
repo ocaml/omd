@@ -1,1 +1,1 @@
-&#X22; &#XD06; &#xcab;
+<a href="&ouml;&ouml;.html">

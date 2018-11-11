@@ -1,4 +1,4 @@
-[foo] 
-[]
+[foo][bar]
 
-[foo]: /url "title"
+[foo]: /url1
+[bar]: /url2

@@ -1,1 +1,1 @@
-![foo](/url "title")
+![](/url)

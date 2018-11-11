@@ -1,3 +1,2 @@
-> # Foo
-> bar
-baz
+> foo
+---

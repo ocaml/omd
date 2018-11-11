@@ -1,2 +1,1 @@
-[link](   /uri
-  "title"  )
+[foo *[bar [baz](/uri)](/uri)*](/uri)

@@ -1,5 +1,3 @@
-[foo]: /url1
+[foo][]
 
-[foo]: /url2
-
-[bar][foo]
+[foo]: /url "title"

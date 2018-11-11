@@ -1,9 +1,5 @@
--   foo
+1. a
 
-    notcode
+  2. b
 
--   foo
-
-<!-- -->
-
-    code
+    3. c

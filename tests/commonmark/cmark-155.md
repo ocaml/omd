@@ -1,3 +1,5 @@
-Foo
-<a href="bar">
-baz
+<div>
+
+*Emphasized* text.
+
+</div>

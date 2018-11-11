@@ -1,2 +1,3 @@
-> > > foo
-bar
+>     code
+
+>    not code

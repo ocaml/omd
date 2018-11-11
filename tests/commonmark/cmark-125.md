@@ -1,2 +1,2 @@
-<div id="foo"
-*hi*
+<div class
+foo

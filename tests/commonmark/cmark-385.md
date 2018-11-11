@@ -1,1 +1,2 @@
-__foo bar __
+*foo
+bar*

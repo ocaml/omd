@@ -1,1 +1,2 @@
-foo <!-- not a comment -- two hyphens -->
+foo\
+baz

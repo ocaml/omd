@@ -1,1 +1,1 @@
-< http://foo.bar >
+Foo <responsive-image src="foo.jpg" />

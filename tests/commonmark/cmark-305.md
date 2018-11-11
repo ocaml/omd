@@ -1,3 +1,2 @@
-``` foo\+bar
-foo
-```
+&nbsp &x; &#; &#x;
+&ThisIsNotDefined; &hi?;

@@ -1,1 +1,1 @@
-******foo******
+*<img src="foo" title="*"/>

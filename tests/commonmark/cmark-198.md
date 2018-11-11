@@ -1,3 +1,2 @@
-> bar
-baz
-> foo
+> - foo
+- bar

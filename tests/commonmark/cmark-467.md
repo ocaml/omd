@@ -1,1 +1,1 @@
-__a<http://foo.bar/?q=__>
+[link](\(foo\))
