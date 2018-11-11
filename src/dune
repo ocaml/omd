@@ -1,5 +1,3 @@
-(ocamllex link_parser)
-
 (library
  (name omd)
  (public_name omd)
