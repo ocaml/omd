@@ -1514,7 +1514,7 @@ let rec inline defs st =
                           loop (Pre.R (Ref (k, label, def)) :: acc') st
                       | None ->
                           Buffer.add_char buf '[';
-                          let acc = Pre.R label :: text acc in
+                          let acc = Pre.R label :: text acc' in
                           Buffer.add_char buf ']';
                           restore_state st st1;
                           loop acc st
