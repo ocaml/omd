@@ -1150,11 +1150,11 @@ let link_destination st =
         | '(' as c ->
             advance 1 st; Buffer.add_char buf c; loop (succ n)
         | ')' as c ->
-            advance 1 st;
             if n = 0 then begin
               if Buffer.length buf = 0 then raise Fail;
               Buffer.contents buf
             end else begin
+              advance 1 st;
               Buffer.add_char buf c;
               loop (pred n)
             end
