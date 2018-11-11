@@ -1338,6 +1338,7 @@ let rec inline defs st =
       Pre.R (Text (get_buf ())) :: acc
   in
   let rec reference_link kind acc st =
+    let st0 = copy_state st in
     match protect link_label st with
     | lab ->
         let st1 = copy_state st in
@@ -1360,14 +1361,19 @@ let rec inline defs st =
               (advance 2 st; reflink lab)
             else begin
               match protect link_label st with
-              | lab -> reflink lab
-              | exception Fail -> reflink lab
+              | _ ->
+                  restore_state st st0;
+                  advance 1 st;
+                  loop (Left_bracket kind :: text acc) st
+              | exception Fail ->
+                  reflink lab
             end
         | Some '(' ->
             begin match protect inline_link st with
-            | destination, title ->
-                let r = Link (kind, {Ast.label = lab1; destination; title}) in
-                loop (Pre.R r :: text acc) st
+            | _ ->
+                restore_state st st0;
+                advance 1 st;
+                loop (Left_bracket kind :: text acc) st
             | exception Fail ->
                 reflink lab
             end
@@ -1505,7 +1511,7 @@ let rec inline defs st =
                       let s = normalize lab in
                       begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
                       | Some def ->
-                          loop (Pre.R (Ref (k, label, def)) :: acc) st
+                          loop (Pre.R (Ref (k, label, def)) :: acc') st
                       | None ->
                           Buffer.add_char buf '[';
                           let acc = Pre.R label :: text acc in
