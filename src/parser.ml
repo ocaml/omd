@@ -1,5 +1,127 @@
 open Ast
 
+exception Fail
+
+module P : sig
+  type state
+  type 'a t = state -> 'a
+
+  val of_string: string -> state
+  val peek: char option t
+  val peek_exn: char t
+  val pos: state -> int
+  val range: state -> int -> int -> string
+  val set_pos: state -> int -> unit
+  val junk: unit t
+  val char: char -> unit t
+  val next: char t
+  val (|||): 'a t -> 'a t -> 'a t
+  val ws: unit t
+  val sp: unit t
+  val ws1: unit t
+  val (>>>): unit t -> 'a t -> 'a t
+  val (<<<): 'a t -> unit t -> 'a t
+  val protect: 'a t -> 'a t
+  val peek_before: char -> state -> char
+  val peek_after: char -> state -> char
+  val pair: 'a t -> 'b t -> ('a * 'b) t
+end = struct
+  type state =
+    {
+      str: string;
+      mutable pos: int;
+    }
+
+  let of_string str =
+    {str; pos = 0}
+
+  type 'a t =
+    state -> 'a
+
+  let char c st =
+    if st.pos >= String.length st.str then raise Fail;
+    if st.str.[st.pos] <> c then raise Fail;
+    st.pos <- st.pos + 1
+
+  let next st =
+    if st.pos >= String.length st.str then
+      raise Fail
+    else
+      let c = st.str.[st.pos] in (st.pos <- st.pos + 1; c)
+
+  let peek_exn st =
+    if st.pos >= String.length st.str then
+      raise Fail
+    else
+      st.str.[st.pos]
+
+  let peek st =
+    if st.pos >= String.length st.str then
+      None
+    else
+      Some st.str.[st.pos]
+
+  let peek_before c st =
+    if st.pos = 0 then c
+    else st.str.[st.pos - 1]
+
+  let peek_after c st =
+    if st.pos + 1 >= String.length st.str then c
+    else st.str.[st.pos + 1]
+
+  let pos st =
+    st.pos
+
+  let range st pos n =
+    String.sub st.str pos n
+
+  let set_pos st pos =
+    st.pos <- pos
+
+  let junk st =
+    if st.pos < String.length st.str then st.pos <- st.pos + 1
+
+  let protect p st =
+    let off = pos st in
+    try p st with e -> set_pos st off; raise e
+
+  let (|||) p1 p2 st =
+    try protect p1 st with Fail -> p2 st
+
+  let ws st =
+    let rec loop () =
+      match peek_exn st with
+      | ' ' | '\t' | '\010'..'\013' -> junk st; loop ()
+      | _ -> ()
+    in
+    try loop () with Fail -> ()
+
+  let sp st =
+    let rec loop () =
+      match peek_exn st with
+      | ' ' | '\t' -> junk st; loop ()
+      | _ -> ()
+    in
+    try loop () with Fail -> ()
+
+  let ws1 st =
+    match peek_exn st with
+    | ' ' | '\t' | '\010'..'\013' -> junk st; ws st
+    | _ -> raise Fail
+
+  let (>>>) p q st =
+    p st; q st
+
+  let (<<<) p q st =
+    let x = p st in
+    q st; x
+
+  let pair p q st =
+    let x = p st in
+    let y = q st in
+    x, y
+end
+
 type html_kind =
   | Hcontains of string list
   | Hblank
@@ -30,8 +152,6 @@ let sp3 s =
       | Some _ | None -> 1, s
       end
   | Some _ | None -> 0, s
-
-exception Fail
 
 let (|||) p1 p2 s =
   try p1 s with Fail -> p2 s
@@ -459,132 +579,8 @@ let parse s0 =
   | None ->
       Lempty
 
-let parse s0 =
-  try parse s0 with Fail -> Lparagraph
-
-module P : sig
-  type state
-  type 'a t = state -> 'a
-
-  exception Fail
-
-  val of_string: string -> state
-  val peek: char option t
-  val peek_exn: char t
-  val pos: state -> int
-  val range: state -> int -> int -> string
-  val set_pos: state -> int -> unit
-  val junk: unit t
-  val char: char -> unit t
-  val next: char t
-  val (|||): 'a t -> 'a t -> 'a t
-  val ws: unit t
-  val sp: unit t
-  val ws1: unit t
-  val (>>>): unit t -> 'a t -> 'a t
-  val (<<<): 'a t -> unit t -> 'a t
-  val protect: 'a t -> 'a t
-  val peek_before: char -> state -> char
-  val peek_after: char -> state -> char
-  val pair: 'a t -> 'b t -> ('a * 'b) t
-end = struct
-  type state =
-    {
-      str: string;
-      mutable pos: int;
-    }
-
-  let of_string str =
-    {str; pos = 0}
-
-  type 'a t =
-    state -> 'a
-
-  exception Fail
-
-  let char c st =
-    if st.pos >= String.length st.str then raise Fail;
-    if st.str.[st.pos] <> c then raise Fail;
-    st.pos <- st.pos + 1
-
-  let next st =
-    if st.pos >= String.length st.str then
-      raise Fail
-    else
-      let c = st.str.[st.pos] in (st.pos <- st.pos + 1; c)
-
-  let peek_exn st =
-    if st.pos >= String.length st.str then
-      raise Fail
-    else
-      st.str.[st.pos]
-
-  let peek st =
-    if st.pos >= String.length st.str then
-      None
-    else
-      Some st.str.[st.pos]
-
-  let peek_before c st =
-    if st.pos = 0 then c
-    else st.str.[st.pos - 1]
-
-  let peek_after c st =
-    if st.pos + 1 >= String.length st.str then c
-    else st.str.[st.pos + 1]
-
-  let pos st =
-    st.pos
-
-  let range st pos n =
-    String.sub st.str pos n
-
-  let set_pos st pos =
-    st.pos <- pos
-
-  let junk st =
-    if st.pos < String.length st.str then st.pos <- st.pos + 1
-
-  let protect p st =
-    let off = pos st in
-    try p st with e -> set_pos st off; raise e
-
-  let (|||) p1 p2 st =
-    try protect p1 st with Fail -> p2 st
-
-  let ws st =
-    let rec loop () =
-      match peek_exn st with
-      | ' ' | '\t' | '\010'..'\013' -> junk st; loop ()
-      | _ -> ()
-    in
-    try loop () with Fail -> ()
-
-  let sp st =
-    let rec loop () =
-      match peek_exn st with
-      | ' ' | '\t' -> junk st; loop ()
-      | _ -> ()
-    in
-    try loop () with Fail -> ()
-
-  let ws1 st =
-    match peek_exn st with
-    | ' ' | '\t' | '\010'..'\013' -> junk st; ws st
-    | _ -> raise Fail
-
-  let (>>>) p q st =
-    p st; q st
-
-  let (<<<) p q st =
-    let x = p st in
-    q st; x
-
-  let pair p q st =
-    let x = p st in
-    let y = q st in
-    x, y
-end
+let parse s =
+  try parse s with Fail -> Lparagraph
 
 open P
 
