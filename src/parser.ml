@@ -669,7 +669,7 @@ let entity buf st =
       | Some _ | None ->
           Buffer.add_string buf (range st p (pos st - p))
       end
-  | Some ('0'..'9' | 'a'..'z' | 'A'..'9') ->
+  | Some ('0'..'9' | 'a'..'z' | 'A'..'Z') ->
       let q = pos st in
       let rec aux () =
         match peek_opt st with
