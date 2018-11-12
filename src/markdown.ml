@@ -59,33 +59,9 @@ let rec inline b = function
   | Emph (Strong, q, md) ->
       let q = match q with Star -> '*' | Underscore -> '_' in
       Printf.bprintf b "%c%c%a%c%c" q q inline md q q
-  | Code c ->
-      let n = (* compute how many backquotes we need to use *)
-        let filter (n:int) (s:int list) =
-          if n > 0 && n < 10 then
-            List.filter (fun e -> e <> n) s
-          else
-            s
-        in
-        let l = String.length c in
-        let rec loop s x b i =
-          if i = l then begin
-            match filter b s with hd :: _ -> hd | [] -> x+1
-          end else begin
-            match c.[i] with
-            | '`' ->
-                loop s x (succ b) (succ i)
-            | _ ->
-                loop (filter b s) (max b x) 0 (succ i)
-          end
-        in
-        loop [1;2;3;4;5;6;7;8;9;10] 0 0 0
-      in
-      Printf.bprintf b "%s" (String.make n '`');
-      if c.[0] = '`' then Buffer.add_char b ' ';
-      Printf.bprintf b "%s" c;
-      if c.[String.length c - 1] = '`' then Buffer.add_char b ' ';
-      Printf.bprintf b "%s" (String.make n '`')
+  | Code (n, c) ->
+      let d = String.make n '`' in
+      Printf.bprintf b "%s%s%s" d c d
   | Hard_break ->
       Buffer.add_string b "<br />"
   | Html body ->

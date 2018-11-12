@@ -1504,7 +1504,7 @@ let rec inline defs st =
                     junk st; loop3 start seen_ws (succ m)
                 | Some (' ' | '\t' | '\010'..'\013') ->
                     if m = n then
-                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
                     else begin
                       if m > 0 then begin
                         if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1514,7 +1514,7 @@ let rec inline defs st =
                     end
                 | Some c ->
                     if m = n then
-                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
                     else begin
                       junk st;
                       if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1524,7 +1524,7 @@ let rec inline defs st =
                     end
                 | None ->
                     if m = n then
-                      loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
                     else begin
                       Buffer.add_string buf (range st pos n);
                       set_pos st (pos + n);

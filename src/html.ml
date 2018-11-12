@@ -91,7 +91,7 @@ let rec html_of_md b md =
         Buffer.add_string b "<strong>";
         loop md;
         Buffer.add_string b "</strong>"
-    | Code c ->
+    | Code (_, c) ->
         Buffer.add_string b "<code>";
         Buffer.add_string b (htmlentities c);
         Buffer.add_string b "</code>"

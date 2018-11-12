@@ -43,7 +43,7 @@ type inline =
   | Concat of inline list
   | Text of string
   | Emph of emph_kind * emph_style * inline
-  | Code of string
+  | Code of int * string
   | Hard_break
   | Soft_break
   | Link of link_kind * inline link_def

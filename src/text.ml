@@ -7,8 +7,9 @@ let rec inline b = function
       Buffer.add_string b t
   | Emph (_, _, md) ->
       inline b md
-  | Code s ->
-      Buffer.add_string b s
+  | Code (n, s) ->
+      let d = String.make n '`' in
+      Printf.bprintf b "%s%s%s" d s d
   | Hard_break | Soft_break ->
       Buffer.add_char b '\n'
   | Html body ->
