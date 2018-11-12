@@ -484,27 +484,18 @@ module P : sig
   val (>>>): unit t -> 'a t -> 'a t
   val (<<<): 'a t -> unit t -> 'a t
   val protect: 'a t -> 'a t
-  val copy_state: state -> state
-  val restore_state: state -> state -> unit
   val peek_before: char -> state -> char
   val peek_after: char -> state -> char
   val pair: 'a t -> 'b t -> ('a * 'b) t
 end = struct
   type state =
     {
-      mutable str: string;
+      str: string;
       mutable pos: int;
     }
 
   let of_string str =
     {str; pos = 0}
-
-  let copy_state {str; pos} =
-    {str; pos}
-
-  let restore_state st {str; pos} =
-    st.str <- str;
-    st.pos <- pos
 
   type 'a t =
     state -> 'a
@@ -555,8 +546,8 @@ end = struct
     if st.pos < String.length st.str then st.pos <- st.pos + 1
 
   let protect p st =
-    let st' = copy_state st in
-    try p st with e -> restore_state st st'; raise e
+    let off = pos st in
+    try p st with e -> set_pos st off; raise e
 
   let (|||) p1 p2 st =
     try protect p1 st with Fail -> p2 st
@@ -598,15 +589,16 @@ end
 open P
 
 let is_empty st =
-  let st = copy_state st in
+  let off = pos st in
   try
     let rec loop () =
       match next st with
       | ' ' | '\t' | '\010'..'\013' -> loop ()
-      | _ -> false
+      | _ -> set_pos st off; false
     in
     loop ()
   with Fail ->
+    set_pos st off;
     true
 
 let entity buf st =
@@ -1301,10 +1293,10 @@ let rec inline defs st =
       Pre.R (Text (get_buf ())) :: acc
   in
   let rec reference_link kind acc st =
-    let st0 = copy_state st in
+    let off0 = pos st in
     match protect (link_label true) st with
     | lab ->
-        let st1 = copy_state st in
+        let off1 = pos st in
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
@@ -1316,7 +1308,7 @@ let rec inline defs st =
               Buffer.add_char buf '[';
               let acc = Pre.R lab1 :: text acc in
               Buffer.add_char buf ']';
-              restore_state st st1;
+              set_pos st off1;
               loop acc st
         in
         begin match peek_opt st with
@@ -1326,18 +1318,14 @@ let rec inline defs st =
             else begin
               match protect (link_label false) st with
               | _ ->
-                  restore_state st st0;
-                  junk st;
-                  loop (Left_bracket kind :: text acc) st
+                  set_pos st off0; junk st; loop (Left_bracket kind :: text acc) st
               | exception Fail ->
                   reflink lab
             end
         | Some '(' ->
             begin match protect inline_link st with
             | _ ->
-                restore_state st st0;
-                junk st;
-                loop (Left_bracket kind :: text acc) st
+                set_pos st off0; junk st; loop (Left_bracket kind :: text acc) st
             | exception Fail ->
                 reflink lab
             end
@@ -1469,7 +1457,7 @@ let rec inline defs st =
                   end
               | Some '[' ->
                   let label = Pre.parse_emph xs in
-                  let st1 = copy_state st in
+                  let off1 = pos st in
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
@@ -1481,7 +1469,7 @@ let rec inline defs st =
                           Buffer.add_char buf '[';
                           let acc = Pre.R label :: text acc' in
                           Buffer.add_char buf ']';
-                          restore_state st st1;
+                          set_pos st off1;
                           loop acc st
                       end
                   | exception Fail ->
@@ -1489,7 +1477,7 @@ let rec inline defs st =
                       Buffer.add_char buf '[';
                       let acc = Pre.R label :: text acc in
                       Buffer.add_char buf ']';
-                      restore_state st st1;
+                      set_pos st off1;
                       loop acc st
                   end
               | Some _ | None ->
