@@ -474,7 +474,7 @@ module P : sig
   val pos: state -> int
   val range: state -> int -> int -> string
   val set_pos: state -> int -> unit
-  val advance: int -> unit t
+  val junk: unit t
   val char: char -> unit t
   val next: char t
   val (|||): 'a t -> 'a t -> 'a t
@@ -551,10 +551,8 @@ end = struct
   let set_pos st pos =
     st.pos <- pos
 
-  let advance n st =
-    assert (n >= 0);
-    let n = min (String.length st.str - st.pos) n in
-    st.pos <- st.pos + n
+  let junk st =
+    if st.pos < String.length st.str then st.pos <- st.pos + 1
 
   let protect p st =
     let st' = copy_state st in
@@ -566,7 +564,7 @@ end = struct
   let ws st =
     let rec loop () =
       match peek st with
-      | ' ' | '\t' | '\010'..'\013' -> advance 1 st; loop ()
+      | ' ' | '\t' | '\010'..'\013' -> junk st; loop ()
       | _ -> ()
     in
     try loop () with Fail -> ()
@@ -574,14 +572,14 @@ end = struct
   let sp st =
     let rec loop () =
       match peek st with
-      | ' ' | '\t' -> advance 1 st; loop ()
+      | ' ' | '\t' -> junk st; loop ()
       | _ -> ()
     in
     try loop () with Fail -> ()
 
   let ws1 st =
     match peek st with
-    | ' ' | '\t' | '\010'..'\013' -> advance 1 st; ws st
+    | ' ' | '\t' | '\010'..'\013' -> junk st; ws st
     | _ -> raise Fail
 
   let (>>>) p q st =
@@ -616,25 +614,25 @@ let entity buf st =
   if next st <> '&' then raise Fail;
   match peek_opt st with
   | Some '#' ->
-      advance 1 st;
+      junk st;
       begin match peek_opt st with
       | Some ('x' | 'X') ->
-          advance 1 st;
+          junk st;
           let rec aux n m =
             if n > 8 then Buffer.add_string buf (range st p (pos st - p))
             else begin
               match peek_opt st with
               | Some ('0'..'9' as c) ->
-                  advance 1 st;
+                  junk st;
                   aux (succ n) (m * 16 + Char.code c - Char.code '0')
               | Some ('a'..'f' as c) ->
-                  advance 1 st;
+                  junk st;
                   aux (succ n) (m * 16 + Char.code c - Char.code 'a' + 10)
               | Some ('A'..'F' as c) ->
-                  advance 1 st;
+                  junk st;
                   aux (succ n) (m * 16 + Char.code c - Char.code 'A' + 10)
               | Some ';' ->
-                  advance 1 st;
+                  junk st;
                   if n = 0 then
                     Buffer.add_string buf (range st p (pos st - p))
                   else
@@ -651,10 +649,10 @@ let entity buf st =
             else begin
               match peek_opt st with
               | Some ('0'..'9' as c) ->
-                  advance 1 st;
+                  junk st;
                   aux (succ n) (m * 10 + Char.code c - Char.code '0')
               | Some ';' ->
-                  advance 1 st;
+                  junk st;
                   if n = 0 then
                     Buffer.add_string buf (range st p (pos st - p))
                   else begin
@@ -674,10 +672,10 @@ let entity buf st =
       let rec aux () =
         match peek_opt st with
         | Some ('0'..'9' | 'a'..'z' | 'A'..'Z') ->
-            advance 1 st; aux ()
+            junk st; aux ()
         | Some ';' ->
             let name = range st q (pos st - q) in
-            advance 1 st;
+            junk st;
             begin match Entities.f name with
             | [] ->
                 Buffer.add_string buf (range st p (pos st - p))
@@ -792,7 +790,7 @@ let escape buf st =
   if next st <> '\\' then raise Fail;
   match peek st with
   | c when is_punct c ->
-      advance 1 st; Buffer.add_char buf c
+      junk st; Buffer.add_char buf c
   | _ ->
       Buffer.add_char buf '\\'
   | exception Fail ->
@@ -800,24 +798,24 @@ let escape buf st =
 
 let link_label allow_balanced_brackets st =
   if peek st <> '[' then raise Fail;
-  advance 1 st;
+  junk st;
   let buf = Buffer.create 17 in
   let rec loop n nonempty =
     match peek st with
     | ']' when n = 0 ->
-        advance 1 st;
+        junk st;
         if not nonempty then raise Fail;
         Buffer.contents buf
     | ']' as c ->
         assert (n > 0);
-        advance 1 st;
+        junk st;
         Buffer.add_char buf c;
         loop (pred n) true
     | '\\' as c ->
-        advance 1 st; Buffer.add_char buf c;
+        junk st; Buffer.add_char buf c;
         begin match peek st with
         | c when is_punct c ->
-            advance 1 st; Buffer.add_char buf c
+            junk st; Buffer.add_char buf c
         | _ ->
             ()
         end;
@@ -825,11 +823,11 @@ let link_label allow_balanced_brackets st =
     | '[' when not allow_balanced_brackets ->
         raise Fail
     | '[' as c ->
-        advance 1 st; Buffer.add_char buf c; loop (succ n) true
+        junk st; Buffer.add_char buf c; loop (succ n) true
     | ' ' | '\t' | '\010'..'\013' as c ->
-        advance 1 st; Buffer.add_char buf c; loop n nonempty
+        junk st; Buffer.add_char buf c; loop n nonempty
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop n true
+        junk st; Buffer.add_char buf c; loop n true
   in
   loop 0 false
 
@@ -853,11 +851,11 @@ let normalize s =
 let tag_name st =
   match peek st with
   | 'a'..'z' | 'A'..'Z' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek_opt st with
         | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '-') ->
-            advance 1 st; loop ()
+            junk st; loop ()
         | Some _ | None -> ()
       in
       loop ()
@@ -868,7 +866,7 @@ let ws_buf buf st =
   let rec loop () =
     match peek_opt st with
     | Some (' ' | '\t' | '\010'..'\013' as c) ->
-        Buffer.add_char buf c; advance 1 st; loop ()
+        Buffer.add_char buf c; junk st; loop ()
     | Some _ | None ->
         ()
   in
@@ -896,11 +894,11 @@ let single_quoted_attribute st =
   let rec loop () =
     match peek st with
     | '\'' ->
-        advance 1 st
+        junk st
     (* | '&' -> *)
     (*     entity buf st; loop () *)
     | _ ->
-        advance 1 st; loop ()
+        junk st; loop ()
   in
   loop ()
 
@@ -909,11 +907,11 @@ let double_quoted_attribute st =
   let rec loop () =
     match peek st with
     | '"' ->
-        advance 1 st
+        junk st
     (* | '&' -> *)
     (*     entity buf st; loop () *)
     | _ ->
-        advance 1 st; loop ()
+        junk st; loop ()
   in
   loop ()
 
@@ -925,7 +923,7 @@ let unquoted_attribute st =
     (* | '&' -> *)
     (*     entity buf st; loop () *)
     | _ ->
-        advance 1 st; loop (succ n)
+        junk st; loop (succ n)
   in
   loop 0
 
@@ -938,11 +936,11 @@ let attribute_value st =
 let attribute_name st =
   match peek st with
   | 'a'..'z' | 'A'..'Z' | '_' | ':' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek_opt st with
         | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '.' | ':' | '-') ->
-            advance 1 st; loop ()
+            junk st; loop ()
         | Some _ | None ->
             ()
       in
@@ -980,7 +978,7 @@ let open_tag st =
   list attribute st;
   ws st;
   begin match peek st with
-  | '/' -> advance 1 st
+  | '/' -> junk st
   | _ -> ()
   end;
   if next st <> '>' then raise Fail;
@@ -996,10 +994,10 @@ let html_comment st =
   let rec loop start =
     match peek st with
     | '-' as c ->
-        advance 1 st;
+        junk st;
         begin match peek st with
         | '-' ->
-            advance 1 st;
+            junk st;
             if next st <> '>' then raise Fail;
             Buffer.add_string buf "-->";
             Buffer.contents buf
@@ -1013,7 +1011,7 @@ let html_comment st =
     | '&' ->
         entity buf st; loop false
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop false
+        junk st; Buffer.add_char buf c; loop false
   in
   loop true
 
@@ -1025,17 +1023,17 @@ let processing_instruction st =
   let rec loop () =
     match peek st with
     | '?' as c ->
-        advance 1 st;
+        junk st;
         begin match peek st with
         | '>' ->
-            advance 1 st; Buffer.add_string buf "?>"; Buffer.contents buf
+            junk st; Buffer.add_string buf "?>"; Buffer.contents buf
         | _ ->
             Buffer.add_char buf c; loop ()
         end
     | '&' ->
         entity buf st; loop ()
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop ()
+        junk st; Buffer.add_char buf c; loop ()
   in
   loop ()
 
@@ -1054,13 +1052,13 @@ let cdata_section st =
   let rec loop () =
     match peek st with
     | ']' as c ->
-        advance 1 st;
+        junk st;
         begin match peek st with
         | ']' as c1 ->
-            advance 1 st;
+            junk st;
             begin match peek st with
             | '>' ->
-                advance 1 st; Buffer.add_string buf "]]>"; Buffer.contents buf
+                junk st; Buffer.add_string buf "]]>"; Buffer.contents buf
             | _ ->
                 Buffer.add_char buf c; Buffer.add_char buf c1; loop ()
             end
@@ -1070,7 +1068,7 @@ let cdata_section st =
     | '&' ->
         entity buf st; loop ()
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop ()
+        junk st; Buffer.add_char buf c; loop ()
   in
   loop ()
 
@@ -1084,17 +1082,17 @@ let declaration st =
       let rec loop () =
         match peek st with
         | 'A'..'Z' as c ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            junk st; Buffer.add_char buf c; loop ()
         | ' ' | '\t' | '\010'..'\013' ->
             ws1_buf buf st;
             let rec loop () =
               match peek st with
               | '>' as c ->
-                  advance 1 st; Buffer.add_char buf c; Buffer.contents buf
+                  junk st; Buffer.add_char buf c; Buffer.contents buf
               | '&' ->
                   entity buf st; loop ()
               | _ as c ->
-                  advance 1 st; Buffer.add_char buf c; loop ()
+                  junk st; Buffer.add_char buf c; loop ()
             in
             loop ()
         | _ ->
@@ -1109,11 +1107,11 @@ let link_destination st =
   let buf = Buffer.create 17 in
   match peek st with
   | '<' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek st with
         | '>' ->
-            advance 1 st; Buffer.contents buf
+            junk st; Buffer.contents buf
         | ' ' | '\t' | '\010'..'\013' | '<' ->
             raise Fail
         | '\\' ->
@@ -1121,20 +1119,20 @@ let link_destination st =
         | '&' ->
             entity buf st; loop ()
         | _ as c ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            junk st; Buffer.add_char buf c; loop ()
       in
       loop ()
   | _ ->
       let rec loop n =
         match peek st with
         | '(' as c ->
-            advance 1 st; Buffer.add_char buf c; loop (succ n)
+            junk st; Buffer.add_char buf c; loop (succ n)
         | ')' as c ->
             if n = 0 then begin
               if Buffer.length buf = 0 then raise Fail;
               Buffer.contents buf
             end else begin
-              advance 1 st;
+              junk st;
               Buffer.add_char buf c;
               loop (pred n)
             end
@@ -1149,13 +1147,13 @@ let link_destination st =
             if n > 0 || Buffer.length buf = 0 then raise Fail;
             Buffer.contents buf
         | _ as c ->
-            advance 1 st; Buffer.add_char buf c; loop n
+            junk st; Buffer.add_char buf c; loop n
       in
       loop 0
 
 let eol st =
   match peek st with
-  | '\n' -> advance 1 st
+  | '\n' -> junk st
   | _ -> raise Fail
   | exception Fail -> ()
 
@@ -1163,7 +1161,7 @@ let link_title st =
   let buf = Buffer.create 17 in
   match peek st with
   | '\'' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek st with
         | '\\' ->
@@ -1171,13 +1169,13 @@ let link_title st =
         | '&' ->
             entity buf st; loop ()
         | '\'' ->
-            advance 1 st; Buffer.contents buf
+            junk st; Buffer.contents buf
         | _ as c ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            junk st; Buffer.add_char buf c; loop ()
       in
       loop ()
   | '"' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek st with
         | '\\' ->
@@ -1185,13 +1183,13 @@ let link_title st =
         | '&' ->
             entity buf st; loop ()
         | '"' ->
-            advance 1 st; Buffer.contents buf
+            junk st; Buffer.contents buf
         | _ as c ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            junk st; Buffer.add_char buf c; loop ()
       in
       loop ()
   | '(' ->
-      advance 1 st;
+      junk st;
       let rec loop () =
         match peek st with
         | '\\' ->
@@ -1199,10 +1197,10 @@ let link_title st =
         | '&' ->
             entity buf st; loop ()
         | ')' ->
-            advance 1 st;
+            junk st;
             Buffer.contents buf
         | _ as c ->
-            advance 1 st; Buffer.add_char buf c; loop ()
+            junk st; Buffer.add_char buf c; loop ()
       in
       loop ()
   | _ ->
@@ -1210,7 +1208,7 @@ let link_title st =
 
 let space st =
   match peek st with
-  | ' ' -> advance 1 st
+  | ' ' -> junk st
   | _ -> raise Fail
 
 let many p st =
@@ -1226,7 +1224,7 @@ let scheme st =
         if n < 32 then begin
           match peek_opt st with
           | Some ('a'..'z' | 'A'..'Z' | '0'..'9' | '+' | '.' | '-') ->
-              advance 1 st; loop (succ n)
+              junk st; loop (succ n)
           | Some _ | None ->
               n
         end else n
@@ -1246,7 +1244,7 @@ let absolute_uri st =
         let txt = range st p (pos st - p) in
         txt, txt
     | Some _ ->
-        advance 1 st; loop ()
+        junk st; loop ()
   in
   loop ()
 
@@ -1258,14 +1256,14 @@ let email_address st =
     | '.' | '!' | '#' | '$' | '%' | '&' | '\'' | '*'
     | '+' | '/' | '=' | '?' | '^' | '_' | '`' | '{' | '|'
     | '}' | '~' | '-' ->
-        advance 1 st; loop (succ n)
+        junk st; loop (succ n)
     | '@' ->
-        advance 1 st;
+        junk st;
         let label st =
           let let_dig st =
             match peek st with
-            | 'a'..'z' | 'A'..'Z' | '0'..'9' -> advance 1 st; false
-            | '-' -> advance 1 st; true
+            | 'a'..'z' | 'A'..'Z' | '0'..'9' -> junk st; false
+            | '-' -> junk st; true
             | _ -> raise Fail
           in
           if let_dig st then raise Fail;
@@ -1290,7 +1288,7 @@ let email_address st =
 let autolink st =
   match peek st with
   | '<' ->
-      advance 1 st;
+      junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
       {Ast.label; destination; title = None}
@@ -1338,12 +1336,12 @@ let rec inline defs st =
         begin match peek_opt st with
         | Some '[' ->
             if peek_after '\000' st = ']' then
-              (advance 2 st; reflink lab)
+              (junk st; junk st; reflink lab)
             else begin
               match protect (link_label false) st with
               | _ ->
                   restore_state st st0;
-                  advance 1 st;
+                  junk st;
                   loop (Left_bracket kind :: text acc) st
               | exception Fail ->
                   reflink lab
@@ -1352,7 +1350,7 @@ let rec inline defs st =
             begin match protect inline_link st with
             | _ ->
                 restore_state st st0;
-                advance 1 st;
+                junk st;
                 loop (Left_bracket kind :: text acc) st
             | exception Fail ->
                 reflink lab
@@ -1361,7 +1359,7 @@ let rec inline defs st =
             reflink lab
         end
     | exception Fail ->
-        advance 1 st; loop (Left_bracket kind :: text acc) st
+        junk st; loop (Left_bracket kind :: text acc) st
   and loop acc st =
     match peek st with
     | '<' as c ->
@@ -1376,20 +1374,20 @@ let rec inline defs st =
           | tag ->
               loop (Pre.R (Html tag) :: text acc) st
           | exception Fail ->
-              advance 1 st; Buffer.add_char buf c; loop acc st
+              junk st; Buffer.add_char buf c; loop acc st
           end
         end
     | '\n' ->
-        advance 1 st; sp st; loop (Pre.R Soft_break :: text acc) st
+        junk st; sp st; loop (Pre.R Soft_break :: text acc) st
     | ' ' as c ->
-        advance 1 st;
+        junk st;
         begin match peek_opt st with
         | Some ' ' ->
             begin match protect (many space >>> char '\n' >>> many space) st with
             | () ->
                 loop (Pre.R Hard_break :: text acc) st
             | exception Fail ->
-                advance 1 st;
+                junk st;
                 Buffer.add_string buf "  "; loop acc st
             end
         | Some '\n' ->
@@ -1402,14 +1400,14 @@ let rec inline defs st =
         let rec loop2 n =
           match peek_opt st with
           | Some '`' ->
-              advance 1 st; loop2 (succ n)
+              junk st; loop2 (succ n)
           | Some _ ->
               let acc = text acc in
               let bufcode = Buffer.create 17 in
               let rec loop3 start seen_ws m =
                 match peek_opt st with
                 | Some '`' ->
-                    advance 1 st; loop3 start seen_ws (succ m)
+                    junk st; loop3 start seen_ws (succ m)
                 | Some (' ' | '\t' | '\010'..'\013') ->
                     if m = n then
                       loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
@@ -1418,13 +1416,13 @@ let rec inline defs st =
                         if not start && seen_ws then Buffer.add_char bufcode ' ';
                         Buffer.add_string bufcode (String.make m '`');
                       end;
-                      advance 1 st; loop3 (start && m = 0) true 0
+                      junk st; loop3 (start && m = 0) true 0
                     end
                 | Some c ->
                     if m = n then
                       loop (Pre.R (Code (Buffer.contents bufcode)) :: acc) st
                     else begin
-                      advance 1 st;
+                      junk st;
                       if not start && seen_ws then Buffer.add_char bufcode ' ';
                       if m > 0 then Buffer.add_string bufcode (String.make m '`');
                       Buffer.add_char bufcode c;
@@ -1445,17 +1443,17 @@ let rec inline defs st =
         in
         loop2 0
     | '\\' as c ->
-        advance 1 st;
+        junk st;
         begin match peek_opt st with
         | Some '\n' ->
-            advance 1 st; loop (Pre.R Hard_break :: text acc) st
+            junk st; loop (Pre.R Hard_break :: text acc) st
         | Some c when is_punct c ->
-            advance 1 st; Buffer.add_char buf c; loop acc st
+            junk st; Buffer.add_char buf c; loop acc st
         | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
     | '!' as c ->
-        advance 1 st;
+        junk st;
         begin match peek_opt st with
         | Some '[' ->
             reference_link Img (text acc) st
@@ -1465,7 +1463,7 @@ let rec inline defs st =
     | '&' ->
         entity buf st; loop acc st
     | ']' ->
-        advance 1 st;
+        junk st;
         let acc = text acc in
         let rec aux seen_link xs = function
           | Pre.Left_bracket Url :: _ when seen_link ->
@@ -1531,13 +1529,13 @@ let rec inline defs st =
         in
         let rec aux n =
           match peek_opt st with
-          | Some c1 when c1 = c -> advance 1 st; aux (succ n)
+          | Some c1 when c1 = c -> junk st; aux (succ n)
           | Some c1 -> f c1 n st
           | None -> f ' ' n st
         in
         aux 0
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop acc st
+        junk st; Buffer.add_char buf c; loop acc st
     | exception Fail ->
         Pre.parse_emph (List.rev (text acc))
   in
@@ -1546,12 +1544,12 @@ let rec inline defs st =
 let sp3 st =
   match peek st with
   | ' ' ->
-      advance 1 st;
+      junk st;
       begin match peek st with
       | ' ' ->
-          advance 1 st;
+          junk st;
           begin match peek st with
-          | ' ' -> advance 1 st; 3
+          | ' ' -> junk st; 3
           | _ -> 2
           | exception Fail -> 2
           end
@@ -1565,8 +1563,8 @@ let link_reference_definition st =
   let ws st =
     let rec loop seen_nl =
       match peek st with
-      | ' ' | '\t' | '\011'..'\013' -> advance 1 st; loop seen_nl
-      | '\n' when not seen_nl -> advance 1 st; loop true
+      | ' ' | '\t' | '\011'..'\013' -> junk st; loop seen_nl
+      | '\n' when not seen_nl -> junk st; loop true
       | _ -> ()
       | exception Fail -> ()
     in
