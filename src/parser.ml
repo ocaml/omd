@@ -1160,7 +1160,7 @@ let eol st =
 let link_title st =
   let buf = Buffer.create 17 in
   match peek st with
-  | '\'' ->
+  | '\'' | '"' as c ->
       junk st;
       let rec loop () =
         match peek st with
@@ -1168,24 +1168,10 @@ let link_title st =
             escape buf st; loop ()
         | '&' ->
             entity buf st; loop ()
-        | '\'' ->
+        | _ as c1 when c = c1 ->
             junk st; Buffer.contents buf
-        | _ as c ->
-            junk st; Buffer.add_char buf c; loop ()
-      in
-      loop ()
-  | '"' ->
-      junk st;
-      let rec loop () =
-        match peek st with
-        | '\\' ->
-            escape buf st; loop ()
-        | '&' ->
-            entity buf st; loop ()
-        | '"' ->
-            junk st; Buffer.contents buf
-        | _ as c ->
-            junk st; Buffer.add_char buf c; loop ()
+        | _ as c1 ->
+            junk st; Buffer.add_char buf c1; loop ()
       in
       loop ()
   | '(' ->
