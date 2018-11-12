@@ -55,13 +55,9 @@ type inline =
 type t = inline block list
 (** A markdown document *)
 
-(* val of_string: ?extensions:Representation.extensions -> string -> t *)
-(** Parse a markdown document from a string. *)
+val of_channel: in_channel -> t
 
-(* val of_bigarray: ?extensions:Representation.extensions -> Lexer.bigstring -> t *)
-(** As {!of_string}, but read input from a bigarray. *)
-
-val of_channel : in_channel -> t
+val of_string: string -> t
 
 val to_html: (* ?pindent:bool -> ?nl2br:bool -> *) t -> string
 (** Translate markdown representation into raw HTML. *)

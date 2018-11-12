@@ -18,7 +18,7 @@ let () =
 
 let test name md_string desired_md =
   try
-    let md = Omd.of_string md_string in
+    let md = of_string md_string in
     if md = desired_md then (
       incr success;
       (* printf "%s: SUCCESS\n" name *)
@@ -28,8 +28,8 @@ let test name md_string desired_md =
       printf "%s: FAILURE\n" name;
       printf "   input = %S\nexpected = %S\n  result = %S\n"
         md_string
-        (Backend.sexpr_of_md desired_md)
-        (Backend.sexpr_of_md md)
+        (to_sexp desired_md)
+        (to_sexp md)
     )
   with e ->
     incr failures;
@@ -44,91 +44,91 @@ let () =
      newlines are not considered to be part of the paragraphs, just a
      delimiter. *)
   test "Paragraph, simple" "Paragraph1\nline2\n\nP2\n\n\nP3"
-       [Paragraph [Text "Paragraph1"; NL; Text "line2"];
-        Paragraph [Text "P2"]; Paragraph [Text "P3"]];
+       [Paragraph (Concat [Text "Paragraph1"; Soft_break; Text "line2"]);
+        Paragraph (Text "P2"); Paragraph (Text "P3")];
   (* A blank line is any line that looks like a blank line — a line
      containing nothing but spaces or tabs is considered blank. *)
   test "Paragraph, blank line" "P1\n   \nP2\n\t\nP3\n"
-       [Omd.Paragraph [Omd.Text "P1"];
-        Omd.Paragraph [Omd.Text "P2"];
-        Omd.Paragraph [Omd.Text "P3"]];
+       [Paragraph (Text "P1");
+        Paragraph (Text "P2");
+        Paragraph (Text "P3")];
   (* "When you do want to insert a <br />, you end a line with two or
      more spaces." *)
   test "Paragraph, <br>" "Paragraph1  \nline2\n\nParagraph2"
-       [Paragraph [Text "Paragraph1"; Br; Text "line2"];
-        Paragraph [Text "Paragraph2"]];
+       [Paragraph (Concat [Text "Paragraph1"; Hard_break; Text "line2"]);
+        Paragraph (Text "Paragraph2")];
 
   (* Normal paragraphs should not be indented with spaces or tabs. *)
 
   (* Headers
    ***********************************************************************)
-  test "header, ===" "Title\n=="  [Omd.H (1, [Omd.Text "Title"])];
-  test "header, ---" "Title\n---" [Omd.H (2, [Omd.Text "Title"])];
+  test "header, ===" "Title\n=="  [Heading (1, Text "Title")];
+  test "header, ---" "Title\n---" [Heading (2, Text "Title")];
 
-  test "header, #" "# Title" [Omd.H (1, [Omd.Text "Title"])];
-  test "header, ##" "## Title" [Omd.H (2, [Omd.Text "Title"])];
-  test "header, ###" "### Title" [Omd.H (3, [Omd.Text "Title"])];
-  test "header, ####" "#### Title" [Omd.H (4, [Omd.Text "Title"])];
-  test "header, #####" "##### Title" [Omd.H (5, [Omd.Text "Title"])];
-  test "header, ######" "###### Title" [Omd.H (6, [Omd.Text "Title"])];
+  test "header, #" "# Title" [Heading (1, Text "Title")];
+  test "header, ##" "## Title" [Heading (2, Text "Title")];
+  test "header, ###" "### Title" [Heading (3, Text "Title")];
+  test "header, ####" "#### Title" [Heading (4, Text "Title")];
+  test "header, #####" "##### Title" [Heading (5, Text "Title")];
+  test "header, ######" "###### Title" [Heading (6, Text "Title")];
   test "header, too deep" "######## Title\n"
-    [Omd.Paragraph[Omd.Text "######## Title"]];
-  test "header, # + space" "# Title  " [Omd.H (1, [Omd.Text "Title"])];
-  test "header, # #" "# Title ###" [Omd.H (1, [Omd.Text "Title"])];
-  test "header, # #" "# Title # " [Omd.H (1, [Omd.Text "Title"])];
-  test "header, ## + space" "## Title #  " [Omd.H (2, [Omd.Text "Title"])];
+    [Paragraph (Text "######## Title")];
+  test "header, # + space" "# Title  " [Heading (1, Text "Title")];
+  test "header, # #" "# Title ###" [Heading (1, Text "Title")];
+  test "header, # #" "# Title # " [Heading (1, Text "Title")];
+  test "header, ## + space" "## Title #  " [Heading (2, Text "Title")];
 
-  test "header, # + \\n" "# Title\n" [Omd.H (1, [Omd.Text "Title"])];
-  test "header, # + space + \\n" "# Title  \n" [Omd.H (1, [Omd.Text "Title"])];
-  test "header, # + # + \\n" "# Title # \n" [Omd.H (1, [Omd.Text "Title"])];
+  test "header, # + \\n" "# Title\n" [Heading (1, Text "Title")];
+  test "header, # + space + \\n" "# Title  \n" [Heading (1, Text "Title")];
+  test "header, # + # + \\n" "# Title # \n" [Heading (1, Text "Title")];
 
 
   (* Blockquotes
    ***********************************************************************)
 
   test "blockquote, simple" "> quoted"
-       [Blockquote [Paragraph [Text "quoted"]]];
+       [Blockquote [Paragraph (Text "quoted")]];
   test "blockquote, simple 2" "> quoted\n"
-       [Blockquote [Paragraph [Text "quoted"]]];
+       [Blockquote [Paragraph (Text "quoted")]];
   test "blockquote, 2 pars" "> quoted\n>\n> quoted2"
-       [Blockquote [Paragraph [Text "quoted"];
-                    Paragraph [Text "quoted2"]]];
-  test "blockquote, 2 pars (blank line)" "> quoted\n\n> quoted2"
-       [Blockquote [Paragraph [Text "quoted"];
-                    Paragraph [Text "quoted2"]]];
+       [Blockquote [Paragraph (Text "quoted");
+                    Paragraph (Text "quoted2")]];
+  test "blockquote, 2 pars (blank line)" "> quoted\n> \n> quoted2"
+       [Blockquote [Paragraph (Text "quoted");
+                    Paragraph (Text "quoted2")]];
 
   test "blockquote + header" "> ## header\n"
-       [Blockquote [H (2, [Text "header"])]];
+       [Blockquote [Heading (2, (Text "header"))]];
   test "blockquote + header + par" "> ## header\nHello"
-       [Blockquote [H (2, [Text "header"]); Paragraph [Text "Hello"]]];
+       [Blockquote [Heading (2, (Text "header")); Paragraph (Text "Hello")]];
   test "blockquote + header + par" "> ## header\n> Hello"
-       [Blockquote [H (2, [Text "header"]); Paragraph [Text "Hello"]]];
+       [Blockquote [Heading (2, Text "header"); Paragraph (Text "Hello")]];
   test "blockquote + list" "> 1. item1\n> 2. item2\n"
-       [Blockquote [Ol [[Text "item1"];
-                        [Text "item2"]]]];
+       [Blockquote [List (Ordered (1, '.'), Tight, [[Paragraph (Text "item1")];
+                        [Paragraph (Text "item2")]])]];
   test "blockquote + code (4 spaces)" ">     code"
-       [Blockquote [Code_block ("", "code")]];
+       [Blockquote [Code_block (None, Some "code")]];
   test "blockquote + code (tab)" "> \tcode"
-       [Blockquote [Code_block ("", "code")]];
+       [Blockquote [Code_block (None, Some "code")]];
   test "blockquote + code ```" "> ```\n> code\n> ```"
-       [Blockquote [Code_block ("", "code")]];
+       [Blockquote [Code_block (Some (Backtick, ""), Some "code")]];
 
 
   (* Lists
    ***********************************************************************)
 
   test "list, simple" "8.  Red\n1.  Green\n3.  Blue"
-       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+       [List (Ordered (8, '.'), Tight, [[Paragraph (Text "Red")]; [Paragraph (Text "Green")]; [Paragraph (Text "Blue")]])];
   test "list, simple2" "\n8.  Red\n1.  Green\n3.  Blue"
-       [Ol [[Text "Red"]; [Text "Green"]; [Text "Blue"]]];
+       [List (Ordered (8, '.'), Tight, [[Paragraph (Text "Red")]; [Paragraph (Text "Green")]; [Paragraph (Text "Blue")]])];
   test "list, par" "8.  Red\n\n1.  Green\n\n3.  Blue"
-       [Olp [[Paragraph[Text "Red"]]; [Paragraph[Text "Green"]];
-             [Paragraph[Text "Blue"]]]];
+       [List (Ordered (8, '.'), Loose, [[Paragraph (Text "Red")]; [Paragraph (Text "Green")];
+             [Paragraph (Text "Blue")]])];
 
   test "list, *" "* AA\n* VV"
-       [Ul [[Text "AA"]; [Text "VV"]]];
+       [List (Unordered '*', Tight, [[Paragraph (Text "AA")]; [Paragraph (Text "VV")]])];
   test "list, 2 levels" "* AA\n\n* VV"
-       [Ulp [[Paragraph [Text "AA"]]; [Paragraph [Text "VV"]]]];
+       [List (Unordered '*', Loose, [[Paragraph (Text "AA")]; [Paragraph (Text "VV")]])];
 
   test "list + code + space + header" "- A
 - B
@@ -138,12 +138,12 @@ let () =
     ```
 
 # header"
-       [Ulp [[Paragraph [Omd.Text "A"]];
-             [Paragraph [Omd.Text "B"]; Code_block ("", "code")]];
-        NL; H (1, [Text "header"])];
+       [List (Unordered '-', Loose, [[Paragraph (Text "A")];
+             [Paragraph (Text "B"); Code_block (Some (Backtick, ""), Some "code")]]);
+        Heading (1, Text "header")];
 
   (* Code
    ***********************************************************************)
 
   test "code dashes" "```\n--\n--\n--\n```"
-       [Omd.Code_block ("", "--\n--\n--")]
+       [Code_block (Some (Backtick, ""), Some "--\n--\n--")]

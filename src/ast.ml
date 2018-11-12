@@ -49,3 +49,21 @@ type inline =
   | Link of link_kind * inline link_def
   | Ref of link_kind * inline * string link_def
   | Html of string
+
+let rec map f = function
+  | Paragraph x -> Paragraph (f x)
+  | List (k, st, xs) -> List (k, st, List.map (List.map (map f)) xs)
+  | Blockquote xs -> Blockquote (List.map (map f) xs)
+  | Thematic_break -> Thematic_break
+  | Heading (i, x) -> Heading (i, f x)
+  | Code_block _ | Html_block _ | Link_def _ as x -> x
+
+let defs ast =
+  let rec loop acc = function
+    | List (_, _, l) -> List.fold_left (List.fold_left loop) acc l
+    | Blockquote l -> List.fold_left loop acc l
+    | Paragraph _ | Thematic_break | Heading _
+    | Code_block _ | Html_block _ -> acc
+    | Link_def def -> def :: acc
+  in
+  List.rev (List.fold_left loop [] ast)

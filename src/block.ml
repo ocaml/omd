@@ -8,24 +8,6 @@ let same_list_kind k1 k2 =
 
 type 'a t = 'a block
 
-let rec map f = function
-  | Paragraph x -> Paragraph (f x)
-  | List (k, st, xs) -> List (k, st, List.map (List.map (map f)) xs)
-  | Blockquote xs -> Blockquote (List.map (map f) xs)
-  | Thematic_break -> Thematic_break
-  | Heading (i, x) -> Heading (i, f x)
-  | Code_block _ | Html_block _ | Link_def _ as x -> x
-
-let defs ast =
-  let rec loop acc = function
-    | List (_, _, l) -> List.fold_left (List.fold_left loop) acc l
-    | Blockquote l -> List.fold_left loop acc l
-    | Paragraph _ | Thematic_break | Heading _
-    | Code_block _ | Html_block _ -> acc
-    | Link_def def -> def :: acc
-  in
-  List.rev (List.fold_left loop [] ast)
-
 module Pre = struct
   type block = string t
 
@@ -224,4 +206,33 @@ module Pre = struct
           finish state
     in
     loop empty
+
+  let read_line s off =
+    let buf = Buffer.create 128 in
+    let rec loop cr_read off =
+      if off >= String.length s then
+        Buffer.contents buf, None
+      else begin
+        match s.[off] with
+        | '\n' ->
+            Buffer.contents buf, Some (succ off)
+        | '\r' ->
+            if cr_read then Buffer.add_char buf '\r';
+            loop true (succ off)
+        | c ->
+            if cr_read then Buffer.add_char buf '\r';
+            Buffer.add_char buf c;
+            loop false (succ off)
+      end
+    in
+    loop false off
+
+  let of_string s =
+    let rec loop state = function
+      | None -> finish state
+      | Some off ->
+          let s, off = read_line s off in
+          loop (process state s) off
+    in
+    loop empty (Some 0)
 end
