@@ -826,16 +826,21 @@ let escape buf st =
   | exception Fail ->
       Buffer.add_char buf '\\'
 
-let link_label st =
+let link_label allow_balanced_brackets st =
   if peek st <> '[' then raise Fail;
   advance 1 st;
   let buf = Buffer.create 17 in
-  let rec loop nonempty =
+  let rec loop n nonempty =
     match peek st with
-    | ']' ->
+    | ']' when n = 0 ->
         advance 1 st;
         if not nonempty then raise Fail;
         Buffer.contents buf
+    | ']' as c ->
+        assert (n > 0);
+        advance 1 st;
+        Buffer.add_char buf c;
+        loop (pred n) true
     | '\\' as c ->
         advance 1 st; Buffer.add_char buf c;
         begin match peek st with
@@ -844,15 +849,17 @@ let link_label st =
         | _ ->
             ()
         end;
-        loop true
-    | '[' ->
+        loop n true
+    | '[' when not allow_balanced_brackets ->
         raise Fail
+    | '[' as c ->
+        advance 1 st; Buffer.add_char buf c; loop (succ n) true
     | ' ' | '\t' | '\010'..'\013' as c ->
-        advance 1 st; Buffer.add_char buf c; loop nonempty
+        advance 1 st; Buffer.add_char buf c; loop n nonempty
     | _ as c ->
-        advance 1 st; Buffer.add_char buf c; loop true
+        advance 1 st; Buffer.add_char buf c; loop n true
   in
-  loop false
+  loop 0 false
 
 let normalize s =
   let buf = Buffer.create (String.length s) in
@@ -1339,16 +1346,17 @@ let rec inline defs st =
   in
   let rec reference_link kind acc st =
     let st0 = copy_state st in
-    match protect link_label st with
+    match protect (link_label true) st with
     | lab ->
         let st1 = copy_state st in
-        let lab1 = inline [] (of_string lab) in
+        let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
           match List.find_opt (fun {Ast.label; _} -> label = s) defs with
           | Some def ->
               loop (Pre.R (Ref (kind, lab1, def)) :: text acc) st
           | None ->
+              if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
               let acc = Pre.R lab1 :: text acc in
               Buffer.add_char buf ']';
@@ -1360,7 +1368,7 @@ let rec inline defs st =
             if peek_after '\000' st = ']' then
               (advance 2 st; reflink lab)
             else begin
-              match protect link_label st with
+              match protect (link_label false) st with
               | _ ->
                   restore_state st st0;
                   advance 1 st;
@@ -1506,7 +1514,7 @@ let rec inline defs st =
               | Some '[' ->
                   let label = Pre.parse_emph xs in
                   let st1 = copy_state st in
-                  begin match link_label st with
+                  begin match (link_label false) st with
                   | lab ->
                       let s = normalize lab in
                       begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
@@ -1596,7 +1604,7 @@ let link_reference_definition st =
     | _ -> raise Fail
   in
   ignore (sp3 st);
-  let label = link_label st in
+  let label = link_label false st in
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
