@@ -1493,6 +1493,7 @@ let rec inline defs st =
                       | Some def ->
                           loop (Pre.R (Ref (k, label, def)) :: acc') st
                       | None ->
+                          if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
                           let acc = Pre.R label :: text acc' in
                           Buffer.add_char buf ']';
@@ -1500,6 +1501,7 @@ let rec inline defs st =
                           loop acc st
                       end
                   | exception Fail ->
+                      if k = Img then Buffer.add_char buf '!';
                       Buffer.add_char buf '[';
                       let acc = Pre.R label :: text acc in
                       Buffer.add_char buf ']';
