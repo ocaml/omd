@@ -469,8 +469,6 @@ module P : sig
   exception Fail
 
   val of_string: string -> state
-  val push_mark: state -> unit
-  val pop_mark: state -> string
   val peek: char t
   val peek_opt: char option t
   val pos: state -> int
@@ -496,35 +494,22 @@ end = struct
     {
       mutable str: string;
       mutable pos: int;
-      mutable marks: int list;
     }
 
   let of_string str =
-    {str; pos = 0; marks = []}
+    {str; pos = 0}
 
-  let copy_state {str; pos; marks} =
-    {str; pos; marks}
+  let copy_state {str; pos} =
+    {str; pos}
 
-  let restore_state st {str; pos; marks} =
+  let restore_state st {str; pos} =
     st.str <- str;
-    st.pos <- pos;
-    st.marks <- marks
+    st.pos <- pos
 
   type 'a t =
     state -> 'a
 
   exception Fail
-
-  let push_mark st =
-    st.marks <- st.pos :: st.marks
-
-  let pop_mark st =
-    let mark =
-      match st.marks with
-      | [] -> invalid_arg "pop_mark"
-      | mark :: marks -> st.marks <- marks; mark
-    in
-    String.sub st.str mark (st.pos - mark)
 
   let char c st =
     if st.pos >= String.length st.str then raise Fail;
@@ -627,97 +612,84 @@ let is_empty st =
     true
 
 let entity buf st =
-  if peek st <> '&' then raise Fail;
-  push_mark st;
-  advance 1 st;
-  match peek st with
-  | '#' ->
+  let p = pos st in
+  if next st <> '&' then raise Fail;
+  match peek_opt st with
+  | Some '#' ->
       advance 1 st;
-      begin match peek st with
-      | 'x' | 'X' ->
+      begin match peek_opt st with
+      | Some ('x' | 'X') ->
           advance 1 st;
           let rec aux n m =
-            if n > 8 then Buffer.add_string buf (pop_mark st)
+            if n > 8 then Buffer.add_string buf (range st p (pos st - p))
             else begin
-              match peek st with
-              | '0'..'9' as c ->
+              match peek_opt st with
+              | Some ('0'..'9' as c) ->
                   advance 1 st;
                   aux (succ n) (m * 16 + Char.code c - Char.code '0')
-              | 'a'..'f' as c ->
+              | Some ('a'..'f' as c) ->
                   advance 1 st;
                   aux (succ n) (m * 16 + Char.code c - Char.code 'a' + 10)
-              | 'A'..'F' as c ->
+              | Some ('A'..'F' as c) ->
                   advance 1 st;
                   aux (succ n) (m * 16 + Char.code c - Char.code 'A' + 10)
-              | ';' ->
+              | Some ';' ->
                   advance 1 st;
                   if n = 0 then
-                    Buffer.add_string buf (pop_mark st)
+                    Buffer.add_string buf (range st p (pos st - p))
                   else
                     let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
                     Buffer.add_utf_8_uchar buf u
-              | _ ->
-                  Buffer.add_string buf (pop_mark st)
-              | exception Fail ->
-                  Buffer.add_string buf (pop_mark st)
+              | Some _ | None ->
+                  Buffer.add_string buf (range st p (pos st - p))
             end
           in
           aux 0 0
-      | '0'..'9' ->
+      | Some '0'..'9' ->
           let rec aux n m =
-            if n > 8 then Buffer.add_string buf (pop_mark st)
+            if n > 8 then Buffer.add_string buf (range st p (pos st - p))
             else begin
-              match peek st with
-              | '0'..'9' as c ->
+              match peek_opt st with
+              | Some ('0'..'9' as c) ->
                   advance 1 st;
                   aux (succ n) (m * 10 + Char.code c - Char.code '0')
-              | ';' ->
+              | Some ';' ->
                   advance 1 st;
                   if n = 0 then
-                    Buffer.add_string buf (pop_mark st)
+                    Buffer.add_string buf (range st p (pos st - p))
                   else begin
                     let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
                     Buffer.add_utf_8_uchar buf u
                   end
-              | _ ->
-                  Buffer.add_string buf (pop_mark st)
-              | exception Fail ->
-                  Buffer.add_string buf (pop_mark st)
+              | Some _ | None ->
+                  Buffer.add_string buf (range st p (pos st - p))
             end
           in
           aux 0 0
-      | _ ->
-          Buffer.add_string buf (pop_mark st)
-      | exception Fail ->
-          Buffer.add_string buf (pop_mark st)
+      | Some _ | None ->
+          Buffer.add_string buf (range st p (pos st - p))
       end
-  | '0'..'9' | 'a'..'z' | 'A'..'9' ->
-      push_mark st;
+  | Some ('0'..'9' | 'a'..'z' | 'A'..'9') ->
+      let q = pos st in
       let rec aux () =
-        match peek st with
-        | '0'..'9' | 'a'..'z' | 'A'..'Z' ->
+        match peek_opt st with
+        | Some ('0'..'9' | 'a'..'z' | 'A'..'Z') ->
             advance 1 st; aux ()
-        | ';' ->
-            let name = pop_mark st in
+        | Some ';' ->
+            let name = range st q (pos st - q) in
             advance 1 st;
             begin match Entities.f name with
             | [] ->
-                Buffer.add_string buf (pop_mark st)
+                Buffer.add_string buf (range st p (pos st - p))
             | _ :: _ as cps ->
                 List.iter (Buffer.add_utf_8_uchar buf) cps
             end
-        | _ ->
-            ignore (pop_mark st);
-            Buffer.add_string buf (pop_mark st)
-        | exception Fail ->
-            ignore (pop_mark st);
-            Buffer.add_string buf (pop_mark st)
+        | Some _ | None ->
+            Buffer.add_string buf (range st p (pos st - p))
       in
       aux ()
-  | _ ->
-      Buffer.add_string buf (pop_mark st)
-  | exception Fail ->
-      Buffer.add_string buf (pop_mark st)
+  | Some _ | None ->
+      Buffer.add_string buf (range st p (pos st - p))
 
 module Pre = struct
   type delim =
