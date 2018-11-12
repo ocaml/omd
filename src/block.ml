@@ -1,5 +1,7 @@
 open Ast
 
+module Sub = Parser.Sub
+
 let same_list_kind k1 k2 =
   match k1, k2 with
   | Ordered (_, c1), Ordered (_, c2)
