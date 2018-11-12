@@ -6,16 +6,6 @@ open Omd
 let success = ref 0
 let failures = ref 0
 
-let () =
-  let report () =
-    if !failures = 0 then
-      printf "Congratulation, all %d specification tests passed!\n" !success
-    else
-      printf "%d test%s passed, %d test%s failed.\n"
-             !success (if !success > 1 then "s" else "")
-             !failures (if !failures > 1 then "s" else "") in
-  at_exit report
-
 let test name md_string desired_md =
   try
     let md = of_string md_string in
@@ -147,3 +137,12 @@ let () =
 
   test "code dashes" "```\n--\n--\n--\n```"
        [Code_block (Some (Backtick, ""), Some "--\n--\n--")]
+
+let () =
+  if !failures = 0 then
+    printf "Congratulation, all %d specification tests passed!\n" !success
+  else
+    printf "%d test%s passed, %d test%s failed.\n"
+      !success (if !success > 1 then "s" else "")
+      !failures (if !failures > 1 then "s" else "");
+  if !failures > 0 then exit 2
