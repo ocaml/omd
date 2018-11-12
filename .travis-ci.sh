@@ -52,6 +52,7 @@ case "$TARGET" in
     eval $(opam config env)
     dune build --display=short
     dune clean
+    dune runtest
     opam pin add omd .
   ;;
   *)
