@@ -1514,7 +1514,7 @@ let rec inline defs st =
               | Some '[' ->
                   let label = Pre.parse_emph xs in
                   let st1 = copy_state st in
-                  begin match (link_label false) st with
+                  begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
                       begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
