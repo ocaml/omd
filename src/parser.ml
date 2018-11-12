@@ -1298,7 +1298,7 @@ let autolink st =
       raise Fail
 
 let inline_link =
-  char '(' >>>
+  char '(' >>> ws >>>
   option ("", None)
     (pair link_destination (option None (ws1 >>> some link_title)))
   <<< ws <<< char ')'
