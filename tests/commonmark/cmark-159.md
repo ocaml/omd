@@ -1,11 +1,3 @@
-<table>
+[foo]: /url "title"
 
-  <tr>
-
-    <td>
-      Hi
-    </td>
-
-  </tr>
-
-</table>
+[foo]

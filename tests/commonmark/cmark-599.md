@@ -1,1 +1,1 @@
-<a h*#ref="hi">
+foo <?php echo $a; ?>

@@ -1,1 +1,2 @@
-foo <!ELEMENT br EMPTY>
+foo\
+     bar

@@ -1,6 +1,7 @@
-<script type="text/javascript">
-// JavaScript example
+<style
+  type="text/css">
+h1 {color:red;}
 
-document.getElementById("demo").innerHTML = "Hello JavaScript!";
-</script>
+p {color:blue;}
+</style>
 okay

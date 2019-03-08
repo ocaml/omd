@@ -1,3 +1,3 @@
-<div id="foo"
-  class="bar">
+<div id="foo" class="bar
+  baz">
 </div>

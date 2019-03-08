@@ -1,5 +1,6 @@
-<!-- Foo
+<?php
 
-bar
-   baz -->
+  echo '>';
+
+?>
 okay

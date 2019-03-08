@@ -1,1 +1,3 @@
-<http://example.com?find=\*>
+``` foo\+bar
+foo
+```

@@ -1,1 +1,1 @@
-[link](foo(and(bar)))
+[link](/url "title \"&quot;")

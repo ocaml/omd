@@ -1,1 +1,1 @@
-` b `
+[not a `link](/foo`)

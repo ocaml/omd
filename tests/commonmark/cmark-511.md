@@ -1,3 +1,3 @@
-[![moon](moon.jpg)][ref]
+[Толпой][Толпой] is a Russian word.
 
-[ref]: /uri
+[ТОЛПОЙ]: /url

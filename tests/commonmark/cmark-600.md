@@ -1,1 +1,1 @@
-<a href="hi'> <a href=hi'>
+foo <!ELEMENT br EMPTY>

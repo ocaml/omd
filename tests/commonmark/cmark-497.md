@@ -1,1 +1,1 @@
-[![moon](moon.jpg)](/uri)
+[foo<http://example.com/?search=](uri)>

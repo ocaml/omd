@@ -1,1 +1,1 @@
-<made-up-scheme://foo,bar>
+< http://foo.bar >

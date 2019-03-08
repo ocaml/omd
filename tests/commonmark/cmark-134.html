@@ -1,2 +1,3 @@
-</ins>
-*bar*
+<del>
+*foo*
+</del>

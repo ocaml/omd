@@ -1,6 +1,1 @@
-<?php
-
-  echo '>';
-
-?>
-okay
+<!DOCTYPE html>

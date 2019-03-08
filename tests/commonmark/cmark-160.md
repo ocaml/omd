@@ -1,3 +1,5 @@
-[foo]: /url "title"
+   [foo]: 
+      /url  
+           'the title'  
 
 [foo]

@@ -1,1 +1,1 @@
-<foo.bar.baz>
+<a h*#ref="hi">

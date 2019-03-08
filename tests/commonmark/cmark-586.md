@@ -1,1 +1,2 @@
-<foo\+@bar.example.com>
+<a  /><b2
+data="foo" >

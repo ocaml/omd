@@ -1,3 +1,3 @@
-- foo
+Foo
 - bar
-+ baz
+- baz

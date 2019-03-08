@@ -1,5 +1,3 @@
 <div>
-
 *Emphasized* text.
-
 </div>

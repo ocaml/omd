@@ -1,11 +1,4 @@
 (library
  (name omd)
  (public_name omd)
- (modules lexer parser representation backend omd utils)
- (libraries bigarray))
-
-(executable
- (name main)
- (public_name omd)
- (modules main)
- (libraries omd))
+ (libraries bigarray uchar))

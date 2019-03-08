@@ -1,1 +1,3 @@
-&MadeUpEntity;
+``` f&ouml;&ouml;
+foo
+```

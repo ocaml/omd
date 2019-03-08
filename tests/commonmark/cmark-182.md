@@ -1,8 +1,3 @@
-[foo]: /foo-url "foo"
-[bar]: /bar-url
-  "bar"
-[baz]: /baz-url
+aaa
 
-[foo],
-[bar],
-[baz]
+bbb

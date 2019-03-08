@@ -1,2 +1,3 @@
-<!-- foo -->*bar*
-*baz*
+<script>
+foo
+</script>1. *bar*

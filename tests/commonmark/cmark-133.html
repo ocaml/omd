@@ -1,3 +1,2 @@
-<i class="foo">
+</ins>
 *bar*
-</i>

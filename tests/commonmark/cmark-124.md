@@ -1,4 +1,2 @@
-<div>
-*foo*
-
-*bar*
+<div id="foo"
+*hi*

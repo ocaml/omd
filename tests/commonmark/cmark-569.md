@@ -1,3 +1,1 @@
-![*foo* bar]
-
-[*foo* bar]: /url "title"
+<a+b+c:d>

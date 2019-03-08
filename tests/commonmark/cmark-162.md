@@ -1,3 +1,5 @@
-[Foo*bar\]]:my_(url) 'title (with parens)'
+[Foo bar]:
+<my%20url>
+'title'
 
-[Foo*bar\]]
+[Foo bar]

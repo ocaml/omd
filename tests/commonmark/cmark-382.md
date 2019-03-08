@@ -1,2 +1,1 @@
-**Gomphocarpus (*Gomphocarpus physocarpus*, syn.
-*Asclepias physocarpa*)**
+__foo__bar__baz__

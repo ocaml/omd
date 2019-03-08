@@ -1,1 +1,1 @@
-*<img src="foo" title="*"/>
+[link]()

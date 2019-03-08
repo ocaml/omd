@@ -1,1 +1,2 @@
-foo <a href="&ouml;">
+*foo\
+bar*

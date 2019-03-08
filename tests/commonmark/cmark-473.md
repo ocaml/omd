@@ -1,1 +1,1 @@
-[link](</my uri>)
+[link](foo\bar)

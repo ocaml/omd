@@ -1,3 +1,4 @@
-[foo]: /url\bar\*baz "foo\"bar\baz"
-
 [foo]
+
+[foo]: first
+[foo]: second

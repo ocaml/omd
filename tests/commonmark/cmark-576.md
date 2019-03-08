@@ -1,1 +1,1 @@
-<irc://foo.bar:2233/baz>
+<foo+special@Bar.baz-bar0.com>

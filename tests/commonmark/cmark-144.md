@@ -1,2 +1,2 @@
-<style>p{color:red;}</style>
-*foo*
+<!-- foo -->*bar*
+*baz*

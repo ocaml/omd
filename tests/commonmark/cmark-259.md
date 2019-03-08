@@ -1,4 +1,2 @@
-- foo
-  - bar
-    - baz
-      - boo
+10) foo
+    - bar

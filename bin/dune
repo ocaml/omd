@@ -1,0 +1,8 @@
+(executable
+ (name main)
+ (public_name omd)
+ (libraries omd))
+
+(alias
+ (name default)
+ (deps omd.exe))

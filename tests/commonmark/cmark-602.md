@@ -1,1 +1,1 @@
-<a href='bar'title=title>
+foo <a href="&ouml;">

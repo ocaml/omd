@@ -1,3 +1,3 @@
-<Warning>
+<i class="foo">
 *bar*
-</Warning>
+</i>

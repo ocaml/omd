@@ -1,1 +1,3 @@
-My ![foo bar](/path/to/train.jpg  "title"   )
+![foo]
+
+[foo]: /url "title"

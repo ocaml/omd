@@ -1,4 +1,1 @@
-[foo][bar][baz]
-
-[baz]: /url1
-[bar]: /url2
+My ![foo bar](/path/to/train.jpg  "title"   )

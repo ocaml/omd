@@ -1,13 +1,3 @@
-<![CDATA[
-function matchwo(a,b)
-{
-  if (a < b && a < 0) then {
-    return 1;
+  <!-- foo -->
 
-  } else {
-
-    return 0;
-  }
-}
-]]>
-okay
+    <!-- foo -->

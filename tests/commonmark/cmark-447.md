@@ -1,1 +1,1 @@
-*_foo_*
+*foo __bar *baz bim__ bam*

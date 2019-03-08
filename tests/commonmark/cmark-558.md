@@ -1,1 +1,4 @@
-![foo](train.jpg)
+![foo] 
+[]
+
+[foo]: /url "title"

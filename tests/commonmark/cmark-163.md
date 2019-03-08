@@ -1,5 +1,7 @@
-[Foo bar]:
-<my url>
-'title'
+[foo]: /url '
+title
+line1
+line2
+'
 
-[Foo bar]
+[foo]

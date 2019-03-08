@@ -1,2 +1,5 @@
-</div>
-*foo*
+<DIV CLASS="foo">
+
+*Markdown*
+
+</DIV>

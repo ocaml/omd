@@ -1,6 +1,6 @@
 
 This is [an example][id] reference-style link.
-This is [another] [foo] reference-style link.
+This is [another][foo] reference-style link.
 This is [a third][bar] reference-style link.
 This is [a fourth][4] reference-style link.
 

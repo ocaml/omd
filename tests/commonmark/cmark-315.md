@@ -1,3 +1,1 @@
-``` f&ouml;&ouml;
-foo
-```
+`` foo ` bar  ``

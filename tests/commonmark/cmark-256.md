@@ -1,2 +1,2 @@
-  1.  A paragraph
-    with two lines.
+> 1. > Blockquote
+> continued here.

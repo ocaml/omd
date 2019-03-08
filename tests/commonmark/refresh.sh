@@ -2,7 +2,7 @@
 
 export CURR=`pwd`
 DIR=`mktemp -d`
-git clone https://github.com/commonmark/commonmark $DIR
+git clone -b 0.28 https://github.com/commonmark/commonmark $DIR
 cd $DIR
 
 python3 test/spec_tests.py -d |

@@ -1,1 +1,1 @@
-__foo_ bar_
+*foo [*bar*](/url)*

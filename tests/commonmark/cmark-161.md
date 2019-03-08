@@ -1,5 +1,3 @@
-   [foo]: 
-      /url  
-           'the title'  
+[Foo*bar\]]:my_(url) 'title (with parens)'
 
-[foo]
+[Foo*bar\]]
