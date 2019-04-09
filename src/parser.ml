@@ -265,7 +265,7 @@ type t =
   | Lthematic_break
   | Latx_heading of int * string
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Ast.fenced_code_kind * string
+  | Lfenced_code of int * int * Ast.fenced_code_kind * (string * string)
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of Ast.list_kind * int * Sub.t
@@ -422,7 +422,7 @@ let info_string c s =
     match Sub.head s with
     | Some (' ' | '\t' | '\010'..'\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then raise Fail;
-        Buffer.contents buf
+        Buffer.contents buf, Sub.to_string (ws s)
     | Some '`' when c = '`' ->
         raise Fail
     | Some ('\\' as c) ->

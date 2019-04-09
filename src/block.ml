@@ -17,7 +17,7 @@ module Pre = struct
     | Rblockquote of t
     | Rlist of list_kind * list_style * bool * int * block list list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * fenced_code_kind * string * string list
+    | Rfenced_code of int * int * fenced_code_kind * (string * string) * string list
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rempty
@@ -109,7 +109,7 @@ module Pre = struct
         {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
-    | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, "") when num' >= num && q = q1 ->
+    | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, ("", _)) when num' >= num && q = q1 ->
         {blocks = close {blocks; next}; next = Rempty}
     | Rfenced_code (ind, num, q, info, lines), _ ->
         let s =
