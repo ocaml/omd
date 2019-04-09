@@ -25,7 +25,7 @@ type 'a block =
   | Blockquote of 'a block list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of (fenced_code_kind * string) option * string option
+  | Code_block of (fenced_code_kind * (string * string)) option * string option
   | Html_block of string
   | Link_def of string link_def
 

@@ -156,15 +156,15 @@ let to_html b md =
           ) l;
         Buffer.add_string b
           (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
-    | Code_block ((None | Some (_, "")), None) ->
+    | Code_block ((None | Some (_, ("", _))), None) ->
         Buffer.add_string b "<pre><code></code></pre>"
-    | Code_block (Some (_, info), None) ->
+    | Code_block (Some (_, (info, _)), None) ->
         Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
-    | Code_block ((None | Some (_, "")), Some c) ->
+    | Code_block ((None | Some (_, ("", _))), Some c) ->
         Buffer.add_string b "<pre><code>";
         Buffer.add_string b (htmlentities c);
         Buffer.add_string b "\n</code></pre>"
-    | Code_block (Some (_, info), Some c) ->
+    | Code_block (Some (_, (info, _)), Some c) ->
         Printf.bprintf b "<pre><code class=\"language-%s\">" info;
         Buffer.add_string b (htmlentities c);
         Buffer.add_string b "\n</code></pre>"
