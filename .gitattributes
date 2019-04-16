@@ -1,3 +1,4 @@
 *.ml* text eol=lf
 *.md text eol=lf
 *.html text eol=lf
+dune.inc linguist-generated=true
