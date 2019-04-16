@@ -10,7 +10,7 @@ install: bash -ex .travis-ci.sh prepare
 script: bash -ex .travis-ci.sh build
 
 matrix:
-  include:
+  allow_failures:
   - os: linux
     env: OCAML_VERSION=4.03 OCAML_RELEASE=0
     stage: Build
@@ -20,6 +20,7 @@ matrix:
   - os: linux
     env: OCAML_VERSION=4.05 OCAML_RELEASE=0
     stage: Build
+  include:
   - os: linux
     env: OCAML_VERSION=4.06 OCAML_RELEASE=0
     stage: Build
