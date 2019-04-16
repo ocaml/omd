@@ -101,7 +101,7 @@ let () =
   test "blockquote + code (tab)" "> \tcode"
        [Blockquote [Code_block (None, Some "code")]];
   test "blockquote + code ```" "> ```\n> code\n> ```"
-       [Blockquote [Code_block (Some (Backtick, ""), Some "code")]];
+       [Blockquote [Code_block (Some (Backtick, ("", "")), Some "code")]];
 
 
   (* Lists
@@ -129,14 +129,14 @@ let () =
 
 # header"
        [List (Unordered '-', Loose, [[Paragraph (Text "A")];
-             [Paragraph (Text "B"); Code_block (Some (Backtick, ""), Some "code")]]);
+             [Paragraph (Text "B"); Code_block (Some (Backtick, ("", "")), Some "code")]]);
         Heading (1, Text "header")];
 
   (* Code
    ***********************************************************************)
 
   test "code dashes" "```\n--\n--\n--\n```"
-       [Code_block (Some (Backtick, ""), Some "--\n--\n--")]
+       [Code_block (Some (Backtick, ("", "")), Some "--\n--\n--")]
 
 let () =
   if !failures = 0 then

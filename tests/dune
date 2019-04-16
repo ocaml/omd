@@ -4,6 +4,6 @@
  (libraries omd))
 
 (alias
- (name runtest)
+ (name runtest_all)
  (deps test_spec.exe)
  (action (run %{deps})))

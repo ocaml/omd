@@ -1046,7 +1046,7 @@
        (alias inline-escaped-chars)
        (alias inline-style-tag)
        (alias lazy-blockquote)
-       (alias link-with-code)
+       ;; (alias link-with-code)
        (alias list-with-blockquote)
        (alias list-with-code-header)
        (alias list-with-code)
@@ -1070,3 +1070,8 @@
        (alias unordered-list-minus)
        (alias unordered-list-plus)
        (alias url-with-parenthesis)))
+
+(alias
+ (name runtest_all)
+ (deps (alias runtest)
+       (alias link-with-code)))
