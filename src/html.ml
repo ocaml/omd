@@ -1,5 +1,29 @@
 open Ast
 
+type printer =
+  {
+    start: printer          -> Buffer.t -> inline block list                                             -> unit;
+    finish: printer         -> Buffer.t                                                                  -> unit;
+    block: printer          -> Buffer.t -> inline block                                                  -> unit;
+    paragraph: printer      -> Buffer.t -> inline                                                        -> unit;
+    blockquote: printer     -> Buffer.t -> inline block list                                             -> unit;
+    list: printer           -> Buffer.t -> list_kind * list_style * inline block list list               -> unit;
+    code_block: printer     -> Buffer.t -> (fenced_code_kind * (string * string)) option * string option -> unit;
+    thematic_break: printer -> Buffer.t                                                                  -> unit;
+    html_block: printer     -> Buffer.t -> string                                                        -> unit;
+    heading: printer        -> Buffer.t -> int * inline                                                  -> unit;
+    inline: printer         -> Buffer.t -> inline                                                        -> unit;
+    concat: printer         -> Buffer.t -> inline list                                                   -> unit;
+    text: printer           -> Buffer.t -> string                                                        -> unit;
+    emph: printer           -> Buffer.t -> emph_kind * emph_style * inline                               -> unit;
+    code: printer           -> Buffer.t -> int * string                                                  -> unit;
+    hard_break: printer     -> Buffer.t                                                                  -> unit;
+    soft_break: printer     -> Buffer.t                                                                  -> unit;
+    html: printer           -> Buffer.t -> string                                                        -> unit;
+    link: printer           -> Buffer.t -> link_kind * inline link_def                                   -> unit;
+    ref: printer            -> Buffer.t -> link_kind * inline * string link_def                          -> unit;
+  }
+
 let _id_of_string ids s =
   let n = String.length s in
   let out = Buffer.create 0 in
@@ -77,128 +101,215 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
-let rec html_of_md b md =
-  let rec loop = function
-    | Concat l ->
-        List.iter loop l
-    | Text t ->
-        Buffer.add_string b (htmlentities t)
-    | Emph (Normal, _, md) ->
-        Buffer.add_string b "<em>";
-        loop md;
-        Buffer.add_string b "</em>"
-    | Emph (Strong, _, md) ->
-        Buffer.add_string b "<strong>";
-        loop md;
-        Buffer.add_string b "</strong>"
-    | Code (_, c) ->
-        Buffer.add_string b "<code>";
-        Buffer.add_string b (htmlentities c);
-        Buffer.add_string b "</code>"
-    | Hard_break ->
-        Buffer.add_string b "<br />\n"
-    | Html body ->
-        Buffer.add_string b body
-    | Link (Url, {label; destination; title}) | Ref (Url, label, {destination; title; _}) ->
-        Buffer.add_string b "<a href=\"";
-        Buffer.add_string b (percent_encode destination);
-        Buffer.add_string b "\"";
-        begin match title with
-        | None -> ()
-        | Some title ->
-            Buffer.add_string b " title=\"";
-            Buffer.add_string b (htmlentities title);
-            Buffer.add_string b "\""
-        end;
-        Buffer.add_string b ">";
-        html_of_md b label;
-        Buffer.add_string b "</a>"
-    | Link (Img, {label; destination; title}) | Ref (Img, label, {destination; title; _}) ->
-        Buffer.add_string b "<img src=\"";
-        Buffer.add_string b (percent_encode destination);
-        Buffer.add_string b "\" alt=\"";
-        Buffer.add_string b (htmlentities (text_of_inline label));
-        Buffer.add_string b "\"";
-        begin match title with
-        | None -> ()
-        | Some title ->
-            Buffer.add_string b " title=\"";
-            Buffer.add_string b (htmlentities title);
-            Buffer.add_string b "\""
-        end;
-        Buffer.add_string b " />"
-    | Soft_break ->
-        Buffer.add_string b "\n"
-  in
-  loop md
+let start_print p b mds =
+  List.iter (function
+    | Link_def _ -> ()
+    | md ->
+        p.block p b md;
+        Buffer.add_char b '\n'
+    ) mds;
+  p.finish p b
 
-let to_html b md =
+let finish_print _ _ = ()
+
+let print_concat p b l =
+  List.iter (p.inline p b) l
+
+let print_text _ b t =
+  Buffer.add_string b (htmlentities t)
+
+let print_emph p b = function
+  | Normal, _, md ->
+      Buffer.add_string b "<em>";
+      p.inline p b md;
+      Buffer.add_string b "</em>"
+  | Strong, _, md ->
+      Buffer.add_string b "<strong>";
+      p.inline p b md;
+      Buffer.add_string b "</strong>"
+
+let print_code _ b (_, c) =
+  Buffer.add_string b "<code>";
+  Buffer.add_string b (htmlentities c);
+  Buffer.add_string b "</code>"
+
+let print_hard_break _ b =
+  Buffer.add_string b "<br />\n"
+
+let print_soft_break _ b =
+  Buffer.add_string b "\n"
+
+let print_html _ b body =
+  Buffer.add_string b body
+
+let print_url p b label destination title =
+  Buffer.add_string b "<a href=\"";
+  Buffer.add_string b (percent_encode destination);
+  Buffer.add_string b "\"";
+  begin match title with
+  | None -> ()
+  | Some title ->
+      Buffer.add_string b " title=\"";
+      Buffer.add_string b (htmlentities title);
+      Buffer.add_string b "\""
+  end;
+  Buffer.add_string b ">";
+  p.inline p b label;
+  Buffer.add_string b "</a>"
+
+let print_img b label destination title =
+  Buffer.add_string b "<img src=\"";
+  Buffer.add_string b (percent_encode destination);
+  Buffer.add_string b "\" alt=\"";
+  Buffer.add_string b (htmlentities (text_of_inline label));
+  Buffer.add_string b "\"";
+  begin match title with
+  | None -> ()
+  | Some title ->
+      Buffer.add_string b " title=\"";
+      Buffer.add_string b (htmlentities title);
+      Buffer.add_string b "\""
+  end;
+  Buffer.add_string b " />"
+
+let print_link p b = function
+  | Url, {label; destination; title} ->
+    print_url p b label destination title
+  | Img, {label; destination; title}  ->
+    print_img b label destination title
+
+let print_ref p b = function
+  | Url, label, {destination; title; _} ->
+    print_url p b label destination title
+  | Img, label, {destination; title; _} ->
+    print_img b label destination title
+
+let print_inline p b = function
+  | Concat l ->
+    p.concat p b l
+  | Text t ->
+    (* Format.eprintf "Text: %s\n" (id_of_string t); *)
+    p.text p b t
+  | Emph (kind, style, md) ->
+    p.emph p b (kind, style, md)
+  | Code (i, c) ->
+    p.code p b (i, c)
+  | Hard_break ->
+    p.hard_break p b
+  | Soft_break ->
+    p.soft_break p b
+  | Html body ->
+    p.html p b body
+  | Link (kind, link) ->
+    p.link p b (kind, link)
+  | Ref (kind, md, link) ->
+    p.ref p b (kind, md, link)
+
+let print_blockquote p b q =
   let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
-  let rec loop = function
-    | Blockquote q ->
-        Buffer.add_string b "<blockquote>\n";
-        iter_par (fun md -> loop md; Buffer.add_char b '\n') q;
-        Buffer.add_string b "</blockquote>"
-    | Paragraph md ->
-        Buffer.add_string b "<p>";
-        html_of_md b md;
-        Buffer.add_string b "</p>"
-    | List (kind, style, l) ->
-        Buffer.add_string b
-          (match kind with
-           | Ordered (1, _) -> "<ol>\n"
-           | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
-           | Unordered _ -> "<ul>\n");
-        List.iter (fun x ->
-            Buffer.add_string b "<li>";
-            let _ = List.fold_left (li style) false x in
-            Buffer.add_string b "</li>\n"
-          ) l;
-        Buffer.add_string b
-          (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
-    | Code_block ((None | Some (_, ("", _))), None) ->
-        Buffer.add_string b "<pre><code></code></pre>"
-    | Code_block (Some (_, (info, _)), None) ->
-        Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
-    | Code_block ((None | Some (_, ("", _))), Some c) ->
-        Buffer.add_string b "<pre><code>";
-        Buffer.add_string b (htmlentities c);
-        Buffer.add_string b "\n</code></pre>"
-    | Code_block (Some (_, (info, _)), Some c) ->
-        Printf.bprintf b "<pre><code class=\"language-%s\">" info;
-        Buffer.add_string b (htmlentities c);
-        Buffer.add_string b "\n</code></pre>"
-    | Thematic_break ->
-        Buffer.add_string b "<hr />"
-    | Html_block body ->
-        Buffer.add_string b body
-    | Heading (i, md) ->
-        Buffer.add_string b (Printf.sprintf "<h%d>" i);
-        html_of_md b md;
-        Buffer.add_string b (Printf.sprintf "</h%d>" i)
-    | Link_def _ ->
-        ()
-  and li style prev_nl x =
+  Buffer.add_string b "<blockquote>\n";
+  iter_par (fun md -> p.block p b md; Buffer.add_char b '\n') q;
+  Buffer.add_string b "</blockquote>"
+
+let print_paragraph p b md =
+  Buffer.add_string b "<p>";
+  p.inline p b md;
+  Buffer.add_string b "</p>"
+
+let print_list p b (kind, style, l) =
+  Buffer.add_string b
+    (match kind with
+      | Ordered (1, _) -> "<ol>\n"
+      | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
+      | Unordered _ -> "<ul>\n");
+  let li style prev_nl x =
     match x, style with
     | Paragraph md, Tight ->
-        html_of_md b md;
+        p.inline p b md;
         false
     | Link_def _, _ ->
         prev_nl
     | _ ->
         if not prev_nl then Buffer.add_char b '\n';
-        loop x;
+        p.block p b x;
         Buffer.add_char b '\n';
-        true
-  in
-  loop md
+        true in
+  List.iter (fun x ->
+      Buffer.add_string b "<li>";
+      let _ = List.fold_left (li style) false x in
+      Buffer.add_string b "</li>\n"
+    ) l;
+  Buffer.add_string b
+    (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let to_html mds =
+let print_code_block _ b = function
+  | (None | Some (_, ("", _))), None ->
+      Buffer.add_string b "<pre><code></code></pre>"
+  | Some (_, (info, _)), None ->
+      Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
+  | (None | Some (_, ("", _))), Some c ->
+      Buffer.add_string b "<pre><code>";
+      Buffer.add_string b (htmlentities c);
+      Buffer.add_string b "\n</code></pre>"
+  | Some (_, (info, _)), Some c ->
+      Printf.bprintf b "<pre><code class=\"language-%s\">" info;
+      Buffer.add_string b (htmlentities c);
+      Buffer.add_string b "\n</code></pre>"
+
+let print_thematic_break _ b =
+  Buffer.add_string b "<hr />"
+
+let print_html_block _ b body =
+  Buffer.add_string b body
+
+let print_heading p b (i, md) =
+  Buffer.add_string b (Printf.sprintf "<h%d>" i);
+  p.inline p b md;
+  Buffer.add_string b (Printf.sprintf "</h%d>" i)
+
+let print_block p b = function
+  | Blockquote q ->
+    p.blockquote p b q
+  | Paragraph md ->
+    p.paragraph p b md
+  | List (kind, style, l) ->
+    p.list p b (kind, style, l)
+  | Code_block (i, t) ->
+    p.code_block p b (i, t)
+  | Thematic_break ->
+    p.thematic_break p b
+  | Html_block body ->
+    p.html_block p b body
+  | Heading (i, md) ->
+    p.heading p b (i, md)
+  | Link_def _ ->
+    ()
+
+let default_printer =
+  {
+    start = start_print;
+    finish = finish_print;
+    block = print_block;
+    paragraph = print_paragraph;
+    blockquote = print_blockquote;
+    list = print_list;
+    code_block = print_code_block;
+    thematic_break = print_thematic_break;
+    html_block = print_html_block;
+    heading = print_heading;
+    inline = print_inline;
+    concat = print_concat;
+    text = print_text;
+    emph = print_emph;
+    code = print_code;
+    hard_break = print_hard_break;
+    soft_break = print_soft_break;
+    html = print_html;
+    link = print_link;
+    ref = print_ref;
+  }
+
+let to_html ?(printer=default_printer) mds =
   let b = Buffer.create 64 in
-  List.iter (function
-    | Link_def _ -> ()
-    | md ->
-        to_html b md;
-        Buffer.add_char b '\n'
-    ) mds;
+  printer.start printer b mds;
   Buffer.contents b

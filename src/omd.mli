@@ -55,10 +55,14 @@ type inline =
 type t = inline block list
 (** A markdown document *)
 
+type printer = Html.printer
+
 val of_channel: in_channel -> t
 
 val of_string: string -> t
 
-val to_html: t -> string
+val default_printer: printer
+
+val to_html: ?printer:printer -> t -> string
 
 val to_sexp: t -> string

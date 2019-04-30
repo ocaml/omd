@@ -1,5 +1,7 @@
 include Ast
 
+type printer = Html.printer
+
 type t = inline block list
 
 let parse_inlines md =
@@ -18,8 +20,10 @@ let of_string s =
   let md = Block.Pre.of_string s in
   parse_inlines md
 
-let to_html doc =
-  Html.to_html doc
+let default_printer = Html.default_printer
+
+let to_html ?printer doc =
+  Html.to_html ?printer doc
 
 let to_sexp ast =
   Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
