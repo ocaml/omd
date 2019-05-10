@@ -5,8 +5,8 @@ let rec inline b = function
       List.iter (inline b) l
   | Text t ->
       Buffer.add_string b t
-  | Emph (_, _, md) ->
-      inline b md
+  | Emph e ->
+      inline b e.md
   | Code (n, s) ->
       let d = String.make n '`' in
       Printf.bprintf b "%s%s%s" d s d
@@ -14,18 +14,13 @@ let rec inline b = function
       Buffer.add_char b '\n'
   | Html body ->
       Buffer.add_string b body
-  | Link (_, {label; _}) | Ref (_, label, _) ->
-      inline b label
+  | Link l ->
+      inline b l.def.label
+  | Ref r ->
+      inline b r.label
 
 let block f b = function
   | Paragraph x ->
       f b x
   | _ ->
       assert false
-  (* | List of list_kind * list_style * 'a block list list *)
-  (* | Blockquote of 'a block list *)
-  (* | Thematic_break *)
-  (* | Heading of int * 'a *)
-  (* | Code_block of (fenced_code_kind * string) option * string option *)
-  (* | Html_block of string *)
-  (* | Link_def of 'a link_def *)

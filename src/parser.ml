@@ -880,7 +880,7 @@ module Pre = struct
               in
               let r =
                 let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph (kind, q1, concat (List.map to_r (parse_emph (List.rev acc))))) :: xs
+                R (Emph {kind; style = q1; md = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then
@@ -1420,9 +1420,9 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+          match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
           | Some def ->
-              loop (Pre.R (Ref (kind, lab1, def)) :: text acc) st
+              loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
               if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
@@ -1459,7 +1459,7 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link (Url, {def with label = Text def.label})) :: text acc) st
+            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label}}) :: text acc) st
         | exception Fail ->
           begin match
             protect (closing_tag ||| open_tag ||| html_comment |||
@@ -1569,7 +1569,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link (k, {Ast.label; destination; title})
+                        Link {kind = k; def = {Ast.label; destination; title}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1581,9 +1581,9 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+                      begin match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
                       | Some def ->
-                          loop (Pre.R (Ref (k, label, def)) :: acc') st
+                          loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
@@ -1603,7 +1603,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Link (Url, _) | Ref (Url, _, _)) as x :: acc' ->
+          | Pre.R (Link {kind = Url; _} | Ref {kind = Url; _}) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'

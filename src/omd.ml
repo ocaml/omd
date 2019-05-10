@@ -2,25 +2,25 @@ include Ast
 
 type printer = Html.printer =
   {
-    document: printer       -> Buffer.t -> inline block list                                              -> unit;
-    block: printer          -> Buffer.t -> inline block                                                   -> unit;
-    paragraph: printer      -> Buffer.t -> inline                                                         -> unit;
-    blockquote: printer     -> Buffer.t -> inline block list                                              -> unit;
-    list: printer           -> Buffer.t -> list_kind -> list_style -> inline block list list              -> unit;
-    code_block: printer     -> Buffer.t -> (fenced_code_kind * (string * string)) option -> string option -> unit;
-    thematic_break: printer -> Buffer.t                                                                   -> unit;
-    html_block: printer     -> Buffer.t -> string                                                         -> unit;
-    heading: printer        -> Buffer.t -> int -> inline                                                  -> unit;
-    inline: printer         -> Buffer.t -> inline                                                         -> unit;
-    concat: printer         -> Buffer.t -> inline list                                                    -> unit;
-    text: printer           -> Buffer.t -> string                                                         -> unit;
-    emph: printer           -> Buffer.t -> emph_kind -> emph_style -> inline                              -> unit;
-    code: printer           -> Buffer.t -> int -> string                                                  -> unit;
-    hard_break: printer     -> Buffer.t                                                                   -> unit;
-    soft_break: printer     -> Buffer.t                                                                   -> unit;
-    html: printer           -> Buffer.t -> string                                                         -> unit;
-    link: printer           -> Buffer.t -> link_kind -> inline link_def                                   -> unit;
-    ref: printer            -> Buffer.t -> link_kind -> inline -> string link_def                         -> unit;
+    document: printer       -> Buffer.t -> inline block list -> unit;
+    block: printer          -> Buffer.t -> inline block      -> unit;
+    paragraph: printer      -> Buffer.t -> inline            -> unit;
+    blockquote: printer     -> Buffer.t -> inline block list -> unit;
+    list: printer           -> Buffer.t -> inline block_list -> unit;
+    code_block: printer     -> Buffer.t -> code_block        -> unit;
+    thematic_break: printer -> Buffer.t                      -> unit;
+    html_block: printer     -> Buffer.t -> string            -> unit;
+    heading: printer        -> Buffer.t -> int -> inline     -> unit;
+    inline: printer         -> Buffer.t -> inline            -> unit;
+    concat: printer         -> Buffer.t -> inline list       -> unit;
+    text: printer           -> Buffer.t -> string            -> unit;
+    emph: printer           -> Buffer.t -> emph              -> unit;
+    code: printer           -> Buffer.t -> int -> string     -> unit;
+    hard_break: printer     -> Buffer.t                      -> unit;
+    soft_break: printer     -> Buffer.t                      -> unit;
+    html: printer           -> Buffer.t -> string            -> unit;
+    link: printer           -> Buffer.t -> link              -> unit;
+    ref: printer            -> Buffer.t -> ref               -> unit;
   }
 
 type t = inline block list
@@ -29,7 +29,7 @@ let parse_inlines md =
   let parse_inline defs s = Parser.inline defs (Parser.P.of_string s) in
   let defs = Ast.defs md in
   let defs =
-    List.map (fun def -> {def with Ast.label = Parser.normalize def.label}) defs
+    List.map (fun (def: string link_def) -> {def with Ast.label = Parser.normalize def.label}) defs
   in
   List.map (Ast.map (parse_inline defs)) md
 

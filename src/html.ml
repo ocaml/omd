@@ -2,25 +2,25 @@ open Ast
 
 type printer =
   {
-    document: printer       -> Buffer.t -> inline block list                                              -> unit;
-    block: printer          -> Buffer.t -> inline block                                                   -> unit;
-    paragraph: printer      -> Buffer.t -> inline                                                         -> unit;
-    blockquote: printer     -> Buffer.t -> inline block list                                              -> unit;
-    list: printer           -> Buffer.t -> list_kind -> list_style -> inline block list list              -> unit;
-    code_block: printer     -> Buffer.t -> (fenced_code_kind * (string * string)) option -> string option -> unit;
-    thematic_break: printer -> Buffer.t                                                                   -> unit;
-    html_block: printer     -> Buffer.t -> string                                                         -> unit;
-    heading: printer        -> Buffer.t -> int -> inline                                                  -> unit;
-    inline: printer         -> Buffer.t -> inline                                                         -> unit;
-    concat: printer         -> Buffer.t -> inline list                                                    -> unit;
-    text: printer           -> Buffer.t -> string                                                         -> unit;
-    emph: printer           -> Buffer.t -> emph_kind -> emph_style -> inline                              -> unit;
-    code: printer           -> Buffer.t -> int -> string                                                  -> unit;
-    hard_break: printer     -> Buffer.t                                                                   -> unit;
-    soft_break: printer     -> Buffer.t                                                                   -> unit;
-    html: printer           -> Buffer.t -> string                                                         -> unit;
-    link: printer           -> Buffer.t -> link_kind -> inline link_def                                   -> unit;
-    ref: printer            -> Buffer.t -> link_kind -> inline -> string link_def                         -> unit;
+    document: printer       -> Buffer.t -> inline block list -> unit;
+    block: printer          -> Buffer.t -> inline block      -> unit;
+    paragraph: printer      -> Buffer.t -> inline            -> unit;
+    blockquote: printer     -> Buffer.t -> inline block list -> unit;
+    list: printer           -> Buffer.t -> inline block_list -> unit;
+    code_block: printer     -> Buffer.t -> code_block        -> unit;
+    thematic_break: printer -> Buffer.t                      -> unit;
+    html_block: printer     -> Buffer.t -> string            -> unit;
+    heading: printer        -> Buffer.t -> int -> inline     -> unit;
+    inline: printer         -> Buffer.t -> inline            -> unit;
+    concat: printer         -> Buffer.t -> inline list       -> unit;
+    text: printer           -> Buffer.t -> string            -> unit;
+    emph: printer           -> Buffer.t -> emph              -> unit;
+    code: printer           -> Buffer.t -> int -> string     -> unit;
+    hard_break: printer     -> Buffer.t                      -> unit;
+    soft_break: printer     -> Buffer.t                      -> unit;
+    html: printer           -> Buffer.t -> string            -> unit;
+    link: printer           -> Buffer.t -> link              -> unit;
+    ref: printer            -> Buffer.t -> ref               -> unit;
   }
 
 let _id_of_string ids s =
@@ -114,15 +114,15 @@ let print_concat p b l =
 let print_text _ b t =
   Buffer.add_string b (htmlentities t)
 
-let print_emph p b k _ md =
-  match k with
+let print_emph p b (e: emph) =
+  match e.kind with
   | Normal ->
       Buffer.add_string b "<em>";
-      p.inline p b md;
+      p.inline p b e.md;
       Buffer.add_string b "</em>"
   | Strong ->
       Buffer.add_string b "<strong>";
-      p.inline p b md;
+      p.inline p b e.md;
       Buffer.add_string b "</strong>"
 
 let print_code _ b _ c =
@@ -169,27 +169,27 @@ let print_img b label destination title =
   end;
   Buffer.add_string b " />"
 
-let print_link p b k {label; destination; title} =
-  match k with
+let print_link p b (l: link) =
+  match l.kind with
   | Url ->
-      print_url p b label destination title
+      print_url p b l.def.label l.def.destination l.def.title
   | Img ->
-      print_img b label destination title
+      print_img b l.def.label l.def.destination l.def.title
 
-let print_ref p b k label {destination; title; _} =
-  match k with
+let print_ref p b r =
+  match r.kind with
   | Url ->
-      print_url p b label destination title
+      print_url p b r.label r.def.destination r.def.title
   | Img ->
-      print_img b label destination title
+      print_img b r.label r.def.destination r.def.title
 
 let print_inline p b = function
   | Concat l ->
       p.concat p b l
   | Text t ->
       p.text p b t
-  | Emph (kind, style, md) ->
-      p.emph p b kind style md
+  | Emph e ->
+      p.emph p b e
   | Code (i, c) ->
       p.code p b i c
   | Hard_break ->
@@ -198,10 +198,10 @@ let print_inline p b = function
       p.soft_break p b
   | Html body ->
       p.html p b body
-  | Link (kind, link) ->
-      p.link p b kind link
-  | Ref (kind, md, link) ->
-      p.ref p b kind md link
+  | Link l ->
+      p.link p b l
+  | Ref r ->
+      p.ref p b r
 
 let print_blockquote p b q =
   let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
@@ -214,9 +214,9 @@ let print_paragraph p b md =
   p.inline p b md;
   Buffer.add_string b "</p>"
 
-let print_list p b kind style l =
+let print_list p b (l: inline block_list) =
   Buffer.add_string b
-    (match kind with
+    (match l.list_kind with
      | Ordered (1, _) -> "<ol>\n"
      | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
      | Unordered _ -> "<ul>\n");
@@ -234,23 +234,23 @@ let print_list p b kind style l =
         true in
   List.iter (fun x ->
       Buffer.add_string b "<li>";
-      let _ = List.fold_left (li style) false x in
+      let _ = List.fold_left (li l.list_style) false x in
       Buffer.add_string b "</li>\n"
-    ) l;
+    ) l.blocks;
   Buffer.add_string b
-    (match kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
+    (match l.list_kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block _ b i t = match i, t with
-  | (None | Some (_, ("", _))), None ->
+let print_code_block _ b = function
+  | {code_label = None | Some ""; code = None; _} ->
       Buffer.add_string b "<pre><code></code></pre>"
-  | Some (_, (info, _)), None ->
-      Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" info)
-  | (None | Some (_, ("", _))), Some c ->
+  | {code_label = Some language; code = None; _} ->
+      Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" language)
+  | {code_label = None | Some ""; code = Some c; _} ->
       Buffer.add_string b "<pre><code>";
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
-  | Some (_, (info, _)), Some c ->
-      Printf.bprintf b "<pre><code class=\"language-%s\">" info;
+  | {code_label = Some language; code = Some c; _} ->
+      Printf.bprintf b "<pre><code class=\"language-%s\">" language;
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
 
@@ -270,10 +270,10 @@ let print_block p b = function
       p.blockquote p b q
   | Paragraph md ->
       p.paragraph p b md
-  | List (kind, style, l) ->
-      p.list p b kind style l
-  | Code_block (i, t) ->
-      p.code_block p b i t
+  | List l ->
+      p.list p b l
+  | Code_block c ->
+      p.code_block p b c
   | Thematic_break ->
       p.thematic_break p b
   | Html_block body ->

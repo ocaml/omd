@@ -49,21 +49,21 @@ module Pre = struct
     match next with
     | Rblockquote state ->
         Blockquote (finish state) :: blocks
-    | Rlist (kind, style, _, _, closed_items, state) ->
-        List (kind, style, List.rev (finish state :: closed_items)) :: blocks
+    | Rlist (list_kind, list_style, _, _, closed_items, state) ->
+        List {list_kind; list_style; blocks = List.rev (finish state :: closed_items)} :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
         let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
         if s = "" then blocks else Paragraph s :: blocks
-    | Rfenced_code (_, _, kind, info, []) ->
-        Code_block (Some (kind, info), None) :: blocks
-    | Rfenced_code (_, _, kind, info, l) ->
-        Code_block (Some (kind, info), Some (concat l)) :: blocks
+    | Rfenced_code (_, _, kind, (label, other), []) ->
+        Code_block {code_kind = Some kind; code_label = Some label; code_other = Some other; code = None} :: blocks
+    | Rfenced_code (_, _, kind, (label, other), l) ->
+        Code_block {code_kind = Some kind; code_label = Some label; code_other = Some other; code = Some (concat l)} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        Code_block (None, Some (concat (loop l))) :: blocks
+        Code_block {code_kind = None; code_label = None; code_other = None; code = Some (concat (loop l))} :: blocks
     | Rhtml (_, l) ->
         Html_block (concat l) :: blocks
     | Rempty ->

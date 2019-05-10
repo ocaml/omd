@@ -16,43 +16,43 @@ and inline = function
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
       Atom s
-  | Emph (_, _, x) ->
-      List [Atom "emph"; inline x]
+  | Emph e ->
+      List [Atom "emph"; inline e.md]
   | Code _ ->
       Atom "code"
   | Hard_break ->
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Link (Url, def) ->
+  | Link {kind = Url; def} ->
       List [Atom "url"; link_def inline def]
-  | Ref (Url, label, def) ->
+  | Ref {kind = Url; label; def} ->
       List [Atom "url-ref"; inline label; link_def atom def]
   | Html s ->
       List [Atom "html"; Atom s]
-  | Link (Img, _) ->
+  | Link {kind = Img; _} ->
       Atom "img"
-  | Ref (Img, label, def) ->
+  | Ref {kind = Img; label; def} ->
       List [Atom "img-ref"; inline label; link_def atom def]
 
 let rec block = function
   | Paragraph x ->
       List [Atom "paragraph"; inline x]
-  | List (_, _, xs) ->
-      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) xs)
+  | List l ->
+      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.blocks)
   | Blockquote xs ->
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
   | Heading (n, x) ->
       List [Atom "heading"; Atom (string_of_int n); inline x]
-  | Code_block (None, Some s) ->
+  | Code_block {code_kind = None; code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
-  | Code_block (None, None) ->
+  | Code_block {code_kind = None; code = None; _} ->
       List [Atom "indented-code"]
-  | Code_block (Some _, Some s) ->
+  | Code_block {code_kind = Some _; code = Some s; _} ->
       List [Atom "fenced-code"; Atom s]
-  | Code_block (Some _, None) ->
+  | Code_block {code_kind = Some _; code = None; _} ->
       List [Atom "fenced-code"]
   | Html_block s ->
       List [Atom "html"; Atom s]
