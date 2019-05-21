@@ -17,7 +17,7 @@ and inline = function
   | Text s ->
       Atom s
   | Emph e ->
-      List [Atom "emph"; inline e.md]
+      List [Atom "emph"; inline e.content]
   | Code _ ->
       Atom "code"
   | Hard_break ->
@@ -46,13 +46,13 @@ let rec block = function
       Atom "thematic-break"
   | Heading (n, x) ->
       List [Atom "heading"; Atom (string_of_int n); inline x]
-  | Code_block {code_kind = None; code = Some s; _} ->
+  | Code_block {kind = None; code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
-  | Code_block {code_kind = None; code = None; _} ->
+  | Code_block {kind = None; code = None; _} ->
       List [Atom "indented-code"]
-  | Code_block {code_kind = Some _; code = Some s; _} ->
+  | Code_block {kind = Some _; code = Some s; _} ->
       List [Atom "fenced-code"; Atom s]
-  | Code_block {code_kind = Some _; code = None; _} ->
+  | Code_block {kind = Some _; code = None; _} ->
       List [Atom "fenced-code"]
   | Html_block s ->
       List [Atom "html"; Atom s]

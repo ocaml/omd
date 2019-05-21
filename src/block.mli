@@ -1,6 +1,6 @@
 open Ast
 
-val same_list_kind: list_kind -> list_kind -> bool
+val same_list_kind: Block_list.kind -> Block_list.kind -> bool
 
 type 'a t = 'a block
 

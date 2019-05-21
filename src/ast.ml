@@ -1,13 +1,3 @@
-[@@@warning "-30"]
-
-type list_kind =
-  | Ordered of int * char
-  | Unordered of char
-
-type list_style =
-  | Loose
-  | Tight
-
 type 'a link_def =
   {
     label: 'a;
@@ -15,71 +5,98 @@ type 'a link_def =
     title: string option;
   }
 
-type fenced_code_kind =
-  | Tilde
-  | Backtick
+module Block_list = struct
+  type kind =
+    | Ordered of int * char
+    | Unordered of char
 
-type 'a block_list =
+  type style =
+    | Loose
+    | Tight
+
+  type 'block t =
   {
-    list_kind: list_kind;
-    list_style: list_style;
-    blocks: 'a block list list;
+    kind: kind;
+    style: style;
+    blocks: 'block list list;
   }
-and code_block =
-  {
-    code_kind: fenced_code_kind option;
-    code_label: string option;
-    code_other: string option;
-    code: string option;
-  }
-and 'a block =
+end
+
+module Code_block = struct
+  type kind =
+    | Tilde
+    | Backtick
+
+  type t =
+    {
+      kind: kind option;
+      label: string option;
+      other: string option;
+      code: string option;
+    }
+end
+
+type 'a block =
   | Paragraph of 'a
-  | List of 'a block_list
+  | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of code_block
+  | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string link_def
 
-type emph_kind =
-  | Normal
-  | Strong
+module Emph = struct
+  type kind =
+    | Normal
+    | Strong
 
-type emph_style =
-  | Star
-  | Underscore
+  type style =
+    | Star
+    | Underscore
+
+  type 'inline t =
+  {
+    style: style;
+    kind: kind;
+    content: 'inline
+  }
+end
 
 type link_kind =
   | Img
   | Url
 
-type emph =
+module Link = struct
+  type kind = link_kind
+
+  type 'inline t =
   {
-    kind: emph_kind;
-    style: emph_style;
-    md: inline;
+    kind: kind;
+    def: 'inline link_def;
   }
-and link =
+end
+
+module Ref = struct
+  type kind = link_kind
+
+  type 'inline t =
   {
-    kind: link_kind;
-    def: inline link_def;
-  }
-and ref =
-  {
-    kind: link_kind;
-    label: inline;
+    kind: kind;
+    label: 'inline;
     def: string link_def;
   }
-and inline =
+end
+
+type inline =
   | Concat of inline list
   | Text of string
-  | Emph of emph
+  | Emph of inline Emph.t
   | Code of int * string
   | Hard_break
   | Soft_break
-  | Link of link
-  | Ref of ref
+  | Link of inline Link.t
+  | Ref of inline Ref.t
   | Html of string
 
 let rec map f = function

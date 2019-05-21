@@ -53,12 +53,12 @@ let rec inline b = function
       List.iter (inline b) l
   | Text t ->
       Printf.bprintf b "%s" (escape_markdown_characters t)
-  | Emph {kind = Normal; style; md} ->
+  | Emph {kind = Normal; style; content} ->
       let q = match style with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%a%c" q inline md q
-  | Emph {kind = Strong; style; md} ->
+      Printf.bprintf b "%c%a%c" q inline content q
+  | Emph {kind = Strong; style; content} ->
       let q = match style with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%c%a%c%c" q q inline md q q
+      Printf.bprintf b "%c%c%a%c%c" q q inline content q q
   | Code (n, c) ->
       let d = String.make n '`' in
       Printf.bprintf b "%s%s%s" d c d

@@ -6,7 +6,7 @@ let rec inline b = function
   | Text t ->
       Buffer.add_string b t
   | Emph e ->
-      inline b e.md
+      inline b e.content
   | Code (n, s) ->
       let d = String.make n '`' in
       Printf.bprintf b "%s%s%s" d s d

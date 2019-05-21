@@ -2,25 +2,25 @@ include Ast
 
 type printer = Html.printer =
   {
-    document: printer       -> Buffer.t -> inline block list -> unit;
-    block: printer          -> Buffer.t -> inline block      -> unit;
-    paragraph: printer      -> Buffer.t -> inline            -> unit;
-    blockquote: printer     -> Buffer.t -> inline block list -> unit;
-    list: printer           -> Buffer.t -> inline block_list -> unit;
-    code_block: printer     -> Buffer.t -> code_block        -> unit;
-    thematic_break: printer -> Buffer.t                      -> unit;
-    html_block: printer     -> Buffer.t -> string            -> unit;
-    heading: printer        -> Buffer.t -> int -> inline     -> unit;
-    inline: printer         -> Buffer.t -> inline            -> unit;
-    concat: printer         -> Buffer.t -> inline list       -> unit;
-    text: printer           -> Buffer.t -> string            -> unit;
-    emph: printer           -> Buffer.t -> emph              -> unit;
-    code: printer           -> Buffer.t -> int -> string     -> unit;
-    hard_break: printer     -> Buffer.t                      -> unit;
-    soft_break: printer     -> Buffer.t                      -> unit;
-    html: printer           -> Buffer.t -> string            -> unit;
-    link: printer           -> Buffer.t -> link              -> unit;
-    ref: printer            -> Buffer.t -> ref               -> unit;
+    document: printer       -> Buffer.t -> inline block list         -> unit;
+    block: printer          -> Buffer.t -> inline block              -> unit;
+    paragraph: printer      -> Buffer.t -> inline                    -> unit;
+    blockquote: printer     -> Buffer.t -> inline block list         -> unit;
+    list: printer           -> Buffer.t -> inline block Block_list.t -> unit;
+    code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
+    thematic_break: printer -> Buffer.t                              -> unit;
+    html_block: printer     -> Buffer.t -> string                    -> unit;
+    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    inline: printer         -> Buffer.t -> inline                    -> unit;
+    concat: printer         -> Buffer.t -> inline list               -> unit;
+    text: printer           -> Buffer.t -> string                    -> unit;
+    emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
+    code: printer           -> Buffer.t -> int -> string             -> unit;
+    hard_break: printer     -> Buffer.t                              -> unit;
+    soft_break: printer     -> Buffer.t                              -> unit;
+    html: printer           -> Buffer.t -> string                    -> unit;
+    link: printer           -> Buffer.t -> inline Link.t             -> unit;
+    ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
   }
 
 type t = inline block list
