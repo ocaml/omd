@@ -1,11 +1,3 @@
-type list_kind =
-  | Ordered of int * char
-  | Unordered of char
-
-type list_style =
-  | Loose
-  | Tight
-
 type 'a link_def =
   {
     label: 'a;
@@ -13,46 +5,103 @@ type 'a link_def =
     title: string option;
   }
 
-type fenced_code_kind =
-  | Tilde
-  | Backtick
+module Block_list = struct
+  type kind =
+    | Ordered of int * char
+    | Unordered of char
+
+  type style =
+    | Loose
+    | Tight
+
+  type 'block t =
+  {
+    kind: kind;
+    style: style;
+    blocks: 'block list list;
+  }
+end
+
+module Code_block = struct
+  type kind =
+    | Tilde
+    | Backtick
+
+  type t =
+    {
+      kind: kind option;
+      label: string option;
+      other: string option;
+      code: string option;
+    }
+end
 
 type 'a block =
   | Paragraph of 'a
-  | List of list_kind * list_style * 'a block list list
+  | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
   | Heading of int * 'a
-  | Code_block of (fenced_code_kind * (string * string)) option * string option
+  | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string link_def
 
-type emph_kind =
-  | Normal
-  | Strong
+module Emph = struct
+  type kind =
+    | Normal
+    | Strong
 
-type emph_style =
-  | Star
-  | Underscore
+  type style =
+    | Star
+    | Underscore
+
+  type 'inline t =
+  {
+    style: style;
+    kind: kind;
+    content: 'inline
+  }
+end
 
 type link_kind =
   | Img
   | Url
 
+module Link = struct
+  type kind = link_kind
+
+  type 'inline t =
+  {
+    kind: kind;
+    def: 'inline link_def;
+  }
+end
+
+module Ref = struct
+  type kind = link_kind
+
+  type 'inline t =
+  {
+    kind: kind;
+    label: 'inline;
+    def: string link_def;
+  }
+end
+
 type inline =
   | Concat of inline list
   | Text of string
-  | Emph of emph_kind * emph_style * inline
+  | Emph of inline Emph.t
   | Code of int * string
   | Hard_break
   | Soft_break
-  | Link of link_kind * inline link_def
-  | Ref of link_kind * inline * string link_def
+  | Link of inline Link.t
+  | Ref of inline Ref.t
   | Html of string
 
 let rec map f = function
   | Paragraph x -> Paragraph (f x)
-  | List (k, st, xs) -> List (k, st, List.map (List.map (map f)) xs)
+  | List l -> List  {l with blocks = List.map (List.map (map f)) l.blocks}
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
   | Heading (i, x) -> Heading (i, f x)
@@ -60,7 +109,7 @@ let rec map f = function
 
 let defs ast =
   let rec loop acc = function
-    | List (_, _, l) -> List.fold_left (List.fold_left loop) acc l
+    | List l -> List.fold_left (List.fold_left loop) acc l.blocks
     | Blockquote l -> List.fold_left loop acc l
     | Paragraph _ | Thematic_break | Heading _
     | Code_block _ | Html_block _ -> acc

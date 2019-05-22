@@ -265,10 +265,10 @@ type t =
   | Lthematic_break
   | Latx_heading of int * string
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Ast.fenced_code_kind * (string * string)
+  | Lfenced_code of int * int * Code_block.kind * (string * string)
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
-  | Llist_item of Ast.list_kind * int * Sub.t
+  | Llist_item of Block_list.kind * int * Sub.t
   | Lparagraph
 
 let sp3 s =
@@ -461,7 +461,7 @@ let fenced_code ind s =
         | Some _ | None ->
             if n < 3 then raise Fail;
             let s = info_string c s in
-            let c = if c = '`' then Backtick else Tilde in
+            let c = if c = '`' then Code_block.Backtick else Tilde in
             Lfenced_code (ind, n, c, s)
       in
       loop 1 (Sub.tail s)
@@ -818,8 +818,8 @@ module Pre = struct
 
   type t =
     | Bang_left_bracket
-    | Left_bracket of Ast.link_kind
-    | Emph of delim * delim * emph_style * int
+    | Left_bracket of Link.kind
+    | Emph of delim * delim * Emph.style * int
     | R of inline
 
   let concat = function
@@ -879,8 +879,8 @@ module Pre = struct
                 if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
               in
               let r =
-                let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph (kind, q1, concat (List.map to_r (parse_emph (List.rev acc))))) :: xs
+                let kind = if n1 >= 2 && n2 >= 2 then Emph.Strong else Emph.Normal in
+                R (Emph {kind; style = q1; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then
@@ -1420,9 +1420,9 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+          match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
           | Some def ->
-              loop (Pre.R (Ref (kind, lab1, def)) :: text acc) st
+              loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
               if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
@@ -1459,7 +1459,7 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link (Url, {def with label = Text def.label})) :: text acc) st
+            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label}}) :: text acc) st
         | exception Fail ->
           begin match
             protect (closing_tag ||| open_tag ||| html_comment |||
@@ -1569,7 +1569,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link (k, {Ast.label; destination; title})
+                        Link {kind = k; def = {Ast.label; destination; title}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1581,9 +1581,9 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun {Ast.label; _} -> label = s) defs with
+                      begin match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
                       | Some def ->
-                          loop (Pre.R (Ref (k, label, def)) :: acc') st
+                          loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
@@ -1603,7 +1603,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Link (Url, _) | Ref (Url, _, _)) as x :: acc' ->
+          | Pre.R (Link {kind = Url; _} | Ref {kind = Url; _}) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'
@@ -1618,7 +1618,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Ast.Star else Underscore in
+          let e = if c = '*' then Emph.Star else Emph.Underscore in
           loop (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =

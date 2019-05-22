@@ -53,12 +53,12 @@ let rec inline b = function
       List.iter (inline b) l
   | Text t ->
       Printf.bprintf b "%s" (escape_markdown_characters t)
-  | Emph (Normal, q, md) ->
-      let q = match q with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%a%c" q inline md q
-  | Emph (Strong, q, md) ->
-      let q = match q with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%c%a%c%c" q q inline md q q
+  | Emph {kind = Normal; style; content} ->
+      let q = match style with Star -> '*' | Underscore -> '_' in
+      Printf.bprintf b "%c%a%c" q inline content q
+  | Emph {kind = Strong; style; content} ->
+      let q = match style with Star -> '*' | Underscore -> '_' in
+      Printf.bprintf b "%c%c%a%c%c" q q inline content q q
   | Code (n, c) ->
       let d = String.make n '`' in
       Printf.bprintf b "%s%s%s" d c d
@@ -66,18 +66,18 @@ let rec inline b = function
       Buffer.add_string b "<br />"
   | Html body ->
       Buffer.add_string b body
-  | Link (Url, {label; destination; title = None}) ->
+  | Link {kind = Url; def = {label; destination; title = None}} ->
       Printf.bprintf b "[%a](%s)" inline label destination
-  | Link (Img, {label; destination; title = None}) ->
+  | Link {kind = Img; def = {label; destination; title = None}} ->
       Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination
-  | Link (Url, {label; destination; title = Some title}) ->
+  | Link {kind = Url; def = {label; destination; title = Some title}} ->
       Printf.bprintf b "[%a](%s \"%s\")" inline label destination title
-  | Link (Img, {label; destination; title = Some title}) ->
+  | Link {kind = Img; def = {label; destination; title = Some title}} ->
       Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title
-  | Ref (Url, label, {Ast.label = label1; _}) ->
-      Printf.bprintf b "[%a][%s]" inline label label1
-  | Ref (Img, label, {Ast.label = label1; _}) ->
-      Printf.bprintf b "![%a][%s]" inline label label1
+  | Ref {kind = Url; label; def = {Ast.label = label'; _}} ->
+      Printf.bprintf b "[%a][%s]" inline label label'
+  | Ref {kind = Img; label; def = {Ast.label = label'; _}} ->
+      Printf.bprintf b "![%a][%s]" inline label label'
   | Soft_break ->
       if Buffer.length b = 1 ||
          (Buffer.length b > 1 &&
