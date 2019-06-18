@@ -10,7 +10,7 @@ type printer =
     code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
@@ -261,10 +261,10 @@ let print_thematic_break _ b =
 let print_html_block _ b body =
   Buffer.add_string b body
 
-let print_heading p b i md =
-  Buffer.add_string b (Printf.sprintf "<h%d>" i);
-  p.inline p b md;
-  Buffer.add_string b (Printf.sprintf "</h%d>" i)
+let print_heading p b (h: inline Heading.t) =
+  Buffer.add_string b (Printf.sprintf "<h%d>" h.level);
+  p.inline p b h.text;
+  Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
 let print_block p b = function
   | Blockquote q ->
@@ -279,8 +279,8 @@ let print_block p b = function
       p.thematic_break p b
   | Html_block body ->
       p.html_block p b body
-  | Heading (i, md) ->
-      p.heading p b i md
+  | Heading h ->
+      p.heading p b h
   | Link_def _ ->
       ()
 

@@ -1,0 +1,12 @@
+(rule
+ (targets attr-001.html.out)
+ (deps attr-001.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-001)
+ (action (diff attr-001.html attr-001.html.out)))
+
+(alias
+ (name runtest)
+ (deps (alias attr-001)))

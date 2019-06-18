@@ -10,7 +10,7 @@ type printer = Html.printer =
     code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;

@@ -263,7 +263,7 @@ type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string
+  | Latx_heading of int * string * string option
   | Lsetext_heading of int * int
   | Lfenced_code of int * int * Code_block.kind * (string * string)
   | Lindented_code of Sub.t
@@ -332,6 +332,69 @@ let setext_heading s =
   | Some _ | None ->
       raise Fail
 
+let is_punct = function
+  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')'
+  | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<'
+  | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^' | '_'
+  | '`' | '{' | '|' | '}' | '~' -> true
+  | _ -> false
+
+let attribute_string s =
+  let buf = Buffer.create 64 in
+  let rec loop s =
+    match Sub.head s with
+    | None ->
+        Sub.of_string (Buffer.contents buf), None
+    | Some ('\\' as c) ->
+        let s = Sub.tail s in
+        begin match Sub.head s with
+        | Some c when is_punct c ->
+            Buffer.add_char buf c;
+            loop (Sub.tail s)
+        | Some _ | None ->
+            Buffer.add_char buf c;
+            loop s
+        end
+    | Some '{' ->
+        let buf' = Buffer.create 64 in
+        let rec loop' s =
+          match Sub.head s with
+          | Some ('\\') ->
+              Buffer.add_char buf '{';
+              Buffer.add_buffer buf buf';
+              Buffer.add_string buf (Sub.to_string s);
+              Sub.of_string (Buffer.contents buf), None
+          | Some '}' ->
+              let s = Sub.tail s in
+              begin match Sub.head s with
+              | Some _ ->
+                  Buffer.add_char buf '{';
+                  Buffer.add_buffer buf buf';
+                  Buffer.add_char buf '}';
+                  loop s
+              | None ->
+                  Sub.of_string (Buffer.contents buf), Some (Buffer.contents buf')
+              end
+          | None ->
+              Buffer.add_char buf '{';
+              Buffer.add_buffer buf buf';
+              Sub.of_string (Buffer.contents buf), None
+          | Some '{' ->
+              Buffer.add_char buf '{';
+              Buffer.add_buffer buf buf';
+              Buffer.reset buf';
+              loop' (Sub.tail s)
+          | Some c ->
+              Buffer.add_char buf' c;
+              loop' (Sub.tail s)
+        in
+        loop' (Sub.tail s)
+    | Some c ->
+        Buffer.add_char buf c;
+        loop (Sub.tail s)
+  in
+  loop (ws s)
+
 let atx_heading s =
   let rec loop n s =
     if n > 6 then raise Fail;
@@ -339,6 +402,13 @@ let atx_heading s =
     | Some '#' ->
         loop (succ n) (Sub.tail s)
     | Some (' ' | '\t' | '\010'..'\013') ->
+        let s, a =
+          match Sub.head ~rev:() s with
+          | Some '}' ->
+              attribute_string s
+          | _ ->
+              s, None
+        in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
           match Sub.head ~rev:() t with
@@ -349,20 +419,13 @@ let atx_heading s =
           | Some _ ->
               s
         in
-        Latx_heading (n, Sub.to_string (loop s))
+        Latx_heading (n, Sub.to_string (ws (loop s)), a)
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s)
+        Latx_heading (n, Sub.to_string s, None)
   in
   loop 0 s
-
-let is_punct = function
-  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')'
-  | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<'
-  | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^' | '_'
-  | '`' | '{' | '|' | '}' | '~' -> true
-  | _ -> false
 
 let entity s =
   match Sub.heads 2 s with
@@ -1461,15 +1524,15 @@ let rec inline defs st =
         | def ->
             loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label}}) :: text acc) st
         | exception Fail ->
-          begin match
-            protect (closing_tag ||| open_tag ||| html_comment |||
-                     declaration ||| cdata_section ||| processing_instruction) st
-          with
-          | tag ->
-              loop (Pre.R (Html tag) :: text acc) st
-          | exception Fail ->
-              junk st; Buffer.add_char buf c; loop acc st
-          end
+            begin match
+              protect (closing_tag ||| open_tag ||| html_comment |||
+                       declaration ||| cdata_section ||| processing_instruction) st
+            with
+            | tag ->
+                loop (Pre.R (Html tag) :: text acc) st
+            | exception Fail ->
+                junk st; Buffer.add_char buf c; loop acc st
+            end
         end
     | '\n' ->
         junk st; sp st; loop (Pre.R Soft_break :: text acc) st

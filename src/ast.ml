@@ -36,12 +36,21 @@ module Code_block = struct
     }
 end
 
+module Heading = struct
+  type 'block t =
+    {
+      level: int;
+      attributes: string option;
+      text: 'block;
+    }
+end
+
 type 'a block =
   | Paragraph of 'a
   | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
-  | Heading of int * 'a
+  | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string link_def
@@ -104,7 +113,7 @@ let rec map f = function
   | List l -> List  {l with blocks = List.map (List.map (map f)) l.blocks}
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
-  | Heading (i, x) -> Heading (i, f x)
+  | Heading h -> Heading {h with text = f h.text}
   | Code_block _ | Html_block _ | Link_def _ as x -> x
 
 let defs ast =

@@ -9,13 +9,14 @@ type 'a link_def = 'a Ast.link_def =
 
 module Block_list = Ast.Block_list
 module Code_block = Ast.Code_block
+module Heading = Ast.Heading
 
 type 'a block = 'a Ast.block =
   | Paragraph of 'a
   | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
-  | Heading of int * 'a
+  | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string link_def
@@ -48,7 +49,7 @@ type printer = Html.printer =
     code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;

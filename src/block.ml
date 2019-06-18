@@ -88,8 +88,8 @@ module Pre = struct
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Lsetext_heading (2, n) when n >= 3 ->
         {blocks = Thematic_break :: blocks; next = Rempty}
-    | Rempty, Latx_heading (n, s) ->
-        {blocks = Heading (n, s) :: blocks; next = Rempty}
+    | Rempty, Latx_heading (level, text, attributes) ->
+        {blocks = Heading {level; text; attributes} :: blocks; next = Rempty}
     | Rempty, Lfenced_code (ind, num, q, info) ->
         {blocks; next = Rfenced_code (ind, num, q, info, [])}
     | Rempty, Lhtml (_, kind) ->
@@ -105,8 +105,8 @@ module Pre = struct
     | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading (n, _) ->
-        {blocks = Heading (n, String.trim (String.concat "\n" (List.rev lines))) :: blocks; next = Rempty}
+    | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
+        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = None}:: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, ("", _)) when num' >= num && q = q1 ->

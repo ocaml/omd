@@ -44,8 +44,8 @@ let rec block = function
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading (n, x) ->
-      List [Atom "heading"; Atom (string_of_int n); inline x]
+  | Heading h ->
+      List [Atom "heading"; Atom (string_of_int h.level); inline h.text]
   | Code_block {kind = None; code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
   | Code_block {kind = None; code = None; _} ->
