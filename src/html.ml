@@ -96,6 +96,24 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
+let print_attributes _ b attributes =
+  begin
+    match attributes.id with
+    | None -> ()
+    | Some s -> Buffer.add_string b (Printf.sprintf " id=\"%s\"" s)
+  end;
+  if List.length attributes.classes <> 0
+  then
+    begin
+      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " attributes.classes))
+    end;
+  if List.length attributes.attributes <> 0
+  then
+    begin
+      let f (d, v) = Buffer.add_string b (Printf.sprintf " data-%s=\"%s\"" d v) in
+      List.iter f attributes.attributes
+    end
+
 let print_document p b mds =
   List.iter (function
       | Link_def _ -> ()
@@ -236,18 +254,20 @@ let print_list p b (l: inline block Block_list.t) =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block _ b (c: Code_block.t) =
+let print_code_block p b (c: Code_block.t) =
+  Buffer.add_string b "<pre";
+  print_attributes p b c.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
-      Buffer.add_string b "<pre><code></code></pre>"
+      Buffer.add_string b "><code></code></pre>"
   | {label = Some language; code = None; _} ->
-      Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" language)
+      Buffer.add_string b (Printf.sprintf "><code class=\"language-%s\"></code></pre>" language)
   | {label = None | Some ""; code = Some c; _} ->
-      Buffer.add_string b "<pre><code>";
+      Buffer.add_string b "><code>";
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
   | {label = Some language; code = Some c; _} ->
-      Printf.bprintf b "<pre><code class=\"language-%s\">" language;
+      Printf.bprintf b "><code class=\"language-%s\">" language;
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
 
@@ -259,26 +279,7 @@ let print_html_block _ b body =
 
 let print_heading p b (h: inline Heading.t) =
   Buffer.add_string b (Printf.sprintf "<h%d" h.level);
-  let id =
-    match h.attributes.id with
-    | None ->
-      let b' = Buffer.create 64 in
-      p.inline p b' h.text;
-      id_of_string (Buffer.to_bytes b')
-    | Some s -> s
-  in
-  Buffer.add_string b (Printf.sprintf " id=\"%s\"" id);
-  if List.length h.attributes.classes <> 0
-  then
-    begin
-      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " h.attributes.classes))
-    end;
-  if List.length h.attributes.attributes <> 0
-  then
-    begin
-      let f (d, v) = Buffer.add_string b (Printf.sprintf " data-%s=\"%s\"" d v) in
-      List.iter f h.attributes.attributes
-    end;
+  print_attributes p b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)

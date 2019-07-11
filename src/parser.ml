@@ -265,7 +265,7 @@ type t =
   | Lthematic_break
   | Latx_heading of int * string * attributes
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Code_block.kind * (string * string)
+  | Lfenced_code of int * int * Code_block.kind * (string * string) * attributes
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
@@ -340,7 +340,7 @@ let is_punct = function
   | _ -> false
 
 let parse_attributes = function
-  | None -> {id=None; classes=[]; attributes=[]}
+  | None -> empty_attributes
   | Some s ->
     let attributes = String.split_on_char ' ' s in
     let f acc s =
@@ -351,7 +351,7 @@ let parse_attributes = function
         let attr = String.split_on_char '=' s in
         {acc with attributes = (List.nth attr 0, List.nth attr 1)::acc.attributes}
     in
-    let attr = List.fold_left f {id=None; classes=[]; attributes=[]} attributes in
+    let attr = List.fold_left f empty_attributes attributes in
     { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
 
 let attribute_string s =
@@ -407,7 +407,7 @@ let attribute_string s =
   try
     s', parse_attributes a
   with
-    | Invalid_argument _ -> s, {id=None; classes=[]; attributes=[]}
+    | Invalid_argument _ -> s, empty_attributes
 
 let atx_heading s =
   let rec loop n s =
@@ -421,7 +421,7 @@ let atx_heading s =
           | Some '}' ->
               attribute_string s
           | _ ->
-              s, {id=None; classes=[]; attributes=[]}
+              s, empty_attributes
         in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
@@ -437,7 +437,7 @@ let atx_heading s =
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s, {id=None; classes=[]; attributes=[]})
+        Latx_heading (n, Sub.to_string s, empty_attributes)
   in
   loop 0 s
 
@@ -495,11 +495,19 @@ let entity s =
 
 let info_string c s =
   let buf = Buffer.create 17 in
+  let s, a =
+    match Sub.head ~rev:() s with
+    | Some '}' ->
+        attribute_string s
+    | _ ->
+        s, empty_attributes
+  in
+  let s = ws ~rev:() (ws s) in
   let rec loop s =
     match Sub.head s with
     | Some (' ' | '\t' | '\010'..'\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then raise Fail;
-        Buffer.contents buf, Sub.to_string (ws s)
+        (Buffer.contents buf, Sub.to_string (ws s)), a
     | Some '`' when c = '`' ->
         raise Fail
     | Some ('\\' as c) ->
@@ -537,9 +545,9 @@ let fenced_code ind s =
             loop (succ n) (Sub.tail s)
         | Some _ | None ->
             if n < 3 then raise Fail;
-            let s = info_string c s in
+            let s, a = info_string c s in
             let c = if c = '`' then Code_block.Backtick else Tilde in
-            Lfenced_code (ind, n, c, s)
+            Lfenced_code (ind, n, c, s, a)
       in
       loop 1 (Sub.tail s)
   | Some _ | None ->

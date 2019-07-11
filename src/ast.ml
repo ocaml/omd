@@ -12,6 +12,8 @@ type attributes =
     attributes: (string * string) list
   }
 
+let empty_attributes = {id=None; classes=[]; attributes=[]}
+
 module Block_list = struct
   type kind =
     | Ordered of int * char
@@ -39,6 +41,7 @@ module Code_block = struct
       kind: kind option;
       label: string option;
       other: string option;
+      attributes: attributes;
       code: string option;
     }
 end

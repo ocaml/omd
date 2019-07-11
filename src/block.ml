@@ -17,7 +17,7 @@ module Pre = struct
     | Rblockquote of t
     | Rlist of Block_list.kind * Block_list.style * bool * int * block list list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * Code_block.kind * (string * string) * string list
+    | Rfenced_code of int * int * Code_block.kind * (string * string) * string list * attributes
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rempty
@@ -57,13 +57,13 @@ module Pre = struct
         let s = String.sub s off (String.length s - off) |> String.trim in
         let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
         if s = "" then blocks else Paragraph s :: blocks
-    | Rfenced_code (_, _, kind, (label, other), []) ->
-        Code_block {kind = Some kind; label = Some label; other = Some other; code = None} :: blocks
-    | Rfenced_code (_, _, kind, (label, other), l) ->
-        Code_block {kind = Some kind; label = Some label; other = Some other; code = Some (concat l)} :: blocks
+    | Rfenced_code (_, _, kind, (label, other), [], a) ->
+        Code_block {kind = Some kind; label = Some label; other = Some other; code = None; attributes = a} :: blocks
+    | Rfenced_code (_, _, kind, (label, other), l, a) ->
+        Code_block {kind = Some kind; label = Some label; other = Some other; code = Some (concat l); attributes = a} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        Code_block {kind = None; label = None; other = None; code = Some (concat (loop l))} :: blocks
+        Code_block {kind = None; label = None; other = None; code = Some (concat (loop l)); attributes = empty_attributes} :: blocks
     | Rhtml (_, l) ->
         Html_block (concat l) :: blocks
     | Rempty ->
@@ -90,8 +90,8 @@ module Pre = struct
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Latx_heading (level, text, attributes) ->
         {blocks = Heading {level; text; attributes} :: blocks; next = Rempty}
-    | Rempty, Lfenced_code (ind, num, q, info) ->
-        {blocks; next = Rfenced_code (ind, num, q, info, [])}
+    | Rempty, Lfenced_code (ind, num, q, info, a) ->
+        {blocks; next = Rfenced_code (ind, num, q, info, [], a)}
     | Rempty, Lhtml (_, kind) ->
         process {blocks; next = Rhtml (kind, [])} s
     | Rempty, Lindented_code s ->
@@ -106,12 +106,12 @@ module Pre = struct
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
-        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = {id=None; classes=[]; attributes=[]}}:: blocks; next = Rempty}
+        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = empty_attributes}:: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
-    | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, ("", _)) when num' >= num && q = q1 ->
+    | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _) when num' >= num && q = q1 ->
         {blocks = close {blocks; next}; next = Rempty}
-    | Rfenced_code (ind, num, q, info, lines), _ ->
+    | Rfenced_code (ind, num, q, info, lines, a), _ ->
         let s =
           let ind = min (Parser.indent s) ind in
           if ind > 0 then
@@ -119,7 +119,7 @@ module Pre = struct
           else
             s
         in
-        {blocks; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines)}
+        {blocks; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)}
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
@@ -148,7 +148,7 @@ module Pre = struct
             | Rblockquote {blocks = []; next}
             | Rlist (_, _, _, _, _, {blocks = []; next}) -> new_block next
             | Rparagraph [_]
-            | Rfenced_code (_, _, _, _, [])
+            | Rfenced_code (_, _, _, _, [], _)
             | Rindented_code [_]
             | Rhtml (_, [_]) -> true
             | _ -> false
