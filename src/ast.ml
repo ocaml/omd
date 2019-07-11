@@ -5,6 +5,13 @@ type 'a link_def =
     title: string option;
   }
 
+type attributes =
+  {
+    id: string option;
+    classes: string list;
+    attributes: (string * string) list
+  }
+
 module Block_list = struct
   type kind =
     | Ordered of int * char
@@ -40,7 +47,7 @@ module Heading = struct
   type 'block t =
     {
       level: int;
-      attributes: string option;
+      attributes: attributes;
       text: 'block;
     }
 end

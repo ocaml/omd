@@ -263,7 +263,7 @@ type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string * string option
+  | Latx_heading of int * string * attributes
   | Lsetext_heading of int * int
   | Lfenced_code of int * int * Code_block.kind * (string * string)
   | Lindented_code of Sub.t
@@ -339,6 +339,21 @@ let is_punct = function
   | '`' | '{' | '|' | '}' | '~' -> true
   | _ -> false
 
+let parse_attributes = function
+  | None -> {id=None; classes=[]; attributes=[]}
+  | Some s ->
+    let attributes = String.split_on_char ' ' s in
+    let f acc s =
+      match s.[0] with
+      | '#' -> {acc with id = Some (String.sub s 1 (String.length s - 1))}
+      | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
+      | _ ->
+        let attr = String.split_on_char '=' s in
+        {acc with attributes = (List.nth attr 0, List.nth attr 1)::acc.attributes}
+    in
+    let attr = List.fold_left f {id=None; classes=[]; attributes=[]} attributes in
+    { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
+
 let attribute_string s =
   let buf = Buffer.create 64 in
   let rec loop s =
@@ -359,11 +374,6 @@ let attribute_string s =
         let buf' = Buffer.create 64 in
         let rec loop' s =
           match Sub.head s with
-          | Some ('\\') ->
-              Buffer.add_char buf '{';
-              Buffer.add_buffer buf buf';
-              Buffer.add_string buf (Sub.to_string s);
-              Sub.of_string (Buffer.contents buf), None
           | Some '}' ->
               let s = Sub.tail s in
               begin match Sub.head s with
@@ -393,7 +403,11 @@ let attribute_string s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  loop (ws s)
+  let s', a = loop (ws s) in
+  try
+    s', parse_attributes a
+  with
+    | Invalid_argument _ -> s, {id=None; classes=[]; attributes=[]}
 
 let atx_heading s =
   let rec loop n s =
@@ -407,7 +421,7 @@ let atx_heading s =
           | Some '}' ->
               attribute_string s
           | _ ->
-              s, None
+              s, {id=None; classes=[]; attributes=[]}
         in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
@@ -423,7 +437,7 @@ let atx_heading s =
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s, None)
+        Latx_heading (n, Sub.to_string s, {id=None; classes=[]; attributes=[]})
   in
   loop 0 s
 

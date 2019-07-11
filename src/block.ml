@@ -106,7 +106,7 @@ module Pre = struct
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
-        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = None}:: blocks; next = Rempty}
+        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = {id=None; classes=[]; attributes=[]}}:: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _), Lfenced_code (_, num', q1, ("", _)) when num' >= num && q = q1 ->

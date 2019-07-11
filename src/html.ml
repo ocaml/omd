@@ -23,39 +23,35 @@ type printer =
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
   }
 
-let _id_of_string ids s =
-  let n = String.length s in
-  let out = Buffer.create 0 in
-  (* Put [s] into [b], replacing non-alphanumeric characters with dashes. *)
-  let rec loop started i =
-    if i = n then ()
+let id_of_string s =
+  let n = Bytes.length s in
+  let id = Buffer.create 64 in
+  let rec trim i =
+    if i = n then n
     else begin
-      match s.[i] with
-      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
-          Buffer.add_char out c ;
+      match Bytes.get s i with
+      | 'a' .. 'z' | 'A' .. 'Z' -> i
+      | _ -> trim (i + 1)
+    end
+  and loop keep i =
+    if i = n then begin if not keep then Buffer.truncate id (Buffer.length id - 1) end
+    else begin
+      match Bytes.get s i with
+      | 'A' .. 'Z' as c ->
+          Buffer.add_char id (Char.lowercase_ascii c) ;
           loop true (i + 1)
-      (* Don't want to start with dashes. *)
-      | _ when not started ->
+      | 'a' .. 'z' | '0' .. '9' | '_' | '-' | '.' as c ->
+          Buffer.add_char id c ;
+          loop true (i + 1)
+      | ' ' | '\n' ->
+          if keep then
+          Buffer.add_char id '-' ;
           loop false (i + 1)
       | _ ->
-          Buffer.add_char out '-' ;
-          loop false (i + 1)
-    end
-  in
-  loop false 0 ;
-  let s' = Buffer.contents out in
-  if s' = "" then ""
-  else
-    (* Find out the index of the last character in [s'] that isn't a dash. *)
-    let last_trailing =
-      let rec loop i =
-        if i < 0 || s'.[i] <> '-' then i
-        else loop (i - 1)
-      in
-      loop (String.length s' - 1)
+          loop keep (i + 1)
+      end
     in
-    (* Trim trailing dashes. *)
-    ids#mangle @@ String.sub s' 0 (last_trailing + 1)
+    loop true (trim 0); Bytes.to_string (Buffer.to_bytes id)
 
 (* only convert when "necessary" *)
 let htmlentities s =
@@ -262,7 +258,28 @@ let print_html_block _ b body =
   Buffer.add_string b body
 
 let print_heading p b (h: inline Heading.t) =
-  Buffer.add_string b (Printf.sprintf "<h%d>" h.level);
+  Buffer.add_string b (Printf.sprintf "<h%d" h.level);
+  let id =
+    match h.attributes.id with
+    | None ->
+      let b' = Buffer.create 64 in
+      p.inline p b' h.text;
+      id_of_string (Buffer.to_bytes b')
+    | Some s -> s
+  in
+  Buffer.add_string b (Printf.sprintf " id=\"%s\"" id);
+  if List.length h.attributes.classes <> 0
+  then
+    begin
+      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " h.attributes.classes))
+    end;
+  if List.length h.attributes.attributes <> 0
+  then
+    begin
+      let f (d, v) = Buffer.add_string b (Printf.sprintf " data-%s=\"%s\"" d v) in
+      List.iter f h.attributes.attributes
+    end;
+  Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
