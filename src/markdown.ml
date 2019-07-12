@@ -48,6 +48,45 @@ let escape_markdown_characters s =
   done;
   Buffer.contents b
 
+let print_attributes b a =
+  match a with
+  | {id = None; classes = []; attributes = []} -> ()
+  | _ ->
+    let start = ref false in
+    Printf.bprintf b "{";
+    begin
+      match a.id with
+      | None -> ()
+      | Some s ->
+        start := true;
+        Printf.bprintf b "#%s" s
+    end;
+    begin
+      match a.classes with
+      | [] -> ()
+      | l ->
+        let dump s =
+          if !start then
+            Printf.bprintf b " ";
+          Printf.bprintf b ".%s" s;
+          start := true
+        in
+        List.iter dump l
+    end;
+    begin
+      match a.attributes with
+      | [] -> ()
+      | l ->
+        let dump (n,v) =
+          if !start then
+            Printf.bprintf b " ";
+          Printf.bprintf b "%s=%s" n v;
+          start := true
+        in
+        List.iter dump l
+    end;
+    Printf.bprintf b "}"
+
 let rec inline b = function
   | Concat l ->
       List.iter (inline b) l
@@ -59,9 +98,10 @@ let rec inline b = function
   | Emph {kind = Strong; style; content} ->
       let q = match style with Star -> '*' | Underscore -> '_' in
       Printf.bprintf b "%c%c%a%c%c" q q inline content q q
-  | Code (n, c) ->
-      let d = String.make n '`' in
-      Printf.bprintf b "%s%s%s" d c d
+  | Code c ->
+      let d = String.make c.level '`' in
+      Printf.bprintf b "%s%s%s" d c.content d;
+      print_attributes b c.attributes
   | Hard_break ->
       Buffer.add_string b "<br />"
   | Html body ->

@@ -4,6 +4,4 @@ Heading data attributes testing
 
 # Heading 2 # {data2=value2}
 
-# Heading 3 {data3=value3} #
-
-# Heading 4 {data1=value4.a data2=value4.b}
+# Heading 3 {data1=value3a data2=value3b}

@@ -15,7 +15,7 @@ type printer =
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
     emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> int -> string             -> unit;
+    code: printer           -> Buffer.t -> Code.t                    -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;
@@ -96,7 +96,7 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
-let print_attributes _ b attributes =
+let print_attributes b attributes =
   begin
     match attributes.id with
     | None -> ()
@@ -139,9 +139,11 @@ let print_emph p b (e: inline Emph.t) =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let print_code _ b _ c =
-  Buffer.add_string b "<code>";
-  Buffer.add_string b (htmlentities c);
+let print_code _ b (c: Code.t) =
+  Buffer.add_string b "<code";
+  print_attributes b c.attributes;
+  Buffer.add_string b ">";
+  Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
 
 let print_hard_break _ b =
@@ -204,8 +206,8 @@ let print_inline p b = function
       p.text p b t
   | Emph e ->
       p.emph p b e
-  | Code (i, c) ->
-      p.code p b i c
+  | Code c ->
+      p.code p b c
   | Hard_break ->
       p.hard_break p b
   | Soft_break ->
@@ -254,9 +256,9 @@ let print_list p b (l: inline block Block_list.t) =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block p b (c: Code_block.t) =
+let print_code_block _ b (c: Code_block.t) =
   Buffer.add_string b "<pre";
-  print_attributes p b c.attributes;
+  print_attributes b c.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
       Buffer.add_string b "><code></code></pre>"
@@ -279,7 +281,7 @@ let print_html_block _ b body =
 
 let print_heading p b (h: inline Heading.t) =
   Buffer.add_string b (Printf.sprintf "<h%d" h.level);
-  print_attributes p b h.attributes;
+  print_attributes b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)

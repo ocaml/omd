@@ -22,6 +22,7 @@ type 'a block = 'a Ast.block =
   | Link_def of string link_def
 
 module Emph = Ast.Emph
+module Code = Ast.Code
 module Link = Ast.Link
 module Ref = Ast.Ref
 
@@ -29,7 +30,7 @@ type inline = Ast.inline =
   | Concat of inline list
   | Text of string
   | Emph of inline Emph.t
-  | Code of int * string
+  | Code of Code.t
   | Hard_break
   | Soft_break
   | Link of inline Link.t
@@ -54,7 +55,7 @@ type printer = Html.printer =
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
     emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> int -> string             -> unit;
+    code: printer           -> Buffer.t -> Code.t                    -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;

@@ -4,6 +4,4 @@ Heading classes attributes testing
 
 # Heading 2 # {.class2}
 
-# Heading 3 {.class3} #
-
-# Heading 4 {.class4.a .class4.b}
+# Heading 3 {.class3a .class3b}

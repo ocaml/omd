@@ -82,6 +82,15 @@ module Emph = struct
   }
 end
 
+module Code = struct
+  type t =
+  {
+    level: int;
+    content: string;
+    attributes: attributes
+  }
+end
+
 type link_kind =
   | Img
   | Url
@@ -111,7 +120,7 @@ type inline =
   | Concat of inline list
   | Text of string
   | Emph of inline Emph.t
-  | Code of int * string
+  | Code of Code.t
   | Hard_break
   | Soft_break
   | Link of inline Link.t

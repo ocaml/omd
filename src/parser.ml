@@ -349,7 +349,10 @@ let parse_attributes = function
       | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
       | _ ->
         let attr = String.split_on_char '=' s in
-        {acc with attributes = (List.nth attr 0, List.nth attr 1)::acc.attributes}
+        try
+          {acc with attributes = (List.nth attr 0, List.nth attr 1)::acc.attributes}
+        with
+          | Failure _ -> acc
     in
     let attr = List.fold_left f empty_attributes attributes in
     { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
@@ -814,6 +817,33 @@ let is_empty st =
   with Fail ->
     set_pos st off;
     true
+
+let inline_attribute_string s =
+  let a =
+    match peek s with
+    | Some '{' ->
+        let buf = Buffer.create 64 in
+        let rec loop s pos =
+          match peek s with
+          | Some '}' ->
+              junk s;
+              Some (Buffer.contents buf)
+          | None | Some '{' ->
+              set_pos s pos; None
+          | Some c ->
+              Buffer.add_char buf c;
+              junk s;
+              loop s pos
+        in
+        junk s;
+        loop s (pos s)
+    | _ ->
+        None
+  in
+  try
+    parse_attributes a
+  with
+    | Invalid_argument _ -> empty_attributes
 
 let entity buf st =
   let p = pos st in
@@ -1589,7 +1619,7 @@ let rec inline defs st =
                     junk st; loop3 start seen_ws (succ m)
                 | Some (' ' | '\t' | '\010'..'\013') ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       if m > 0 then begin
                         if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1599,7 +1629,7 @@ let rec inline defs st =
                     end
                 | Some c ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       junk st;
                       if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1609,7 +1639,7 @@ let rec inline defs st =
                     end
                 | None ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       Buffer.add_string buf (range st pos n);
                       set_pos st (pos + n);
