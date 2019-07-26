@@ -106,14 +106,18 @@ let rec inline b = function
       Buffer.add_string b "<br />"
   | Html body ->
       Buffer.add_string b body
-  | Link {kind = Url; def = {label; destination; title = None}} ->
-      Printf.bprintf b "[%a](%s)" inline label destination
-  | Link {kind = Img; def = {label; destination; title = None}} ->
-      Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination
-  | Link {kind = Url; def = {label; destination; title = Some title}} ->
-      Printf.bprintf b "[%a](%s \"%s\")" inline label destination title
-  | Link {kind = Img; def = {label; destination; title = Some title}} ->
-      Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title
+  | Link {kind = Url; def = {label; destination; title = None; attributes}} ->
+      Printf.bprintf b "[%a](%s)" inline label destination;
+      print_attributes b attributes
+  | Link {kind = Img; def = {label; destination; title = None; attributes}} ->
+      Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination;
+      print_attributes b attributes
+  | Link {kind = Url; def = {label; destination; title = Some title; attributes}} ->
+      Printf.bprintf b "[%a](%s \"%s\")" inline label destination title;
+      print_attributes b attributes
+  | Link {kind = Img; def = {label; destination; title = Some title; attributes}} ->
+      Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title;
+      print_attributes b attributes
   | Ref {kind = Url; label; def = {Ast.label = label'; _}} ->
       Printf.bprintf b "[%a][%s]" inline label label'
   | Ref {kind = Img; label; def = {Ast.label = label'; _}} ->

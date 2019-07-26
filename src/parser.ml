@@ -1504,7 +1504,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None}
+      {Ast.label; destination; title = None; attributes = empty_attributes}
   | _ ->
       raise Fail
 
@@ -1574,7 +1574,7 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label}}) :: text acc) st
+            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label; attributes=inline_attribute_string st}}) :: text acc) st
         | exception Fail ->
             begin match
               protect (closing_tag ||| open_tag ||| html_comment |||
@@ -1684,7 +1684,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link {kind = k; def = {Ast.label; destination; title}}
+                        Link {kind = k; def = {Ast.label; destination; title; attributes=inline_attribute_string st}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1788,12 +1788,17 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
+  let pos = pos st in
+  ws st;
+  let attributes = inline_attribute_string st in
+  if attributes = empty_attributes then
+    set_pos st pos;
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.label; destination; title = Some title}
+      {Ast.label; destination; title = Some title; attributes}
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.label; destination; title = None}
+      {Ast.label; destination; title = None; attributes}
 
 let link_reference_definitions st =
   let rec loop acc =

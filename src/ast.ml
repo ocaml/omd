@@ -1,15 +1,16 @@
+type attributes =
+  {
+    id: string option;
+    classes: string list;
+    attributes: (string * string) list;
+  }
+
 type 'a link_def =
   {
     label: 'a;
     destination: string;
     title: string option;
-  }
-
-type attributes =
-  {
-    id: string option;
-    classes: string list;
-    attributes: (string * string) list
+    attributes: attributes;
   }
 
 let empty_attributes = {id=None; classes=[]; attributes=[]}
@@ -41,8 +42,8 @@ module Code_block = struct
       kind: kind option;
       label: string option;
       other: string option;
-      attributes: attributes;
       code: string option;
+      attributes: attributes;
     }
 end
 
@@ -50,8 +51,8 @@ module Heading = struct
   type 'block t =
     {
       level: int;
-      attributes: attributes;
       text: 'block;
+      attributes: attributes;
     }
 end
 
@@ -78,7 +79,7 @@ module Emph = struct
   {
     style: style;
     kind: kind;
-    content: 'inline
+    content: 'inline;
   }
 end
 
@@ -87,7 +88,7 @@ module Code = struct
   {
     level: int;
     content: string;
-    attributes: attributes
+    attributes: attributes;
   }
 end
 

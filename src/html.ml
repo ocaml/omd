@@ -155,7 +155,7 @@ let print_soft_break _ b =
 let print_html _ b body =
   Buffer.add_string b body
 
-let print_url p b label destination title =
+let print_url p b label destination title attributes =
   Buffer.add_string b "<a href=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\"";
@@ -166,11 +166,12 @@ let print_url p b label destination title =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
+  print_attributes b attributes;
   Buffer.add_string b ">";
   p.inline p b label;
   Buffer.add_string b "</a>"
 
-let print_img b label destination title =
+let print_img b label destination title attributes =
   Buffer.add_string b "<img src=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\" alt=\"";
@@ -183,21 +184,22 @@ let print_img b label destination title =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
+  print_attributes b attributes;
   Buffer.add_string b " />"
 
 let print_link p b (l: inline Link.t) =
   match l.kind with
   | Url ->
-      print_url p b l.def.label l.def.destination l.def.title
+      print_url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
-      print_img b l.def.label l.def.destination l.def.title
+      print_img b l.def.label l.def.destination l.def.title l.def.attributes
 
 let print_ref p b (r: inline Ref.t) =
   match r.kind with
   | Url ->
-      print_url p b r.label r.def.destination r.def.title
+      print_url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
-      print_img b r.label r.def.destination r.def.title
+      print_img b r.label r.def.destination r.def.title r.def.attributes
 
 let print_inline p b = function
   | Concat l ->

@@ -1,10 +1,18 @@
 (** A markdown parser in OCaml. *)
 
+type attributes = Ast.attributes =
+  {
+    id: string option;
+    classes: string list;
+    attributes: (string * string) list;
+  }
+
 type 'a link_def = 'a Ast.link_def =
   {
     label: 'a;
     destination: string;
     title: string option;
+    attributes: attributes;
   }
 
 module Block_list = Ast.Block_list
