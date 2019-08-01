@@ -1,20 +1,8 @@
 (** A markdown parser in OCaml. *)
 
-type attributes = Ast.attributes =
-  {
-    id: string option;
-    classes: string list;
-    attributes: (string * string) list;
-  }
+module Attributes = Ast.Attributes
 
-type 'a link_def = 'a Ast.link_def =
-  {
-    label: 'a;
-    destination: string;
-    title: string option;
-    attributes: attributes;
-  }
-
+module Link_def = Ast.Link_def
 module Block_list = Ast.Block_list
 module Code_block = Ast.Code_block
 module Heading = Ast.Heading
@@ -27,7 +15,7 @@ type 'a block = 'a Ast.block =
   | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
-  | Link_def of string link_def
+  | Link_def of string Link_def.t
 
 module Emph = Ast.Emph
 module Code = Ast.Code

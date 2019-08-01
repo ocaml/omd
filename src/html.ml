@@ -23,36 +23,6 @@ type printer =
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
   }
 
-let id_of_string s =
-  let n = Bytes.length s in
-  let id = Buffer.create 64 in
-  let rec trim i =
-    if i = n then n
-    else begin
-      match Bytes.get s i with
-      | 'a' .. 'z' | 'A' .. 'Z' -> i
-      | _ -> trim (i + 1)
-    end
-  and loop keep i =
-    if i = n then begin if not keep then Buffer.truncate id (Buffer.length id - 1) end
-    else begin
-      match Bytes.get s i with
-      | 'A' .. 'Z' as c ->
-          Buffer.add_char id (Char.lowercase_ascii c) ;
-          loop true (i + 1)
-      | 'a' .. 'z' | '0' .. '9' | '_' | '-' | '.' as c ->
-          Buffer.add_char id c ;
-          loop true (i + 1)
-      | ' ' | '\n' ->
-          if keep then
-          Buffer.add_char id '-' ;
-          loop false (i + 1)
-      | _ ->
-          loop keep (i + 1)
-      end
-    in
-    loop true (trim 0); Bytes.to_string (Buffer.to_bytes id)
-
 (* only convert when "necessary" *)
 let htmlentities s =
   let b = Buffer.create (String.length s) in
@@ -96,22 +66,22 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
-let print_attributes b attributes =
+let print_attributes b attr =
   begin
-    match attributes.id with
+    match attr.Attributes.id with
     | None -> ()
     | Some s -> Buffer.add_string b (Printf.sprintf " id=\"%s\"" s)
   end;
-  if List.length attributes.classes <> 0
+  if List.length attr.classes <> 0
   then
     begin
-      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " attributes.classes))
+      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " attr.classes))
     end;
-  if List.length attributes.attributes <> 0
+  if List.length attr.attributes <> 0
   then
     begin
-      let f (d, v) = Buffer.add_string b (Printf.sprintf " data-%s=\"%s\"" d v) in
-      List.iter f attributes.attributes
+      let f (d, v) = Buffer.add_string b (Printf.sprintf " %s=\"%s\"" d v) in
+      List.iter f attr.attributes
     end
 
 let print_document p b mds =
@@ -128,8 +98,8 @@ let print_concat p b l =
 let print_text _ b t =
   Buffer.add_string b (htmlentities t)
 
-let print_emph p b (e: inline Emph.t) =
-  match e.kind with
+let print_emph p b e =
+  match e.Emph.kind with
   | Normal ->
       Buffer.add_string b "<em>";
       p.inline p b e.content;
@@ -139,9 +109,9 @@ let print_emph p b (e: inline Emph.t) =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let print_code _ b (c: Code.t) =
+let print_code _ b c =
   Buffer.add_string b "<code";
-  print_attributes b c.attributes;
+  print_attributes b c.Code.attributes;
   Buffer.add_string b ">";
   Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
@@ -187,15 +157,15 @@ let print_img b label destination title attributes =
   print_attributes b attributes;
   Buffer.add_string b " />"
 
-let print_link p b (l: inline Link.t) =
-  match l.kind with
+let print_link p b l =
+  match l.Link.kind with
   | Url ->
       print_url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
       print_img b l.def.label l.def.destination l.def.title l.def.attributes
 
-let print_ref p b (r: inline Ref.t) =
-  match r.kind with
+let print_ref p b r =
+  match r.Ref.kind with
   | Url ->
       print_url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
@@ -232,9 +202,9 @@ let print_paragraph p b md =
   p.inline p b md;
   Buffer.add_string b "</p>"
 
-let print_list p b (l: inline block Block_list.t) =
+let print_list p b l =
   Buffer.add_string b
-    (match l.kind with
+    (match l.Block_list.kind with
      | Ordered (1, _) -> "<ol>\n"
      | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
      | Unordered _ -> "<ul>\n");
@@ -258,9 +228,9 @@ let print_list p b (l: inline block Block_list.t) =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block _ b (c: Code_block.t) =
+let print_code_block _ b c =
   Buffer.add_string b "<pre";
-  print_attributes b c.attributes;
+  print_attributes b c.Code_block.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
       Buffer.add_string b "><code></code></pre>"
@@ -281,8 +251,8 @@ let print_thematic_break _ b =
 let print_html_block _ b body =
   Buffer.add_string b body
 
-let print_heading p b (h: inline Heading.t) =
-  Buffer.add_string b (Printf.sprintf "<h%d" h.level);
+let print_heading p b h =
+  Buffer.add_string b (Printf.sprintf "<h%d" h.Heading.level);
   print_attributes b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;

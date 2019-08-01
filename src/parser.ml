@@ -263,9 +263,9 @@ type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string * attributes
+  | Latx_heading of int * string * Attributes.t
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Code_block.kind * (string * string) * attributes
+  | Lfenced_code of int * int * Code_block.kind * (string * string) * Attributes.t
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
@@ -340,22 +340,26 @@ let is_punct = function
   | _ -> false
 
 let parse_attributes = function
-  | None -> empty_attributes
+  | None -> Attributes.empty
   | Some s ->
-    let attributes = String.split_on_char ' ' s in
-    let f acc s =
-      match s.[0] with
-      | '#' -> {acc with id = Some (String.sub s 1 (String.length s - 1))}
-      | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
-      | _ ->
-        let attr = String.split_on_char '=' s in
-        try
-          {acc with attributes = (List.nth attr 0, List.nth attr 1)::acc.attributes}
-        with
-          | Failure _ -> acc
-    in
-    let attr = List.fold_left f empty_attributes attributes in
-    { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
+      let attributes = String.split_on_char ' ' s in
+      let f acc s =
+        if s <> "" then
+          begin
+            match s.[0] with
+            | '#' -> {acc with Attributes.id = Some (String.sub s 1 (String.length s - 1))}
+            | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
+            | _ ->
+                let attr = String.split_on_char '=' s in
+                match attr with
+                | [] -> acc
+                | h::t -> {acc with attributes = (h, String.concat "=" t)::acc.attributes}
+          end
+        else
+          acc
+      in
+      let attr = List.fold_left f Attributes.empty attributes in
+      { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
 
 let attribute_string s =
   let buf = Buffer.create 64 in
@@ -407,10 +411,7 @@ let attribute_string s =
         loop (Sub.tail s)
   in
   let s', a = loop (ws s) in
-  try
-    s', parse_attributes a
-  with
-    | Invalid_argument _ -> s, empty_attributes
+  s', parse_attributes a
 
 let atx_heading s =
   let rec loop n s =
@@ -424,7 +425,7 @@ let atx_heading s =
           | Some '}' ->
               attribute_string s
           | _ ->
-              s, empty_attributes
+              s, Attributes.empty
         in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
@@ -440,7 +441,7 @@ let atx_heading s =
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s, empty_attributes)
+        Latx_heading (n, Sub.to_string s, Attributes.empty)
   in
   loop 0 s
 
@@ -503,7 +504,7 @@ let info_string c s =
     | Some '}' ->
         attribute_string s
     | _ ->
-        s, empty_attributes
+        s, Attributes.empty
   in
   let s = ws ~rev:() (ws s) in
   let rec loop s =
@@ -819,6 +820,8 @@ let is_empty st =
     true
 
 let inline_attribute_string s =
+  let ppos = pos s in
+  ws s;
   let a =
     match peek s with
     | Some '{' ->
@@ -840,10 +843,11 @@ let inline_attribute_string s =
     | _ ->
         None
   in
-  try
-    parse_attributes a
-  with
-    | Invalid_argument _ -> empty_attributes
+  let attr = parse_attributes a in
+  if attr = Attributes.empty
+  then
+    set_pos s ppos;
+  attr
 
 let entity buf st =
   let p = pos st in
@@ -975,7 +979,7 @@ module Pre = struct
     | ' ' | '\t' | '\010'..'\013' -> Ws
     | _ -> Other
 
-  let to_r : _ -> inline = function
+  let to_r = function
     | Bang_left_bracket -> Text "!["
     | Left_bracket Img -> Text "!["
     | Left_bracket Url -> Text "["
@@ -1504,7 +1508,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None; attributes = empty_attributes}
+      {Ast.Link_def.label; destination; title = None; attributes = Attributes.empty}
   | _ ->
       raise Fail
 
@@ -1535,7 +1539,7 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
+          match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
           | Some def ->
               loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
@@ -1684,7 +1688,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link {kind = k; def = {Ast.label; destination; title; attributes=inline_attribute_string st}}
+                        Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1696,7 +1700,7 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
+                      begin match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
                       | Some def ->
                           loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
@@ -1788,17 +1792,13 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
-  let pos = pos st in
-  ws st;
   let attributes = inline_attribute_string st in
-  if attributes = empty_attributes then
-    set_pos st pos;
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.label; destination; title = Some title; attributes}
+      {Ast.Link_def.label; destination; title = Some title; attributes}
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.label; destination; title = None; attributes}
+      {Ast.Link_def.label; destination; title = None; attributes}
 
 let link_reference_definitions st =
   let rec loop acc =

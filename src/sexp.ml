@@ -6,7 +6,7 @@ type t =
 
 let atom s = Atom s
 
-let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
+let rec link_def : 'a. ('a -> t) -> 'a Link_def.t -> t =
   fun f {label; destination; title; _} ->
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)

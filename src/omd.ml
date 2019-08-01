@@ -29,7 +29,7 @@ let parse_inlines md =
   let parse_inline defs s = Parser.inline defs (Parser.P.of_string s) in
   let defs = Ast.defs md in
   let defs =
-    List.map (fun (def: string link_def) -> {def with Ast.label = Parser.normalize def.label}) defs
+    List.map (fun (def: string Link_def.t) -> {def with label = Parser.normalize def.label}) defs
   in
   List.map (Ast.map (parse_inline defs)) md
 

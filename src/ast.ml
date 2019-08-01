@@ -1,19 +1,25 @@
-type attributes =
-  {
-    id: string option;
-    classes: string list;
-    attributes: (string * string) list;
-  }
+module Attributes =
+struct
+  type t =
+    {
+      id: string option;
+      classes: string list;
+      attributes: (string * string) list;
+    }
 
-type 'a link_def =
-  {
-    label: 'a;
-    destination: string;
-    title: string option;
-    attributes: attributes;
-  }
+  let empty = {id=None; classes=[]; attributes=[]}
+end
 
-let empty_attributes = {id=None; classes=[]; attributes=[]}
+module Link_def =
+struct
+  type 'a t =
+    {
+      label: 'a;
+      destination: string;
+      title: string option;
+      attributes: Attributes.t;
+    }
+end
 
 module Block_list = struct
   type kind =
@@ -43,7 +49,7 @@ module Code_block = struct
       label: string option;
       other: string option;
       code: string option;
-      attributes: attributes;
+      attributes: Attributes.t;
     }
 end
 
@@ -52,7 +58,7 @@ module Heading = struct
     {
       level: int;
       text: 'block;
-      attributes: attributes;
+      attributes: Attributes.t;
     }
 end
 
@@ -64,7 +70,7 @@ type 'a block =
   | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
-  | Link_def of string link_def
+  | Link_def of string Link_def.t
 
 module Emph = struct
   type kind =
@@ -88,7 +94,7 @@ module Code = struct
   {
     level: int;
     content: string;
-    attributes: attributes;
+    attributes: Attributes.t;
   }
 end
 
@@ -102,7 +108,7 @@ module Link = struct
   type 'inline t =
   {
     kind: kind;
-    def: 'inline link_def;
+    def: 'inline Link_def.t;
   }
 end
 
@@ -113,7 +119,7 @@ module Ref = struct
   {
     kind: kind;
     label: 'inline;
-    def: string link_def;
+    def: string Link_def.t;
   }
 end
 
