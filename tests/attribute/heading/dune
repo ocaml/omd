@@ -1,0 +1,32 @@
+(rule
+ (targets attr-heading-data.html.out)
+ (deps attr-heading-data.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-heading-data)
+ (action (diff attr-heading-data.html attr-heading-data.html.out)))
+
+(rule
+ (targets attr-heading-id.html.out)
+ (deps attr-heading-id.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-heading-id)
+ (action (diff attr-heading-id.html attr-heading-id.html.out)))
+
+(rule
+ (targets attr-heading-classes.html.out)
+ (deps attr-heading-classes.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-heading-classes)
+ (action (diff attr-heading-classes.html attr-heading-classes.html.out)))
+
+(alias
+ (name runtest)
+ (deps (alias attr-heading-data)
+       (alias attr-heading-classes)
+       (alias attr-heading-id)))

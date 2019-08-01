@@ -1,9 +1,25 @@
-type 'a link_def =
-  {
-    label: 'a;
-    destination: string;
-    title: string option;
-  }
+module Attributes =
+struct
+  type t =
+    {
+      id: string option;
+      classes: string list;
+      attributes: (string * string) list;
+    }
+
+  let empty = {id=None; classes=[]; attributes=[]}
+end
+
+module Link_def =
+struct
+  type 'a t =
+    {
+      label: 'a;
+      destination: string;
+      title: string option;
+      attributes: Attributes.t;
+    }
+end
 
 module Block_list = struct
   type kind =
@@ -33,6 +49,16 @@ module Code_block = struct
       label: string option;
       other: string option;
       code: string option;
+      attributes: Attributes.t;
+    }
+end
+
+module Heading = struct
+  type 'block t =
+    {
+      level: int;
+      text: 'block;
+      attributes: Attributes.t;
     }
 end
 
@@ -41,10 +67,10 @@ type 'a block =
   | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
-  | Heading of int * 'a
+  | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
-  | Link_def of string link_def
+  | Link_def of string Link_def.t
 
 module Emph = struct
   type kind =
@@ -59,7 +85,16 @@ module Emph = struct
   {
     style: style;
     kind: kind;
-    content: 'inline
+    content: 'inline;
+  }
+end
+
+module Code = struct
+  type t =
+  {
+    level: int;
+    content: string;
+    attributes: Attributes.t;
   }
 end
 
@@ -73,7 +108,7 @@ module Link = struct
   type 'inline t =
   {
     kind: kind;
-    def: 'inline link_def;
+    def: 'inline Link_def.t;
   }
 end
 
@@ -84,7 +119,7 @@ module Ref = struct
   {
     kind: kind;
     label: 'inline;
-    def: string link_def;
+    def: string Link_def.t;
   }
 end
 
@@ -92,7 +127,7 @@ type inline =
   | Concat of inline list
   | Text of string
   | Emph of inline Emph.t
-  | Code of int * string
+  | Code of Code.t
   | Hard_break
   | Soft_break
   | Link of inline Link.t
@@ -104,7 +139,7 @@ let rec map f = function
   | List l -> List  {l with blocks = List.map (List.map (map f)) l.blocks}
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
-  | Heading (i, x) -> Heading (i, f x)
+  | Heading h -> Heading {h with text = f h.text}
   | Code_block _ | Html_block _ | Link_def _ as x -> x
 
 let defs ast =

@@ -6,8 +6,8 @@ type t =
 
 let atom s = Atom s
 
-let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
-  fun f {label; destination; title} ->
+let rec link_def : 'a. ('a -> t) -> 'a Link_def.t -> t =
+  fun f {label; destination; title; _} ->
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)
 
@@ -24,15 +24,15 @@ and inline = function
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Link {kind = Url; def} ->
+  | Link {kind = Url; def; _} ->
       List [Atom "url"; link_def inline def]
-  | Ref {kind = Url; label; def} ->
+  | Ref {kind = Url; label; def; _} ->
       List [Atom "url-ref"; inline label; link_def atom def]
   | Html s ->
       List [Atom "html"; Atom s]
   | Link {kind = Img; _} ->
       Atom "img"
-  | Ref {kind = Img; label; def} ->
+  | Ref {kind = Img; label; def; _} ->
       List [Atom "img-ref"; inline label; link_def atom def]
 
 let rec block = function
@@ -44,8 +44,8 @@ let rec block = function
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading (n, x) ->
-      List [Atom "heading"; Atom (string_of_int n); inline x]
+  | Heading h ->
+      List [Atom "heading"; Atom (string_of_int h.level); inline h.text]
   | Code_block {kind = None; code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
   | Code_block {kind = None; code = None; _} ->

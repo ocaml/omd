@@ -263,9 +263,9 @@ type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string
+  | Latx_heading of int * string * Attributes.t
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Code_block.kind * (string * string)
+  | Lfenced_code of int * int * Code_block.kind * (string * string) * Attributes.t
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
@@ -332,6 +332,87 @@ let setext_heading s =
   | Some _ | None ->
       raise Fail
 
+let is_punct = function
+  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')'
+  | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<'
+  | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^' | '_'
+  | '`' | '{' | '|' | '}' | '~' -> true
+  | _ -> false
+
+let parse_attributes = function
+  | None -> Attributes.empty
+  | Some s ->
+      let attributes = String.split_on_char ' ' s in
+      let f acc s =
+        if s <> "" then
+          begin
+            match s.[0] with
+            | '#' -> {acc with Attributes.id = Some (String.sub s 1 (String.length s - 1))}
+            | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
+            | _ ->
+                let attr = String.split_on_char '=' s in
+                match attr with
+                | [] -> acc
+                | h::t -> {acc with attributes = (h, String.concat "=" t)::acc.attributes}
+          end
+        else
+          acc
+      in
+      let attr = List.fold_left f Attributes.empty attributes in
+      { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
+
+let attribute_string s =
+  let buf = Buffer.create 64 in
+  let rec loop s =
+    match Sub.head s with
+    | None ->
+        Sub.of_string (Buffer.contents buf), None
+    | Some ('\\' as c) ->
+        let s = Sub.tail s in
+        begin match Sub.head s with
+        | Some c when is_punct c ->
+            Buffer.add_char buf c;
+            loop (Sub.tail s)
+        | Some _ | None ->
+            Buffer.add_char buf c;
+            loop s
+        end
+    | Some '{' ->
+        let buf' = Buffer.create 64 in
+        let rec loop' s =
+          match Sub.head s with
+          | Some '}' ->
+              let s = Sub.tail s in
+              begin match Sub.head s with
+              | Some _ ->
+                  Buffer.add_char buf '{';
+                  Buffer.add_buffer buf buf';
+                  Buffer.add_char buf '}';
+                  loop s
+              | None ->
+                  Sub.of_string (Buffer.contents buf), Some (Buffer.contents buf')
+              end
+          | None ->
+              Buffer.add_char buf '{';
+              Buffer.add_buffer buf buf';
+              Sub.of_string (Buffer.contents buf), None
+          | Some '{' ->
+              Buffer.add_char buf '{';
+              Buffer.add_buffer buf buf';
+              Buffer.reset buf';
+              loop' (Sub.tail s)
+          | Some c ->
+              Buffer.add_char buf' c;
+              loop' (Sub.tail s)
+        in
+        loop' (Sub.tail s)
+    | Some c ->
+        Buffer.add_char buf c;
+        loop (Sub.tail s)
+  in
+  let s', a = loop (ws s) in
+  s', parse_attributes a
+
 let atx_heading s =
   let rec loop n s =
     if n > 6 then raise Fail;
@@ -339,6 +420,13 @@ let atx_heading s =
     | Some '#' ->
         loop (succ n) (Sub.tail s)
     | Some (' ' | '\t' | '\010'..'\013') ->
+        let s, a =
+          match Sub.head ~rev:() s with
+          | Some '}' ->
+              attribute_string s
+          | _ ->
+              s, Attributes.empty
+        in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
           match Sub.head ~rev:() t with
@@ -349,20 +437,13 @@ let atx_heading s =
           | Some _ ->
               s
         in
-        Latx_heading (n, Sub.to_string (loop s))
+        Latx_heading (n, Sub.to_string (ws (loop s)), a)
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s)
+        Latx_heading (n, Sub.to_string s, Attributes.empty)
   in
   loop 0 s
-
-let is_punct = function
-  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')'
-  | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<'
-  | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^' | '_'
-  | '`' | '{' | '|' | '}' | '~' -> true
-  | _ -> false
 
 let entity s =
   match Sub.heads 2 s with
@@ -418,11 +499,19 @@ let entity s =
 
 let info_string c s =
   let buf = Buffer.create 17 in
+  let s, a =
+    match Sub.head ~rev:() s with
+    | Some '}' ->
+        attribute_string s
+    | _ ->
+        s, Attributes.empty
+  in
+  let s = ws ~rev:() (ws s) in
   let rec loop s =
     match Sub.head s with
     | Some (' ' | '\t' | '\010'..'\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then raise Fail;
-        Buffer.contents buf, Sub.to_string (ws s)
+        (Buffer.contents buf, Sub.to_string (ws s)), a
     | Some '`' when c = '`' ->
         raise Fail
     | Some ('\\' as c) ->
@@ -460,9 +549,9 @@ let fenced_code ind s =
             loop (succ n) (Sub.tail s)
         | Some _ | None ->
             if n < 3 then raise Fail;
-            let s = info_string c s in
+            let s, a = info_string c s in
             let c = if c = '`' then Code_block.Backtick else Tilde in
-            Lfenced_code (ind, n, c, s)
+            Lfenced_code (ind, n, c, s, a)
       in
       loop 1 (Sub.tail s)
   | Some _ | None ->
@@ -730,6 +819,36 @@ let is_empty st =
     set_pos st off;
     true
 
+let inline_attribute_string s =
+  let ppos = pos s in
+  ws s;
+  let a =
+    match peek s with
+    | Some '{' ->
+        let buf = Buffer.create 64 in
+        let rec loop s pos =
+          match peek s with
+          | Some '}' ->
+              junk s;
+              Some (Buffer.contents buf)
+          | None | Some '{' ->
+              set_pos s pos; None
+          | Some c ->
+              Buffer.add_char buf c;
+              junk s;
+              loop s pos
+        in
+        junk s;
+        loop s (pos s)
+    | _ ->
+        None
+  in
+  let attr = parse_attributes a in
+  if attr = Attributes.empty
+  then
+    set_pos s ppos;
+  attr
+
 let entity buf st =
   let p = pos st in
   if next st <> '&' then raise Fail;
@@ -860,7 +979,7 @@ module Pre = struct
     | ' ' | '\t' | '\010'..'\013' -> Ws
     | _ -> Other
 
-  let to_r : _ -> inline = function
+  let to_r = function
     | Bang_left_bracket -> Text "!["
     | Left_bracket Img -> Text "!["
     | Left_bracket Url -> Text "["
@@ -1389,7 +1508,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None}
+      {Ast.Link_def.label; destination; title = None; attributes = Attributes.empty}
   | _ ->
       raise Fail
 
@@ -1420,7 +1539,7 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
+          match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
           | Some def ->
               loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
@@ -1459,17 +1578,17 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label}}) :: text acc) st
+            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label; attributes=inline_attribute_string st}}) :: text acc) st
         | exception Fail ->
-          begin match
-            protect (closing_tag ||| open_tag ||| html_comment |||
-                     declaration ||| cdata_section ||| processing_instruction) st
-          with
-          | tag ->
-              loop (Pre.R (Html tag) :: text acc) st
-          | exception Fail ->
-              junk st; Buffer.add_char buf c; loop acc st
-          end
+            begin match
+              protect (closing_tag ||| open_tag ||| html_comment |||
+                       declaration ||| cdata_section ||| processing_instruction) st
+            with
+            | tag ->
+                loop (Pre.R (Html tag) :: text acc) st
+            | exception Fail ->
+                junk st; Buffer.add_char buf c; loop acc st
+            end
         end
     | '\n' ->
         junk st; sp st; loop (Pre.R Soft_break :: text acc) st
@@ -1504,7 +1623,7 @@ let rec inline defs st =
                     junk st; loop3 start seen_ws (succ m)
                 | Some (' ' | '\t' | '\010'..'\013') ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       if m > 0 then begin
                         if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1514,7 +1633,7 @@ let rec inline defs st =
                     end
                 | Some c ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       junk st;
                       if not start && seen_ws then Buffer.add_char bufcode ' ';
@@ -1524,7 +1643,7 @@ let rec inline defs st =
                     end
                 | None ->
                     if m = n then
-                      loop (Pre.R (Code (n, Buffer.contents bufcode)) :: acc) st
+                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
                     else begin
                       Buffer.add_string buf (range st pos n);
                       set_pos st (pos + n);
@@ -1569,7 +1688,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link {kind = k; def = {Ast.label; destination; title}}
+                        Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1581,7 +1700,7 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({Ast.label; _}: string link_def) -> label = s) defs with
+                      begin match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
                       | Some def ->
                           loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
@@ -1673,12 +1792,13 @@ let link_reference_definition st =
   if next st <> ':' then raise Fail;
   ws st;
   let destination = link_destination st in
+  let attributes = inline_attribute_string st in
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.label; destination; title = Some title}
+      {Ast.Link_def.label; destination; title = Some title; attributes}
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.label; destination; title = None}
+      {Ast.Link_def.label; destination; title = None; attributes}
 
 let link_reference_definitions st =
   let rec loop acc =

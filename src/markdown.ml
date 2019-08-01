@@ -48,6 +48,42 @@ let escape_markdown_characters s =
   done;
   Buffer.contents b
 
+let print_attributes b a =
+  match a with
+  | {Attributes.id = None; classes = []; attributes = []} -> ()
+  | _ ->
+      let start = ref false in
+      Printf.bprintf b "{";
+      begin match a.id with
+      | None -> ()
+      | Some s ->
+          start := true;
+          Printf.bprintf b "#%s" s
+      end;
+      begin match a.classes with
+      | [] -> ()
+      | l ->
+          let dump s =
+            if !start then
+              Printf.bprintf b " ";
+            Printf.bprintf b ".%s" s;
+            start := true
+          in
+          List.iter dump l
+      end;
+      begin match a.attributes with
+      | [] -> ()
+      | l ->
+          let dump (n,v) =
+            if !start then
+              Printf.bprintf b " ";
+            Printf.bprintf b "%s=%s" n v;
+            start := true
+          in
+          List.iter dump l
+      end;
+      Printf.bprintf b "}"
+
 let rec inline b = function
   | Concat l ->
       List.iter (inline b) l
@@ -59,24 +95,29 @@ let rec inline b = function
   | Emph {kind = Strong; style; content} ->
       let q = match style with Star -> '*' | Underscore -> '_' in
       Printf.bprintf b "%c%c%a%c%c" q q inline content q q
-  | Code (n, c) ->
-      let d = String.make n '`' in
-      Printf.bprintf b "%s%s%s" d c d
+  | Code {level; content; attributes} ->
+      let d = String.make level '`' in
+      Printf.bprintf b "%s%s%s" d content d;
+      print_attributes b attributes
   | Hard_break ->
       Buffer.add_string b "<br />"
   | Html body ->
       Buffer.add_string b body
-  | Link {kind = Url; def = {label; destination; title = None}} ->
-      Printf.bprintf b "[%a](%s)" inline label destination
-  | Link {kind = Img; def = {label; destination; title = None}} ->
-      Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination
-  | Link {kind = Url; def = {label; destination; title = Some title}} ->
-      Printf.bprintf b "[%a](%s \"%s\")" inline label destination title
-  | Link {kind = Img; def = {label; destination; title = Some title}} ->
-      Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title
-  | Ref {kind = Url; label; def = {Ast.label = label'; _}} ->
+  | Link {kind = Url; def = {label; destination; title = None; attributes}} ->
+      Printf.bprintf b "[%a](%s)" inline label destination;
+      print_attributes b attributes
+  | Link {kind = Img; def = {label; destination; title = None; attributes}} ->
+      Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination;
+      print_attributes b attributes
+  | Link {kind = Url; def = {label; destination; title = Some title; attributes}} ->
+      Printf.bprintf b "[%a](%s \"%s\")" inline label destination title;
+      print_attributes b attributes
+  | Link {kind = Img; def = {label; destination; title = Some title; attributes}} ->
+      Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title;
+      print_attributes b attributes
+  | Ref {kind = Url; label; def = {label = label'; _}} ->
       Printf.bprintf b "[%a][%s]" inline label label'
-  | Ref {kind = Img; label; def = {Ast.label = label'; _}} ->
+  | Ref {kind = Img; label; def = {label = label'; _}} ->
       Printf.bprintf b "![%a][%s]" inline label label'
   | Soft_break ->
       if Buffer.length b = 1 ||

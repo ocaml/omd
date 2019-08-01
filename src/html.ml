@@ -10,52 +10,18 @@ type printer =
     code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
     emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> int -> string             -> unit;
+    code: printer           -> Buffer.t -> Code.t                    -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;
     link: printer           -> Buffer.t -> inline Link.t             -> unit;
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
   }
-
-let _id_of_string ids s =
-  let n = String.length s in
-  let out = Buffer.create 0 in
-  (* Put [s] into [b], replacing non-alphanumeric characters with dashes. *)
-  let rec loop started i =
-    if i = n then ()
-    else begin
-      match s.[i] with
-      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' as c ->
-          Buffer.add_char out c ;
-          loop true (i + 1)
-      (* Don't want to start with dashes. *)
-      | _ when not started ->
-          loop false (i + 1)
-      | _ ->
-          Buffer.add_char out '-' ;
-          loop false (i + 1)
-    end
-  in
-  loop false 0 ;
-  let s' = Buffer.contents out in
-  if s' = "" then ""
-  else
-    (* Find out the index of the last character in [s'] that isn't a dash. *)
-    let last_trailing =
-      let rec loop i =
-        if i < 0 || s'.[i] <> '-' then i
-        else loop (i - 1)
-      in
-      loop (String.length s' - 1)
-    in
-    (* Trim trailing dashes. *)
-    ids#mangle @@ String.sub s' 0 (last_trailing + 1)
 
 (* only convert when "necessary" *)
 let htmlentities s =
@@ -100,6 +66,24 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
+let print_attributes b attr =
+  begin
+    match attr.Attributes.id with
+    | None -> ()
+    | Some s -> Buffer.add_string b (Printf.sprintf " id=\"%s\"" s)
+  end;
+  if List.length attr.classes <> 0
+  then
+    begin
+      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " attr.classes))
+    end;
+  if List.length attr.attributes <> 0
+  then
+    begin
+      let f (d, v) = Buffer.add_string b (Printf.sprintf " %s=\"%s\"" d v) in
+      List.iter f attr.attributes
+    end
+
 let print_document p b mds =
   List.iter (function
       | Link_def _ -> ()
@@ -114,8 +98,8 @@ let print_concat p b l =
 let print_text _ b t =
   Buffer.add_string b (htmlentities t)
 
-let print_emph p b (e: inline Emph.t) =
-  match e.kind with
+let print_emph p b e =
+  match e.Emph.kind with
   | Normal ->
       Buffer.add_string b "<em>";
       p.inline p b e.content;
@@ -125,9 +109,11 @@ let print_emph p b (e: inline Emph.t) =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let print_code _ b _ c =
-  Buffer.add_string b "<code>";
-  Buffer.add_string b (htmlentities c);
+let print_code _ b c =
+  Buffer.add_string b "<code";
+  print_attributes b c.Code.attributes;
+  Buffer.add_string b ">";
+  Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
 
 let print_hard_break _ b =
@@ -139,7 +125,7 @@ let print_soft_break _ b =
 let print_html _ b body =
   Buffer.add_string b body
 
-let print_url p b label destination title =
+let print_url p b label destination title attributes =
   Buffer.add_string b "<a href=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\"";
@@ -150,11 +136,12 @@ let print_url p b label destination title =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
+  print_attributes b attributes;
   Buffer.add_string b ">";
   p.inline p b label;
   Buffer.add_string b "</a>"
 
-let print_img b label destination title =
+let print_img b label destination title attributes =
   Buffer.add_string b "<img src=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\" alt=\"";
@@ -167,21 +154,22 @@ let print_img b label destination title =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
+  print_attributes b attributes;
   Buffer.add_string b " />"
 
-let print_link p b (l: inline Link.t) =
-  match l.kind with
+let print_link p b l =
+  match l.Link.kind with
   | Url ->
-      print_url p b l.def.label l.def.destination l.def.title
+      print_url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
-      print_img b l.def.label l.def.destination l.def.title
+      print_img b l.def.label l.def.destination l.def.title l.def.attributes
 
-let print_ref p b (r: inline Ref.t) =
-  match r.kind with
+let print_ref p b r =
+  match r.Ref.kind with
   | Url ->
-      print_url p b r.label r.def.destination r.def.title
+      print_url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
-      print_img b r.label r.def.destination r.def.title
+      print_img b r.label r.def.destination r.def.title r.def.attributes
 
 let print_inline p b = function
   | Concat l ->
@@ -190,8 +178,8 @@ let print_inline p b = function
       p.text p b t
   | Emph e ->
       p.emph p b e
-  | Code (i, c) ->
-      p.code p b i c
+  | Code c ->
+      p.code p b c
   | Hard_break ->
       p.hard_break p b
   | Soft_break ->
@@ -214,9 +202,9 @@ let print_paragraph p b md =
   p.inline p b md;
   Buffer.add_string b "</p>"
 
-let print_list p b (l: inline block Block_list.t) =
+let print_list p b l =
   Buffer.add_string b
-    (match l.kind with
+    (match l.Block_list.kind with
      | Ordered (1, _) -> "<ol>\n"
      | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
      | Unordered _ -> "<ul>\n");
@@ -240,18 +228,20 @@ let print_list p b (l: inline block Block_list.t) =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block _ b (c: Code_block.t) =
+let print_code_block _ b c =
+  Buffer.add_string b "<pre";
+  print_attributes b c.Code_block.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
-      Buffer.add_string b "<pre><code></code></pre>"
+      Buffer.add_string b "><code></code></pre>"
   | {label = Some language; code = None; _} ->
-      Buffer.add_string b (Printf.sprintf "<pre><code class=\"language-%s\"></code></pre>" language)
+      Buffer.add_string b (Printf.sprintf "><code class=\"language-%s\"></code></pre>" language)
   | {label = None | Some ""; code = Some c; _} ->
-      Buffer.add_string b "<pre><code>";
+      Buffer.add_string b "><code>";
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
   | {label = Some language; code = Some c; _} ->
-      Printf.bprintf b "<pre><code class=\"language-%s\">" language;
+      Printf.bprintf b "><code class=\"language-%s\">" language;
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
 
@@ -261,10 +251,12 @@ let print_thematic_break _ b =
 let print_html_block _ b body =
   Buffer.add_string b body
 
-let print_heading p b i md =
-  Buffer.add_string b (Printf.sprintf "<h%d>" i);
-  p.inline p b md;
-  Buffer.add_string b (Printf.sprintf "</h%d>" i)
+let print_heading p b h =
+  Buffer.add_string b (Printf.sprintf "<h%d" h.Heading.level);
+  print_attributes b h.attributes;
+  Buffer.add_string b (Printf.sprintf ">");
+  p.inline p b h.text;
+  Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
 let print_block p b = function
   | Blockquote q ->
@@ -279,8 +271,8 @@ let print_block p b = function
       p.thematic_break p b
   | Html_block body ->
       p.html_block p b body
-  | Heading (i, md) ->
-      p.heading p b i md
+  | Heading h ->
+      p.heading p b h
   | Link_def _ ->
       ()
 

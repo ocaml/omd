@@ -1,26 +1,24 @@
 (** A markdown parser in OCaml. *)
 
-type 'a link_def = 'a Ast.link_def =
-  {
-    label: 'a;
-    destination: string;
-    title: string option;
-  }
+module Attributes = Ast.Attributes
 
+module Link_def = Ast.Link_def
 module Block_list = Ast.Block_list
 module Code_block = Ast.Code_block
+module Heading = Ast.Heading
 
 type 'a block = 'a Ast.block =
   | Paragraph of 'a
   | List of 'a block Block_list.t
   | Blockquote of 'a block list
   | Thematic_break
-  | Heading of int * 'a
+  | Heading of 'a Heading.t
   | Code_block of Code_block.t
   | Html_block of string
-  | Link_def of string link_def
+  | Link_def of string Link_def.t
 
 module Emph = Ast.Emph
+module Code = Ast.Code
 module Link = Ast.Link
 module Ref = Ast.Ref
 
@@ -28,7 +26,7 @@ type inline = Ast.inline =
   | Concat of inline list
   | Text of string
   | Emph of inline Emph.t
-  | Code of int * string
+  | Code of Code.t
   | Hard_break
   | Soft_break
   | Link of inline Link.t
@@ -48,12 +46,12 @@ type printer = Html.printer =
     code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> int -> inline             -> unit;
+    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
     emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> int -> string             -> unit;
+    code: printer           -> Buffer.t -> Code.t                    -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;

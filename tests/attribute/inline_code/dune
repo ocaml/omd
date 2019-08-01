@@ -1,0 +1,32 @@
+(rule
+ (targets attr-code-data.html.out)
+ (deps attr-code-data.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-code-data)
+ (action (diff attr-code-data.html attr-code-data.html.out)))
+
+(rule
+ (targets attr-code-id.html.out)
+ (deps attr-code-id.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-code-id)
+ (action (diff attr-code-id.html attr-code-id.html.out)))
+
+(rule
+ (targets attr-code-classes.html.out)
+ (deps attr-code-classes.md)
+ (action (with-stdout-to %{targets} (run omd %{deps}))))
+
+(alias
+ (name attr-code-classes)
+ (action (diff attr-code-classes.html attr-code-classes.html.out)))
+
+(alias
+ (name runtest)
+ (deps (alias attr-code-data)
+       (alias attr-code-classes)
+       (alias attr-code-id)))
