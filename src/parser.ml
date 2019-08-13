@@ -270,6 +270,7 @@ type t =
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
   | Lparagraph
+  | Ltag of string * Attributes.t
 
 let sp3 s =
   match Sub.head s with
@@ -767,6 +768,33 @@ let blank s =
   if not (is_empty s) then raise Fail;
   Lempty
 
+let tag s =
+  match Sub.heads 2 s with
+  | ['{'; '!'] ->
+      let tag = Buffer.create 17 in
+      let rec loop s =
+        match Sub.head s with
+        | Some ':' ->
+            let _, a =
+              match Sub.head ~rev:() s with
+              | Some '}' ->
+                  attribute_string s
+              | _ ->
+                  s, Attributes.empty
+            in
+            let string_tag = Buffer.contents tag in
+            let string_tag = if string_tag = "" then "none" else string_tag in
+            Ltag (string_tag, a)
+        | Some (' ' | '\t' | '\010'..'\013') | None ->
+            raise Fail
+        | Some c ->
+            Buffer.add_char tag c;
+            loop (Sub.tail s)
+      in
+      loop (Sub.tails 2 s)
+  | _ ->
+      raise Fail
+
 let indented_code ind s =
   if indent s + ind < 4 then raise Fail;
   Lindented_code (Sub.offset (4 - ind) s)
@@ -796,6 +824,10 @@ let parse s0 =
       unordered_list_item ind s
   | Some ('0'..'9') ->
       ordered_list_item ind s
+  | Some '{' ->
+      tag s
+  | Some '}' ->
+      Ltag ("", Attributes.empty)
   | Some _ ->
       (blank ||| indented_code ind) s
   | None ->
@@ -1655,6 +1687,66 @@ let rec inline defs st =
               Buffer.add_string buf (String.make n '`'); loop acc st
         in
         loop2 0
+    | '{' ->
+        junk st;
+        begin
+          match peek st with
+          | Some '!' ->
+              junk st;
+              let acc = text acc in
+              let tag = Buffer.create 17 in
+              let rec loop2 () =
+                match peek st with
+                | Some ':' ->
+                    junk st;
+                    let content = Buffer.create 17 in
+                    let rec loop3 start =
+                      match peek st with
+                      | Some (' ' | '\t' | '\010'..'\013' as c) ->
+                          junk st;
+                          if start then
+                            Buffer.add_char content c;
+                          loop3 start
+                      | Some '\\' ->
+                          junk st;
+                          begin
+                            match peek st with
+                            | Some '}' ->
+                                junk st;
+                                Buffer.add_char content '}';
+                                loop3 true
+                            | _ ->
+                                Buffer.add_char content '\\';
+                                loop3 true
+                          end
+                      | Some '}' ->
+                          junk st;
+                          loop (Pre.R (Tag {tag=Buffer.contents tag; content=inline defs (Buffer.contents content |> of_string); attributes=inline_attribute_string st}) :: acc) st
+                      | Some c ->
+                          junk st;
+                          Buffer.add_char content c;
+                          loop3 true
+                      | None ->
+                          Buffer.add_string buf "{!";
+                          Buffer.add_buffer buf tag;
+                          Buffer.add_char buf ':';
+                          Buffer.add_buffer buf content;
+                          loop acc st
+                    in loop3 false
+                | Some (' ' | '\t' | '\010'..'\013') | None ->
+                    Buffer.add_string buf "{!";
+                    Buffer.add_buffer buf tag;
+                    loop acc st
+                | Some c ->
+                    junk st;
+                    Buffer.add_char tag c;
+                    loop2 ()
+              in
+              loop2 ()
+          | _ ->
+              Buffer.add_char buf '{';
+              loop acc st
+        end
     | '\\' as c ->
         junk st;
         begin match peek st with

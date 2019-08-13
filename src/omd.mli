@@ -6,6 +6,7 @@ module Link_def = Ast.Link_def
 module Block_list = Ast.Block_list
 module Code_block = Ast.Code_block
 module Heading = Ast.Heading
+module Tag_block = Ast.Tag_block
 
 type 'a block = 'a Ast.block =
   | Paragraph of 'a
@@ -16,11 +17,13 @@ type 'a block = 'a Ast.block =
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string Link_def.t
+  | Tag_block of 'a block Tag_block.t
 
 module Emph = Ast.Emph
 module Code = Ast.Code
 module Link = Ast.Link
 module Ref = Ast.Ref
+module Tag = Ast.Tag
 
 type inline = Ast.inline =
   | Concat of inline list
@@ -32,6 +35,7 @@ type inline = Ast.inline =
   | Link of inline Link.t
   | Ref of inline Ref.t
   | Html of string
+  | Tag of inline Tag.t
 
 type t = inline block list
 (** A markdown document *)
@@ -47,6 +51,7 @@ type printer = Html.printer =
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
     heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
+    tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
@@ -57,6 +62,7 @@ type printer = Html.printer =
     html: printer           -> Buffer.t -> string                    -> unit;
     link: printer           -> Buffer.t -> inline Link.t             -> unit;
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
+    tag: printer            -> Buffer.t -> inline Tag.t              -> unit;
   }
 
 val of_channel: in_channel -> t

@@ -20,6 +20,7 @@ module Pre = struct
     | Rfenced_code of int * int * Code_block.kind * (string * string) * string list * Attributes.t
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
+    | Rtag of string * t * Attributes.t
     | Rempty
 
   and t =
@@ -59,6 +60,8 @@ module Pre = struct
         if s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, kind, (label, other), [], a) ->
         Code_block {kind = Some kind; label = Some label; other = Some other; code = None; attributes = a} :: blocks
+    | Rtag (tag, state, attributes) ->
+        Tag_block {tag; content = close state; attributes} :: blocks
     | Rfenced_code (_, _, kind, (label, other), l, a) ->
         Code_block {kind = Some kind; label = Some label; other = Some other; code = Some (concat l); attributes = a} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
@@ -92,6 +95,8 @@ module Pre = struct
         {blocks = Heading {level; text; attributes} :: blocks; next = Rempty}
     | Rempty, Lfenced_code (ind, num, q, info, a) ->
         {blocks; next = Rfenced_code (ind, num, q, info, [], a)}
+    | Rempty, Ltag (tag, attributes) ->
+        {blocks; next = Rtag (tag, empty, attributes)}
     | Rempty, Lhtml (_, kind) ->
         process {blocks; next = Rhtml (kind, [])} s
     | Rempty, Lindented_code s ->
@@ -120,6 +125,10 @@ module Pre = struct
             s
         in
         {blocks; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)}
+    | Rtag (tag, state, attributes), Ltag ("", _) ->
+        {blocks = Tag_block {tag; content = finish state; attributes} :: blocks; next = Rempty}
+    | Rtag (tag, state, attributes), _ ->
+        {blocks; next = Rtag (tag, process state s, attributes)}
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->

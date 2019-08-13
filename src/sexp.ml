@@ -34,6 +34,8 @@ and inline = function
       Atom "img"
   | Ref {kind = Img; label; def; _} ->
       List [Atom "img-ref"; inline label; link_def atom def]
+  | Tag {tag; content; _} ->
+      List [Atom "tag"; Atom tag; inline content]
 
 let rec block = function
   | Paragraph x ->
@@ -44,8 +46,8 @@ let rec block = function
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading h ->
-      List [Atom "heading"; Atom (string_of_int h.level); inline h.text]
+  | Heading {level; text; _} ->
+      List [Atom "heading"; Atom (string_of_int level); inline text]
   | Code_block {kind = None; code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
   | Code_block {kind = None; code = None; _} ->
@@ -58,6 +60,8 @@ let rec block = function
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
+  | Tag_block {tag; content; _} ->
+      List [Atom "tag"; Atom tag; List (Atom "list-item" :: List.map block content)]
 
 let create ast =
   List (List.map block ast)

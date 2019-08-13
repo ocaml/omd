@@ -126,3 +126,6 @@ let rec inline b = function
               Buffer.nth b (Buffer.length b - 2) = '\n'))
       then
         Buffer.add_string b "\n"
+  | Tag {tag; content; attributes} ->
+      Printf.bprintf b "{!%s:%a}" tag inline content;
+      print_attributes b attributes

@@ -11,6 +11,7 @@ type printer =
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
     heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
+    tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
@@ -21,6 +22,7 @@ type printer =
     html: printer           -> Buffer.t -> string                    -> unit;
     link: printer           -> Buffer.t -> inline Link.t             -> unit;
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
+    tag: printer            -> Buffer.t -> inline Tag.t              -> unit;
   }
 
 (* only convert when "necessary" *)
@@ -171,6 +173,9 @@ let print_ref p b r =
   | Img ->
       print_img b r.label r.def.destination r.def.title r.def.attributes
 
+let print_tag p b t =
+  p.inline p b t.Tag.content
+
 let print_inline p b = function
   | Concat l ->
       p.concat p b l
@@ -190,6 +195,8 @@ let print_inline p b = function
       p.link p b l
   | Ref r ->
       p.ref p b r
+  | Tag t ->
+      p.tag p b t
 
 let print_blockquote p b q =
   let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
@@ -258,6 +265,14 @@ let print_heading p b h =
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
+let print_tag_block p b t =
+  let f i block =
+    p.block p b block;
+    if i < List.length t.Tag_block.content - 1 then
+      Buffer.add_char b '\n'
+  in
+  List.iteri f t.Tag_block.content
+
 let print_block p b = function
   | Blockquote q ->
       p.blockquote p b q
@@ -273,6 +288,8 @@ let print_block p b = function
       p.html_block p b body
   | Heading h ->
       p.heading p b h
+  | Tag_block t ->
+      p.tag_block p b t
   | Link_def _ ->
       ()
 
@@ -287,6 +304,7 @@ let default_printer =
     thematic_break = print_thematic_break;
     html_block = print_html_block;
     heading = print_heading;
+    tag_block = print_tag_block;
     inline = print_inline;
     concat = print_concat;
     text = print_text;
@@ -297,6 +315,7 @@ let default_printer =
     html = print_html;
     link = print_link;
     ref = print_ref;
+    tag = print_tag;
   }
 
 let to_html ?(printer=default_printer) mds =
