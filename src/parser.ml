@@ -393,7 +393,7 @@ let attribute_string s =
               | None ->
                   Sub.of_string (Buffer.contents buf), Some (Buffer.contents buf')
               end
-          | None ->
+          | None | Some '!' ->
               Buffer.add_char buf '{';
               Buffer.add_buffer buf buf';
               Sub.of_string (Buffer.contents buf), None
@@ -863,7 +863,7 @@ let inline_attribute_string s =
           | Some '}' ->
               junk s;
               Some (Buffer.contents buf)
-          | None | Some '{' ->
+          | None | Some '{' | Some '!' ->
               set_pos s pos; None
           | Some c ->
               Buffer.add_char buf c;

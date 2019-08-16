@@ -43,6 +43,7 @@ type t = inline block list
 type printer = Html.printer =
   {
     document: printer       -> Buffer.t -> inline block list         -> unit;
+    attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
     block: printer          -> Buffer.t -> inline block              -> unit;
     paragraph: printer      -> Buffer.t -> inline                    -> unit;
     blockquote: printer     -> Buffer.t -> inline block list         -> unit;

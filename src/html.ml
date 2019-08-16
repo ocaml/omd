@@ -3,6 +3,7 @@ open Ast
 type printer =
   {
     document: printer       -> Buffer.t -> inline block list         -> unit;
+    attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
     block: printer          -> Buffer.t -> inline block              -> unit;
     paragraph: printer      -> Buffer.t -> inline                    -> unit;
     blockquote: printer     -> Buffer.t -> inline block list         -> unit;
@@ -68,7 +69,15 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
-let print_attributes b attr =
+let print_document p b mds =
+  List.iter (function
+      | Link_def _ -> ()
+      | md ->
+          p.block p b md;
+          Buffer.add_char b '\n'
+    ) mds
+
+let print_attributes _ b attr =
   begin
     match attr.Attributes.id with
     | None -> ()
@@ -85,14 +94,6 @@ let print_attributes b attr =
       let f (d, v) = Buffer.add_string b (Printf.sprintf " %s=\"%s\"" d v) in
       List.iter f attr.attributes
     end
-
-let print_document p b mds =
-  List.iter (function
-      | Link_def _ -> ()
-      | md ->
-          p.block p b md;
-          Buffer.add_char b '\n'
-    ) mds
 
 let print_concat p b l =
   List.iter (p.inline p b) l
@@ -111,9 +112,9 @@ let print_emph p b e =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let print_code _ b c =
+let print_code p b c =
   Buffer.add_string b "<code";
-  print_attributes b c.Code.attributes;
+  p.attributes p b c.Code.attributes;
   Buffer.add_string b ">";
   Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
@@ -138,12 +139,12 @@ let print_url p b label destination title attributes =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
-  print_attributes b attributes;
+  p.attributes p b attributes;
   Buffer.add_string b ">";
   p.inline p b label;
   Buffer.add_string b "</a>"
 
-let print_img b label destination title attributes =
+let print_img p b label destination title attributes =
   Buffer.add_string b "<img src=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\" alt=\"";
@@ -156,7 +157,7 @@ let print_img b label destination title attributes =
       Buffer.add_string b (htmlentities title);
       Buffer.add_string b "\""
   end;
-  print_attributes b attributes;
+  p.attributes p b attributes;
   Buffer.add_string b " />"
 
 let print_link p b l =
@@ -164,14 +165,14 @@ let print_link p b l =
   | Url ->
       print_url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
-      print_img b l.def.label l.def.destination l.def.title l.def.attributes
+      print_img p b l.def.label l.def.destination l.def.title l.def.attributes
 
 let print_ref p b r =
   match r.Ref.kind with
   | Url ->
       print_url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
-      print_img b r.label r.def.destination r.def.title r.def.attributes
+      print_img p b r.label r.def.destination r.def.title r.def.attributes
 
 let print_tag p b t =
   p.inline p b t.Tag.content
@@ -235,9 +236,9 @@ let print_list p b l =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block _ b c =
+let print_code_block p b c =
   Buffer.add_string b "<pre";
-  print_attributes b c.Code_block.attributes;
+  p.attributes p b c.Code_block.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
       Buffer.add_string b "><code></code></pre>"
@@ -260,7 +261,7 @@ let print_html_block _ b body =
 
 let print_heading p b h =
   Buffer.add_string b (Printf.sprintf "<h%d" h.Heading.level);
-  print_attributes b h.attributes;
+  p.attributes p b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
@@ -296,6 +297,7 @@ let print_block p b = function
 let default_printer =
   {
     document = print_document;
+    attributes = print_attributes;
     block = print_block;
     paragraph = print_paragraph;
     blockquote = print_blockquote;
