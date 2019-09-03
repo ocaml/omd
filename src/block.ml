@@ -103,7 +103,7 @@ module Pre = struct
         {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
         {blocks; next = Rlist (kind, Tight, false, indent, [], process empty s)}
-    | Rempty, (Lsetext_heading _ | Lparagraph) ->
+    | Rempty, (Lsetext_heading _ | Lparagraph | Lendtag) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
         process {blocks = close {blocks; next}; next = Rempty} s
@@ -125,7 +125,7 @@ module Pre = struct
             s
         in
         {blocks; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)}
-    | Rtag (tag, state, attributes), Ltag ("", _) ->
+    | Rtag (tag, state, attributes), Lendtag ->
         {blocks = Tag_block {tag; content = finish state; attributes} :: blocks; next = Rempty}
     | Rtag (tag, state, attributes), _ ->
         {blocks; next = Rtag (tag, process state s, attributes)}

@@ -271,6 +271,7 @@ type t =
   | Llist_item of Block_list.kind * int * Sub.t
   | Lparagraph
   | Ltag of string * Attributes.t
+  | Lendtag
 
 let sp3 s =
   match Sub.head s with
@@ -783,7 +784,7 @@ let tag s =
                   s, Attributes.empty
             in
             let string_tag = Buffer.contents tag in
-            let string_tag = if string_tag = "" then "none" else string_tag in
+            let string_tag = if string_tag = "" then raise Fail else string_tag in
             Ltag (string_tag, a)
         | Some (' ' | '\t' | '\010'..'\013') | None ->
             raise Fail
@@ -827,7 +828,7 @@ let parse s0 =
   | Some '{' ->
       tag s
   | Some '}' ->
-      Ltag ("", Attributes.empty)
+      Lendtag
   | Some _ ->
       (blank ||| indented_code ind) s
   | None ->

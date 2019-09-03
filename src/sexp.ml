@@ -61,7 +61,7 @@ let rec block = function
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
   | Tag_block {tag; content; _} ->
-      List [Atom "tag"; Atom tag; List (Atom "list-item" :: List.map block content)]
+      List [Atom "tag"; Atom tag; List (List.map block content)]
 
 let create ast =
   List (List.map block ast)

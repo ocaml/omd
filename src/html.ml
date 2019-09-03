@@ -69,7 +69,7 @@ let text_of_inline ast =
   Text.inline b ast;
   Buffer.contents b
 
-let print_document p b mds =
+let document p b mds =
   List.iter (function
       | Link_def _ -> ()
       | md ->
@@ -77,7 +77,7 @@ let print_document p b mds =
           Buffer.add_char b '\n'
     ) mds
 
-let print_attributes _ b attr =
+let attributes _ b attr =
   begin
     match attr.Attributes.id with
     | None -> ()
@@ -95,13 +95,13 @@ let print_attributes _ b attr =
       List.iter f attr.attributes
     end
 
-let print_concat p b l =
+let concat p b l =
   List.iter (p.inline p b) l
 
-let print_text _ b t =
+let text _ b t =
   Buffer.add_string b (htmlentities t)
 
-let print_emph p b e =
+let emph p b e =
   match e.Emph.kind with
   | Normal ->
       Buffer.add_string b "<em>";
@@ -112,23 +112,23 @@ let print_emph p b e =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let print_code p b c =
+let code p b c =
   Buffer.add_string b "<code";
   p.attributes p b c.Code.attributes;
   Buffer.add_string b ">";
   Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
 
-let print_hard_break _ b =
+let hard_break _ b =
   Buffer.add_string b "<br />\n"
 
-let print_soft_break _ b =
+let soft_break _ b =
   Buffer.add_string b "\n"
 
-let print_html _ b body =
+let html _ b body =
   Buffer.add_string b body
 
-let print_url p b label destination title attributes =
+let url p b label destination title attributes =
   Buffer.add_string b "<a href=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\"";
@@ -144,7 +144,7 @@ let print_url p b label destination title attributes =
   p.inline p b label;
   Buffer.add_string b "</a>"
 
-let print_img p b label destination title attributes =
+let img p b label destination title attributes =
   Buffer.add_string b "<img src=\"";
   Buffer.add_string b (percent_encode destination);
   Buffer.add_string b "\" alt=\"";
@@ -160,24 +160,24 @@ let print_img p b label destination title attributes =
   p.attributes p b attributes;
   Buffer.add_string b " />"
 
-let print_link p b l =
+let link p b l =
   match l.Link.kind with
   | Url ->
-      print_url p b l.def.label l.def.destination l.def.title l.def.attributes
+      url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
-      print_img p b l.def.label l.def.destination l.def.title l.def.attributes
+      img p b l.def.label l.def.destination l.def.title l.def.attributes
 
-let print_ref p b r =
+let ref p b r =
   match r.Ref.kind with
   | Url ->
-      print_url p b r.label r.def.destination r.def.title r.def.attributes
+      url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
-      print_img p b r.label r.def.destination r.def.title r.def.attributes
+      img p b r.label r.def.destination r.def.title r.def.attributes
 
-let print_tag p b t =
+let tag p b t =
   p.inline p b t.Tag.content
 
-let print_inline p b = function
+let inline p b = function
   | Concat l ->
       p.concat p b l
   | Text t ->
@@ -199,18 +199,18 @@ let print_inline p b = function
   | Tag t ->
       p.tag p b t
 
-let print_blockquote p b q =
+let blockquote p b q =
   let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
   Buffer.add_string b "<blockquote>\n";
   iter_par (fun md -> p.block p b md; Buffer.add_char b '\n') q;
   Buffer.add_string b "</blockquote>"
 
-let print_paragraph p b md =
+let paragraph p b md =
   Buffer.add_string b "<p>";
   p.inline p b md;
   Buffer.add_string b "</p>"
 
-let print_list p b l =
+let list p b l =
   Buffer.add_string b
     (match l.Block_list.kind with
      | Ordered (1, _) -> "<ol>\n"
@@ -236,7 +236,7 @@ let print_list p b l =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let print_code_block p b c =
+let code_block p b c =
   Buffer.add_string b "<pre";
   p.attributes p b c.Code_block.attributes;
   match c with
@@ -253,20 +253,20 @@ let print_code_block p b c =
       Buffer.add_string b (htmlentities c);
       Buffer.add_string b "\n</code></pre>"
 
-let print_thematic_break _ b =
+let thematic_break _ b =
   Buffer.add_string b "<hr />"
 
-let print_html_block _ b body =
+let html_block _ b body =
   Buffer.add_string b body
 
-let print_heading p b h =
+let heading p b h =
   Buffer.add_string b (Printf.sprintf "<h%d" h.Heading.level);
   p.attributes p b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
-let print_tag_block p b t =
+let tag_block p b t =
   let f i block =
     p.block p b block;
     if i < List.length t.Tag_block.content - 1 then
@@ -274,7 +274,7 @@ let print_tag_block p b t =
   in
   List.iteri f t.Tag_block.content
 
-let print_block p b = function
+let block p b = function
   | Blockquote q ->
       p.blockquote p b q
   | Paragraph md ->
@@ -296,28 +296,28 @@ let print_block p b = function
 
 let default_printer =
   {
-    document = print_document;
-    attributes = print_attributes;
-    block = print_block;
-    paragraph = print_paragraph;
-    blockquote = print_blockquote;
-    list = print_list;
-    code_block = print_code_block;
-    thematic_break = print_thematic_break;
-    html_block = print_html_block;
-    heading = print_heading;
-    tag_block = print_tag_block;
-    inline = print_inline;
-    concat = print_concat;
-    text = print_text;
-    emph = print_emph;
-    code = print_code;
-    hard_break = print_hard_break;
-    soft_break = print_soft_break;
-    html = print_html;
-    link = print_link;
-    ref = print_ref;
-    tag = print_tag;
+    document;
+    attributes;
+    block;
+    paragraph;
+    blockquote;
+    list;
+    code_block;
+    thematic_break;
+    html_block;
+    heading;
+    tag_block;
+    inline;
+    concat;
+    text;
+    emph;
+    code;
+    hard_break;
+    soft_break;
+    html;
+    link;
+    ref;
+    tag;
   }
 
 let to_html ?(printer=default_printer) mds =
