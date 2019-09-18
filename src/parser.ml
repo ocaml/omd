@@ -270,8 +270,7 @@ type t =
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
   | Lparagraph
-  | Ltag of string * Attributes.t
-  | Lendtag
+  | Ltag of int * int * string * Attributes.t
 
 let sp3 s =
   match Sub.head s with
@@ -394,7 +393,7 @@ let attribute_string s =
               | None ->
                   Sub.of_string (Buffer.contents buf), Some (Buffer.contents buf')
               end
-          | None | Some '!' ->
+          | None ->
               Buffer.add_char buf '{';
               Buffer.add_buffer buf buf';
               Sub.of_string (Buffer.contents buf), None
@@ -769,31 +768,40 @@ let blank s =
   if not (is_empty s) then raise Fail;
   Lempty
 
-let tag s =
-  match Sub.heads 2 s with
-  | ['{'; '!'] ->
-      let tag = Buffer.create 17 in
-      let rec loop s =
+let tag_string s =
+  let buf = Buffer.create 17 in
+  let s, a =
+    match Sub.head ~rev:() s with
+    | Some '}' ->
+        attribute_string s
+    | _ ->
+        s, Attributes.empty
+  in
+  let s = ws ~rev:() (ws s) in
+  let rec loop s =
+    match Sub.head s with
+    | Some (' ' | '\t' | '\010'..'\013') | None ->
+        Buffer.contents buf, a
+    | Some c ->
+        Buffer.add_char buf c;
+        loop (Sub.tail s)
+  in
+  loop (ws s)
+
+let tag ind s =
+  match Sub.head s with
+  | Some '+' ->
+      let rec loop n s =
         match Sub.head s with
-        | Some ':' ->
-            let _, a =
-              match Sub.head ~rev:() s with
-              | Some '}' ->
-                  attribute_string s
-              | _ ->
-                  s, Attributes.empty
-            in
-            let string_tag = Buffer.contents tag in
-            let string_tag = if string_tag = "" then raise Fail else string_tag in
-            Ltag (string_tag, a)
-        | Some (' ' | '\t' | '\010'..'\013') | None ->
-            raise Fail
-        | Some c ->
-            Buffer.add_char tag c;
-            loop (Sub.tail s)
+        | Some '+' ->
+            loop (succ n) (Sub.tail s)
+        | Some _ | None ->
+            if n < 3 then raise Fail;
+            let s, a = tag_string s in
+            Ltag (ind, n, s, a)
       in
-      loop (Sub.tails 2 s)
-  | _ ->
+      loop 1 (Sub.tail s)
+  | Some _ | None ->
       raise Fail
 
 let indented_code ind s =
@@ -822,13 +830,9 @@ let parse s0 =
   | Some '*' ->
       (thematic_break ||| unordered_list_item ind) s
   | Some '+' ->
-      unordered_list_item ind s
+      (tag ind ||| unordered_list_item ind) s
   | Some ('0'..'9') ->
       ordered_list_item ind s
-  | Some '{' ->
-      tag s
-  | Some '}' ->
-      Lendtag
   | Some _ ->
       (blank ||| indented_code ind) s
   | None ->
@@ -864,7 +868,7 @@ let inline_attribute_string s =
           | Some '}' ->
               junk s;
               Some (Buffer.contents buf)
-          | None | Some '{' | Some '!' ->
+          | None | Some '{' ->
               set_pos s pos; None
           | Some c ->
               Buffer.add_char buf c;
@@ -1688,66 +1692,54 @@ let rec inline defs st =
               Buffer.add_string buf (String.make n '`'); loop acc st
         in
         loop2 0
-    | '{' ->
-        junk st;
-        begin
+    | '+' ->
+        let pos = pos st in
+        let rec loop2 n =
           match peek st with
-          | Some '!' ->
-              junk st;
+          | Some '+' ->
+              junk st; loop2 (succ n)
+          | Some _ ->
               let acc = text acc in
               let tag = Buffer.create 17 in
-              let rec loop2 () =
+              let contents = Buffer.create 17 in
+              let rec loop3 start seen_ws end_tag m bufcode =
                 match peek st with
-                | Some ':' ->
-                    junk st;
-                    let content = Buffer.create 17 in
-                    let rec loop3 start =
-                      match peek st with
-                      | Some (' ' | '\t' | '\010'..'\013' as c) ->
-                          junk st;
-                          if start then
-                            Buffer.add_char content c;
-                          loop3 start
-                      | Some '\\' ->
-                          junk st;
-                          begin
-                            match peek st with
-                            | Some '}' ->
-                                junk st;
-                                Buffer.add_char content '}';
-                                loop3 true
-                            | _ ->
-                                Buffer.add_char content '\\';
-                                loop3 true
-                          end
-                      | Some '}' ->
-                          junk st;
-                          loop (Pre.R (Tag {tag=Buffer.contents tag; content=inline defs (Buffer.contents content |> of_string); attributes=inline_attribute_string st}) :: acc) st
-                      | Some c ->
-                          junk st;
-                          Buffer.add_char content c;
-                          loop3 true
-                      | None ->
-                          Buffer.add_string buf "{!";
-                          Buffer.add_buffer buf tag;
-                          Buffer.add_char buf ':';
-                          Buffer.add_buffer buf content;
-                          loop acc st
-                    in loop3 false
-                | Some (' ' | '\t' | '\010'..'\013') | None ->
-                    Buffer.add_string buf "{!";
-                    Buffer.add_buffer buf tag;
-                    loop acc st
+                | Some '+' ->
+                    junk st; loop3 start seen_ws end_tag (succ m) bufcode
+                | Some (' ' | '\t' | '\010'..'\013') ->
+                    if m = n then
+                      loop (Pre.R (Tag {tag=Buffer.contents tag; content=inline defs (Buffer.contents contents |> of_string); attributes=inline_attribute_string st}) :: acc) st
+                    else begin
+                      if m > 0 then begin
+                        if not start && seen_ws && end_tag then Buffer.add_char bufcode ' ';
+                        Buffer.add_string bufcode (String.make m '+');
+                      end;
+                      junk st; loop3 (start && m = 0) end_tag true 0 contents
+                    end
                 | Some c ->
-                    junk st;
-                    Buffer.add_char tag c;
-                    loop2 ()
+                    if m = n then
+                      loop (Pre.R (Tag {tag=Buffer.contents tag; content=inline defs (Buffer.contents contents |> of_string); attributes=inline_attribute_string st}) :: acc) st
+                    else begin
+                      junk st;
+                      if not start && seen_ws && end_tag then Buffer.add_char bufcode ' ';
+                      if m > 0 then Buffer.add_string bufcode (String.make m '+');
+                      Buffer.add_char bufcode c;
+                      loop3 false false end_tag 0 bufcode
+                    end
+                | None ->
+                    if m = n then
+                      loop (Pre.R (Tag {tag=Buffer.contents tag; content=inline defs (Buffer.contents contents |> of_string); attributes=inline_attribute_string st}) :: acc) st
+                    else begin
+                      Buffer.add_string buf (range st pos n);
+                      set_pos st (pos + n);
+                      loop acc st
+                    end
               in
-              loop2 ()
-          | _ ->
-              Buffer.add_char buf '{';
-              loop acc st
-        end
+              loop3 true false false 0 tag
+          | None ->
+              Buffer.add_string buf (String.make n '+'); loop acc st
+        in
+        loop2 0
     | '\\' as c ->
         junk st;
         begin match peek st with
