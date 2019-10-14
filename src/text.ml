@@ -18,6 +18,8 @@ let rec inline b = function
       inline b l.def.label
   | Ref r ->
       inline b r.label
+  | Tag t ->
+      inline b t.content
 
 let block f b = function
   | Paragraph x ->

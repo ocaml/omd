@@ -62,6 +62,15 @@ module Heading = struct
     }
 end
 
+module Tag_block = struct
+  type 'block t =
+  {
+    tag: string;
+    content: 'block list;
+    attributes: Attributes.t
+  }
+end
+
 type 'a block =
   | Paragraph of 'a
   | List of 'a block Block_list.t
@@ -71,6 +80,7 @@ type 'a block =
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string Link_def.t
+  | Tag_block of 'a block Tag_block.t
 
 module Emph = struct
   type kind =
@@ -123,6 +133,15 @@ module Ref = struct
   }
 end
 
+module Tag = struct
+  type 'inline t =
+  {
+    tag: string;
+    content: 'inline;
+    attributes: Attributes.t
+  }
+end
+
 type inline =
   | Concat of inline list
   | Text of string
@@ -133,6 +152,7 @@ type inline =
   | Link of inline Link.t
   | Ref of inline Ref.t
   | Html of string
+  | Tag of inline Tag.t
 
 let rec map f = function
   | Paragraph x -> Paragraph (f x)
@@ -140,12 +160,13 @@ let rec map f = function
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
   | Heading h -> Heading {h with text = f h.text}
+  | Tag_block t -> Tag_block {t with content = List.map (map f) t.content}
   | Code_block _ | Html_block _ | Link_def _ as x -> x
 
 let defs ast =
   let rec loop acc = function
     | List l -> List.fold_left (List.fold_left loop) acc l.blocks
-    | Blockquote l -> List.fold_left loop acc l
+    | Blockquote l | Tag_block {content = l; _} -> List.fold_left loop acc l
     | Paragraph _ | Thematic_break | Heading _
     | Code_block _ | Html_block _ -> acc
     | Link_def def -> def :: acc

@@ -3,6 +3,7 @@ include Ast
 type printer = Html.printer =
   {
     document: printer       -> Buffer.t -> inline block list         -> unit;
+    attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
     block: printer          -> Buffer.t -> inline block              -> unit;
     paragraph: printer      -> Buffer.t -> inline                    -> unit;
     blockquote: printer     -> Buffer.t -> inline block list         -> unit;
@@ -11,6 +12,7 @@ type printer = Html.printer =
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
     heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
+    tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
@@ -21,6 +23,7 @@ type printer = Html.printer =
     html: printer           -> Buffer.t -> string                    -> unit;
     link: printer           -> Buffer.t -> inline Link.t             -> unit;
     ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
+    tag: printer            -> Buffer.t -> inline Tag.t              -> unit;
   }
 
 type t = inline block list
