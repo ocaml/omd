@@ -270,6 +270,7 @@ type t =
   | Lhtml of bool * html_kind
   | Llist_item of Block_list.kind * int * Sub.t
   | Lparagraph
+  | Ldef_list of string
   | Ltag of int * int * string * Attributes.t
 
 let sp3 s =
@@ -788,6 +789,12 @@ let tag_string s =
   in
   loop (ws s)
 
+let def_list s =
+  let s = Sub.tail s in
+  match Sub.head (s) with
+  | Some (' ' | '\t' | '\010'..'\013') -> Ldef_list (String.trim (Sub.to_string s))
+  | _ -> raise Fail
+
 let tag ind s =
   match Sub.head s with
   | Some '+' ->
@@ -833,6 +840,8 @@ let parse s0 =
       (tag ind ||| unordered_list_item ind) s
   | Some ('0'..'9') ->
       ordered_list_item ind s
+  | Some ':' ->
+      def_list s
   | Some _ ->
       (blank ||| indented_code ind) s
   | None ->

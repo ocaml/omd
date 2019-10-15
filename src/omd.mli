@@ -6,6 +6,7 @@ module Link_def = Ast.Link_def
 module Block_list = Ast.Block_list
 module Code_block = Ast.Code_block
 module Heading = Ast.Heading
+module Def_list = Ast.Def_list
 module Tag_block = Ast.Tag_block
 
 type 'a block = 'a Ast.block =
@@ -17,6 +18,7 @@ type 'a block = 'a Ast.block =
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string Link_def.t
+  | Def_list of 'a Def_list.t
   | Tag_block of 'a block Tag_block.t
 
 module Emph = Ast.Emph
@@ -52,6 +54,7 @@ type printer = Html.printer =
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
     heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
+    def_list: printer       -> Buffer.t -> inline Def_list.t         -> unit;
     tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;

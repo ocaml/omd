@@ -60,6 +60,8 @@ let rec block = function
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
+  | Def_list {content} ->
+      List [Atom "def-list"; List (List.map (fun elt -> List [inline elt.Def_list.term; List (List.map inline elt.defs)]) content)]
   | Tag_block {tag; content; _} ->
       List [Atom "tag"; Atom tag; List (List.map block content)]
 
