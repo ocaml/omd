@@ -12,6 +12,7 @@ type printer =
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
     heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
+    def_list: printer       -> Buffer.t -> inline Def_list.t         -> unit;
     tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
     inline: printer         -> Buffer.t -> inline                    -> unit;
     concat: printer         -> Buffer.t -> inline list               -> unit;
@@ -266,6 +267,20 @@ let heading p b h =
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
+let def_list p b l =
+  Buffer.add_string b (Printf.sprintf "<dl>\n");
+  List.iter (fun {Def_list.term; defs} ->
+    Buffer.add_string b (Printf.sprintf "<dt>");
+    p.inline p b term;
+    Buffer.add_string b (Printf.sprintf "</dt>\n");
+    List.iter (fun s ->
+      Buffer.add_string b (Printf.sprintf "<dd>");
+      p.inline p b s;
+      Buffer.add_string b (Printf.sprintf "</dd>\n")
+    ) defs;
+  ) l.Def_list.content;
+  Buffer.add_string b (Printf.sprintf "</dl>")
+
 let tag_block p b t =
   let f i block =
     p.block p b block;
@@ -289,6 +304,8 @@ let block p b = function
       p.html_block p b body
   | Heading h ->
       p.heading p b h
+  | Def_list l ->
+      p.def_list p b l
   | Tag_block t ->
       p.tag_block p b t
   | Link_def _ ->
@@ -306,6 +323,7 @@ let default_printer =
     thematic_break;
     html_block;
     heading;
+    def_list;
     tag_block;
     inline;
     concat;

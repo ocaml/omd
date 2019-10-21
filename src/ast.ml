@@ -62,6 +62,14 @@ module Heading = struct
     }
 end
 
+module Def_list = struct
+  type 'a elt = { term : 'a; defs : 'a list }
+  type 'a t =
+  {
+    content: 'a elt list
+  }
+end
+
 module Tag_block = struct
   type 'block t =
   {
@@ -80,6 +88,7 @@ type 'a block =
   | Code_block of Code_block.t
   | Html_block of string
   | Link_def of string Link_def.t
+  | Def_list of 'a Def_list.t
   | Tag_block of 'a block Tag_block.t
 
 module Emph = struct
@@ -160,6 +169,7 @@ let rec map f = function
   | Blockquote xs -> Blockquote (List.map (map f) xs)
   | Thematic_break -> Thematic_break
   | Heading h -> Heading {h with text = f h.text}
+  | Def_list l -> Def_list {content = List.map (fun elt -> {Def_list.term = f elt.Def_list.term; defs = List.map f elt.defs}) l.content}
   | Tag_block t -> Tag_block {t with content = List.map (map f) t.content}
   | Code_block _ | Html_block _ | Link_def _ as x -> x
 
@@ -168,7 +178,7 @@ let defs ast =
     | List l -> List.fold_left (List.fold_left loop) acc l.blocks
     | Blockquote l | Tag_block {content = l; _} -> List.fold_left loop acc l
     | Paragraph _ | Thematic_break | Heading _
-    | Code_block _ | Html_block _ -> acc
+    | Def_list _ | Code_block _ | Html_block _ -> acc
     | Link_def def -> def :: acc
   in
   List.rev (List.fold_left loop [] ast)
