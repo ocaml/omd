@@ -33,30 +33,30 @@ let main () =
   Arg.parse (Arg.align spec) (fun s -> input := s :: !input) "omd [options] [inputfile1 .. inputfileN] [options]";
   let output = if !output = "" then stdout else open_out_bin !output in
   let printer =
-    let text p b t =
+    let text p add t =
       let t = String.uppercase_ascii t in
-      Omd.default_printer.text p b t
+      Omd.default_printer.text p add t
     in
-    let code p b (c: Omd.Code.t) =
+    let code p add (c: Omd.Code.t) =
       let c = {c with content = String.uppercase_ascii c.content} in
-      Omd.default_printer.code p b c
+      Omd.default_printer.code p add c
     in
-    let tag (p: Omd.printer) b (t: 'inline Omd.Tag.t) =
+    let tag (p: Omd.printer) add (t: 'inline Omd.Tag.t) =
       match t.tag with
       | "capitalize" ->
-        p.inline {p with text; code} b t.content
-      | _ -> Omd.default_printer.tag p b t
+        p.inline {p with text; code} add t.content
+      | _ -> Omd.default_printer.tag p add t
     in
-    let tag_block (p: Omd.printer) b t =
+    let tag_block (p: Omd.printer) add t =
       match t.Omd.Tag_block.tag with
       | "capitalize" ->
         let f i block =
-          p.block {p with text; code} b block;
+          p.block {p with text; code} add block;
           if i < List.length t.content - 1 then
-            Buffer.add_char b '\n'
+            add "\n"
         in
         List.iteri f t.content
-      | _ -> Omd.default_printer.tag_block p b t
+      | _ -> Omd.default_printer.tag_block p add t
     in
     {Omd.default_printer with tag; tag_block}
   in
