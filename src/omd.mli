@@ -73,6 +73,9 @@ val of_channel: in_channel -> t
 
 val of_string: string -> t
 
+module Mapper = Ast.Mapper
+module Iterator = Ast.Iterator
+
 val default_printer: printer
 
 val to_html: ?printer:printer -> t -> string
