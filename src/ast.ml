@@ -213,7 +213,7 @@ struct
     ; tag:            t -> inline Tag.t              -> inline Tag.t
     }
 
-  let default : t =
+  let map : t =
     let identity = (fun _m x -> x) in
     let link_def (r :t) (d :_ Link_def.t) =
       { d with attributes = r.attributes r d.attributes }
@@ -330,7 +330,7 @@ struct
     ; tag:            'a t -> 'a -> inline Tag.t              -> unit
     }
 
-  let default : 'a t =
+  let iter : 'a t =
     let identity = (fun _ _ _ -> ()) in
     let link_def (r :'a t) ctx (d :_ Link_def.t) =
       r.attributes r ctx d.attributes

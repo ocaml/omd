@@ -237,7 +237,7 @@ let tag_block p add t =
   List.iteri f t.Tag_block.content
 
 let default_printer =
-{ default with
+{ iter with
   document
 ; attributes
 ; paragraph
