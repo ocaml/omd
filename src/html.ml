@@ -281,13 +281,17 @@ let def_list p b l =
   ) l.Def_list.content;
   Buffer.add_string b (Printf.sprintf "</dl>")
 
-let tag_block p b t =
+let tag_block p b {Tag_block.tag; attributes=attr; content} =
   let f i block =
     p.block p b block;
-    if i < List.length t.Tag_block.content - 1 then
+    if i < List.length content - 1 then
       Buffer.add_char b '\n'
   in
-  List.iteri f t.Tag_block.content
+  Buffer.add_string b ("<" ^ tag);
+  attributes p b attr;
+  Buffer.add_string b ">\n";
+  List.iteri f content;
+  Buffer.add_string b ("\n</" ^ tag ^ ">")
 
 let block p b = function
   | Blockquote q ->
