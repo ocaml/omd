@@ -82,7 +82,7 @@ let rec block = function
   | Tag_block {tag; content; attributes=attr} -> List
         [ Atom "tag"; Atom tag
         ; Atom "attributes"; attributes attr
-        ; Atom "content"; List (List.map block content)
+        ; Atom "content"; List (List.rev_map block content)
         ]
 
 let create ast =
