@@ -11,6 +11,20 @@ let rec link_def : 'a. ('a -> t) -> 'a Link_def.t -> t =
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)
 
+and attributes = function
+    { Attributes.id; classes; attributes } ->
+      List begin
+        begin match id with
+        | None -> []
+        | Some id -> [ Atom "id" ; Atom id ]
+        end
+        @
+        [ Atom "classes"; List (List.map (fun s -> Atom s) classes)
+        ; Atom "attributes"
+        ; List (List.map (fun (k,v) -> List [Atom k; Atom v]) attributes)
+        ]
+      end
+
 and inline = function
   | Concat xs ->
       List (Atom "concat" :: List.map inline xs)
@@ -34,8 +48,11 @@ and inline = function
       Atom "img"
   | Ref {kind = Img; label; def; _} ->
       List [Atom "img-ref"; inline label; link_def atom def]
-  | Tag {tag; content; _} ->
-      List [Atom "tag"; Atom tag; inline content]
+  | Tag {tag; content; attributes=attr} -> List
+        [ Atom "tag"; Atom tag
+        ; Atom "attributes"; attributes attr
+        ; Atom "content"; inline content
+        ]
 
 let rec block = function
   | Paragraph x ->
@@ -62,8 +79,11 @@ let rec block = function
       List [Atom "link-def"; Atom label; Atom destination]
   | Def_list {content} ->
       List [Atom "def-list"; List (List.map (fun elt -> List [inline elt.Def_list.term; List (List.map inline elt.defs)]) content)]
-  | Tag_block {tag; content; _} ->
-      List [Atom "tag"; Atom tag; List (List.map block content)]
+  | Tag_block {tag; content; attributes=attr} -> List
+        [ Atom "tag"; Atom tag
+        ; Atom "attributes"; attributes attr
+        ; Atom "content"; List (List.rev_map block content)
+        ]
 
 let create ast =
   List (List.map block ast)

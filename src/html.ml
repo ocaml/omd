@@ -228,13 +228,17 @@ let def_list p add l =
     ) l.Def_list.content;
   add (Printf.sprintf "</dl>")
 
-let tag_block p add t =
+let tag_block p add {Tag_block.tag; attributes=attr; content} =
   let f i block =
     p.block p add block;
-    if i < List.length t.Tag_block.content - 1 then
+    if i < List.length content - 1 then
       add "\n"
   in
-  List.iteri f t.Tag_block.content
+  add "<"; add tag;
+  attributes p add attr;
+  add ">\n";
+  List.iteri f content;
+  add "\n</"; add tag; add ">"
 
 let default_printer =
 { iter with
