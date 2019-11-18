@@ -35,17 +35,17 @@ let main () =
   let printer =
     let text p b t =
       let t = String.uppercase_ascii t in
-      Omd.default_printer.text p b t
+      Omd.html_printer.text p b t
     in
     let code p b (c: Omd.Code.t) =
       let c = {c with content = String.uppercase_ascii c.content} in
-      Omd.default_printer.code p b c
+      Omd.html_printer.code p b c
     in
     let tag (p: Omd.printer) b (t: 'inline Omd.Tag.t) =
       match t.tag with
       | "capitalize" ->
         p.inline {p with text; code} b t.content
-      | _ -> Omd.default_printer.tag p b t
+      | _ -> Omd.html_printer.tag p b t
     in
     let tag_block (p: Omd.printer) b t =
       match t.Omd.Tag_block.tag with
@@ -56,9 +56,9 @@ let main () =
             Buffer.add_char b '\n'
         in
         List.iteri f t.content
-      | _ -> Omd.default_printer.tag_block p b t
+      | _ -> Omd.html_printer.tag_block p b t
     in
-    {Omd.default_printer with tag; tag_block}
+    {Omd.html_printer with tag; tag_block}
   in
   let process ic =
     let md = Omd.of_channel ic in

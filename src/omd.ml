@@ -1,6 +1,6 @@
 include Ast
 
-type printer = Html.printer =
+type printer = Printer.printer =
   {
     document: printer       -> Buffer.t -> inline block list         -> unit;
     attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
@@ -45,7 +45,7 @@ let of_string s =
   let md = Block.Pre.of_string s in
   parse_inlines md
 
-let default_printer = Html.default_printer
+let html_printer = Html.default_printer
 
 let to_html ?printer doc =
   Html.to_html ?printer doc
