@@ -1,6 +1,7 @@
 type format =
   | Sexp
   | Html
+  | Latex
   | Markdown
   | Text
 
@@ -9,6 +10,7 @@ let fmt = ref Html
 let convert ast =
   match !fmt with
   | Html -> Omd.to_html ast
+  | Latex -> Omd.to_latex ast
   | Sexp -> Omd.to_sexp ast
   | Markdown | Text -> assert false
 
@@ -22,6 +24,8 @@ let main () =
       " file.html Specify the output file (default is stdout).";
 
       "-sexp", Unit (fun () -> fmt := Sexp), " sexp";
+
+      "-latex", Unit (fun () -> fmt := Latex), " latex";
 
       "--", Rest(fun s -> input := s :: !input),
       " Consider all remaining arguments as input file names.";
