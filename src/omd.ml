@@ -47,8 +47,13 @@ let of_string s =
 
 let html_printer = Html.default_printer
 
+let latex_printer = Latex.default_printer
+
 let to_html ?printer doc =
   Html.to_html ?printer doc
+
+let to_latex ?printer doc =
+  Latex.to_latex ?printer doc
 
 let to_sexp ast =
   Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)

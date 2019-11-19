@@ -75,6 +75,10 @@ val of_string: string -> t
 
 val html_printer: printer
 
+val latex_printer: printer
+
 val to_html: ?printer:printer -> t -> string
+
+val to_latex: ?printer:printer -> t -> string
 
 val to_sexp: t -> string
