@@ -50,17 +50,17 @@ let escape_markdown_characters s =
 
 let print_attributes b a =
   match a with
-  | {Attributes.id = None; classes = []; attributes = []} -> ()
+  | {a_id = None; a_classes = []; a_attributes = []} -> ()
   | _ ->
       let start = ref false in
       Printf.bprintf b "{";
-      begin match a.id with
+      begin match a.a_id with
       | None -> ()
       | Some s ->
           start := true;
           Printf.bprintf b "#%s" s
       end;
-      begin match a.classes with
+      begin match a.a_classes with
       | [] -> ()
       | l ->
           let dump s =
@@ -71,7 +71,7 @@ let print_attributes b a =
           in
           List.iter dump l
       end;
-      begin match a.attributes with
+      begin match a.a_attributes with
       | [] -> ()
       | l ->
           let dump (n,v) =
@@ -89,36 +89,36 @@ let rec inline b = function
       List.iter (inline b) l
   | Text t ->
       Printf.bprintf b "%s" (escape_markdown_characters t)
-  | Emph {kind = Normal; style; content} ->
-      let q = match style with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%a%c" q inline content q
-  | Emph {kind = Strong; style; content} ->
-      let q = match style with Star -> '*' | Underscore -> '_' in
-      Printf.bprintf b "%c%c%a%c%c" q q inline content q q
-  | Code {level; content; attributes} ->
-      let d = String.make level '`' in
-      Printf.bprintf b "%s%s%s" d content d;
-      print_attributes b attributes
+  | Emph {em_kind = Normal; em_style; em_content} ->
+      let q = match em_style with Star -> '*' | Underscore -> '_' in
+      Printf.bprintf b "%c%a%c" q inline em_content q
+  | Emph {em_kind = Strong; em_style; em_content} ->
+      let q = match em_style with Star -> '*' | Underscore -> '_' in
+      Printf.bprintf b "%c%c%a%c%c" q q inline em_content q q
+  | Code {c_level; c_content; c_attributes} ->
+      let d = String.make c_level '`' in
+      Printf.bprintf b "%s%s%s" d c_content d;
+      print_attributes b c_attributes
   | Hard_break ->
       Buffer.add_string b "<br />"
   | Html body ->
       Buffer.add_string b body
-  | Link {kind = Url; def = {label; destination; title = None; attributes}} ->
-      Printf.bprintf b "[%a](%s)" inline label destination;
-      print_attributes b attributes
-  | Link {kind = Img; def = {label; destination; title = None; attributes}} ->
-      Printf.bprintf b "![%a](%s)" inline label (* FIXME *) destination;
-      print_attributes b attributes
-  | Link {kind = Url; def = {label; destination; title = Some title; attributes}} ->
-      Printf.bprintf b "[%a](%s \"%s\")" inline label destination title;
-      print_attributes b attributes
-  | Link {kind = Img; def = {label; destination; title = Some title; attributes}} ->
-      Printf.bprintf b "![%a](%s \"%s\")" inline label (* FIXME *) destination title;
-      print_attributes b attributes
-  | Ref {kind = Url; label; def = {label = label'; _}} ->
-      Printf.bprintf b "[%a][%s]" inline label label'
-  | Ref {kind = Img; label; def = {label = label'; _}} ->
-      Printf.bprintf b "![%a][%s]" inline label label'
+  | Link {lk_kind = Url; lk_def = {ld_label; ld_destination; ld_title = None; ld_attributes}} ->
+      Printf.bprintf b "[%a](%s)" inline ld_label ld_destination;
+      print_attributes b ld_attributes
+  | Link {lk_kind = Img; lk_def = {ld_label; ld_destination; ld_title = None; ld_attributes}} ->
+      Printf.bprintf b "![%a](%s)" inline ld_label (* FIXME *) ld_destination;
+      print_attributes b ld_attributes
+  | Link {lk_kind = Url; lk_def = {ld_label; ld_destination; ld_title = Some title; ld_attributes}} ->
+      Printf.bprintf b "[%a](%s \"%s\")" inline ld_label ld_destination title;
+      print_attributes b ld_attributes
+  | Link {lk_kind = Img; lk_def = {ld_label; ld_destination; ld_title = Some title; ld_attributes}} ->
+      Printf.bprintf b "![%a](%s \"%s\")" inline ld_label (* FIXME *) ld_destination title;
+      print_attributes b ld_attributes
+  | Ref {rf_kind = Url; rf_label; rf_def = {ld_label; _}} ->
+      Printf.bprintf b "[%a][%s]" inline rf_label ld_label
+  | Ref {rf_kind = Img; rf_label; rf_def = {ld_label; _}} ->
+      Printf.bprintf b "![%a][%s]" inline rf_label ld_label
   | Soft_break ->
       if Buffer.length b = 1 ||
          (Buffer.length b > 1 &&
@@ -126,6 +126,6 @@ let rec inline b = function
               Buffer.nth b (Buffer.length b - 2) = '\n'))
       then
         Buffer.add_string b "\n"
-  | Tag {tag; content; attributes} ->
-      Printf.bprintf b "{!%s:%a}" tag inline content;
-      print_attributes b attributes
+  | Tag {tg_name; tg_content; tg_attributes} ->
+      Printf.bprintf b "{!%s:%a}" tg_name inline tg_content;
+      print_attributes b tg_attributes

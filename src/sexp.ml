@@ -6,10 +6,9 @@ type t =
 
 let atom s = Atom s
 
-let rec link_def : 'a. ('a -> t) -> 'a Link_def.t -> t =
-  fun f {label; destination; title; _} ->
-    let title = match title with Some title -> [Atom title] | None -> [] in
-    List (Atom "link-def" :: f label :: Atom destination :: title)
+let rec link_def : 'a. ('a -> t) -> 'a link_def -> t = fun f {ld_label; ld_destination; ld_title; _} ->
+  let title = match ld_title with Some title -> [Atom title] | None -> [] in
+  List (Atom "link-def" :: f ld_label :: Atom ld_destination :: title)
 
 and inline = function
   | Concat xs ->
@@ -17,53 +16,53 @@ and inline = function
   | Text s ->
       Atom s
   | Emph e ->
-      List [Atom "emph"; inline e.content]
+      List [Atom "emph"; inline e.em_content]
   | Code _ ->
       Atom "code"
   | Hard_break ->
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Link {kind = Url; def; _} ->
-      List [Atom "url"; link_def inline def]
-  | Ref {kind = Url; label; def; _} ->
-      List [Atom "url-ref"; inline label; link_def atom def]
+  | Link {lk_kind = Url; lk_def; _} ->
+      List [Atom "url"; link_def inline lk_def]
+  | Ref {rf_kind = Url; rf_label; rf_def; _} ->
+      List [Atom "url-ref"; inline rf_label; link_def atom rf_def]
   | Html s ->
       List [Atom "html"; Atom s]
-  | Link {kind = Img; _} ->
+  | Link {lk_kind = Img; _} ->
       Atom "img"
-  | Ref {kind = Img; label; def; _} ->
-      List [Atom "img-ref"; inline label; link_def atom def]
-  | Tag {tag; content; _} ->
-      List [Atom "tag"; Atom tag; inline content]
+  | Ref {rf_kind = Img; rf_label; rf_def; _} ->
+      List [Atom "img-ref"; inline rf_label; link_def atom rf_def]
+  | Tag {tg_name; tg_content; _} ->
+      List [Atom "tag"; Atom tg_name; inline tg_content]
 
 let rec block = function
   | Paragraph x ->
       List [Atom "paragraph"; inline x]
   | List l ->
-      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.blocks)
+      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.bl_blocks)
   | Blockquote xs ->
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading {level; text; _} ->
-      List [Atom "heading"; Atom (string_of_int level); inline text]
-  | Code_block {kind = None; code = Some s; _} ->
+  | Heading {h_level; h_text; _} ->
+      List [Atom "heading"; Atom (string_of_int h_level); inline h_text]
+  | Code_block {cb_kind = None; cb_code = Some s; _} ->
       List [Atom "indented-code"; Atom s]
-  | Code_block {kind = None; code = None; _} ->
+  | Code_block {cb_kind = None; cb_code = None; _} ->
       List [Atom "indented-code"]
-  | Code_block {kind = Some _; code = Some s; _} ->
+  | Code_block {cb_kind = Some _; cb_code = Some s; _} ->
       List [Atom "fenced-code"; Atom s]
-  | Code_block {kind = Some _; code = None; _} ->
+  | Code_block {cb_kind = Some _; cb_code = None; _} ->
       List [Atom "fenced-code"]
   | Html_block s ->
       List [Atom "html"; Atom s]
-  | Link_def {label; destination; _} ->
-      List [Atom "link-def"; Atom label; Atom destination]
-  | Def_list {content} ->
-      List [Atom "def-list"; List (List.map (fun elt -> List [inline elt.Def_list.term; List (List.map inline elt.defs)]) content)]
-  | Tag_block {tag; content; _} ->
-      List [Atom "tag"; Atom tag; List (List.map block content)]
+  | Link_def {ld_label; ld_destination; _} ->
+      List [Atom "link-def"; Atom ld_label; Atom ld_destination]
+  | Def_list {dl_content} ->
+      List [Atom "def-list"; List (List.map (fun elt -> List [inline elt.de_term; List (List.map inline elt.de_defs)]) dl_content)]
+  | Tag_block {tb_tag; tb_content; _} ->
+      List [Atom "tag"; Atom tb_tag; List (List.map block tb_content)]
 
 let create ast =
   List (List.map block ast)

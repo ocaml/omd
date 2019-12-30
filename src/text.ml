@@ -5,21 +5,21 @@ let rec inline b = function
       List.iter (inline b) l
   | Text t ->
       Buffer.add_string b t
-  | Emph e ->
-      inline b e.content
+  | Emph {em_content; _} ->
+      inline b em_content
   | Code c ->
-      let d = String.make c.level '`' in
-      Printf.bprintf b "%s%s%s" d c.content d
+      let d = String.make c.c_level '`' in
+      Printf.bprintf b "%s%s%s" d c.c_content d
   | Hard_break | Soft_break ->
       Buffer.add_char b '\n'
   | Html body ->
       Buffer.add_string b body
   | Link l ->
-      inline b l.def.label
+      inline b l.lk_def.ld_label
   | Ref r ->
-      inline b r.label
+      inline b r.rf_label
   | Tag t ->
-      inline b t.content
+      inline b t.tg_content
 
 let block f b = function
   | Paragraph x ->

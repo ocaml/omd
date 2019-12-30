@@ -4,24 +4,20 @@ module Sub = Parser.Sub
 
 let same_list_kind k1 k2 =
   match k1, k2 with
-  | Block_list.Ordered (_, c1), Block_list.Ordered (_, c2)
+  | Ordered (_, c1), Ordered (_, c2)
   | Unordered c1, Unordered c2 -> c1 = c2
   | _ -> false
 
-type 'a t = 'a block
-
 module Pre = struct
-  type block = string t
-
   type container =
     | Rblockquote of t
-    | Rlist of Block_list.kind * Block_list.style * bool * int * block list list * t
+    | Rlist of block_list_kind * block_list_style * bool * int * block list list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * Code_block.kind * (string * string) * string list * Attributes.t
+    | Rfenced_code of int * int * code_block_kind * (string * string) * string list * attributes
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rdef_list of string * string list
-    | Rtag of int * int * string * t * Attributes.t
+    | Rtag of int * int * string * t * attributes
     | Rempty
 
   and t =
@@ -51,30 +47,30 @@ module Pre = struct
     match next with
     | Rblockquote state ->
         Blockquote (finish state) :: blocks
-    | Rlist (kind, style, _, _, closed_items, state) ->
-        List {kind; style; blocks = List.rev (finish state :: closed_items)} :: blocks
+    | Rlist (bl_kind, bl_style, _, _, closed_items, state) ->
+        List {bl_kind; bl_style; bl_blocks = List.rev (finish state :: closed_items)} :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
         let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
-        if s = "" then blocks else Paragraph s :: blocks
-    | Rfenced_code (_, _, kind, (label, other), [], a) ->
-        Code_block {kind = Some kind; label = Some label; other = Some other; code = None; attributes = a} :: blocks
-    | Rfenced_code (_, _, kind, (label, other), l, a) ->
-        Code_block {kind = Some kind; label = Some label; other = Some other; code = Some (concat l); attributes = a} :: blocks
+        if s = "" then blocks else Paragraph (Text s) :: blocks
+    | Rfenced_code (_, _, kind, (label, other), [], cb_attributes) ->
+        Code_block {cb_kind = Some kind; cb_label = Some label; cb_other = Some other; cb_code = None; cb_attributes} :: blocks
+    | Rfenced_code (_, _, kind, (label, other), l, cb_attributes) ->
+        Code_block {cb_kind = Some kind; cb_label = Some label; cb_other = Some other; cb_code = Some (concat l); cb_attributes} :: blocks
     | Rdef_list (term, defs) ->
         let l, blocks =
           match blocks with
-          | Def_list l :: b -> l.content, b
+          | Def_list {dl_content} :: b -> dl_content, b
           | b -> [], b
         in
-        Def_list {content = l @ [{ Def_list.term; defs = List.rev defs}]} :: blocks
-    | Rtag (_, _, tag, state, attributes) ->
-        Tag_block {tag; content = close state; attributes} :: blocks
+        Def_list {dl_content = l @ [{ de_term = Text term; de_defs = List.rev_map (fun s -> Text s) defs}]} :: blocks
+    | Rtag (_, _, tb_tag, state, tb_attributes) ->
+        Tag_block {tb_tag; tb_content = close state; tb_attributes} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        Code_block {kind = None; label = None; other = None; code = Some (concat (loop l)); attributes = Attributes.empty} :: blocks
+        Code_block {cb_kind = None; cb_label = None; cb_other = None; cb_code = Some (concat (loop l)); cb_attributes = empty_attributes} :: blocks
     | Rhtml (_, l) ->
         Html_block (concat l) :: blocks
     | Rempty ->
@@ -99,8 +95,8 @@ module Pre = struct
         {blocks = Thematic_break :: blocks; next = Rempty}
     | Rempty, Lsetext_heading (2, n) when n >= 3 ->
         {blocks = Thematic_break :: blocks; next = Rempty}
-    | Rempty, Latx_heading (level, text, attributes) ->
-        {blocks = Heading {level; text; attributes} :: blocks; next = Rempty}
+    | Rempty, Latx_heading (h_level, text, h_attributes) ->
+        {blocks = Heading {h_level; h_text = Text text; h_attributes} :: blocks; next = Rempty}
     | Rempty, Lfenced_code (ind, num, q, info, a) ->
         {blocks; next = Rfenced_code (ind, num, q, info, [], a)}
     | Rempty, Lhtml (_, kind) ->
@@ -122,8 +118,8 @@ module Pre = struct
     | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
-        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = Attributes.empty}:: blocks; next = Rempty}
+    | Rparagraph (_ :: _ as lines), Lsetext_heading (h_level, _) ->
+        {blocks = Heading {h_level; h_text = Text (String.trim (String.concat "\n" (List.rev lines))); h_attributes = empty_attributes}:: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _) when num' >= num && q = q1 ->
@@ -187,13 +183,13 @@ module Pre = struct
             | _ -> false
           in
           if prev_empty && new_block state.next then
-            Block_list.Loose
+            Loose
           else
             style
         in
         {blocks; next = Rlist (kind, style, false, ind, items, state)}
     | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
-        let style = if prev_empty then Block_list.Loose else style in
+        let style = if prev_empty then Loose else style in
         {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function

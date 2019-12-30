@@ -37,25 +37,25 @@ let main () =
       let t = String.uppercase_ascii t in
       Omd.default_printer.text p b t
     in
-    let code p b (c: Omd.Code.t) =
-      let c = {c with content = String.uppercase_ascii c.content} in
+    let code p b (c: Omd.code) =
+      let c = {c with c_content = String.uppercase_ascii c.c_content} in
       Omd.default_printer.code p b c
     in
-    let tag (p: Omd.printer) b (t: 'inline Omd.Tag.t) =
-      match t.tag with
+    let tag (p: Omd.printer) b (t: Omd.tag) =
+      match t.tg_name with
       | "capitalize" ->
-        p.inline {p with text; code} b t.content
+        p.inline {p with text; code} b t.tg_content
       | _ -> Omd.default_printer.tag p b t
     in
     let tag_block (p: Omd.printer) b t =
-      match t.Omd.Tag_block.tag with
+      match t.Omd.tb_tag with
       | "capitalize" ->
         let f i block =
           p.block {p with text; code} b block;
-          if i < List.length t.content - 1 then
+          if i < List.length t.tb_content - 1 then
             Buffer.add_char b '\n'
         in
-        List.iteri f t.content
+        List.iteri f t.tb_content
       | _ -> Omd.default_printer.tag_block p b t
     in
     {Omd.default_printer with tag; tag_block}
