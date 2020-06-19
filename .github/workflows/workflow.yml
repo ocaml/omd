@@ -1,0 +1,37 @@
+name: Main workflow
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-version:
+          - 4.09.1
+          - 4.08.1
+          - 4.07.1
+          - 4.02.3
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      - run: opam install . --deps-only --with-doc --with-test
+
+      - run: opam exec -- dune build
+
+      - run: opam exec -- dune runtest
