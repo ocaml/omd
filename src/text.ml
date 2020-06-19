@@ -1,7 +1,7 @@
 open Ast
 
 let rec inline b = function
-  | Concat l ->
+  | Inline.Concat l ->
       List.iter (inline b) l
   | Text t ->
       Buffer.add_string b t
@@ -22,7 +22,7 @@ let rec inline b = function
       inline b t.content
 
 let block f b = function
-  | Paragraph x ->
+  | Block.Paragraph x ->
       f b x
   | _ ->
       assert false

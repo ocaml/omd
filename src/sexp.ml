@@ -6,13 +6,13 @@ type t =
 
 let atom s = Atom s
 
-let rec link_def : 'a. ('a -> t) -> 'a Link_def.t -> t =
+let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
   fun f {label; destination; title; _} ->
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)
 
 and inline = function
-  | Concat xs ->
+  | Inline.Concat xs ->
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
       Atom s
@@ -38,7 +38,7 @@ and inline = function
       List [Atom "tag"; Atom tag; inline content]
 
 let rec block = function
-  | Paragraph x ->
+  | Block.Paragraph x ->
       List [Atom "paragraph"; inline x]
   | List l ->
       List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.blocks)
@@ -61,7 +61,9 @@ let rec block = function
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
   | Def_list {content} ->
-      List [Atom "def-list"; List (List.map (fun elt -> List [inline elt.Def_list.term; List (List.map inline elt.defs)]) content)]
+      List [Atom "def-list";
+            List (List.map (fun elt -> List [inline elt.Block.term;
+                                             List (List.map inline elt.defs)]) content)]
   | Tag_block {tag; content; _} ->
       List [Atom "tag"; Atom tag; List (List.map block content)]
 

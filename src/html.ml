@@ -2,29 +2,29 @@ open Ast
 
 type printer =
   {
-    document: printer       -> Buffer.t -> inline block list         -> unit;
+    document: printer       -> Buffer.t -> Block.t list              -> unit;
     attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
-    block: printer          -> Buffer.t -> inline block              -> unit;
-    paragraph: printer      -> Buffer.t -> inline                    -> unit;
-    blockquote: printer     -> Buffer.t -> inline block list         -> unit;
-    list: printer           -> Buffer.t -> inline block Block_list.t -> unit;
-    code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
+    block: printer          -> Buffer.t -> Block.t                   -> unit;
+    paragraph: printer      -> Buffer.t -> Inline.t                  -> unit;
+    blockquote: printer     -> Buffer.t -> Block.t list              -> unit;
+    list: printer           -> Buffer.t -> Block.block_list          -> unit;
+    code_block: printer     -> Buffer.t -> Block.code_block          -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
-    def_list: printer       -> Buffer.t -> inline Def_list.t         -> unit;
-    tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
-    inline: printer         -> Buffer.t -> inline                    -> unit;
-    concat: printer         -> Buffer.t -> inline list               -> unit;
+    heading: printer        -> Buffer.t -> Block.heading             -> unit;
+    def_list: printer       -> Buffer.t -> Block.def_list            -> unit;
+    tag_block: printer      -> Buffer.t -> Block.tag_block           -> unit;
+    inline: printer         -> Buffer.t -> Inline.t                  -> unit;
+    concat: printer         -> Buffer.t -> Inline.t list             -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
-    emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> Code.t                    -> unit;
+    emph: printer           -> Buffer.t -> Inline.emph               -> unit;
+    code: printer           -> Buffer.t -> Inline.code               -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;
-    link: printer           -> Buffer.t -> inline Link.t             -> unit;
-    ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
-    tag: printer            -> Buffer.t -> inline Tag.t              -> unit;
+    link: printer           -> Buffer.t -> Inline.link               -> unit;
+    ref: printer            -> Buffer.t -> Inline.ref                -> unit;
+    tag: printer            -> Buffer.t -> Inline.tag                -> unit;
   }
 
 (* only convert when "necessary" *)
@@ -72,7 +72,7 @@ let text_of_inline ast =
 
 let document p b mds =
   List.iter (function
-      | Link_def _ -> ()
+      | Block.Link_def _ -> ()
       | md ->
           p.block p b md;
           Buffer.add_char b '\n'
@@ -102,8 +102,8 @@ let concat p b l =
 let text _ b t =
   Buffer.add_string b (htmlentities t)
 
-let emph p b e =
-  match e.Emph.kind with
+let emph p b (e : Inline.emph) =
+  match e.kind with
   | Normal ->
       Buffer.add_string b "<em>";
       p.inline p b e.content;
@@ -113,9 +113,9 @@ let emph p b e =
       p.inline p b e.content;
       Buffer.add_string b "</strong>"
 
-let code p b c =
+let code p b (c : Inline.code) =
   Buffer.add_string b "<code";
-  p.attributes p b c.Code.attributes;
+  p.attributes p b c.attributes;
   Buffer.add_string b ">";
   Buffer.add_string b (htmlentities c.content);
   Buffer.add_string b "</code>"
@@ -161,25 +161,25 @@ let img p b label destination title attributes =
   p.attributes p b attributes;
   Buffer.add_string b " />"
 
-let link p b l =
-  match l.Link.kind with
+let link p b (l : Inline.link) =
+  match l.kind with
   | Url ->
       url p b l.def.label l.def.destination l.def.title l.def.attributes
   | Img ->
       img p b l.def.label l.def.destination l.def.title l.def.attributes
 
-let ref p b r =
-  match r.Ref.kind with
+let ref p b (r : Inline.ref) =
+  match r.kind with
   | Url ->
       url p b r.label r.def.destination r.def.title r.def.attributes
   | Img ->
       img p b r.label r.def.destination r.def.title r.def.attributes
 
-let tag p b t =
-  p.inline p b t.Tag.content
+let tag p b (t : Inline.tag) =
+  p.inline p b t.content
 
 let inline p b = function
-  | Concat l ->
+  | Inline.Concat l ->
       p.concat p b l
   | Text t ->
       p.text p b t
@@ -201,7 +201,7 @@ let inline p b = function
       p.tag p b t
 
 let blockquote p b q =
-  let iter_par f l = List.iter (function Link_def _ -> () | md -> f md) l in
+  let iter_par f l = List.iter (function Block.Link_def _ -> () | md -> f md) l in
   Buffer.add_string b "<blockquote>\n";
   iter_par (fun md -> p.block p b md; Buffer.add_char b '\n') q;
   Buffer.add_string b "</blockquote>"
@@ -211,15 +211,15 @@ let paragraph p b md =
   p.inline p b md;
   Buffer.add_string b "</p>"
 
-let list p b l =
+let list p b (l : Block.block_list) =
   Buffer.add_string b
-    (match l.Block_list.kind with
+    (match l.kind with
      | Ordered (1, _) -> "<ol>\n"
      | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
      | Unordered _ -> "<ul>\n");
   let li style prev_nl x =
     match x, style with
-    | Paragraph md, Block_list.Tight ->
+    | Block.Paragraph md, Tight ->
         p.inline p b md;
         false
     | Link_def _, _ ->
@@ -237,9 +237,9 @@ let list p b l =
   Buffer.add_string b
     (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
 
-let code_block p b c =
+let code_block p b (c : Block.code_block) =
   Buffer.add_string b "<pre";
-  p.attributes p b c.Code_block.attributes;
+  p.attributes p b c.attributes;
   match c with
   | {label = None | Some ""; code = None; _} ->
       Buffer.add_string b "><code></code></pre>"
@@ -260,16 +260,16 @@ let thematic_break _ b =
 let html_block _ b body =
   Buffer.add_string b body
 
-let heading p b h =
-  Buffer.add_string b (Printf.sprintf "<h%d" h.Heading.level);
+let heading p b (h : Block.heading) =
+  Buffer.add_string b (Printf.sprintf "<h%d" h.level);
   p.attributes p b h.attributes;
   Buffer.add_string b (Printf.sprintf ">");
   p.inline p b h.text;
   Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
 
-let def_list p b l =
+let def_list p b (l : Block.def_list) =
   Buffer.add_string b (Printf.sprintf "<dl>\n");
-  List.iter (fun {Def_list.term; defs} ->
+  List.iter (fun {Block.term; defs} ->
     Buffer.add_string b (Printf.sprintf "<dt>");
     p.inline p b term;
     Buffer.add_string b (Printf.sprintf "</dt>\n");
@@ -278,19 +278,19 @@ let def_list p b l =
       p.inline p b s;
       Buffer.add_string b (Printf.sprintf "</dd>\n")
     ) defs;
-  ) l.Def_list.content;
+  ) l.content;
   Buffer.add_string b (Printf.sprintf "</dl>")
 
-let tag_block p b t =
+let tag_block p b (t : Block.tag_block) =
   let f i block =
     p.block p b block;
-    if i < List.length t.Tag_block.content - 1 then
+    if i < List.length t.content - 1 then
       Buffer.add_char b '\n'
   in
-  List.iteri f t.Tag_block.content
+  List.iteri f t.content
 
 let block p b = function
-  | Blockquote q ->
+  | Block.Blockquote q ->
       p.blockquote p b q
   | Paragraph md ->
       p.paragraph p b md
