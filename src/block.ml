@@ -2,22 +2,12 @@ open Ast
 
 module Sub = Parser.Sub
 
-let same_list_kind k1 k2 =
-  match k1, k2 with
-  | Block_list.Ordered (_, c1), Block_list.Ordered (_, c2)
-  | Unordered c1, Unordered c2 -> c1 = c2
-  | _ -> false
-
-type 'a t = 'a block
-
 module Pre = struct
-  type block = string t
-
   type container =
     | Rblockquote of t
-    | Rlist of Block_list.kind * Block_list.style * bool * int * block list list * t
+    | Rlist of block_list_kind * block_list_style * bool * int * Raw.t list list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * Code_block.kind * (string * string) * string list * Attributes.t
+    | Rfenced_code of int * int * code_block_kind * (string * string) * string list * Attributes.t
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rdef_list of string * string list
@@ -26,7 +16,7 @@ module Pre = struct
 
   and t =
     {
-      blocks: block list;
+      blocks: Raw.t list;
       next: container;
     }
 
@@ -50,14 +40,14 @@ module Pre = struct
   let rec close {blocks; next} =
     match next with
     | Rblockquote state ->
-        Blockquote (finish state) :: blocks
+        Raw.Blockquote (finish state) :: blocks
     | Rlist (kind, style, _, _, closed_items, state) ->
         List {kind; style; blocks = List.rev (finish state :: closed_items)} :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
-        let blocks = List.fold_right (fun def blocks -> Link_def def :: blocks) defs blocks in
+        let blocks = List.fold_right (fun def blocks -> Raw.Link_def def :: blocks) defs blocks in
         if s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, kind, (label, other), [], a) ->
         Code_block {kind = Some kind; label = Some label; other = Some other; code = None; attributes = a} :: blocks
@@ -69,7 +59,7 @@ module Pre = struct
           | Def_list l :: b -> l.content, b
           | b -> [], b
         in
-        Def_list {content = l @ [{ Def_list.term; defs = List.rev defs}]} :: blocks
+        Def_list {content = l @ [{ Raw.term; defs = List.rev defs}]} :: blocks
     | Rtag (_, _, tag, state, attributes) ->
         Tag_block {tag; content = close state; attributes} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
@@ -187,13 +177,14 @@ module Pre = struct
             | _ -> false
           in
           if prev_empty && new_block state.next then
-            Block_list.Loose
+            Loose
           else
             style
         in
         {blocks; next = Rlist (kind, style, false, ind, items, state)}
-    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s) when same_list_kind kind kind' ->
-        let style = if prev_empty then Block_list.Loose else style in
+    | Rlist (kind, style, prev_empty, _, items, state), Llist_item (kind', ind, s)
+      when same_block_list_kind kind kind' ->
+        let style = if prev_empty then Loose else style in
         {blocks; next = Rlist (kind, style, false, ind, finish state :: items, process empty s)}
     | (Rlist _ | Rblockquote _), _ ->
         let rec loop = function

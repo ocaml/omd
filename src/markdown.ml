@@ -85,7 +85,7 @@ let print_attributes b a =
       Printf.bprintf b "}"
 
 let rec inline b = function
-  | Concat l ->
+  | Inline.Concat l ->
       List.iter (inline b) l
   | Text t ->
       Printf.bprintf b "%s" (escape_markdown_characters t)

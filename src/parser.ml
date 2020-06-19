@@ -265,10 +265,10 @@ type t =
   | Lthematic_break
   | Latx_heading of int * string * Attributes.t
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * Code_block.kind * (string * string) * Attributes.t
+  | Lfenced_code of int * int * code_block_kind * (string * string) * Attributes.t
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
-  | Llist_item of Block_list.kind * int * Sub.t
+  | Llist_item of block_list_kind * int * Sub.t
   | Lparagraph
   | Ldef_list of string
   | Ltag of int * int * string * Attributes.t
@@ -552,7 +552,7 @@ let fenced_code ind s =
         | Some _ | None ->
             if n < 3 then raise Fail;
             let s, a = info_string c s in
-            let c = if c = '`' then Code_block.Backtick else Tilde in
+            let c = if c = '`' then Backtick else Tilde in
             Lfenced_code (ind, n, c, s, a)
       in
       loop 1 (Sub.tail s)
@@ -983,13 +983,13 @@ module Pre = struct
 
   type t =
     | Bang_left_bracket
-    | Left_bracket of Link.kind
-    | Emph of delim * delim * Emph.style * int
-    | R of inline
+    | Left_bracket of link_kind
+    | Emph of delim * delim * emph_style * int
+    | R of Inline.t
 
   let concat = function
     | [x] -> x
-    | l -> Concat l
+    | l -> Inline.Concat l
 
   let left_flanking = function
     | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
@@ -1026,7 +1026,7 @@ module Pre = struct
     | _ -> Other
 
   let to_r = function
-    | Bang_left_bracket -> Text "!["
+    | Bang_left_bracket -> Inline.Text "!["
     | Left_bracket Img -> Text "!["
     | Left_bracket Url -> Text "["
     | Emph (_, _, Star, n) -> Text (String.make n '*')
@@ -1044,7 +1044,7 @@ module Pre = struct
                 if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
               in
               let r =
-                let kind = if n1 >= 2 && n2 >= 2 then Emph.Strong else Emph.Normal in
+                let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
                 R (Emph {kind; style = q1; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
               in
               let r =
@@ -1554,7 +1554,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.Link_def.label; destination; title = None; attributes = Attributes.empty}
+      {Ast.label; destination; title = None; attributes = Attributes.empty}
   | _ ->
       raise Fail
 
@@ -1585,7 +1585,7 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
+          match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
           | Some def ->
               loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
@@ -1782,7 +1782,7 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
+                        Inline.Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1794,7 +1794,7 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({label; _}: string Link_def.t) -> label = s) defs with
+                      begin match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
                       | Some def ->
                           loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
@@ -1831,7 +1831,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Emph.Star else Emph.Underscore in
+          let e = if c = '*' then Star else Underscore in
           loop (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =
@@ -1889,10 +1889,10 @@ let link_reference_definition st =
   let attributes = inline_attribute_string st in
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.Link_def.label; destination; title = Some title; attributes}
+      {Ast.label; destination; title = Some title; attributes}
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.Link_def.label; destination; title = None; attributes}
+      {Ast.label; destination; title = None; attributes}
 
 let link_reference_definitions st =
   let rec loop acc =

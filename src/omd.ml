@@ -1,48 +1,50 @@
+module Pre = Block.Pre
+
 include Ast
 
 type printer = Html.printer =
   {
-    document: printer       -> Buffer.t -> inline block list         -> unit;
+    document: printer       -> Buffer.t -> Block.t list              -> unit;
     attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
-    block: printer          -> Buffer.t -> inline block              -> unit;
-    paragraph: printer      -> Buffer.t -> inline                    -> unit;
-    blockquote: printer     -> Buffer.t -> inline block list         -> unit;
-    list: printer           -> Buffer.t -> inline block Block_list.t -> unit;
-    code_block: printer     -> Buffer.t -> Code_block.t              -> unit;
+    block: printer          -> Buffer.t -> Block.t                   -> unit;
+    paragraph: printer      -> Buffer.t -> Inline.t                  -> unit;
+    blockquote: printer     -> Buffer.t -> Block.t list              -> unit;
+    list: printer           -> Buffer.t -> Block.block_list          -> unit;
+    code_block: printer     -> Buffer.t -> Block.code_block          -> unit;
     thematic_break: printer -> Buffer.t                              -> unit;
     html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> inline Heading.t          -> unit;
-    def_list: printer       -> Buffer.t -> inline Def_list.t         -> unit;
-    tag_block: printer      -> Buffer.t -> inline block Tag_block.t  -> unit;
-    inline: printer         -> Buffer.t -> inline                    -> unit;
-    concat: printer         -> Buffer.t -> inline list               -> unit;
+    heading: printer        -> Buffer.t -> Block.heading             -> unit;
+    def_list: printer       -> Buffer.t -> Block.def_list            -> unit;
+    tag_block: printer      -> Buffer.t -> Block.tag_block           -> unit;
+    inline: printer         -> Buffer.t -> Inline.t                  -> unit;
+    concat: printer         -> Buffer.t -> Inline.t list             -> unit;
     text: printer           -> Buffer.t -> string                    -> unit;
-    emph: printer           -> Buffer.t -> inline Emph.t             -> unit;
-    code: printer           -> Buffer.t -> Code.t                    -> unit;
+    emph: printer           -> Buffer.t -> Inline.emph               -> unit;
+    code: printer           -> Buffer.t -> Inline.code               -> unit;
     hard_break: printer     -> Buffer.t                              -> unit;
     soft_break: printer     -> Buffer.t                              -> unit;
     html: printer           -> Buffer.t -> string                    -> unit;
-    link: printer           -> Buffer.t -> inline Link.t             -> unit;
-    ref: printer            -> Buffer.t -> inline Ref.t              -> unit;
-    tag: printer            -> Buffer.t -> inline Tag.t              -> unit;
+    link: printer           -> Buffer.t -> Inline.link               -> unit;
+    ref: printer            -> Buffer.t -> Inline.ref                -> unit;
+    tag: printer            -> Buffer.t -> Inline.tag                -> unit;
   }
 
-type t = inline block list
+type t = Block.t list
 
-let parse_inlines md =
+let parse_inlines (md : Raw.t list) =
   let parse_inline defs s = Parser.inline defs (Parser.P.of_string s) in
-  let defs = Ast.defs md in
+  let defs = Raw.defs md in
   let defs =
-    List.map (fun (def: string Link_def.t) -> {def with label = Parser.normalize def.label}) defs
+    List.map (fun (def: string link_def) -> {def with label = Parser.normalize def.label}) defs
   in
-  List.map (Ast.map (parse_inline defs)) md
+  List.map (Mapper.map (parse_inline defs)) md
 
 let of_channel ic =
-  let md = Block.Pre.of_channel ic in
+  let md = Pre.of_channel ic in
   parse_inlines md
 
 let of_string s =
-  let md = Block.Pre.of_string s in
+  let md = Pre.of_string s in
   parse_inlines md
 
 let default_printer = Html.default_printer
