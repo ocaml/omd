@@ -80,7 +80,7 @@ let rec add_to_buffer buf = function
       add_to_buffer buf t1;
       add_to_buffer buf t2
 
-let _percent_encode s =
+let percent_encode s =
   let b = Buffer.create (String.length s) in
   String.iter (function
       | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
@@ -116,7 +116,7 @@ let rec url label destination title attrs =
     | None -> attrs
     | Some title -> ("title", title) :: attrs
   in
-  let attrs = ("href", destination) :: attrs in
+  let attrs = ("href", percent_encode destination) :: attrs in
   elt Inline "a" attrs (Some (inline label))
 
 and img label destination title attrs =
@@ -126,7 +126,7 @@ and img label destination title attrs =
     | Some title -> ("title", title) :: attrs
   in
   let attrs =
-    ("src", destination) ::
+    ("src", percent_encode destination) ::
     ("alt", text_of_inline label) :: attrs
   in
   elt Inline "img" attrs None
@@ -171,8 +171,8 @@ let rec block = function
   | List {kind; style; blocks} ->
       let name =
         match kind with
-        | Ordered _ -> "<ol>"
-        | Unordered _ -> "<ul>"
+        | Ordered _ -> "ol"
+        | Unordered _ -> "ul"
       in
       let attrs =
         match kind with
@@ -208,7 +208,7 @@ let rec block = function
             text c
       in
       elt Block "pre" (attr attributes)
-        (Some (elt Block "code" attrs (Some c)))
+        (Some (elt Inline "code" attrs (Some c)))
   | Thematic_break ->
       elt Block "hr" [] None
   | Html_block body ->
