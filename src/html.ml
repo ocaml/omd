@@ -180,14 +180,19 @@ let rec block = function
       in
       let attrs =
         match kind with
-        | Ordered (n, _) when n > 1 ->
+        | Ordered (n, _) when n <> 1 ->
             ["start", string_of_int n]
         | _ ->
             []
       in
       let li t =
+        let block' t =
+          match t, style with
+          | Block.Paragraph t, Tight -> concat (inline t) nl
+          | _ -> block t
+        in
         let nl = if style = Tight then Null else nl in
-        elt Block "li" [] (Some (concat nl (concat_map block t))) in
+        elt Block "li" [] (Some (concat nl (concat_map block' t))) in
       elt Block name attrs (Some (concat nl (concat_map li blocks)))
   | Code_block {kind = _; other = _; label; attributes; code} ->
       let attrs =

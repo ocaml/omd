@@ -8,6 +8,11 @@
 
 (include dune.inc)
 
+(executable
+ (name omd)
+ (libraries str omd)
+ (modules omd))
+
 (rule
- (alias runtest)
+ (alias gen)
  (action (diff dune.inc dune.inc.new)))
