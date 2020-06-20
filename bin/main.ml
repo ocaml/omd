@@ -25,9 +25,6 @@ let spec =
 
     "--", Rest(fun s -> input := s :: !input),
     " Consider all remaining arguments as input file names.";
-
-    "-version", Unit(fun () -> print_endline "This is version VERSION."; exit 0),
-    " Print version.";
   ]
 
 let main () =
