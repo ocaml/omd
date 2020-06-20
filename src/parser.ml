@@ -1663,40 +1663,53 @@ let rec inline defs st =
           | Some _ ->
               let acc = text acc in
               let bufcode = Buffer.create 17 in
-              let rec loop3 start seen_ws m =
+              let finish () =
+                let content = Buffer.contents bufcode in
+                let content =
+                  if String.length content >= 2 &&
+                     content.[0] = ' ' &&
+                     content.[String.length content - 1] = ' ' (* FIXME not fully whitespace *)
+                  then
+                    String.sub content 1 (String.length content - 2)
+                  else
+                    content
+                in
+                loop (Pre.R (Code {level = n;
+                                   content;
+                                   attributes = inline_attribute_string st}) :: acc) st
+              in
+              let rec loop3 start m =
                 match peek st with
                 | Some '`' ->
-                    junk st; loop3 start seen_ws (succ m)
-                | Some (' ' | '\t' | '\010'..'\013') ->
+                    junk st; loop3 start (succ m)
+                | Some (' ' | '\t' | '\010'..'\013' as c) ->
                     if m = n then
-                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
+                      finish ()
                     else begin
-                      if m > 0 then begin
-                        if not start && seen_ws then Buffer.add_char bufcode ' ';
-                        Buffer.add_string bufcode (String.make m '`');
-                      end;
-                      junk st; loop3 (start && m = 0) true 0
+                      if m > 0 then Buffer.add_string bufcode (String.make m '`');
+                      Buffer.add_char bufcode (if c = '\010' then ' ' else c);
+                      junk st; loop3 (start && m = 0) 0
                     end
                 | Some c ->
                     if m = n then
-                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
+                      finish ()
                     else begin
                       junk st;
-                      if not start && seen_ws then Buffer.add_char bufcode ' ';
+                      (* if seen_ws then Buffer.add_char bufcode ' '; *)
                       if m > 0 then Buffer.add_string bufcode (String.make m '`');
                       Buffer.add_char bufcode c;
-                      loop3 false false 0
+                      loop3 false 0
                     end
                 | None ->
                     if m = n then
-                      loop (Pre.R (Code {level=n; content=Buffer.contents bufcode; attributes=inline_attribute_string st}) :: acc) st
+                      finish ()
                     else begin
                       Buffer.add_string buf (range st pos n);
                       set_pos st (pos + n);
                       loop acc st
                     end
               in
-              loop3 true false 0
+              loop3 true 0
           | None ->
               Buffer.add_string buf (String.make n '`'); loop acc st
         in

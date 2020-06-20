@@ -20,7 +20,7 @@ module Pre = struct
       next: container;
     }
 
-  let concat l = String.concat "\n" (List.rev l)
+  let concat l = String.concat "\n" (List.rev l) ^ "\n"
 
   let trim_left s =
     let rec loop i =

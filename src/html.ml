@@ -1,31 +1,33 @@
 open Ast
 
-type printer =
-  {
-    document: printer       -> Buffer.t -> Block.t list              -> unit;
-    attributes: printer     -> Buffer.t -> Attributes.t              -> unit;
-    block: printer          -> Buffer.t -> Block.t                   -> unit;
-    paragraph: printer      -> Buffer.t -> Inline.t                  -> unit;
-    blockquote: printer     -> Buffer.t -> Block.t list              -> unit;
-    list: printer           -> Buffer.t -> Block.block_list          -> unit;
-    code_block: printer     -> Buffer.t -> Block.code_block          -> unit;
-    thematic_break: printer -> Buffer.t                              -> unit;
-    html_block: printer     -> Buffer.t -> string                    -> unit;
-    heading: printer        -> Buffer.t -> Block.heading             -> unit;
-    def_list: printer       -> Buffer.t -> Block.def_list            -> unit;
-    tag_block: printer      -> Buffer.t -> Block.tag_block           -> unit;
-    inline: printer         -> Buffer.t -> Inline.t                  -> unit;
-    concat: printer         -> Buffer.t -> Inline.t list             -> unit;
-    text: printer           -> Buffer.t -> string                    -> unit;
-    emph: printer           -> Buffer.t -> Inline.emph               -> unit;
-    code: printer           -> Buffer.t -> Inline.code               -> unit;
-    hard_break: printer     -> Buffer.t                              -> unit;
-    soft_break: printer     -> Buffer.t                              -> unit;
-    html: printer           -> Buffer.t -> string                    -> unit;
-    link: printer           -> Buffer.t -> Inline.link               -> unit;
-    ref: printer            -> Buffer.t -> Inline.ref                -> unit;
-    tag: printer            -> Buffer.t -> Inline.tag                -> unit;
-  }
+type attribute =
+  string * string
+
+type element_type =
+  | Inline
+  | Block
+
+type t =
+  | Element of element_type * string * attribute list * t option
+  | Text of string
+  | Raw of string
+  | Null
+  | Concat of t * t
+
+let elt etype name attrs childs =
+  Element (etype, name, attrs, childs)
+
+let text s = Text s
+
+let raw s = Raw s
+
+let concat t1 t2 =
+  match t1, t2 with
+  | Null, t | t, Null -> t
+  | _ -> Concat (t1, t2)
+
+let concat_map f l =
+  List.fold_left (fun accu x -> concat accu (f x)) Null l
 
 (* only convert when "necessary" *)
 let htmlentities s =
@@ -51,7 +53,30 @@ let htmlentities s =
   in
   loop 0
 
-let percent_encode s =
+let add_attrs_to_buffer buf attrs =
+  let f (k, v) = Printf.bprintf buf " %s=\"%s\"" k (htmlentities v) in
+  List.iter f attrs
+
+let rec add_to_buffer buf = function
+  | Element (eltype, name, attrs, None) ->
+      Printf.bprintf buf "<%s%a />"
+        name add_attrs_to_buffer attrs;
+      if eltype = Block then Buffer.add_char buf '\n'
+  | Element (eltype, name, attrs, Some c) ->
+      Printf.bprintf buf "<%s%a>%a</%s>"
+        name add_attrs_to_buffer attrs add_to_buffer c name;
+      if eltype = Block then Buffer.add_char buf '\n'
+  | Text s ->
+      Buffer.add_string buf (htmlentities s)
+  | Raw s ->
+      Buffer.add_string buf s
+  | Null ->
+      ()
+  | Concat (t1, t2) ->
+      add_to_buffer buf t1;
+      add_to_buffer buf t2
+
+let escape_uri s =
   let b = Buffer.create (String.length s) in
   String.iter (function
       | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
@@ -65,280 +90,160 @@ let percent_encode s =
     ) s;
   Buffer.contents b
 
-let text_of_inline ast =
-  let b = Buffer.create 101 in
-  Text.inline b ast;
-  Buffer.contents b
-
-let document p b mds =
-  List.iter (function
-      | Block.Link_def _ -> ()
-      | md ->
-          p.block p b md;
-          Buffer.add_char b '\n'
-    ) mds
-
-let attributes _ b attr =
-  begin
-    match attr.Attributes.id with
-    | None -> ()
-    | Some s -> Buffer.add_string b (Printf.sprintf " id=\"%s\"" s)
-  end;
-  if List.length attr.classes <> 0
-  then
-    begin
-      Buffer.add_string b (Printf.sprintf " class=\"%s\"" (String.concat " " attr.classes))
-    end;
-  if List.length attr.attributes <> 0
-  then
-    begin
-      let f (d, v) = Buffer.add_string b (Printf.sprintf " %s=\"%s\"" d v) in
-      List.iter f attr.attributes
-    end
-
-let concat p b l =
-  List.iter (p.inline p b) l
-
-let text _ b t =
-  Buffer.add_string b (htmlentities t)
-
-let emph p b (e : Inline.emph) =
-  match e.kind with
-  | Normal ->
-      Buffer.add_string b "<em>";
-      p.inline p b e.content;
-      Buffer.add_string b "</em>"
-  | Strong ->
-      Buffer.add_string b "<strong>";
-      p.inline p b e.content;
-      Buffer.add_string b "</strong>"
-
-let code p b (c : Inline.code) =
-  Buffer.add_string b "<code";
-  p.attributes p b c.attributes;
-  Buffer.add_string b ">";
-  Buffer.add_string b (htmlentities c.content);
-  Buffer.add_string b "</code>"
-
-let hard_break _ b =
-  Buffer.add_string b "<br />\n"
-
-let soft_break _ b =
-  Buffer.add_string b "\n"
-
-let html _ b body =
-  Buffer.add_string b body
-
-let url p b label destination title attributes =
-  Buffer.add_string b "<a href=\"";
-  Buffer.add_string b (percent_encode destination);
-  Buffer.add_string b "\"";
-  begin match title with
-  | None -> ()
-  | Some title ->
-      Buffer.add_string b " title=\"";
-      Buffer.add_string b (htmlentities title);
-      Buffer.add_string b "\""
-  end;
-  p.attributes p b attributes;
-  Buffer.add_string b ">";
-  p.inline p b label;
-  Buffer.add_string b "</a>"
-
-let img p b label destination title attributes =
-  Buffer.add_string b "<img src=\"";
-  Buffer.add_string b (percent_encode destination);
-  Buffer.add_string b "\" alt=\"";
-  Buffer.add_string b (htmlentities (text_of_inline label));
-  Buffer.add_string b "\"";
-  begin match title with
-  | None -> ()
-  | Some title ->
-      Buffer.add_string b " title=\"";
-      Buffer.add_string b (htmlentities title);
-      Buffer.add_string b "\""
-  end;
-  p.attributes p b attributes;
-  Buffer.add_string b " />"
-
-let link p b (l : Inline.link) =
-  match l.kind with
-  | Url ->
-      url p b l.def.label l.def.destination l.def.title l.def.attributes
-  | Img ->
-      img p b l.def.label l.def.destination l.def.title l.def.attributes
-
-let ref p b (r : Inline.ref) =
-  match r.kind with
-  | Url ->
-      url p b r.label r.def.destination r.def.title r.def.attributes
-  | Img ->
-      img p b r.label r.def.destination r.def.title r.def.attributes
-
-let tag p b (t : Inline.tag) =
-  p.inline p b t.content
-
-let inline p b = function
-  | Inline.Concat l ->
-      p.concat p b l
-  | Text t ->
-      p.text p b t
-  | Emph e ->
-      p.emph p b e
-  | Code c ->
-      p.code p b c
-  | Hard_break ->
-      p.hard_break p b
-  | Soft_break ->
-      p.soft_break p b
-  | Html body ->
-      p.html p b body
-  | Link l ->
-      p.link p b l
-  | Ref r ->
-      p.ref p b r
-  | Tag t ->
-      p.tag p b t
-
-let blockquote p b q =
-  let iter_par f l = List.iter (function Block.Link_def _ -> () | md -> f md) l in
-  Buffer.add_string b "<blockquote>\n";
-  iter_par (fun md -> p.block p b md; Buffer.add_char b '\n') q;
-  Buffer.add_string b "</blockquote>"
-
-let paragraph p b md =
-  Buffer.add_string b "<p>";
-  p.inline p b md;
-  Buffer.add_string b "</p>"
-
-let list p b (l : Block.block_list) =
-  Buffer.add_string b
-    (match l.kind with
-     | Ordered (1, _) -> "<ol>\n"
-     | Ordered (n, _) -> "<ol start=\"" ^ string_of_int n ^ "\">\n"
-     | Unordered _ -> "<ul>\n");
-  let li style prev_nl x =
-    match x, style with
-    | Block.Paragraph md, Tight ->
-        p.inline p b md;
-        false
-    | Link_def _, _ ->
-        prev_nl
-    | _ ->
-        if not prev_nl then Buffer.add_char b '\n';
-        p.block p b x;
-        Buffer.add_char b '\n';
-        true in
-  List.iter (fun x ->
-      Buffer.add_string b "<li>";
-      let _ = List.fold_left (li l.style) false x in
-      Buffer.add_string b "</li>\n"
-    ) l.blocks;
-  Buffer.add_string b
-    (match l.kind with Ordered _ -> "</ol>" | Unordered _ -> "</ul>")
-
-let code_block p b (c : Block.code_block) =
-  Buffer.add_string b "<pre";
-  p.attributes p b c.attributes;
-  match c with
-  | {label = None | Some ""; code = None; _} ->
-      Buffer.add_string b "><code></code></pre>"
-  | {label = Some language; code = None; _} ->
-      Buffer.add_string b (Printf.sprintf "><code class=\"language-%s\"></code></pre>" language)
-  | {label = None | Some ""; code = Some c; _} ->
-      Buffer.add_string b "><code>";
-      Buffer.add_string b (htmlentities c);
-      Buffer.add_string b "\n</code></pre>"
-  | {label = Some language; code = Some c; _} ->
-      Printf.bprintf b "><code class=\"language-%s\">" language;
-      Buffer.add_string b (htmlentities c);
-      Buffer.add_string b "\n</code></pre>"
-
-let thematic_break _ b =
-  Buffer.add_string b "<hr />"
-
-let html_block _ b body =
-  Buffer.add_string b body
-
-let heading p b (h : Block.heading) =
-  Buffer.add_string b (Printf.sprintf "<h%d" h.level);
-  p.attributes p b h.attributes;
-  Buffer.add_string b (Printf.sprintf ">");
-  p.inline p b h.text;
-  Buffer.add_string b (Printf.sprintf "</h%d>" h.level)
-
-let def_list p b (l : Block.def_list) =
-  Buffer.add_string b (Printf.sprintf "<dl>\n");
-  List.iter (fun {Block.term; defs} ->
-    Buffer.add_string b (Printf.sprintf "<dt>");
-    p.inline p b term;
-    Buffer.add_string b (Printf.sprintf "</dt>\n");
-    List.iter (fun s ->
-      Buffer.add_string b (Printf.sprintf "<dd>");
-      p.inline p b s;
-      Buffer.add_string b (Printf.sprintf "</dd>\n")
-    ) defs;
-  ) l.content;
-  Buffer.add_string b (Printf.sprintf "</dl>")
-
-let tag_block p b (t : Block.tag_block) =
-  let f i block =
-    p.block p b block;
-    if i < List.length t.content - 1 then
-      Buffer.add_char b '\n'
+let to_plain_text t =
+  let buf = Buffer.create 1024 in
+  let rec go = function
+    | Element (_, _, _, Some t) -> go t
+    | Text t -> Buffer.add_string buf t
+    | Concat (t1, t2) -> go t1; go t2
+    | _ -> ()
   in
-  List.iteri f t.content
+  go t;
+  Buffer.contents buf
 
-let block p b = function
+let attr {Attributes.id; classes; attributes} =
+  let a =
+    if classes <> [] then
+      ("class", String.concat " " classes) :: attributes
+    else
+      attributes
+  in
+  match id with
+  | None -> a
+  | Some s -> ("id", s) :: a
+
+let nl = Raw "\n"
+
+let rec url label destination title attrs =
+  let attrs =
+    match title with
+    | None -> attrs
+    | Some title -> ("title", title) :: attrs
+  in
+  let attrs = ("href", escape_uri destination) :: attrs in
+  elt Inline "a" attrs (Some (inline label))
+
+and img label destination title attrs =
+  let attrs =
+    match title with
+    | None -> attrs
+    | Some title -> ("title", title) :: attrs
+  in
+  let attrs =
+    ("src", escape_uri destination) ::
+    ("alt", to_plain_text (inline label)) :: attrs
+  in
+  elt Inline "img" attrs None
+
+and inline = function
+  | Inline.Concat l ->
+      concat_map inline l
+  | Text t ->
+      text t
+  | Emph {kind; style = _; content} ->
+      let name =
+        match kind with
+        | Normal -> "em"
+        | Strong -> "strong"
+      in
+      elt Inline name [] (Some (inline content))
+  | Code {level = _; attributes; content} ->
+      elt Inline "code" (attr attributes) (Some (text content))
+  | Hard_break ->
+      concat (elt Inline "br" [] None) nl
+  | Soft_break ->
+      nl
+  | Html body ->
+      raw body
+  | Link {kind = Url; def = {label; destination; title; attributes}; _} ->
+      url label destination title (attr attributes)
+  | Link {kind = Img; def = {label; destination; title; attributes}; _} ->
+      img label destination title (attr attributes)
+  | Ref {kind = Url; label; def = {destination; title; attributes; _}; _} ->
+      url label destination title (attr attributes)
+  | Ref {kind = Img; label; def = {destination; title; attributes; _}; _} ->
+      img label destination title (attr attributes)
+  | Tag {tag = _; attributes = _; content} ->
+      inline content
+
+let rec block = function
   | Block.Blockquote q ->
-      p.blockquote p b q
+      elt Block "blockquote" []
+        (Some (concat nl (concat_map block q)))
   | Paragraph md ->
-      p.paragraph p b md
-  | List l ->
-      p.list p b l
-  | Code_block c ->
-      p.code_block p b c
+      elt Block "p" [] (Some (inline md))
+  | List {kind; style; blocks} ->
+      let name =
+        match kind with
+        | Ordered _ -> "ol"
+        | Unordered _ -> "ul"
+      in
+      let attrs =
+        match kind with
+        | Ordered (n, _) when n <> 1 ->
+            ["start", string_of_int n]
+        | _ ->
+            []
+      in
+      let li t =
+        let block' t =
+          match t, style with
+          | Block.Paragraph t, Tight -> concat (inline t) nl
+          | _ -> block t
+        in
+        let nl = if style = Tight then Null else nl in
+        elt Block "li" [] (Some (concat nl (concat_map block' t))) in
+      elt Block name attrs (Some (concat nl (concat_map li blocks)))
+  | Code_block {kind = _; other = _; label; attributes; code} ->
+      let attrs =
+        match label with
+        | None -> []
+        | Some language ->
+            if String.trim language = "" then []
+            else ["class", "language-" ^ language]
+      in
+      let c =
+        match code with
+        | None ->
+            Null
+        | Some c ->
+            text c
+      in
+      elt Block "pre" (attr attributes)
+        (Some (elt Inline "code" attrs (Some c)))
   | Thematic_break ->
-      p.thematic_break p b
+      elt Block "hr" [] None
   | Html_block body ->
-      p.html_block p b body
-  | Heading h ->
-      p.heading p b h
-  | Def_list l ->
-      p.def_list p b l
-  | Tag_block t ->
-      p.tag_block p b t
+      raw body
+  | Heading {level; attributes; text} ->
+      let name =
+        match level with
+        | 1 -> "h1"
+        | 2 -> "h2"
+        | 3 -> "h3"
+        | 4 -> "h4"
+        | 5 -> "h5"
+        | 6 -> "h6"
+        | _ -> "p"
+      in
+      elt Block name (attr attributes)
+        (Some (inline text))
+  | Def_list {content} ->
+      let f {Block.term; defs} =
+        concat
+          (elt Block "dt" [] (Some (inline term)))
+          (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
+      in
+      elt Block "dl" [] (Some (concat_map f content))
+  | Tag_block {tag = _; attributes = _; content} ->
+      concat_map block content
   | Link_def _ ->
-      ()
+      Null
 
-let default_printer =
-  {
-    document;
-    attributes;
-    block;
-    paragraph;
-    blockquote;
-    list;
-    code_block;
-    thematic_break;
-    html_block;
-    heading;
-    def_list;
-    tag_block;
-    inline;
-    concat;
-    text;
-    emph;
-    code;
-    hard_break;
-    soft_break;
-    html;
-    link;
-    ref;
-    tag;
-  }
+let of_doc doc =
+  concat_map block doc
 
-let to_html ?(printer=default_printer) mds =
-  let b = Buffer.create 64 in
-  printer.document printer b mds;
-  Buffer.contents b
+let to_string t =
+  let buf = Buffer.create 1024 in
+  add_to_buffer buf t;
+  Buffer.contents buf

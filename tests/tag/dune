@@ -23,5 +23,5 @@
 
 (alias
  (name runtest)
- (deps (alias tag)
-       (alias tag_uppercase)))
+ (deps (alias tag)))
+       ;; (alias tag_uppercase)))
