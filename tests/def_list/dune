@@ -3,8 +3,8 @@
  (deps def_list.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name def_list)
+(rule
+ (alias def_list)
  (action (diff def_list.html def_list.html.out)))
 
 (alias

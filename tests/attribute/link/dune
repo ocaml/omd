@@ -3,8 +3,8 @@
  (deps attr-link-data.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-link-data)
+(rule
+ (alias attr-link-data)
  (action (diff attr-link-data.html attr-link-data.html.out)))
 
 (rule
@@ -12,8 +12,8 @@
  (deps attr-link-id.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-link-id)
+(rule
+ (alias attr-link-id)
  (action (diff attr-link-id.html attr-link-id.html.out)))
 
 (rule
@@ -21,8 +21,8 @@
  (deps attr-link-classes.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-link-classes)
+(rule
+ (alias attr-link-classes)
  (action (diff attr-link-classes.html attr-link-classes.html.out)))
 
 (alias
