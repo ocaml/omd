@@ -76,7 +76,7 @@ let rec add_to_buffer buf = function
       add_to_buffer buf t1;
       add_to_buffer buf t2
 
-let percent_encode s =
+let escape_uri s =
   let b = Buffer.create (String.length s) in
   String.iter (function
       | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
@@ -90,10 +90,16 @@ let percent_encode s =
     ) s;
   Buffer.contents b
 
-let text_of_inline ast =
-  let b = Buffer.create 101 in
-  Text.inline b ast;
-  Buffer.contents b
+let to_plain_text t =
+  let buf = Buffer.create 1024 in
+  let rec go = function
+    | Element (_, _, _, Some t) -> go t
+    | Text t -> Buffer.add_string buf t
+    | Concat (t1, t2) -> go t1; go t2
+    | _ -> ()
+  in
+  go t;
+  Buffer.contents buf
 
 let attr {Attributes.id; classes; attributes} =
   let a =
@@ -114,7 +120,7 @@ let rec url label destination title attrs =
     | None -> attrs
     | Some title -> ("title", title) :: attrs
   in
-  let attrs = ("href", percent_encode destination) :: attrs in
+  let attrs = ("href", escape_uri destination) :: attrs in
   elt Inline "a" attrs (Some (inline label))
 
 and img label destination title attrs =
@@ -124,8 +130,8 @@ and img label destination title attrs =
     | Some title -> ("title", title) :: attrs
   in
   let attrs =
-    ("src", percent_encode destination) ::
-    ("alt", text_of_inline label) :: attrs
+    ("src", escape_uri destination) ::
+    ("alt", to_plain_text (inline label)) :: attrs
   in
   elt Inline "img" attrs None
 
@@ -231,3 +237,8 @@ let rec block = function
 
 let of_doc doc =
   concat_map block doc
+
+let to_string t =
+  let buf = Buffer.create 1024 in
+  add_to_buffer buf t;
+  Buffer.contents buf

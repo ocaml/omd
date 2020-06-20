@@ -21,9 +21,7 @@ let of_string s =
   parse_inlines md
 
 let to_html doc =
-  let buf = Buffer.create 1024 in
-  Html.add_to_buffer buf (Html.of_doc doc);
-  Buffer.contents buf
+  Html.to_string (Html.of_doc doc)
 
 let to_sexp ast =
   Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)

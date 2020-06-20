@@ -14,4 +14,6 @@ type t =
 
 val of_doc : Ast.Block.t list -> t
 
-val add_to_buffer : Buffer.t -> t -> unit
+val to_string : t -> string
+
+val to_plain_text : t -> string
