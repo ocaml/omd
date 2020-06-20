@@ -3,8 +3,8 @@
  (deps tag.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name tag)
+(rule
+ (alias tag)
  (action (diff tag.html tag.html.out)))
 
 (executable
@@ -17,8 +17,8 @@
  (deps tag_uppercase.md)
  (action (with-stdout-to %{targets} (run omd_uppercase %{deps}))))
 
-(alias
- (name tag_uppercase)
+(rule
+ (alias tag_uppercase)
  (action (diff tag_uppercase.html tag_uppercase.html.out)))
 
 (alias

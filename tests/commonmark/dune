@@ -1,7 +1,0 @@
-(rule
- (targets dune.inc)
- (deps (glob_files *.md))
- (mode promote)
- (action (with-stdout-to %{targets} (run ../cow/gen.exe %{deps}))))
-
-(include dune.inc)

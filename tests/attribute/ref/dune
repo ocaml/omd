@@ -3,8 +3,8 @@
  (deps attr-ref-data.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-ref-data)
+(rule
+ (alias attr-ref-data)
  (action (diff attr-ref-data.html attr-ref-data.html.out)))
 
 (rule
@@ -12,8 +12,8 @@
  (deps attr-ref-id.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-ref-id)
+(rule
+ (alias attr-ref-id)
  (action (diff attr-ref-id.html attr-ref-id.html.out)))
 
 (rule
@@ -21,8 +21,8 @@
  (deps attr-ref-classes.md)
  (action (with-stdout-to %{targets} (run omd %{deps}))))
 
-(alias
- (name attr-ref-classes)
+(rule
+ (alias attr-ref-classes)
  (action (diff attr-ref-classes.html attr-ref-classes.html.out)))
 
 (alias
