@@ -3,3 +3,8 @@
  (public_name omd)
  (flags :standard -w -30)
  (libraries bigarray uchar))
+
+(rule
+ (with-stdout-to
+  entities.ml
+  (chdir ../tools (run ./gen_entities.exe %{dep:../tools/entities.json}))))
