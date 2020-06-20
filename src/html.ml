@@ -58,18 +58,14 @@ let add_attrs_to_buffer buf attrs =
   List.iter f attrs
 
 let rec add_to_buffer buf = function
-  | Element (Block, name, attrs, None) ->
-      Printf.bprintf buf "<%s%a />\n"
-        name add_attrs_to_buffer attrs
-  | Element (Block, name, attrs, Some c) ->
-      Printf.bprintf buf "<%s%a>\n%a\n</%s>\n"
-        name add_attrs_to_buffer attrs add_to_buffer c name
-  | Element (Inline, name, attrs, None) ->
+  | Element (eltype, name, attrs, None) ->
       Printf.bprintf buf "<%s%a />"
-        name add_attrs_to_buffer attrs
-  | Element (Inline, name, attrs, Some c) ->
+        name add_attrs_to_buffer attrs;
+      if eltype = Block then Buffer.add_char buf '\n'
+  | Element (eltype, name, attrs, Some c) ->
       Printf.bprintf buf "<%s%a>%a</%s>"
-        name add_attrs_to_buffer attrs add_to_buffer c name
+        name add_attrs_to_buffer attrs add_to_buffer c name;
+      if eltype = Block then Buffer.add_char buf '\n'
   | Text s ->
       Buffer.add_string buf (htmlentities s)
   | Raw s ->
@@ -110,6 +106,8 @@ let attr {Attributes.id; classes; attributes} =
   | None -> a
   | Some s -> ("id", s) :: a
 
+let nl = Raw "\n"
+
 let rec url label destination title attrs =
   let attrs =
     match title with
@@ -146,9 +144,9 @@ and inline = function
   | Code {level = _; attributes; content} ->
       elt Inline "code" (attr attributes) (Some (text content))
   | Hard_break ->
-      elt Inline "br" [] None
+      concat (elt Inline "br" [] None) nl
   | Soft_break ->
-      text "\n"
+      nl
   | Html body ->
       raw body
   | Link {kind = Url; def = {label; destination; title; attributes}; _} ->
@@ -165,7 +163,7 @@ and inline = function
 let rec block = function
   | Block.Blockquote q ->
       elt Block "blockquote" []
-        (Some (concat_map block q))
+        (Some (concat nl (concat_map block q)))
   | Paragraph md ->
       elt Block "p" [] (Some (inline md))
   | List {kind; style; blocks} ->
@@ -182,23 +180,16 @@ let rec block = function
             []
       in
       let li t =
-        match t, style with
-        | Block.Paragraph t, Tight ->
-            inline t
-        | Link_def _, _ ->
-            Null
-        | _ ->
-            block t
-      in
-      let li t = elt Block "li" [] (Some (concat_map li t)) in
-      elt Block name attrs (Some (concat_map li blocks))
+        let nl = if style = Tight then Null else nl in
+        elt Block "li" [] (Some (concat nl (concat_map block t))) in
+      elt Block name attrs (Some (concat nl (concat_map li blocks)))
   | Code_block {kind = _; other = _; label; attributes; code} ->
       let attrs =
         match label with
+        | None -> []
         | Some language ->
-            ["class", "language-" ^ language]
-        | None ->
-            []
+            if String.trim language = "" then []
+            else ["class", "language-" ^ language]
       in
       let c =
         match code with
@@ -214,7 +205,17 @@ let rec block = function
   | Html_block body ->
       raw body
   | Heading {level; attributes; text} ->
-      elt Block ("h" ^ string_of_int level) (attr attributes)
+      let name =
+        match level with
+        | 1 -> "h1"
+        | 2 -> "h2"
+        | 3 -> "h3"
+        | 4 -> "h4"
+        | 5 -> "h5"
+        | 6 -> "h6"
+        | _ -> "p"
+      in
+      elt Block name (attr attributes)
         (Some (inline text))
   | Def_list {content} ->
       let f {Block.term; defs} =
