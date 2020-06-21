@@ -1,25 +1,12 @@
-module Attributes = struct
-  type t =
-    {
-      id: string option;
-      classes: string list;
-      attributes: (string * string) list;
-    }
-
-  let empty =
-    {
-      id = None;
-      classes = [];
-      attributes = [];
-    }
-end
+type attribute =
+  string * string
 
 type 'a link_def =
   {
     label: 'a;
     destination: string;
     title: string option;
-    attributes: Attributes.t;
+    attributes: attribute list;
   }
 
 type block_list_kind =
@@ -58,14 +45,14 @@ module MakeBlock (Inline : T) = struct
       label: string option;
       other: string option;
       code: string option;
-      attributes: Attributes.t;
+      attributes: attribute list;
     }
 
   and heading =
     {
       level: int;
       text: Inline.t;
-      attributes: Attributes.t;
+      attributes: attribute list;
     }
 
   and def_elt =
@@ -83,7 +70,7 @@ module MakeBlock (Inline : T) = struct
     {
       tag: string;
       content: t list;
-      attributes: Attributes.t
+      attributes: attribute list;
     }
 
   and t =
@@ -133,7 +120,7 @@ module Inline = struct
     {
       level: int;
       content: string;
-      attributes: Attributes.t;
+      attributes: attribute list;
     }
 
   and link =
@@ -153,7 +140,7 @@ module Inline = struct
     {
       tag: string;
       content: t;
-      attributes: Attributes.t
+      attributes: attribute list;
     }
 
   and t =

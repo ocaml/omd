@@ -263,15 +263,15 @@ type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string * Attributes.t
+  | Latx_heading of int * string * attribute list
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * code_block_kind * (string * string) * Attributes.t
+  | Lfenced_code of int * int * code_block_kind * (string * string) * attribute list
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
   | Llist_item of block_list_kind * int * Sub.t
   | Lparagraph
   | Ldef_list of string
-  | Ltag of int * int * string * Attributes.t
+  | Ltag of int * int * string * attribute list
 
 let sp3 s =
   match Sub.head s with
@@ -342,26 +342,32 @@ let is_punct = function
   | _ -> false
 
 let parse_attributes = function
-  | None -> Attributes.empty
+  | None -> []
   | Some s ->
       let attributes = String.split_on_char ' ' s in
-      let f acc s =
-        if s <> "" then
-          begin
-            match s.[0] with
-            | '#' -> {acc with Attributes.id = Some (String.sub s 1 (String.length s - 1))}
-            | '.' -> {acc with classes = (String.sub s 1 (String.length s - 1))::acc.classes}
-            | _ ->
-                let attr = String.split_on_char '=' s in
-                match attr with
-                | [] -> acc
-                | h::t -> {acc with attributes = (h, String.concat "=" t)::acc.attributes}
-          end
-        else
-          acc
+      let f (id, classes, acc) s =
+        if s = "" then (id, classes, acc)
+        else begin
+          match s.[0] with
+          | '#' ->
+              (Some (String.sub s 1 (String.length s - 1)), classes, acc)
+          | '.' ->
+              (id, String.sub s 1 (String.length s - 1) :: classes, acc)
+          | _ ->
+              let attr = String.split_on_char '=' s in
+              match attr with
+              | [] -> (id, classes, acc)
+              | h::t -> (id, classes, (h, String.concat "=" t) :: acc)
+        end
       in
-      let attr = List.fold_left f Attributes.empty attributes in
-      { attr with classes=List.rev attr.classes; attributes=List.rev attr.attributes }
+      let id, classes, acc = List.fold_left f (None, [], []) attributes in
+      let acc = List.rev acc in
+      let acc =
+        if classes <> [] then ("class", String.concat " " (List.rev classes)) :: acc
+        else acc in
+      match id with
+      | Some id -> ("id", id) :: acc
+      | None -> acc
 
 let attribute_string s =
   let buf = Buffer.create 64 in
@@ -427,7 +433,7 @@ let atx_heading s =
           | Some '}' ->
               attribute_string s
           | _ ->
-              s, Attributes.empty
+              s, []
         in
         let s = ws ~rev:() (ws s) in
         let rec loop t =
@@ -443,7 +449,7 @@ let atx_heading s =
     | Some _ ->
         raise Fail
     | None ->
-        Latx_heading (n, Sub.to_string s, Attributes.empty)
+        Latx_heading (n, Sub.to_string s, [])
   in
   loop 0 s
 
@@ -506,7 +512,7 @@ let info_string c s =
     | Some '}' ->
         attribute_string s
     | _ ->
-        s, Attributes.empty
+        s, []
   in
   let s = ws ~rev:() (ws s) in
   let rec loop s =
@@ -776,7 +782,7 @@ let tag_string s =
     | Some '}' ->
         attribute_string s
     | _ ->
-        s, Attributes.empty
+        s, []
   in
   let s = ws ~rev:() (ws s) in
   let rec loop s =
@@ -890,7 +896,7 @@ let inline_attribute_string s =
         None
   in
   let attr = parse_attributes a in
-  if attr = Attributes.empty
+  if attr = []
   then
     set_pos s ppos;
   attr
@@ -1554,7 +1560,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None; attributes = Attributes.empty}
+      {Ast.label; destination; title = None; attributes = []}
   | _ ->
       raise Fail
 

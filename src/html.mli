@@ -1,5 +1,4 @@
-type attribute =
-  string * string
+open Ast
 
 type element_type =
   | Inline
@@ -12,7 +11,7 @@ type t =
   | Null
   | Concat of t * t
 
-val of_doc : Ast.Block.t list -> t
+val of_doc : Block.t list -> t
 
 val to_string : t -> string
 
