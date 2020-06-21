@@ -7,11 +7,11 @@ module Pre = struct
     | Rblockquote of t
     | Rlist of block_list_kind * block_list_style * bool * int * Raw.t list list * t
     | Rparagraph of string list
-    | Rfenced_code of int * int * code_block_kind * (string * string) * string list * Attributes.t
+    | Rfenced_code of int * int * code_block_kind * (string * string) * string list * attribute list
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rdef_list of string * string list
-    | Rtag of int * int * string * t * Attributes.t
+    | Rtag of int * int * string * t * attribute list
     | Rempty
 
   and t =
@@ -64,7 +64,7 @@ module Pre = struct
         Tag_block {tag; content = close state; attributes} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        Code_block {kind = None; label = None; other = None; code = Some (concat (loop l)); attributes = Attributes.empty} :: blocks
+        Code_block {kind = None; label = None; other = None; code = Some (concat (loop l)); attributes = []} :: blocks
     | Rhtml (_, l) ->
         Html_block (concat l) :: blocks
     | Rempty ->
@@ -113,7 +113,7 @@ module Pre = struct
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
-        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = Attributes.empty}:: blocks; next = Rempty}
+        {blocks = Heading {level; text= String.trim (String.concat "\n" (List.rev lines)); attributes = []}:: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _) when num' >= num && q = q1 ->

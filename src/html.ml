@@ -1,8 +1,5 @@
 open Ast
 
-type attribute =
-  string * string
-
 type element_type =
   | Inline
   | Block
@@ -101,17 +98,6 @@ let to_plain_text t =
   go t;
   Buffer.contents buf
 
-let attr {Attributes.id; classes; attributes} =
-  let a =
-    if classes <> [] then
-      ("class", String.concat " " classes) :: attributes
-    else
-      attributes
-  in
-  match id with
-  | None -> a
-  | Some s -> ("id", s) :: a
-
 let nl = Raw "\n"
 
 let rec url label destination title attrs =
@@ -148,7 +134,7 @@ and inline = function
       in
       elt Inline name [] (Some (inline content))
   | Code {level = _; attributes; content} ->
-      elt Inline "code" (attr attributes) (Some (text content))
+      elt Inline "code" attributes (Some (text content))
   | Hard_break ->
       concat (elt Inline "br" [] None) nl
   | Soft_break ->
@@ -156,13 +142,13 @@ and inline = function
   | Html body ->
       raw body
   | Link {kind = Url; def = {label; destination; title; attributes}; _} ->
-      url label destination title (attr attributes)
+      url label destination title attributes
   | Link {kind = Img; def = {label; destination; title; attributes}; _} ->
-      img label destination title (attr attributes)
+      img label destination title attributes
   | Ref {kind = Url; label; def = {destination; title; attributes; _}; _} ->
-      url label destination title (attr attributes)
+      url label destination title attributes
   | Ref {kind = Img; label; def = {destination; title; attributes; _}; _} ->
-      img label destination title (attr attributes)
+      img label destination title attributes
   | Tag {tag = _; attributes = _; content} ->
       inline content
 
@@ -209,7 +195,7 @@ let rec block = function
         | Some c ->
             text c
       in
-      elt Block "pre" (attr attributes)
+      elt Block "pre" attributes
         (Some (elt Inline "code" attrs (Some c)))
   | Thematic_break ->
       elt Block "hr" [] None
@@ -226,7 +212,7 @@ let rec block = function
         | 6 -> "h6"
         | _ -> "p"
       in
-      elt Block name (attr attributes)
+      elt Block name attributes
         (Some (inline text))
   | Def_list {content} ->
       let f {Block.term; defs} =
