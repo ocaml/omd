@@ -25,12 +25,12 @@ let disabled =
   ]
 
 let with_open_in fn f =
-  let ic = open_in_bin fn in
+  let ic = open_in fn in
   Fun.protect ~finally:(fun () -> close_in_noerr ic)
     (fun () -> f ic)
 
 let with_open_out fn f =
-  let oc = open_out_bin fn in
+  let oc = open_out fn in
   Fun.protect ~finally:(fun () -> close_out_noerr oc)
     (fun () -> f oc)
 
