@@ -1,5 +1,3 @@
-module Pre = Block.Pre
-
 include Ast
 
 type t = Block.t list
@@ -13,11 +11,11 @@ let parse_inlines (md : Raw.t list) =
   List.map (Mapper.map (parse_inline defs)) md
 
 let of_channel ic =
-  let md = Pre.of_channel ic in
+  let md = Blocks.of_channel ic in
   parse_inlines md
 
 let of_string s =
-  let md = Pre.of_string s in
+  let md = Blocks.of_string s in
   parse_inlines md
 
 let to_html doc =
