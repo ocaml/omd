@@ -149,8 +149,6 @@ and inline = function
       url label destination title attributes
   | Ref {kind = Img; label; def = {destination; title; attributes; _}; _} ->
       img label destination title attributes
-  | Tag {tag = _; attributes = _; content} ->
-      inline content
 
 let rec block = function
   | Block.Blockquote q ->
@@ -221,8 +219,6 @@ let rec block = function
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
       elt Block "dl" [] (Some (concat_map f content))
-  | Tag_block {tag = _; attributes = _; content} ->
-      concat_map block content
   | Link_def _ ->
       Null
 

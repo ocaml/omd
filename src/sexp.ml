@@ -34,8 +34,6 @@ and inline = function
       Atom "img"
   | Ref {kind = Img; label; def; _} ->
       List [Atom "img-ref"; inline label; link_def atom def]
-  | Tag {tag; content; _} ->
-      List [Atom "tag"; Atom tag; inline content]
 
 let rec block = function
   | Block.Paragraph x ->
@@ -64,8 +62,6 @@ let rec block = function
       List [Atom "def-list";
             List (List.map (fun elt -> List [inline elt.Block.term;
                                              List (List.map inline elt.defs)]) content)]
-  | Tag_block {tag; content; _} ->
-      List [Atom "tag"; Atom tag; List (List.map block content)]
 
 let create ast =
   List (List.map block ast)

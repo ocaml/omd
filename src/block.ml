@@ -11,7 +11,6 @@ module Pre = struct
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
     | Rdef_list of string * string list
-    | Rtag of int * int * string * t * attribute list
     | Rempty
 
   and t =
@@ -60,8 +59,6 @@ module Pre = struct
           | b -> [], b
         in
         Def_list {content = l @ [{ Raw.term; defs = List.rev defs}]} :: blocks
-    | Rtag (_, _, tag, state, attributes) ->
-        Tag_block {tag; content = close state; attributes} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
         Code_block {kind = None; label = None; other = None; code = Some (concat (loop l)); attributes = []} :: blocks
@@ -99,14 +96,12 @@ module Pre = struct
         {blocks; next = Rindented_code [Sub.to_string s]}
     | Rempty, Llist_item (kind, indent, s) ->
         {blocks; next = Rlist (kind, Tight, false, indent, [], process empty s)}
-    | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _ | Ltag (_, _, "", _)) ->
+    | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _) ->
         {blocks; next = Rparagraph [Sub.to_string s]}
     | Rparagraph [h], Ldef_list def ->
         {blocks; next = Rdef_list (h, [def])}
     | Rdef_list (term, defs), Ldef_list def ->
         {blocks; next = Rdef_list (term, def::defs)}
-    | Rempty, Ltag (ind, n, tag, attributes) ->
-        {blocks; next = Rtag (ind, n, tag, empty, attributes)}
     | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
@@ -131,17 +126,6 @@ module Pre = struct
         {blocks; next = Rdef_list (term, (d ^ "\n" ^ (Sub.to_string s))::defs)}
     | Rdef_list _, _ ->
         process {blocks = close {blocks; next}; next = Rempty} s
-    | Rtag (_, n, _, _, _), Ltag (_, n', "", _) when n' >= n ->
-        {blocks = close {blocks; next}; next = Rempty}
-    | Rtag (ind, n, tag, state, attributes), _ ->
-        let s =
-          let ind = min (Parser.indent s) ind in
-          if ind > 0 then
-            Sub.offset ind s
-          else
-            s
-        in
-        {blocks; next = Rtag (ind, n, tag, process state s, attributes)}
     | Rindented_code lines, Lindented_code s ->
         {blocks; next = Rindented_code (Sub.to_string s :: lines)}
     | Rindented_code lines, Lempty ->
@@ -172,7 +156,6 @@ module Pre = struct
             | Rparagraph [_]
             | Rfenced_code (_, _, _, _, [], _)
             | Rindented_code [_]
-            | Rtag (_, _, _, _, _)
             | Rhtml (_, [_]) -> true
             | _ -> false
           in
