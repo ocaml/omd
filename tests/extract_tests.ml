@@ -131,10 +131,22 @@ let generate_test_files () =
   in
   List.iter f tests
 
+let test_tokenizer () =
+  List.iter (fun {example; markdown; _} ->
+      let filename = Printf.sprintf "spec-%03d.md" example in
+      let markdown' = Token.parse_string ~filename markdown |> Token.unparse in
+      if markdown <> markdown' then begin
+        Printf.eprintf "Example %s failed!\n%!" filename;
+        Printf.eprintf "===\n%s====\n%s====\n%!" markdown markdown';
+        exit 2
+      end
+    ) tests
+
 let spec =
   [
     "-generate-test-files", Arg.Unit generate_test_files, " Generate test files";
     "-write-dune-file", Arg.Unit write_dune_file, " Write dune file";
+    "-test-tokenizer", Arg.Unit test_tokenizer, " Test tokenizer";
   ]
 
 let () =

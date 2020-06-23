@@ -1,8 +1,9 @@
+(ocamllex token)
+
 (library
  (name omd)
  (public_name omd)
  (flags :standard -w -30))
-
 
 (rule
  (with-stdout-to

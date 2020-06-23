@@ -1,7 +1,11 @@
+(copy_files# ../src/token.ml{l,i})
+
+(ocamllex token)
+
 (executable
  (name extract_tests)
  (libraries str)
- (modules extract_tests))
+ (modules extract_tests token))
 
 (rule
  (with-stdout-to dune.inc.new (run ./extract_tests.exe -write-dune-file)))
@@ -16,3 +20,7 @@
 (rule
  (alias gen)
  (action (diff dune.inc dune.inc.new)))
+
+(rule
+ (alias runtest)
+ (action (run ./extract_tests.exe -test-tokenizer)))
