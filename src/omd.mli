@@ -51,13 +51,6 @@ module Inline : sig
       def: string link_def;
     }
 
-  and tag =
-    {
-      tag: string;
-      content: t;
-      attributes: attribute list;
-    }
-
   and t =
     | Concat of t list
     | Text of string
@@ -68,7 +61,6 @@ module Inline : sig
     | Link of link
     | Ref of ref
     | Html of string
-    | Tag of tag
 end
 
 type block_list_kind =
@@ -118,13 +110,6 @@ module Block : sig
       content: def_elt list
     }
 
-  and tag_block =
-    {
-      tag: string;
-      content: t list;
-      attributes: attribute list;
-    }
-
   and t =
     | Paragraph of Inline.t
     | List of block_list
@@ -135,7 +120,6 @@ module Block : sig
     | Html_block of string
     | Link_def of string link_def
     | Def_list of def_list
-    | Tag_block of tag_block
 end
 
 type t = Block.t list

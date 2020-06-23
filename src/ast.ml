@@ -66,13 +66,6 @@ module MakeBlock (Inline : T) = struct
       content: def_elt list
     }
 
-  and tag_block =
-    {
-      tag: string;
-      content: t list;
-      attributes: attribute list;
-    }
-
   and t =
     | Paragraph of Inline.t
     | List of block_list
@@ -83,12 +76,11 @@ module MakeBlock (Inline : T) = struct
     | Html_block of string
     | Link_def of string link_def
     | Def_list of def_list
-    | Tag_block of tag_block
 
   let defs ast =
     let rec loop acc = function
       | List l -> List.fold_left (List.fold_left loop) acc l.blocks
-      | Blockquote l | Tag_block {content = l; _} -> List.fold_left loop acc l
+      | Blockquote l -> List.fold_left loop acc l
       | Paragraph _ | Thematic_break | Heading _
       | Def_list _ | Code_block _ | Html_block _ -> acc
       | Link_def def -> def :: acc
@@ -136,13 +128,6 @@ module Inline = struct
       def: string link_def;
     }
 
-  and tag =
-    {
-      tag: string;
-      content: t;
-      attributes: attribute list;
-    }
-
   and t =
     | Concat of t list
     | Text of string
@@ -153,7 +138,6 @@ module Inline = struct
     | Link of link
     | Ref of ref
     | Html of string
-    | Tag of tag
 end
 
 module Raw = MakeBlock (String)
@@ -177,8 +161,6 @@ module MakeMapper (Src : T) (Dst : T) = struct
     | Def_list {content} ->
         let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
         Def_list {content = List.map f content}
-    | Tag_block {tag; content; attributes} ->
-        Tag_block {tag; content = List.map (map f) content; attributes}
     | Code_block {kind; label; other; code; attributes} ->
         Code_block {kind; label; other; code; attributes}
     | Html_block x ->
