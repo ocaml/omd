@@ -95,7 +95,6 @@ type link_kind =
 module Inline = struct
   type code =
     {
-      level: int;
       content: string;
       attributes: attribute list;
     }

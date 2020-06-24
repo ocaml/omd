@@ -130,7 +130,7 @@ and inline = function
       elt Inline "em" [] (Some (inline il))
   | Strong il ->
       elt Inline "strong" [] (Some (inline il))
-  | Code {level = _; attributes; content} ->
+  | Code {attributes; content} ->
       elt Inline "code" attributes (Some (text content))
   | Hard_break ->
       concat (elt Inline "br" [] None) nl

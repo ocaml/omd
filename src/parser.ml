@@ -1670,8 +1670,7 @@ let rec inline defs st =
                   else
                     content
                 in
-                loop (Pre.R (Code {level = n;
-                                   content;
+                loop (Pre.R (Code {content;
                                    attributes = inline_attribute_string st}) :: acc) st
               in
               let rec loop3 start m =

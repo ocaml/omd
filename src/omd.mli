@@ -18,7 +18,6 @@ type link_kind =
 module Inline : sig
   type code =
     {
-      level: int;
       content: string;
       attributes: attribute list;
     }
