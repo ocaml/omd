@@ -28,13 +28,6 @@ module Inline : sig
       def: t link_def;
     }
 
-  and ref =
-    {
-      kind: link_kind;
-      label: t;
-      def: string link_def;
-    }
-
   and t =
     | Concat of t list
     | Text of string
@@ -44,7 +37,6 @@ module Inline : sig
     | Hard_break
     | Soft_break
     | Link of link
-    | Ref of ref
     | Html of string
 end
 

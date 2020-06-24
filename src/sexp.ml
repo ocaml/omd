@@ -28,14 +28,10 @@ and inline = function
       Atom "soft-break"
   | Link {kind = Url; def; _} ->
       List [Atom "url"; link_def inline def]
-  | Ref {kind = Url; label; def; _} ->
-      List [Atom "url-ref"; inline label; link_def atom def]
   | Html s ->
       List [Atom "html"; Atom s]
   | Link {kind = Img; _} ->
       Atom "img"
-  | Ref {kind = Img; label; def; _} ->
-      List [Atom "img-ref"; inline label; link_def atom def]
 
 let rec block = function
   | Block.Paragraph x ->

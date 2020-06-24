@@ -1583,7 +1583,7 @@ let rec inline defs st =
           let s = normalize lab' in
           match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
           | Some def ->
-              loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
+              loop (Pre.R (Link {kind; def = {def with label = lab1}}) :: text acc) st
           | None ->
               if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
@@ -1756,7 +1756,7 @@ let rec inline defs st =
                       let s = normalize lab in
                       begin match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
                       | Some def ->
-                          loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
+                          loop (Pre.R (Link {kind = k; def = {def with label}}) :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
@@ -1776,7 +1776,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Link {kind = Url; _} | Ref {kind = Url; _}) as x :: acc' ->
+          | Pre.R (Link {kind = Url; _}) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'

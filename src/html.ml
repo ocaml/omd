@@ -142,10 +142,6 @@ and inline = function
       url label destination title attributes
   | Link {kind = Img; def = {label; destination; title; attributes}; _} ->
       img label destination title attributes
-  | Ref {kind = Url; label; def = {destination; title; attributes; _}; _} ->
-      url label destination title attributes
-  | Ref {kind = Img; label; def = {destination; title; attributes; _}; _} ->
-      img label destination title attributes
 
 let rec block = function
   | Block.Blockquote q ->
