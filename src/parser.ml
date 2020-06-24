@@ -1037,8 +1037,11 @@ module Pre = struct
                 if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
               in
               let r =
-                let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph {kind; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
+                let il = concat (List.map to_r (parse_emph (List.rev acc))) in
+                if n1 >= 2 && n2 >= 2 then
+                  R (Strong il) :: xs
+                else
+                  R (Emph il) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then

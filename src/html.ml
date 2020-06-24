@@ -126,13 +126,10 @@ and inline = function
       concat_map inline l
   | Text t ->
       text t
-  | Emph {kind; content} ->
-      let name =
-        match kind with
-        | Normal -> "em"
-        | Strong -> "strong"
-      in
-      elt Inline name [] (Some (inline content))
+  | Emph il ->
+      elt Inline "em" [] (Some (inline il))
+  | Strong il ->
+      elt Inline "strong" [] (Some (inline il))
   | Code {level = _; attributes; content} ->
       elt Inline "code" attributes (Some (text content))
   | Hard_break ->

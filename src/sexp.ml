@@ -16,8 +16,10 @@ and inline = function
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
       Atom s
-  | Emph e ->
-      List [Atom "emph"; inline e.content]
+  | Emph il ->
+      List [Atom "emph"; inline il]
+  | Strong il ->
+      List [Atom "strong"; inline il]
   | Code _ ->
       Atom "code"
   | Hard_break ->

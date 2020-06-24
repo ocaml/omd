@@ -92,18 +92,8 @@ type link_kind =
   | Img
   | Url
 
-type emph_kind =
-  | Normal
-  | Strong
-
 module Inline = struct
-  type emph =
-    {
-      kind: emph_kind;
-      content: t;
-    }
-
-  and code =
+  type code =
     {
       level: int;
       content: string;
@@ -126,7 +116,8 @@ module Inline = struct
   and t =
     | Concat of t list
     | Text of string
-    | Emph of emph
+    | Emph of t
+    | Strong of t
     | Code of code
     | Hard_break
     | Soft_break
