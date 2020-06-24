@@ -8,7 +8,7 @@ let mk ?(attr = []) desc =
 module Pre = struct
   type container =
     | Rblockquote of t
-    | Rlist of list_type * list_spacing * bool * int * Raw.t list list * t
+    | Rlist of list_type * list_spacing * bool * int * Raw.block list list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * Parser.code_block_kind * (string * string) * string list * attributes
     | Rindented_code of string list
@@ -18,7 +18,7 @@ module Pre = struct
 
   and t =
     {
-      blocks: Raw.t list;
+      blocks: Raw.block list;
       next: container;
     }
 

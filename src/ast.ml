@@ -26,11 +26,11 @@ module type T = sig
   type t
 end
 
-module MakeBlock (Inline : T) = struct
+module MakeBlock (I : T) = struct
   type def_elt =
     {
-      term: Inline.t;
-      defs: Inline.t list;
+      term: I.t;
+      defs: I.t list;
     }
 
   and def_list =
@@ -38,18 +38,18 @@ module MakeBlock (Inline : T) = struct
       content: def_elt list
     }
 
-  and t =
+  and block =
     {
-      bl_desc: t_desc;
+      bl_desc: block_desc;
       bl_attributes: attributes;
     }
 
-  and t_desc =
-    | Paragraph of Inline.t
-    | List of list_type * list_spacing * t list list
-    | Blockquote of t list
+  and block_desc =
+    | Paragraph of I.t
+    | List of list_type * list_spacing * block list list
+    | Blockquote of block list
     | Thematic_break
-    | Heading of int * Inline.t
+    | Heading of int * I.t
     | Code_block of string * string
     | Html_block of string
     | Link_def of string link_def
@@ -67,35 +67,35 @@ module MakeBlock (Inline : T) = struct
     List.rev (List.fold_left loop [] ast)
 end
 
-module Inline = struct
-  type t =
-    {
-      il_desc: t_desc;
-      il_attributes: attributes;
-    }
+type inline =
+  {
+    il_desc: inline_desc;
+    il_attributes: attributes;
+  }
 
-  and t_desc =
-    | Concat of t list
-    | Text of string
-    | Emph of t
-    | Strong of t
-    | Code of string
-    | Hard_break
-    | Soft_break
-    | Link of t link_def
-    | Image of t link_def
-    | Html of string
-end
+and inline_desc =
+  | Concat of inline list
+  | Text of string
+  | Emph of inline
+  | Strong of inline
+  | Code of string
+  | Hard_break
+  | Soft_break
+  | Link of inline link_def
+  | Image of inline link_def
+  | Html of string
 
 module Raw = MakeBlock (String)
 
-module Block = MakeBlock (Inline)
+module Inline = struct type t = inline end
+
+include MakeBlock (Inline)
 
 module MakeMapper (Src : T) (Dst : T) = struct
   module SrcBlock = MakeBlock(Src)
   module DstBlock = MakeBlock(Dst)
 
-  let rec map (f : Src.t -> Dst.t) : SrcBlock.t -> DstBlock.t =
+  let rec map (f : Src.t -> Dst.t) : SrcBlock.block -> DstBlock.block =
     fun {bl_desc; bl_attributes} ->
     let bl_desc =
       match bl_desc with

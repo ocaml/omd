@@ -969,7 +969,7 @@ let entity buf st =
       Buffer.add_string buf (range st p (pos st - p))
 
 let mk ?(attr = []) desc =
-  {Ast.Inline.il_desc = desc; il_attributes = attr}
+  {Ast.il_desc = desc; il_attributes = attr}
 
 module Pre = struct
   type delim =
@@ -989,11 +989,11 @@ module Pre = struct
     | Bang_left_bracket
     | Left_bracket of link_kind
     | Emph of delim * delim * emph_style * int
-    | R of Inline.t
+    | R of inline
 
   let concat = function
     | [x] -> x
-    | l -> mk (Inline.Concat l)
+    | l -> mk (Concat l)
 
   let left_flanking = function
     | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
@@ -1030,7 +1030,7 @@ module Pre = struct
     | _ -> Other
 
   let to_r = function
-    | Bang_left_bracket -> mk (Inline.Text "![")
+    | Bang_left_bracket -> mk (Text "![")
     | Left_bracket Img -> mk (Text "![")
     | Left_bracket Url -> mk (Text "[")
     | Emph (_, _, Star, n) -> mk (Text (String.make n '*'))
@@ -1596,7 +1596,7 @@ let rec inline defs st =
           | Some (def, attr) ->
               let r =
                 let def = {def with label = lab1} in
-                match kind with Pre.Img -> Inline.Image def | Url -> Link def
+                match kind with Pre.Img -> Image def | Url -> Link def
               in
               loop (Pre.R (mk ~attr r) :: text acc) st
           | None ->
@@ -1635,7 +1635,7 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            let def = {def with label = mk (Inline.Text def.label)} in
+            let def = {def with label = mk (Text def.label)} in
             let attr = inline_attribute_string st in
             loop (Pre.R (mk ~attr (Link def)) :: text acc) st
         | exception Fail ->
@@ -1761,7 +1761,7 @@ let rec inline defs st =
                         let label = Pre.parse_emph xs in
                         let def = {label; destination; title} in
                         match k with
-                        | Img -> Inline.Image def
+                        | Img -> Image def
                         | Url -> Link def
                       in
                       let attr = inline_attribute_string st in
@@ -1778,7 +1778,7 @@ let rec inline defs st =
                       begin match List.find_opt (fun ({label; _}, _) -> label = s) defs with
                       | Some (def, attr) ->
                           let def = {def with label} in
-                          let r = match k with Img -> Inline.Image def | Url -> Link def in
+                          let r = match k with Img -> Image def | Url -> Link def in
                           loop (Pre.R (mk ~attr r) :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';

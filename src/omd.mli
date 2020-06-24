@@ -10,25 +10,23 @@ type 'a link_def =
     title: string option;
   }
 
-module Inline : sig
-  type t =
-    {
-      il_desc: t_desc;
-      il_attributes: attributes;
-    }
+type inline =
+  {
+    il_desc: inline_desc;
+    il_attributes: attributes;
+  }
 
-  and t_desc =
-    | Concat of t list
-    | Text of string
-    | Emph of t
-    | Strong of t
-    | Code of string
-    | Hard_break
-    | Soft_break
-    | Link of t link_def
-    | Image of t link_def
-    | Html of string
-end
+and inline_desc =
+  | Concat of inline list
+  | Text of string
+  | Emph of inline
+  | Strong of inline
+  | Code of string
+  | Hard_break
+  | Soft_break
+  | Link of inline link_def
+  | Image of inline link_def
+  | Html of string
 
 type list_type =
   | Ordered of int * char
@@ -38,43 +36,41 @@ type list_spacing =
   | Loose
   | Tight
 
-module Block : sig
-  type def_elt =
-    {
-      term: Inline.t;
-      defs: Inline.t list;
-    }
+type def_elt =
+  {
+    term: inline;
+    defs: inline list;
+  }
 
-  and def_list =
-    {
-      content: def_elt list
-    }
+and def_list =
+  {
+    content: def_elt list
+  }
 
-  and t =
-    {
-      bl_desc: t_desc;
-      bl_attributes: attributes;
-    }
+and block =
+  {
+    bl_desc: block_desc;
+    bl_attributes: attributes;
+  }
 
-  and t_desc =
-    | Paragraph of Inline.t
-    | List of list_type * list_spacing * t list list
-    | Blockquote of t list
-    | Thematic_break
-    | Heading of int * Inline.t
-    | Code_block of string * string
-    | Html_block of string
-    | Link_def of string link_def
-    | Def_list of def_list
-end
+and block_desc =
+  | Paragraph of inline
+  | List of list_type * list_spacing * block list list
+  | Blockquote of block list
+  | Thematic_break
+  | Heading of int * inline
+  | Code_block of string * string
+  | Html_block of string
+  | Link_def of string link_def
+  | Def_list of def_list
 
-type t = Block.t list
+type doc = block list
 (** A markdown document *)
 
-val of_channel: in_channel -> t
+val of_channel: in_channel -> doc
 
-val of_string: string -> t
+val of_string: string -> doc
 
-val to_html: t -> string
+val to_html: doc -> string
 
-val to_sexp: t -> string
+val to_sexp: doc -> string

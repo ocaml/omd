@@ -121,9 +121,9 @@ and img label destination title attrs =
   in
   elt Inline "img" attrs None
 
-and inline {Inline.il_desc; il_attributes = attr} =
+and inline {il_desc; il_attributes = attr} =
   match il_desc with
-  | Inline.Concat l ->
+  | Concat l ->
       concat_map inline l
   | Text t ->
       text t
@@ -144,9 +144,9 @@ and inline {Inline.il_desc; il_attributes = attr} =
   | Image {label; destination; title} ->
       img label destination title attr
 
-let rec block {Block.bl_desc; bl_attributes = attr} =
+let rec block {bl_desc; bl_attributes = attr} =
   match bl_desc with
-  | Block.Blockquote q ->
+  | Blockquote q ->
       elt Block "blockquote" attr
         (Some (concat nl (concat_map block q)))
   | Paragraph md ->
@@ -162,8 +162,8 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
       in
       let li t =
         let block' t =
-          match t.Block.bl_desc, sp with
-          | Block.Paragraph t, Tight -> concat (inline t) nl
+          match t.bl_desc, sp with
+          | Paragraph t, Tight -> concat (inline t) nl
           | _ -> block t
         in
         let nl = if sp = Tight then Null else nl in
@@ -194,7 +194,7 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
       in
       elt Block name attr (Some (inline text))
   | Def_list {content} ->
-      let f {Block.term; defs} =
+      let f {term; defs} =
         concat
           (elt Block "dt" [] (Some (inline term)))
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)

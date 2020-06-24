@@ -11,7 +11,7 @@ type t =
   | Null
   | Concat of t * t
 
-val of_doc : Block.t list -> t
+val of_doc : block list -> t
 
 val to_string : t -> string
 
