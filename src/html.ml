@@ -5,7 +5,7 @@ type element_type =
   | Block
 
 type t =
-  | Element of element_type * string * attribute list * t option
+  | Element of element_type * string * attributes * t option
   | Text of string
   | Raw of string
   | Null
@@ -121,69 +121,71 @@ and img label destination title attrs =
   in
   elt Inline "img" attrs None
 
-and inline = function
+and inline {Inline.il_desc; il_attributes = attr} =
+  match il_desc with
   | Inline.Concat l ->
       concat_map inline l
   | Text t ->
       text t
   | Emph il ->
-      elt Inline "em" [] (Some (inline il))
+      elt Inline "em" attr (Some (inline il))
   | Strong il ->
-      elt Inline "strong" [] (Some (inline il))
-  | Code {attributes; content} ->
-      elt Inline "code" attributes (Some (text content))
+      elt Inline "strong" attr (Some (inline il))
+  | Code {content} ->
+      elt Inline "code" attr (Some (text content))
   | Hard_break ->
-      concat (elt Inline "br" [] None) nl
+      concat (elt Inline "br" attr None) nl
   | Soft_break ->
       nl
   | Html body ->
       raw body
-  | Link {label; destination; title; attributes} ->
-      url label destination title attributes
-  | Image {label; destination; title; attributes} ->
-      img label destination title attributes
+  | Link {label; destination; title} ->
+      url label destination title attr
+  | Image {label; destination; title} ->
+      img label destination title attr
 
-let rec block = function
+let rec block {Block.bl_desc; bl_attributes = attr} =
+  match bl_desc with
   | Block.Blockquote q ->
-      elt Block "blockquote" []
+      elt Block "blockquote" attr
         (Some (concat nl (concat_map block q)))
   | Paragraph md ->
-      elt Block "p" [] (Some (inline md))
+      elt Block "p" attr (Some (inline md))
   | List {kind; style; blocks} ->
       let name =
         match kind with
         | Ordered _ -> "ol"
         | Unordered _ -> "ul"
       in
-      let attrs =
+      let attr =
         match kind with
         | Ordered (n, _) when n <> 1 ->
-            ["start", string_of_int n]
+            ("start", string_of_int n) :: attr
         | _ ->
-            []
+            attr
       in
       let li t =
         let block' t =
-          match t, style with
+          match t.Block.bl_desc, style with
           | Block.Paragraph t, Tight -> concat (inline t) nl
           | _ -> block t
         in
         let nl = if style = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t))) in
-      elt Block name attrs (Some (concat nl (concat_map li blocks)))
-  | Code_block {label; attributes; code} ->
-      let attrs =
+      elt Block name attr (Some (concat nl (concat_map li blocks)))
+  | Code_block {label; code} ->
+      let code_attr =
         if String.trim label = "" then []
         else ["class", "language-" ^ label]
       in
       let c = text code in
-      elt Block "pre" attributes
-        (Some (elt Inline "code" attrs (Some c)))
+      elt Block "pre" attr
+        (Some (elt Inline "code" code_attr (Some c)))
   | Thematic_break ->
-      elt Block "hr" [] None
+      elt Block "hr" attr None
   | Html_block body ->
       raw body
-  | Heading {level; attributes; text} ->
+  | Heading {level; text} ->
       let name =
         match level with
         | 1 -> "h1"
@@ -194,15 +196,14 @@ let rec block = function
         | 6 -> "h6"
         | _ -> "p"
       in
-      elt Block name attributes
-        (Some (inline text))
+      elt Block name attr (Some (inline text))
   | Def_list {content} ->
       let f {Block.term; defs} =
         concat
           (elt Block "dt" [] (Some (inline term)))
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
-      elt Block "dl" [] (Some (concat_map f content))
+      elt Block "dl" attr (Some (concat_map f content))
   | Link_def _ ->
       Null
 

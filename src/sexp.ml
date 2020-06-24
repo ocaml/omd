@@ -11,7 +11,8 @@ let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)
 
-and inline = function
+and inline {Inline.il_desc; _} =
+  match il_desc with
   | Inline.Concat xs ->
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
@@ -33,7 +34,8 @@ and inline = function
   | Image _ ->
       Atom "img"
 
-let rec block = function
+let rec block {Block.bl_desc; bl_attributes = _} =
+  match bl_desc with
   | Block.Paragraph x ->
       List [Atom "paragraph"; inline x]
   | List l ->

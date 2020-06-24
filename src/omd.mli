@@ -1,24 +1,28 @@
 (** A markdown parser in OCaml. *)
 
-type attribute =
-  string * string
+type attributes =
+  (string * string) list
 
 type 'a link_def =
   {
     label: 'a;
     destination: string;
     title: string option;
-    attributes: attribute list;
   }
 
 module Inline : sig
   type code =
     {
       content: string;
-      attributes: attribute list;
     }
 
   and t =
+    {
+      il_desc: t_desc;
+      il_attributes: attributes;
+    }
+
+  and t_desc =
     | Concat of t list
     | Text of string
     | Emph of t
@@ -51,14 +55,12 @@ module Block : sig
     {
       label: string;
       code: string;
-      attributes: attribute list;
     }
 
   and heading =
     {
       level: int;
       text: Inline.t;
-      attributes: attribute list;
     }
 
   and def_elt =
@@ -73,6 +75,12 @@ module Block : sig
     }
 
   and t =
+    {
+      bl_desc: t_desc;
+      bl_attributes: attributes;
+    }
+
+  and t_desc =
     | Paragraph of Inline.t
     | List of block_list
     | Blockquote of t list

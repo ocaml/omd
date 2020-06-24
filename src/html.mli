@@ -5,7 +5,7 @@ type element_type =
   | Block
 
 type t =
-  | Element of element_type * string * attribute list * t option
+  | Element of element_type * string * attributes * t option
   | Text of string
   | Raw of string
   | Null

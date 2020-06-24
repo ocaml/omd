@@ -1,12 +1,11 @@
-type attribute =
-  string * string
+type attributes =
+  (string * string) list
 
 type 'a link_def =
   {
     label: 'a;
     destination: string;
     title: string option;
-    attributes: attribute list;
   }
 
 type block_list_kind =
@@ -39,14 +38,12 @@ module MakeBlock (Inline : T) = struct
     {
       label: string;
       code: string;
-      attributes: attribute list;
     }
 
   and heading =
     {
       level: int;
       text: Inline.t;
-      attributes: attribute list;
     }
 
   and def_elt =
@@ -61,6 +58,12 @@ module MakeBlock (Inline : T) = struct
     }
 
   and t =
+    {
+      bl_desc: t_desc;
+      bl_attributes: attributes;
+    }
+
+  and t_desc =
     | Paragraph of Inline.t
     | List of block_list
     | Blockquote of t list
@@ -72,12 +75,13 @@ module MakeBlock (Inline : T) = struct
     | Def_list of def_list
 
   let defs ast =
-    let rec loop acc = function
+    let rec loop acc {bl_desc; bl_attributes} =
+      match bl_desc with
       | List l -> List.fold_left (List.fold_left loop) acc l.blocks
       | Blockquote l -> List.fold_left loop acc l
       | Paragraph _ | Thematic_break | Heading _
       | Def_list _ | Code_block _ | Html_block _ -> acc
-      | Link_def def -> def :: acc
+      | Link_def def -> (def, bl_attributes) :: acc
     in
     List.rev (List.fold_left loop [] ast)
 end
@@ -86,10 +90,15 @@ module Inline = struct
   type code =
     {
       content: string;
-      attributes: attribute list;
     }
 
   and t =
+    {
+      il_desc: t_desc;
+      il_attributes: attributes;
+    }
+
+  and t_desc =
     | Concat of t list
     | Text of string
     | Emph of t
@@ -110,25 +119,30 @@ module MakeMapper (Src : T) (Dst : T) = struct
   module SrcBlock = MakeBlock(Src)
   module DstBlock = MakeBlock(Dst)
 
-  let rec map (f : Src.t -> Dst.t) : SrcBlock.t -> DstBlock.t = function
-    | SrcBlock.Paragraph x -> DstBlock.Paragraph (f x)
-    | List {kind; style; blocks} ->
-        List  {kind; style; blocks = List.map (List.map (map f)) blocks}
-    | Blockquote xs ->
-        Blockquote (List.map (map f) xs)
-    | Thematic_break ->
-        Thematic_break
-    | Heading {level; text; attributes} ->
-        Heading {level; text = f text; attributes}
-    | Def_list {content} ->
-        let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
-        Def_list {content = List.map f content}
-    | Code_block {label; code; attributes} ->
-        Code_block {label; code; attributes}
-    | Html_block x ->
-        Html_block x
-    | Link_def x ->
-        Link_def x
+  let rec map (f : Src.t -> Dst.t) : SrcBlock.t -> DstBlock.t =
+    fun {bl_desc; bl_attributes} ->
+    let bl_desc =
+      match bl_desc with
+      | SrcBlock.Paragraph x -> DstBlock.Paragraph (f x)
+      | List {kind; style; blocks} ->
+          List  {kind; style; blocks = List.map (List.map (map f)) blocks}
+      | Blockquote xs ->
+          Blockquote (List.map (map f) xs)
+      | Thematic_break ->
+          Thematic_break
+      | Heading {level; text} ->
+          Heading {level; text = f text}
+      | Def_list {content} ->
+          let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
+          Def_list {content = List.map f content}
+      | Code_block {label; code} ->
+          Code_block {label; code}
+      | Html_block x ->
+          Html_block x
+      | Link_def x ->
+          Link_def x
+    in
+    {bl_desc; bl_attributes}
 end
 
 module Mapper = MakeMapper (String) (Inline)
