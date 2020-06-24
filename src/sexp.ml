@@ -11,57 +11,52 @@ let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
     let title = match title with Some title -> [Atom title] | None -> [] in
     List (Atom "link-def" :: f label :: Atom destination :: title)
 
-and inline = function
-  | Inline.Concat xs ->
+and inline {il_desc; _} =
+  match il_desc with
+  | Concat xs ->
       List (Atom "concat" :: List.map inline xs)
   | Text s ->
       Atom s
-  | Emph e ->
-      List [Atom "emph"; inline e.content]
+  | Emph il ->
+      List [Atom "emph"; inline il]
+  | Strong il ->
+      List [Atom "strong"; inline il]
   | Code _ ->
       Atom "code"
   | Hard_break ->
       Atom "hard-break"
   | Soft_break ->
       Atom "soft-break"
-  | Link {kind = Url; def; _} ->
+  | Link def ->
       List [Atom "url"; link_def inline def]
-  | Ref {kind = Url; label; def; _} ->
-      List [Atom "url-ref"; inline label; link_def atom def]
   | Html s ->
       List [Atom "html"; Atom s]
-  | Link {kind = Img; _} ->
+  | Image _ ->
       Atom "img"
-  | Ref {kind = Img; label; def; _} ->
-      List [Atom "img-ref"; inline label; link_def atom def]
 
-let rec block = function
-  | Block.Paragraph x ->
+let rec block {bl_desc; bl_attributes = _} =
+  match bl_desc with
+  | Paragraph x ->
       List [Atom "paragraph"; inline x]
-  | List l ->
-      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.blocks)
+  | List (_, _, bls) ->
+      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) bls)
   | Blockquote xs ->
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading {level; text; _} ->
+  | Heading (level, text) ->
       List [Atom "heading"; Atom (string_of_int level); inline text]
-  | Code_block {kind = None; code = Some s; _} ->
-      List [Atom "indented-code"; Atom s]
-  | Code_block {kind = None; code = None; _} ->
-      List [Atom "indented-code"]
-  | Code_block {kind = Some _; code = Some s; _} ->
-      List [Atom "fenced-code"; Atom s]
-  | Code_block {kind = Some _; code = None; _} ->
-      List [Atom "fenced-code"]
+  | Code_block (info, _) ->
+      List [Atom "code-block"; Atom info]
   | Html_block s ->
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
-  | Def_list {content} ->
+  | Definition_list l ->
       List [Atom "def-list";
-            List (List.map (fun elt -> List [inline elt.Block.term;
-                                             List (List.map inline elt.defs)]) content)]
+            List (List.map (fun elt ->
+                List [inline elt.term;
+                      List (List.map inline elt.defs)]) l)]
 
 let create ast =
   List (List.map block ast)

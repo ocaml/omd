@@ -259,16 +259,20 @@ type html_kind =
   | Hcontains of string list
   | Hblank
 
+type code_block_kind =
+  | Tilde
+  | Backtick
+
 type t =
   | Lempty
   | Lblockquote of Sub.t
   | Lthematic_break
-  | Latx_heading of int * string * attribute list
+  | Latx_heading of int * string * attributes
   | Lsetext_heading of int * int
-  | Lfenced_code of int * int * code_block_kind * (string * string) * attribute list
+  | Lfenced_code of int * int * code_block_kind * (string * string) * attributes
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
-  | Llist_item of block_list_kind * int * Sub.t
+  | Llist_item of list_type * int * Sub.t
   | Lparagraph
   | Ldef_list of string
 
@@ -581,12 +585,12 @@ let unordered_list_item ind s =
   | Some ('+' | '-' | '*' as c) ->
       let s = Sub.tail s in
       if is_empty s then
-        Llist_item (Unordered c, 2 + ind, s)
+        Llist_item (Bullet c, 2 + ind, s)
       else
         let n = indent s in
         if n = 0 then raise Fail;
         let n = if n <= 4 then n else 1 in
-        Llist_item (Unordered c, n + 1 + ind, Sub.offset n s)
+        Llist_item (Bullet c, n + 1 + ind, Sub.offset n s)
   | Some _ | None ->
       raise Fail
 
@@ -964,21 +968,32 @@ let entity buf st =
   | Some _ | None ->
       Buffer.add_string buf (range st p (pos st - p))
 
+let mk ?(attr = []) desc =
+  {Ast.il_desc = desc; il_attributes = attr}
+
 module Pre = struct
   type delim =
     | Ws
     | Punct
     | Other
 
+  type emph_style =
+    | Star
+    | Underscore
+
+  type link_kind =
+    | Img
+    | Url
+
   type t =
     | Bang_left_bracket
     | Left_bracket of link_kind
     | Emph of delim * delim * emph_style * int
-    | R of Inline.t
+    | R of inline
 
   let concat = function
     | [x] -> x
-    | l -> Inline.Concat l
+    | l -> mk (Concat l)
 
   let left_flanking = function
     | Emph (_, Other, _, _) | Emph ((Ws | Punct), Punct, _, _) -> true
@@ -1015,11 +1030,11 @@ module Pre = struct
     | _ -> Other
 
   let to_r = function
-    | Bang_left_bracket -> Inline.Text "!["
-    | Left_bracket Img -> Text "!["
-    | Left_bracket Url -> Text "["
-    | Emph (_, _, Star, n) -> Text (String.make n '*')
-    | Emph (_, _, Underscore, n) -> Text (String.make n '_')
+    | Bang_left_bracket -> mk (Text "![")
+    | Left_bracket Img -> mk (Text "![")
+    | Left_bracket Url -> mk (Text "[")
+    | Emph (_, _, Star, n) -> mk (Text (String.make n '*'))
+    | Emph (_, _, Underscore, n) -> mk (Text (String.make n '_'))
     | R x -> x
 
   let rec parse_emph = function
@@ -1033,8 +1048,11 @@ module Pre = struct
                 if n2 > 1 then Emph (Punct, post, q2, n2-1) :: xs else xs
               in
               let r =
-                let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph {kind; style = q1; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
+                let il = concat (List.map to_r (parse_emph (List.rev acc))) in
+                if n1 >= 2 && n2 >= 2 then
+                  R (mk (Strong il)) :: xs
+                else
+                  R (mk (Emph il)) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then
@@ -1543,7 +1561,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None; attributes = []}
+      {Ast.label; destination; title = None}
   | _ ->
       raise Fail
 
@@ -1564,7 +1582,7 @@ let rec inline defs st =
     if Buffer.length buf = 0 then
       acc
     else
-      Pre.R (Text (get_buf ())) :: acc
+      Pre.R (mk (Text (get_buf ()))) :: acc
   in
   let rec reference_link kind acc st =
     let off0 = pos st in
@@ -1574,9 +1592,13 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
-          | Some def ->
-              loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
+          match List.find_opt (fun ({label; _}, _) -> label = s) defs with
+          | Some (def, attr) ->
+              let r =
+                let def = {def with label = lab1} in
+                match kind with Pre.Img -> Image def | Url -> Link def
+              in
+              loop (Pre.R (mk ~attr r) :: text acc) st
           | None ->
               if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
@@ -1613,27 +1635,29 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label; attributes=inline_attribute_string st}}) :: text acc) st
+            let def = {def with label = mk (Text def.label)} in
+            let attr = inline_attribute_string st in
+            loop (Pre.R (mk ~attr (Link def)) :: text acc) st
         | exception Fail ->
             begin match
               protect (closing_tag ||| open_tag ||| html_comment |||
                        declaration ||| cdata_section ||| processing_instruction) st
             with
             | tag ->
-                loop (Pre.R (Html tag) :: text acc) st
+                loop (Pre.R (mk (Html tag)) :: text acc) st
             | exception Fail ->
                 junk st; Buffer.add_char buf c; loop acc st
             end
         end
     | '\n' ->
-        junk st; sp st; loop (Pre.R Soft_break :: text acc) st
+        junk st; sp st; loop (Pre.R (mk Soft_break) :: text acc) st
     | ' ' as c ->
         junk st;
         begin match peek st with
         | Some ' ' ->
             begin match protect (many space >>> char '\n' >>> many space) st with
             | () ->
-                loop (Pre.R Hard_break :: text acc) st
+                loop (Pre.R (mk Hard_break) :: text acc) st
             | exception Fail ->
                 junk st;
                 Buffer.add_string buf "  "; loop acc st
@@ -1663,9 +1687,8 @@ let rec inline defs st =
                   else
                     content
                 in
-                loop (Pre.R (Code {level = n;
-                                   content;
-                                   attributes = inline_attribute_string st}) :: acc) st
+                let attr = inline_attribute_string st in
+                loop (Pre.R (mk ~attr (Code content)) :: acc) st
               in
               let rec loop3 start m =
                 match peek st with
@@ -1707,7 +1730,7 @@ let rec inline defs st =
         junk st;
         begin match peek st with
         | Some '\n' ->
-            junk st; loop (Pre.R Hard_break :: text acc) st
+            junk st; loop (Pre.R (mk Hard_break) :: text acc) st
         | Some c when is_punct c ->
             junk st; Buffer.add_char buf c; loop acc st
         | Some _ | None ->
@@ -1736,9 +1759,13 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Inline.Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
+                        let def = {label; destination; title} in
+                        match k with
+                        | Img -> Image def
+                        | Url -> Link def
                       in
-                      loop (Pre.R r :: acc') st
+                      let attr = inline_attribute_string st in
+                      loop (Pre.R (mk ~attr r) :: acc') st
                   | exception Fail ->
                       Buffer.add_char buf ']'; loop acc st
                   end
@@ -1748,9 +1775,11 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
-                      | Some def ->
-                          loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
+                      begin match List.find_opt (fun ({label; _}, _) -> label = s) defs with
+                      | Some (def, attr) ->
+                          let def = {def with label} in
+                          let r = match k with Img -> Image def | Url -> Link def in
+                          loop (Pre.R (mk ~attr r) :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
@@ -1770,7 +1799,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Link {kind = Url; _} | Ref {kind = Url; _}) as x :: acc' ->
+          | Pre.R ({il_desc = Link _; _}) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'
@@ -1785,7 +1814,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Star else Underscore in
+          let e = if c = '*' then Pre.Star else Pre.Underscore in
           loop (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =
@@ -1843,10 +1872,10 @@ let link_reference_definition st =
   let attributes = inline_attribute_string st in
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.label; destination; title = Some title; attributes}
+      {Ast.label; destination; title = Some title}, attributes
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.label; destination; title = None; attributes}
+      {Ast.label; destination; title = None}, attributes
 
 let link_reference_definitions st =
   let rec loop acc =
