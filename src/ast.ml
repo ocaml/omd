@@ -33,11 +33,6 @@ module MakeBlock (I : T) = struct
       defs: I.t list;
     }
 
-  and def_list =
-    {
-      content: def_elt list
-    }
-
   and block =
     {
       bl_desc: block_desc;
@@ -53,7 +48,7 @@ module MakeBlock (I : T) = struct
     | Code_block of string * string
     | Html_block of string
     | Link_def of string link_def
-    | Def_list of def_list
+    | Definition_list of def_elt list
 
   let defs ast =
     let rec loop acc {bl_desc; bl_attributes} =
@@ -61,7 +56,7 @@ module MakeBlock (I : T) = struct
       | List (_, _, bls) -> List.fold_left (List.fold_left loop) acc bls
       | Blockquote l -> List.fold_left loop acc l
       | Paragraph _ | Thematic_break | Heading _
-      | Def_list _ | Code_block _ | Html_block _ -> acc
+      | Definition_list _ | Code_block _ | Html_block _ -> acc
       | Link_def def -> (def, bl_attributes) :: acc
     in
     List.rev (List.fold_left loop [] ast)
@@ -108,9 +103,9 @@ module MakeMapper (Src : T) (Dst : T) = struct
           Thematic_break
       | Heading (level, text) ->
           Heading (level, f text)
-      | Def_list {content} ->
+      | Definition_list l ->
           let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
-          Def_list {content = List.map f content}
+          Definition_list (List.map f l)
       | Code_block (label, code) ->
           Code_block (label, code)
       | Html_block x ->

@@ -61,10 +61,10 @@ module Pre = struct
     | Rdef_list (term, defs) ->
         let l, blocks =
           match blocks with
-          | {Raw.bl_desc = Def_list {content}; _} :: b -> content, b
+          | {Raw.bl_desc = Definition_list l; _} :: b -> l, b
           | b -> [], b
         in
-        mk (Raw.Def_list {content = l @ [{ Raw.term; defs = List.rev defs}]}) :: blocks
+        mk (Raw.Definition_list (l @ [{ Raw.term; defs = List.rev defs}])) :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
         mk (Code_block ("", concat (loop l))) :: blocks

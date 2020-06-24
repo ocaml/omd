@@ -193,13 +193,13 @@ let rec block {bl_desc; bl_attributes = attr} =
         | _ -> "p"
       in
       elt Block name attr (Some (inline text))
-  | Def_list {content} ->
+  | Definition_list l ->
       let f {term; defs} =
         concat
           (elt Block "dt" [] (Some (inline term)))
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
-      elt Block "dl" attr (Some (concat_map f content))
+      elt Block "dl" attr (Some (concat_map f l))
   | Link_def _ ->
       Null
 

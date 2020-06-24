@@ -52,10 +52,11 @@ let rec block {bl_desc; bl_attributes = _} =
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
       List [Atom "link-def"; Atom label; Atom destination]
-  | Def_list {content} ->
+  | Definition_list l ->
       List [Atom "def-list";
-            List (List.map (fun elt -> List [inline elt.term;
-                                             List (List.map inline elt.defs)]) content)]
+            List (List.map (fun elt ->
+                List [inline elt.term;
+                      List (List.map inline elt.defs)]) l)]
 
 let create ast =
   List (List.map block ast)

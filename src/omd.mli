@@ -42,11 +42,6 @@ type def_elt =
     defs: inline list;
   }
 
-and def_list =
-  {
-    content: def_elt list
-  }
-
 and block =
   {
     bl_desc: block_desc;
@@ -62,7 +57,7 @@ and block_desc =
   | Code_block of string * string
   | Html_block of string
   | Link_def of string link_def
-  | Def_list of def_list
+  | Definition_list of def_elt list
 
 type doc = block list
 (** A markdown document *)
