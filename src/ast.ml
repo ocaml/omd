@@ -96,14 +96,9 @@ type emph_kind =
   | Normal
   | Strong
 
-type emph_style =
-  | Star
-  | Underscore
-
 module Inline = struct
   type emph =
     {
-      style: emph_style;
       kind: emph_kind;
       content: t;
     }

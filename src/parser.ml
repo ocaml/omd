@@ -970,6 +970,10 @@ module Pre = struct
     | Punct
     | Other
 
+  type emph_style =
+    | Star
+    | Underscore
+
   type t =
     | Bang_left_bracket
     | Left_bracket of link_kind
@@ -1034,7 +1038,7 @@ module Pre = struct
               in
               let r =
                 let kind = if n1 >= 2 && n2 >= 2 then Strong else Normal in
-                R (Emph {kind; style = q1; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
+                R (Emph {kind; content = concat (List.map to_r (parse_emph (List.rev acc)))}) :: xs
               in
               let r =
                 if n1 >= 2 && n2 >= 2 then
@@ -1785,7 +1789,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Star else Underscore in
+          let e = if c = '*' then Pre.Star else Pre.Underscore in
           loop (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =

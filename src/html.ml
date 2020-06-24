@@ -126,7 +126,7 @@ and inline = function
       concat_map inline l
   | Text t ->
       text t
-  | Emph {kind; style = _; content} ->
+  | Emph {kind; content} ->
       let name =
         match kind with
         | Normal -> "em"

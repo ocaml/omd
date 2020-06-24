@@ -19,14 +19,9 @@ type emph_kind =
   | Normal
   | Strong
 
-type emph_style =
-  | Star
-  | Underscore
-
 module Inline : sig
   type emph =
     {
-      style: emph_style;
       kind: emph_kind;
       content: t;
     }
