@@ -185,7 +185,7 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
       elt Block "hr" attr None
   | Html_block body ->
       raw body
-  | Heading {level; text} ->
+  | Heading (level, text) ->
       let name =
         match level with
         | 1 -> "h1"

@@ -51,12 +51,6 @@ module Block : sig
       blocks: t list list;
     }
 
-  and heading =
-    {
-      level: int;
-      text: Inline.t;
-    }
-
   and def_elt =
     {
       term: Inline.t;
@@ -79,7 +73,7 @@ module Block : sig
     | List of block_list
     | Blockquote of t list
     | Thematic_break
-    | Heading of heading
+    | Heading of int * Inline.t
     | Code_block of string * string
     | Html_block of string
     | Link_def of string link_def

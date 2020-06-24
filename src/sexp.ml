@@ -44,7 +44,7 @@ let rec block {Block.bl_desc; bl_attributes = _} =
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->
       Atom "thematic-break"
-  | Heading {level; text; _} ->
+  | Heading (level, text) ->
       List [Atom "heading"; Atom (string_of_int level); inline text]
   | Code_block (info, _) ->
       List [Atom "code-block"; Atom info]

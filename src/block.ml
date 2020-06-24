@@ -93,7 +93,7 @@ module Pre = struct
     | Rempty, Lsetext_heading (2, n) when n >= 3 ->
         {blocks = mk Thematic_break :: blocks; next = Rempty}
     | Rempty, Latx_heading (level, text, attr) ->
-        {blocks = mk ~attr (Heading {level; text}) :: blocks; next = Rempty}
+        {blocks = mk ~attr (Heading (level, text)) :: blocks; next = Rempty}
     | Rempty, Lfenced_code (ind, num, q, info, a) ->
         {blocks; next = Rfenced_code (ind, num, q, info, [], a)}
     | Rempty, Lhtml (_, kind) ->
@@ -115,7 +115,7 @@ module Pre = struct
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
         let text = String.trim (String.concat "\n" (List.rev lines)) in
-        {blocks = mk (Heading {level; text}) :: blocks; next = Rempty}
+        {blocks = mk (Heading (level, text)) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _) when num' >= num && q = q1 ->

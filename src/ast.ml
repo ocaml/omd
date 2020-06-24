@@ -34,12 +34,6 @@ module MakeBlock (Inline : T) = struct
       blocks: t list list;
     }
 
-  and heading =
-    {
-      level: int;
-      text: Inline.t;
-    }
-
   and def_elt =
     {
       term: Inline.t;
@@ -62,7 +56,7 @@ module MakeBlock (Inline : T) = struct
     | List of block_list
     | Blockquote of t list
     | Thematic_break
-    | Heading of heading
+    | Heading of int * Inline.t
     | Code_block of string * string
     | Html_block of string
     | Link_def of string link_def
@@ -124,8 +118,8 @@ module MakeMapper (Src : T) (Dst : T) = struct
           Blockquote (List.map (map f) xs)
       | Thematic_break ->
           Thematic_break
-      | Heading {level; text} ->
-          Heading {level; text = f text}
+      | Heading (level, text) ->
+          Heading (level, f text)
       | Def_list {content} ->
           let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
           Def_list {content = List.map f content}
