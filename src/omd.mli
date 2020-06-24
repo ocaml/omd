@@ -11,21 +11,11 @@ type 'a link_def =
     attributes: attribute list;
   }
 
-type link_kind =
-  | Img
-  | Url
-
 module Inline : sig
   type code =
     {
       content: string;
       attributes: attribute list;
-    }
-
-  and link =
-    {
-      kind: link_kind;
-      def: t link_def;
     }
 
   and t =
@@ -36,7 +26,8 @@ module Inline : sig
     | Code of code
     | Hard_break
     | Soft_break
-    | Link of link
+    | Link of t link_def
+    | Image of t link_def
     | Html of string
 end
 

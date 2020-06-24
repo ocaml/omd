@@ -88,21 +88,11 @@ module MakeBlock (Inline : T) = struct
     List.rev (List.fold_left loop [] ast)
 end
 
-type link_kind =
-  | Img
-  | Url
-
 module Inline = struct
   type code =
     {
       content: string;
       attributes: attribute list;
-    }
-
-  and link =
-    {
-      kind: link_kind;
-      def: t link_def;
     }
 
   and t =
@@ -113,7 +103,8 @@ module Inline = struct
     | Code of code
     | Hard_break
     | Soft_break
-    | Link of link
+    | Link of t link_def
+    | Image of t link_def
     | Html of string
 end
 

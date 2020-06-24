@@ -974,6 +974,10 @@ module Pre = struct
     | Star
     | Underscore
 
+  type link_kind =
+    | Img
+    | Url
+
   type t =
     | Bang_left_bracket
     | Left_bracket of link_kind
@@ -1583,7 +1587,11 @@ let rec inline defs st =
           let s = normalize lab' in
           match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
           | Some def ->
-              loop (Pre.R (Link {kind; def = {def with label = lab1}}) :: text acc) st
+              let r =
+                let def = {def with label = lab1} in
+                match kind with Pre.Img -> Inline.Image def | Url -> Link def
+              in
+              loop (Pre.R r :: text acc) st
           | None ->
               if kind = Img then Buffer.add_char buf '!';
               Buffer.add_char buf '[';
@@ -1620,7 +1628,9 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            loop (Pre.R (Link {kind = Url; def = {def with label = Text def.label; attributes=inline_attribute_string st}}) :: text acc) st
+            let def = {def with label = Inline.Text def.label;
+                                attributes=inline_attribute_string st} in
+            loop (Pre.R (Link def) :: text acc) st
         | exception Fail ->
             begin match
               protect (closing_tag ||| open_tag ||| html_comment |||
@@ -1742,7 +1752,10 @@ let rec inline defs st =
                   | destination, title ->
                       let r =
                         let label = Pre.parse_emph xs in
-                        Inline.Link {kind = k; def = {label; destination; title; attributes=inline_attribute_string st}}
+                        let def = {label; destination; title; attributes=inline_attribute_string st} in
+                        match k with
+                        | Img -> Inline.Image def
+                        | Url -> Link def
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1756,7 +1769,9 @@ let rec inline defs st =
                       let s = normalize lab in
                       begin match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
                       | Some def ->
-                          loop (Pre.R (Link {kind = k; def = {def with label}}) :: acc') st
+                          let def = {def with label} in
+                          let r = match k with Img -> Inline.Image def | Url -> Link def in
+                          loop (Pre.R r :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
@@ -1776,7 +1791,7 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']'; loop acc st
               end
-          | Pre.R (Link {kind = Url; _}) as x :: acc' ->
+          | Pre.R (Link _) as x :: acc' ->
               aux true (x :: xs) acc'
           | x :: acc' ->
               aux seen_link (x :: xs) acc'

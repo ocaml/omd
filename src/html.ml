@@ -138,9 +138,9 @@ and inline = function
       nl
   | Html body ->
       raw body
-  | Link {kind = Url; def = {label; destination; title; attributes}; _} ->
+  | Link {label; destination; title; attributes} ->
       url label destination title attributes
-  | Link {kind = Img; def = {label; destination; title; attributes}; _} ->
+  | Image {label; destination; title; attributes} ->
       img label destination title attributes
 
 let rec block = function
