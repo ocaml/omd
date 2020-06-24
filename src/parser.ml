@@ -1688,7 +1688,7 @@ let rec inline defs st =
                     content
                 in
                 let attr = inline_attribute_string st in
-                loop (Pre.R (mk ~attr (Code {content})) :: acc) st
+                loop (Pre.R (mk ~attr (Code content)) :: acc) st
               in
               let rec loop3 start m =
                 match peek st with

@@ -68,12 +68,7 @@ module MakeBlock (Inline : T) = struct
 end
 
 module Inline = struct
-  type code =
-    {
-      content: string;
-    }
-
-  and t =
+  type t =
     {
       il_desc: t_desc;
       il_attributes: attributes;
@@ -84,7 +79,7 @@ module Inline = struct
     | Text of string
     | Emph of t
     | Strong of t
-    | Code of code
+    | Code of string
     | Hard_break
     | Soft_break
     | Link of t link_def

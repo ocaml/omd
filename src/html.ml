@@ -131,8 +131,8 @@ and inline {Inline.il_desc; il_attributes = attr} =
       elt Inline "em" attr (Some (inline il))
   | Strong il ->
       elt Inline "strong" attr (Some (inline il))
-  | Code {content} ->
-      elt Inline "code" attr (Some (text content))
+  | Code s ->
+      elt Inline "code" attr (Some (text s))
   | Hard_break ->
       concat (elt Inline "br" attr None) nl
   | Soft_break ->
