@@ -46,8 +46,8 @@ let rec block {Block.bl_desc; bl_attributes = _} =
       Atom "thematic-break"
   | Heading {level; text; _} ->
       List [Atom "heading"; Atom (string_of_int level); inline text]
-  | Code_block {code; _} ->
-      List [Atom "code-block"; Atom code]
+  | Code_block (info, _) ->
+      List [Atom "code-block"; Atom info]
   | Html_block s ->
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->

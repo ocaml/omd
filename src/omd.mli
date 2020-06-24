@@ -51,12 +51,6 @@ module Block : sig
       blocks: t list list;
     }
 
-  and code_block =
-    {
-      label: string;
-      code: string;
-    }
-
   and heading =
     {
       level: int;
@@ -86,7 +80,7 @@ module Block : sig
     | Blockquote of t list
     | Thematic_break
     | Heading of heading
-    | Code_block of code_block
+    | Code_block of string * string
     | Html_block of string
     | Link_def of string link_def
     | Def_list of def_list

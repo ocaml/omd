@@ -173,7 +173,7 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
         let nl = if style = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t))) in
       elt Block name attr (Some (concat nl (concat_map li blocks)))
-  | Code_block {label; code} ->
+  | Code_block (label, code) ->
       let code_attr =
         if String.trim label = "" then []
         else ["class", "language-" ^ label]

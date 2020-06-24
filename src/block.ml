@@ -55,9 +55,9 @@ module Pre = struct
         in
         if s = "" then blocks else mk (Paragraph s) :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), [], attr) ->
-        mk ~attr (Code_block {label; code = ""}) :: blocks
+        mk ~attr (Code_block (label, "")) :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), l, attr) ->
-        mk ~attr (Code_block {label; code = concat l}) :: blocks
+        mk ~attr (Code_block (label, concat l)) :: blocks
     | Rdef_list (term, defs) ->
         let l, blocks =
           match blocks with
@@ -67,7 +67,7 @@ module Pre = struct
         mk (Raw.Def_list {content = l @ [{ Raw.term; defs = List.rev defs}]}) :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        mk (Code_block {label = ""; code = concat (loop l)}) :: blocks
+        mk (Code_block ("", concat (loop l))) :: blocks
     | Rhtml (_, l) ->
         mk (Html_block (concat l)) :: blocks
     | Rempty ->
