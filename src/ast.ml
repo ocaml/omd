@@ -8,33 +8,26 @@ type 'a link_def =
     title: string option;
   }
 
-type block_list_kind =
+type list_type =
   | Ordered of int * char
-  | Unordered of char
+  | Bullet of char
+
+type list_spacing =
+  | Loose
+  | Tight
 
 let same_block_list_kind k1 k2 =
   match k1, k2 with
   | Ordered (_, c1), Ordered (_, c2)
-  | Unordered c1, Unordered c2 -> c1 = c2
+  | Bullet c1, Bullet c2 -> c1 = c2
   | _ -> false
-
-type block_list_style =
-  | Loose
-  | Tight
 
 module type T = sig
   type t
 end
 
 module MakeBlock (Inline : T) = struct
-  type block_list =
-    {
-      kind: block_list_kind;
-      style: block_list_style;
-      blocks: t list list;
-    }
-
-  and def_elt =
+  type def_elt =
     {
       term: Inline.t;
       defs: Inline.t list;
@@ -53,7 +46,7 @@ module MakeBlock (Inline : T) = struct
 
   and t_desc =
     | Paragraph of Inline.t
-    | List of block_list
+    | List of list_type * list_spacing * t list list
     | Blockquote of t list
     | Thematic_break
     | Heading of int * Inline.t
@@ -65,7 +58,7 @@ module MakeBlock (Inline : T) = struct
   let defs ast =
     let rec loop acc {bl_desc; bl_attributes} =
       match bl_desc with
-      | List l -> List.fold_left (List.fold_left loop) acc l.blocks
+      | List (_, _, bls) -> List.fold_left (List.fold_left loop) acc bls
       | Blockquote l -> List.fold_left loop acc l
       | Paragraph _ | Thematic_break | Heading _
       | Def_list _ | Code_block _ | Html_block _ -> acc
@@ -112,8 +105,8 @@ module MakeMapper (Src : T) (Dst : T) = struct
     let bl_desc =
       match bl_desc with
       | SrcBlock.Paragraph x -> DstBlock.Paragraph (f x)
-      | List {kind; style; blocks} ->
-          List  {kind; style; blocks = List.map (List.map (map f)) blocks}
+      | List (ty, sp, bl) ->
+          List (ty, sp, List.map (List.map (map f)) bl)
       | Blockquote xs ->
           Blockquote (List.map (map f) xs)
       | Thematic_break ->

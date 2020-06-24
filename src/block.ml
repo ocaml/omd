@@ -8,7 +8,7 @@ let mk ?(attr = []) desc =
 module Pre = struct
   type container =
     | Rblockquote of t
-    | Rlist of block_list_kind * block_list_style * bool * int * Raw.t list list * t
+    | Rlist of list_type * list_spacing * bool * int * Raw.t list list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * Parser.code_block_kind * (string * string) * string list * attributes
     | Rindented_code of string list
@@ -43,8 +43,8 @@ module Pre = struct
     match next with
     | Rblockquote state ->
         mk (Raw.Blockquote (finish state)) :: blocks
-    | Rlist (kind, style, _, _, closed_items, state) ->
-        mk (List {kind; style; blocks = List.rev (finish state :: closed_items)}) :: blocks
+    | Rlist (ty, sp, _, _, closed_items, state) ->
+        mk (List (ty, sp, List.rev (finish state :: closed_items))) :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
@@ -108,7 +108,8 @@ module Pre = struct
         {blocks; next = Rdef_list (h, [def])}
     | Rdef_list (term, defs), Ldef_list def ->
         {blocks; next = Rdef_list (term, def::defs)}
-    | Rparagraph _, Llist_item ((Ordered (1, _) | Unordered _), _, s1) when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
+    | Rparagraph _, Llist_item ((Ordered (1, _) | Bullet _), _, s1)
+      when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph _, (Lempty | Lblockquote _ | Lthematic_break
                     | Latx_heading _ | Lfenced_code _ | Lhtml (true, _)) ->

@@ -38,8 +38,8 @@ let rec block {Block.bl_desc; bl_attributes = _} =
   match bl_desc with
   | Block.Paragraph x ->
       List [Atom "paragraph"; inline x]
-  | List l ->
-      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) l.blocks)
+  | List (_, _, bls) ->
+      List (Atom "list" :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) bls)
   | Blockquote xs ->
       List (Atom "blockquote" :: List.map block xs)
   | Thematic_break ->

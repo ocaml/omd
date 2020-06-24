@@ -272,7 +272,7 @@ type t =
   | Lfenced_code of int * int * code_block_kind * (string * string) * attributes
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
-  | Llist_item of block_list_kind * int * Sub.t
+  | Llist_item of list_type * int * Sub.t
   | Lparagraph
   | Ldef_list of string
 
@@ -585,12 +585,12 @@ let unordered_list_item ind s =
   | Some ('+' | '-' | '*' as c) ->
       let s = Sub.tail s in
       if is_empty s then
-        Llist_item (Unordered c, 2 + ind, s)
+        Llist_item (Bullet c, 2 + ind, s)
       else
         let n = indent s in
         if n = 0 then raise Fail;
         let n = if n <= 4 then n else 1 in
-        Llist_item (Unordered c, n + 1 + ind, Sub.offset n s)
+        Llist_item (Bullet c, n + 1 + ind, Sub.offset n s)
   | Some _ | None ->
       raise Fail
 

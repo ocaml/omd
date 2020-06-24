@@ -35,23 +35,16 @@ module Inline : sig
     | Html of string
 end
 
-type block_list_kind =
+type list_type =
   | Ordered of int * char
-  | Unordered of char
+  | Bullet of char
 
-type block_list_style =
+type list_spacing =
   | Loose
   | Tight
 
 module Block : sig
-  type block_list =
-    {
-      kind: block_list_kind;
-      style: block_list_style;
-      blocks: t list list;
-    }
-
-  and def_elt =
+  type def_elt =
     {
       term: Inline.t;
       defs: Inline.t list;
@@ -70,7 +63,7 @@ module Block : sig
 
   and t_desc =
     | Paragraph of Inline.t
-    | List of block_list
+    | List of list_type * list_spacing * t list list
     | Blockquote of t list
     | Thematic_break
     | Heading of int * Inline.t

@@ -151,14 +151,10 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
         (Some (concat nl (concat_map block q)))
   | Paragraph md ->
       elt Block "p" attr (Some (inline md))
-  | List {kind; style; blocks} ->
-      let name =
-        match kind with
-        | Ordered _ -> "ol"
-        | Unordered _ -> "ul"
-      in
+  | List (ty, sp, bl) ->
+      let name = match ty with Ordered _ -> "ol" | Bullet _ -> "ul" in
       let attr =
-        match kind with
+        match ty with
         | Ordered (n, _) when n <> 1 ->
             ("start", string_of_int n) :: attr
         | _ ->
@@ -166,13 +162,13 @@ let rec block {Block.bl_desc; bl_attributes = attr} =
       in
       let li t =
         let block' t =
-          match t.Block.bl_desc, style with
+          match t.Block.bl_desc, sp with
           | Block.Paragraph t, Tight -> concat (inline t) nl
           | _ -> block t
         in
-        let nl = if style = Tight then Null else nl in
+        let nl = if sp = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t))) in
-      elt Block name attr (Some (concat nl (concat_map li blocks)))
+      elt Block name attr (Some (concat nl (concat_map li bl)))
   | Code_block (label, code) ->
       let code_attr =
         if String.trim label = "" then []
