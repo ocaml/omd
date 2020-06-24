@@ -171,7 +171,7 @@ let rec block = function
         let nl = if style = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t))) in
       elt Block name attrs (Some (concat nl (concat_map li blocks)))
-  | Code_block {kind = _; other = _; label; attributes; code} ->
+  | Code_block {label; attributes; code} ->
       let attrs =
         match label with
         | None -> []

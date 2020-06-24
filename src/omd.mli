@@ -39,10 +39,6 @@ type block_list_style =
   | Loose
   | Tight
 
-type code_block_kind =
-  | Tilde
-  | Backtick
-
 module Block : sig
   type block_list =
     {
@@ -53,9 +49,7 @@ module Block : sig
 
   and code_block =
     {
-      kind: code_block_kind option;
       label: string option;
-      other: string option;
       code: string option;
       attributes: attribute list;
     }

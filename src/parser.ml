@@ -259,6 +259,10 @@ type html_kind =
   | Hcontains of string list
   | Hblank
 
+type code_block_kind =
+  | Tilde
+  | Backtick
+
 type t =
   | Lempty
   | Lblockquote of Sub.t

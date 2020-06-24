@@ -23,10 +23,6 @@ type block_list_style =
   | Loose
   | Tight
 
-type code_block_kind =
-  | Tilde
-  | Backtick
-
 module type T = sig
   type t
 end
@@ -41,9 +37,7 @@ module MakeBlock (Inline : T) = struct
 
   and code_block =
     {
-      kind: code_block_kind option;
       label: string option;
-      other: string option;
       code: string option;
       attributes: attribute list;
     }
@@ -129,8 +123,8 @@ module MakeMapper (Src : T) (Dst : T) = struct
     | Def_list {content} ->
         let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
         Def_list {content = List.map f content}
-    | Code_block {kind; label; other; code; attributes} ->
-        Code_block {kind; label; other; code; attributes}
+    | Code_block {label; code; attributes} ->
+        Code_block {label; code; attributes}
     | Html_block x ->
         Html_block x
     | Link_def x ->
