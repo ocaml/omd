@@ -173,19 +173,10 @@ let rec block = function
       elt Block name attrs (Some (concat nl (concat_map li blocks)))
   | Code_block {label; attributes; code} ->
       let attrs =
-        match label with
-        | None -> []
-        | Some language ->
-            if String.trim language = "" then []
-            else ["class", "language-" ^ language]
+        if String.trim label = "" then []
+        else ["class", "language-" ^ label]
       in
-      let c =
-        match code with
-        | None ->
-            Null
-        | Some c ->
-            text c
-      in
+      let c = text code in
       elt Block "pre" attributes
         (Some (elt Inline "code" attrs (Some c)))
   | Thematic_break ->

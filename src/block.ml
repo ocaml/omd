@@ -49,9 +49,9 @@ module Pre = struct
         let blocks = List.fold_right (fun def blocks -> Raw.Link_def def :: blocks) defs blocks in
         if s = "" then blocks else Paragraph s :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), [], a) ->
-        Code_block {label = Some label; code = None; attributes = a} :: blocks
+        Code_block {label; code = ""; attributes = a} :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), l, a) ->
-        Code_block {label = Some label; code = Some (concat l); attributes = a} :: blocks
+        Code_block {label; code = concat l; attributes = a} :: blocks
     | Rdef_list (term, defs) ->
         let l, blocks =
           match blocks with
@@ -61,7 +61,7 @@ module Pre = struct
         Def_list {content = l @ [{ Raw.term; defs = List.rev defs}]} :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        Code_block {label = None; code = Some (concat (loop l)); attributes = []} :: blocks
+        Code_block {label = ""; code = concat (loop l); attributes = []} :: blocks
     | Rhtml (_, l) ->
         Html_block (concat l) :: blocks
     | Rempty ->

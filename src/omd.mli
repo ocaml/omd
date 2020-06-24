@@ -49,8 +49,8 @@ module Block : sig
 
   and code_block =
     {
-      label: string option;
-      code: string option;
+      label: string;
+      code: string;
       attributes: attribute list;
     }
 

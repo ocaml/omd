@@ -44,10 +44,8 @@ let rec block = function
       Atom "thematic-break"
   | Heading {level; text; _} ->
       List [Atom "heading"; Atom (string_of_int level); inline text]
-  | Code_block {code = Some s; _} ->
-      List [Atom "code-block"; Atom s]
-  | Code_block {code = None; _} ->
-      List [Atom "code-block"]
+  | Code_block {code; _} ->
+      List [Atom "code-block"; Atom code]
   | Html_block s ->
       List [Atom "html"; Atom s]
   | Link_def {label; destination; _} ->
