@@ -58,7 +58,7 @@ and block_desc =
   | Html_block of string
   | Definition_list of def_elt list
 
-type doc = block list
+type doc = Ast.block list
 (** A markdown document *)
 
 module Html = Html
