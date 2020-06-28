@@ -1,5 +1,7 @@
 module Pre = Block.Pre
 
+module Html = Html
+
 include Ast
 
 type doc = block list
