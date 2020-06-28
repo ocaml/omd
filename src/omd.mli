@@ -61,7 +61,10 @@ and block_desc =
 type doc = block list
 (** A markdown document *)
 
+module Html = Html
+
 val of_channel: in_channel -> doc
+
 
 val of_string: string -> doc
 

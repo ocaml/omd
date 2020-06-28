@@ -4,8 +4,6 @@ include Ast
 
 type doc = block list
 
-let parse_inline defs s =
-  Parser.inline defs (Parser.P.of_string s)
 
 let parse_inlines (md, defs) =
   let defs =
