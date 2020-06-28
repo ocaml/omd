@@ -36,10 +36,10 @@ open Tyxml
 let rec of_omd_html (h : Omd.Html.t) =
   match h with
   | Omd.Html.Element (eltype, tag, attrs, child) -> of_element eltype tag attrs child
-  | Omd.Html.Text _ -> (??)
-  | Omd.Html.Raw _ -> (??)
-  | Omd.Html.Null -> (??)
-  | Omd.Html.Concat (_, _) -> (??)
+  | Omd.Html.Text _ -> raise (Failure "TODO")
+  | Omd.Html.Raw _ -> raise (Failure "TODO")
+  | Omd.Html.Null -> raise (Failure "TODO")
+  | Omd.Html.Concat (_, _) -> raise (Failure "TODO")
 
 and of_element =
   fun element_type tag attrs child ->
@@ -47,8 +47,11 @@ and of_element =
   | Inline -> of_inline tag attrs child
   | Block -> of_block tag attrs child
 
+and of_inline _ _ _ = raise (Failure "TODO")
+and of_block _ _ _ = raise (Failure "TODO")
 
-let of_omd ?(title="") : Omd.t -> Tyxml.Html.doc =
+
+let of_omd ?(title="") : Omd.doc -> Tyxml.Html.doc =
   fun omd ->
   let omd_html = Omd.Html.of_doc omd in
   let title' = title in
