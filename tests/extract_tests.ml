@@ -114,7 +114,7 @@ let write_dune_file test_specs tests =
     if not (List.mem example disabled) then
       Format.fprintf ppf "@ (alias %s-%03d)" base example in
   Format.printf
-    "@[<v1>(alias@ (name runtest)@ @[<v1>(deps%t)@])@]@."
+    "@[<v1>(alias@ (name test-specs)@ @[<v1>(deps%t)@])@]@."
     (fun ppf -> List.iter (pp ppf) tests)
 
 let li_begin_re = Str.regexp_string "<li>\n"

@@ -14,6 +14,21 @@
 (include dune.inc)
 
 (executable
+ (name omd_tyxml)
+ (libraries str omd tyxml omd_tyxml)
+ (modules omd_tyxml))
+
+(rule
+ (alias test_omd_tyxml)
+ (action (run ./omd_tyxml.exe)))
+
+(alias
+ (name runtest)
+ (deps
+  (alias test-specs)
+  (alias test_omd_tyxml)))
+
+(executable
  (name omd)
  (libraries str omd)
  (modules omd))
