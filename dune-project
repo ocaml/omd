@@ -21,3 +21,13 @@ Additionally, OMD implements a few Github markdown features, an
 extension mechanism, and some other features. Note that the opam
 package installs both the OMD library and the command line tool `omd`.")
  (tags (org:ocamllabs org:mirage)))
+
+(package
+ (name omd-tyxml)
+ (synopsis "A library to convert OMD's markdown representation to Tyxml")
+ (description
+  "This optional library enables user of OMD to convert values of type Omd.t,
+representing parsed markdown, into values of type Tyxml.t, which provides
+statically correct represenations of HTML.")
+ (tags (org:ocamllabs org:mirage))
+ (depends omd tyxml))

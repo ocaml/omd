@@ -1,4 +1,5 @@
 (executable
  (name main)
  (public_name omd)
+ (package omd)
  (libraries omd))
