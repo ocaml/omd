@@ -1,0 +1,3 @@
+(library
+ (name omd_tyxml)
+ (libraries omd tyxml))
