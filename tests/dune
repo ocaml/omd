@@ -3,6 +3,7 @@
  (libraries str)
  (modules extract_tests))
 
+;  Generate and run tests for the core omd package
 (rule
  (with-stdout-to
   dune.inc.new
@@ -18,21 +19,21 @@
  (libraries str omd tyxml omd_tyxml)
  (modules omd_tyxml))
 
+;  Generate and run tests for the optional omd-tyxml package
 (rule
- (alias test_omd_tyxml)
- (action (run ./omd_tyxml.exe)))
+ (with-stdout-to dune-omd-tyxml.inc.new (run ./extract_tests.exe -write-dune-file-omd-tyxml)))
 
-(alias
- (name runtest)
- (deps
-  (alias test-specs)
-  (alias test_omd_tyxml)))
+(include dune-omd-tyxml.inc)
 
 (executable
  (name omd)
  (libraries str omd)
  (modules omd))
 
+;  Generate the rules for diff-based tests
 (rule
  (alias gen)
- (action (diff dune.inc dune.inc.new)))
+ (action
+  (progn
+    (diff dune.inc dune.inc.new)
+    (diff dune-omd-tyxml.inc dune-omd-tyxml.inc.new))))
