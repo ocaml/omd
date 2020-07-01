@@ -4674,7 +4674,7 @@
  (alias def_list-001)
  (action (diff def_list-001.html def_list-001.html.new)))
 (alias
- (name test-specs)
+ (name runtest)
  (deps
   (alias spec-001)
   (alias spec-002)
