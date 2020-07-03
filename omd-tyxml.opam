@@ -18,6 +18,7 @@ depends: [
   "dune" {>= "2.5"}
   "omd"
   "tyxml"
+  "uri"
 ]
 build: [
   ["dune" "subst"] {pinned}
