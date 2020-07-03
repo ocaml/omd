@@ -30,4 +30,4 @@ package installs both the OMD library and the command line tool `omd`.")
 representing parsed markdown, into values of type Tyxml.t, which provides
 statically correct represenations of HTML.")
  (tags (org:ocamllabs org:mirage))
- (depends omd tyxml))
+ (depends omd tyxml uri))
