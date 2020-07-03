@@ -1,5 +1,95 @@
 open Ast
 
+module Compat : sig
+  val rep: Uchar.t
+  (** Uchar.rep *)
+
+  val add_utf_8_uchar : Buffer.t -> Uchar.t -> unit
+  (** Buffer.add_utf_8_uchar *)
+
+  val find_opt: ('a -> bool) -> 'a list -> 'a option
+  (** List.find_opt *)
+end = struct
+  let rep: Uchar.t = Obj.magic(0xFFFD)
+  (* let add_utf_8_uchar = Buffer.add_utf_8_uchar *)
+  type buffer =
+   {mutable buffer : bytes;
+    mutable position : int;
+    mutable length : int;
+    initial_buffer : bytes}
+
+  let get_buffer b =
+    let b = (Obj.magic(b): buffer) in
+    b.buffer
+  let get_length b =
+    let b = (Obj.magic(b): buffer) in
+    b.length
+  let set_position b v =
+    let b = (Obj.magic(b): buffer) in
+    b.position <- v
+
+  let resize b more =
+    let b = (Obj.magic(b): buffer) in
+    let old_pos = b.position in
+    let old_len = b.length in
+    let new_len = ref old_len in
+    while old_pos + more > !new_len do new_len := 2 * !new_len done;
+    if !new_len > Sys.max_string_length then begin
+      if old_pos + more <= Sys.max_string_length
+      then new_len := Sys.max_string_length
+      else failwith "Buffer.add: cannot grow buffer"
+    end;
+    let new_buffer = Bytes.create !new_len in
+    (* PR#6148: let's keep using [blit] rather than [unsafe_blit] in
+        this tricky function that is slow anyway. *)
+    Bytes.blit b.buffer 0 new_buffer 0 b.position;
+    b.buffer <- new_buffer;
+    b.length <- !new_len;
+    assert (b.position + more <= b.length);
+    assert (old_pos + more <= b.length);
+    ()
+
+  let add_utf_8_uchar b u = match Uchar.to_int u with
+  | u when u < 0 -> assert false
+  | u when u <= 0x007F ->
+      Buffer.add_char b (Char.unsafe_chr u)
+  | u when u <= 0x07FF ->
+      let pos = Buffer.length(b) in
+      if pos + 2 > get_length(b) then resize b 2;
+      Bytes.unsafe_set (get_buffer(b)) (pos    )
+        (Char.unsafe_chr (0xC0 lor (u lsr 6)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 1)
+        (Char.unsafe_chr (0x80 lor (u land 0x3F)));
+      set_position b (pos + 2)
+  | u when u <= 0xFFFF ->
+      let pos = Buffer.length b in
+      if pos + 3 > get_length(b) then resize b 3;
+      Bytes.unsafe_set (get_buffer(b)) (pos    )
+        (Char.unsafe_chr (0xE0 lor (u lsr 12)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 1)
+        (Char.unsafe_chr (0x80 lor ((u lsr 6) land 0x3F)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 2)
+        (Char.unsafe_chr (0x80 lor (u land 0x3F)));
+        set_position b (pos + 3)
+    | u when u <= 0x10FFFF ->
+      let pos = Buffer.length b in
+      if pos + 4 > get_length b then resize b 4;
+      Bytes.unsafe_set (get_buffer(b)) (pos    )
+        (Char.unsafe_chr (0xF0 lor (u lsr 18)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 1)
+        (Char.unsafe_chr (0x80 lor ((u lsr 12) land 0x3F)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 2)
+        (Char.unsafe_chr (0x80 lor ((u lsr 6) land 0x3F)));
+      Bytes.unsafe_set (get_buffer(b)) (pos + 3)
+        (Char.unsafe_chr (0x80 lor (u land 0x3F)));
+      set_position b (pos + 4)
+  | _ -> assert false
+
+  let rec find_opt p = function
+  | [] -> None
+  | x :: l -> if p x then Some x else find_opt p l
+end
+
 module Sub : sig
   type t
 
@@ -24,6 +114,7 @@ module Sub : sig
 
   val sub: len:int -> t -> t
 end = struct
+
   type t =
     {
       base: string;
@@ -466,7 +557,7 @@ let entity s =
             loop (succ m) (n * 16 + Char.code c - Char.code '0') (Sub.tail s)
         | Some ';' ->
             if m = 0 then raise Fail;
-            let u = if n = 0 || not (Uchar.is_valid n) then Uchar.rep else Uchar.of_int n in
+            let u = if n = 0 || not (Uchar.is_valid n) then Compat.rep else Uchar.of_int n in
             [u], Sub.tail s
         | Some _ | None ->
             raise Fail
@@ -480,7 +571,7 @@ let entity s =
             loop (succ m) (n * 10 + Char.code c - Char.code '0') (Sub.tail s)
         | Some ';' ->
             if m = 0 then raise Fail;
-            let u = if n = 0 || not (Uchar.is_valid n) then Uchar.rep else Uchar.of_int n in
+            let u = if n = 0 || not (Uchar.is_valid n) then Compat.rep else Uchar.of_int n in
             [u], Sub.tail s
         | Some _ | None ->
             raise Fail
@@ -535,7 +626,7 @@ let info_string c s =
         let s = Sub.tail s in
         begin match entity s with
         | (ul, s) ->
-            List.iter (Buffer.add_utf_8_uchar buf) ul;
+            List.iter (Compat.add_utf_8_uchar buf) ul;
             loop s
         | exception Fail ->
             Buffer.add_char buf c;
@@ -911,8 +1002,8 @@ let entity buf st =
                   if n = 0 then
                     Buffer.add_string buf (range st p (pos st - p))
                   else
-                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
-                    Buffer.add_utf_8_uchar buf u
+                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Compat.rep in
+                    Compat.add_utf_8_uchar buf u
               | Some _ | None ->
                   Buffer.add_string buf (range st p (pos st - p))
             end
@@ -931,8 +1022,8 @@ let entity buf st =
                   if n = 0 then
                     Buffer.add_string buf (range st p (pos st - p))
                   else begin
-                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Uchar.rep in
-                    Buffer.add_utf_8_uchar buf u
+                    let u = if Uchar.is_valid m && m <> 0 then Uchar.of_int m else Compat.rep in
+                    Compat.add_utf_8_uchar buf u
                   end
               | Some _ | None ->
                   Buffer.add_string buf (range st p (pos st - p))
@@ -955,7 +1046,7 @@ let entity buf st =
             | [] ->
                 Buffer.add_string buf (range st p (pos st - p))
             | _ :: _ as cps ->
-                List.iter (Buffer.add_utf_8_uchar buf) cps
+                List.iter (Compat.add_utf_8_uchar buf) cps
             end
         | Some _ | None ->
             Buffer.add_string buf (range st p (pos st - p))
@@ -1574,7 +1665,7 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
+          match Compat.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
           | Some def ->
               loop (Pre.R (Ref {kind; label = lab1; def}) :: text acc) st
           | None ->
@@ -1748,7 +1839,7 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
+                      begin match Compat.find_opt (fun ({label; _}: string link_def) -> label = s) defs with
                       | Some def ->
                           loop (Pre.R (Ref {kind = k; label; def}) :: acc') st
                       | None ->
