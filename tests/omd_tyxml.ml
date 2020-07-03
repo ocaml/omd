@@ -1,10 +1,25 @@
-(* Integration tests for conversion from Omd.doc to Tyxml.doc *)
+(* Integration tests for conversion from [Omd.block] to [_ Tyxml.elt] *)
 
-let tyxml_to_string t =
-  Format.asprintf "%a" Tyxml.Html.(pp ~indent:true ()) t
+let br_tag s =
+  let re = Str.regexp_string "<br/>" in
+  Str.global_replace re "<br />\n" s
 
-let html_of_string s =
-  s |> Omd.of_string |> Omd_tyxml.of_omd |> tyxml_to_string
+(* The reference spec.txt has some idiosyncratic tagging and line breaks.
+   So we deform the Tyxml a bit to match. Since it's all programmatic and
+   clearly understood, it doesn't undermine the validity of our tests. *)
+let denormalize_html s =
+  s |> br_tag
+
+let tyxml_elt_to_string t =
+  Format.asprintf "%a" Tyxml.Html.(pp_elt ~indent:false ()) t
+
+let html_of_omd s =
+  let html =
+    s
+    |> List.map (fun b -> b |> Omd_tyxml.of_block |>  tyxml_elt_to_string)
+    |> String.concat "\n"
+  in
+  html ^ "\n"
 
 let with_open_in fn f =
   let ic = open_in fn in
@@ -15,6 +30,6 @@ let () =
   with_open_in Sys.argv.(1) @@ fun ic ->
   ic
   |> Omd.of_channel
-  |> Omd_tyxml.of_omd
-  |> tyxml_to_string
+  |> html_of_omd
+  |> denormalize_html
   |> print_string
