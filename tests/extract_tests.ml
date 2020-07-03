@@ -26,11 +26,17 @@ let disabled =
 
 let with_open_in fn f =
   let ic = open_in fn in
-    f ic
+  let result = f ic in
+  close_in_noerr ic;
+  result
+
+
 
 let with_open_out fn f =
   let oc = open_out fn in
-    f oc
+  let result = f oc in
+  close_out oc;
+  result
 
 let begins_with s s' =
   String.length s >= String.length s' &&
