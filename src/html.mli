@@ -5,13 +5,13 @@ type element_type =
   | Block
 
 type t =
-  | Element of element_type * string * attribute list * t option
+  | Element of element_type * string * attributes * t option
   | Text of string
   | Raw of string
   | Null
   | Concat of t * t
 
-val of_doc : Block.t list -> t
+val of_doc : block list -> t
 
 val to_string : t -> string
 
