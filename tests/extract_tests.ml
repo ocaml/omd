@@ -1,4 +1,8 @@
 (* Extract test cases from Spec *)
+let protect ~finally f =
+  match f () with
+  | exception e -> finally (); raise e
+  | r -> finally (); r
 
 let disabled =
   [
@@ -26,17 +30,16 @@ let disabled =
 
 let with_open_in fn f =
   let ic = open_in fn in
-  let result = f ic in
-  close_in_noerr ic;
-  result
+  protect ~finally:(fun () -> close_in_noerr ic)
+    (fun () -> f ic)
+
 
 
 
 let with_open_out fn f =
   let oc = open_out fn in
-  let result = f oc in
-  close_out oc;
-  result
+  protect ~finally:(fun () -> close_out_noerr oc)
+    (fun () -> f oc)
 
 let begins_with s s' =
   String.length s >= String.length s' &&

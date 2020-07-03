@@ -1,6 +1,6 @@
 module Uchar = struct
   include Uchar
-  let rep: Uchar.t = Obj.magic(0xFFFD)
+  let rep: Uchar.t = of_int(0xFFFD)
 end
 
 module List = struct
