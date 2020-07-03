@@ -25,7 +25,6 @@ module Sub : sig
 
   val sub: len:int -> t -> t
 end = struct
-
   type t =
     {
       base: string;
