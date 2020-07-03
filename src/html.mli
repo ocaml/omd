@@ -11,6 +11,8 @@ type t =
   | Null
   | Concat of t * t
 
+val escape_uri : string -> string
+
 val of_doc : block list -> t
 
 val to_string : t -> string

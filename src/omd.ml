@@ -25,3 +25,7 @@ let to_html doc =
 
 let to_sexp ast =
   Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
+
+module Internal = struct
+  let escape_uri = Html.escape_uri
+end
