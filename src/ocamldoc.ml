@@ -60,7 +60,6 @@ let concat_map f l =
   List.fold_left (fun accu x -> concat accu (f x)) Null l
 
 let cross_reference_words = [
-  "ref";
   "module";
   "modtype";
   "class";
@@ -76,6 +75,7 @@ let cross_reference_words = [
 ]
 
 let is_cross_reference_regexps = cross_reference_words |> List.map(fun w -> (Str.regexp_string (w ^ ":")))
+let inferred_cross_reference = Str.regexp_string("ref:")
 
 let rec inline {il_desc; il_attributes = _} =
   match il_desc with
@@ -88,15 +88,21 @@ let rec inline {il_desc; il_attributes = _} =
   | Soft_break -> text "\n"
   | Html body -> Surround ("{%html: ", (text body), "%}")
   | Link {label; destination; title = _} ->
-    let is_cross_reference = match label with
+    let cross_reference = match label with
       | {il_desc = Text s; _} when s == destination ->
-        List.exists (fun r -> Str.string_match r destination 0) is_cross_reference_regexps
+        if (Str.string_match inferred_cross_reference destination 0) then
+          Some(Str.string_after destination 4)
+        else
+          if List.exists (fun r -> Str.string_match r destination 0) is_cross_reference_regexps then Some(destination) else None
       | _ ->
-        false in
-    if is_cross_reference then
-      Surround("{!", (text destination), "}")
-    else
-      TripleSurround("{{: ", (text destination), "} ", inline label, "}")
+        None in
+    (
+      match cross_reference with
+      | Some(cross_reference) ->
+        Surround("{!", (text cross_reference), "}")
+      | None ->
+        TripleSurround("{{: ", (text destination), "} ", inline label, "}")
+    )
   | Image {label; destination; title} ->
       let img = "<img src=\"" ^ escape_uri(destination) ^ "\" alt=\"" ^ (to_plain_text (inline label)) ^ "\"" ^ (match title with
       | None -> ""
