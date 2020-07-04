@@ -4,7 +4,9 @@
  (modules extract_tests))
 
 (rule
- (with-stdout-to dune.inc.new (run ./extract_tests.exe -write-dune-file)))
+ (with-stdout-to
+  dune.inc.new
+  (run ./extract_tests.exe -write-dune-file)))
 
 (include dune.inc)
 
@@ -13,6 +15,12 @@
  (libraries str omd)
  (modules omd))
 
+(executable
+ (name omd_ocamldoc)
+ (libraries str omd)
+ (modules omd_ocamldoc))
+
 (rule
  (alias gen)
- (action (diff dune.inc dune.inc.new)))
+ (action
+  (diff dune.inc dune.inc.new)))
