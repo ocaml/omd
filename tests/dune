@@ -7,7 +7,8 @@
  (with-stdout-to
   dune.inc.new
   (run ./extract_tests.exe -write-dune-file
-       %{dep:spec.txt})))
+       %{dep:spec.txt}
+       %{dep:attributes.md})))
 
 (include dune.inc)
 
