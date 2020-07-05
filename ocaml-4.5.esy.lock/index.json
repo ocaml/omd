@@ -1,0 +1,19 @@
+{
+  "checksum": "0cc961f41dbf4ff5ab5654751a4ba36e",
+  "root": "ocaml-4.5@link-dev:./ocaml-4.5.json",
+  "node": {
+    "ocaml-4.5@link-dev:./ocaml-4.5.json": {
+      "id": "ocaml-4.5@link-dev:./ocaml-4.5.json",
+      "name": "ocaml-4.5",
+      "version": "link-dev:./ocaml-4.5.json",
+      "source": {
+        "type": "link-dev",
+        "path": ".",
+        "manifest": "ocaml-4.5.json"
+      },
+      "overrides": [],
+      "dependencies": [],
+      "devDependencies": []
+    }
+  }
+}

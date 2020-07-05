@@ -17,7 +17,7 @@
     "doc": "esy dune build @doc"
   },
   "dependencies": {
-    "@opam/dune": "^2.5.0",
+    "@opam/dune": "^2.0.0",
     "ocaml": ">4.4.2"
   },
   "devDependencies": {
