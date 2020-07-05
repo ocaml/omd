@@ -1,0 +1,28 @@
+{
+  "name": "omd",
+  "version": "0.1.0",
+  "description": "A Markdown frontend in pure OCaml",
+  "license": "ISC",
+  "esy": {
+    "build": "dune build -p #{self.name}",
+    "release": {
+      "bin": [
+        "omd"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "esy dune runtest",
+    "format": "esy dune build @fmt --auto-promote",
+    "doc": "esy dune build @doc"
+  },
+  "dependencies": {
+    "@opam/dune": "^2.5.0",
+    "ocaml": ">4.4.2"
+  },
+  "devDependencies": {
+    "@opam/merlin": "*",
+    "@reason-native/rely": "*",
+    "@opam/odoc": "*"
+  }
+}

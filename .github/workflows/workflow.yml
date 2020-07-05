@@ -14,23 +14,76 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-version:
-          - 4.04.2
-          - 4.09.1
-          - 4.08.1
+          - 4.4
+          - 4.6
+          - 4.7
+          - 4.8
+          - 4.9
 
     runs-on: ${{ matrix.os }}
+    env:
+      OCAML_VERSION: ${{ matrix.ocaml-version }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
+      - uses: actions/setup-node@v1.4.2
         with:
-          ocaml-version: ${{ matrix.ocaml-version }}
+          node-version: 12
+      - uses: actions/checkout@v2.2.0
+      - name: Install esy
+        run: npm @ocaml-$OCAML_VERSION install -g esy
 
-      - run: opam install . --deps-only --with-doc --with-test
+      - name: Try to restore install cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.esy/source
+          key: source-${{ hashFiles('**/index.json') }}
 
-      - run: opam exec -- dune build
+      - name: Install
+        run: esy @ocaml-$OCAML_VERSION install
 
-      - run: opam exec -- dune runtest
+      - name: Print esy cache
+        uses: actions/github-script@v2
+        id: print_esy_cache
+        with:
+          script: |
+            const path = require('path')
+            const scriptPath = path.resolve('.github/workflows/print_esy_cache.js')
+            require(scriptPath)(core)
+      - name: Try to restore build cache
+        id: deps-cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.print_esy_cache.outputs.esy_cache }}
+          key: build-${{ matrix.os }}-${{ hashFiles('**/index.json') }}
+          restore-keys: build-${{ matrix.os }}-
+
+      # Here we use a low-level. In real situation you don't have to
+      # but it is useful in CI as it split the log in GitHub UI.
+      # You can see at a glance if it is your project or your deps that break.
+      #
+      # We also use --release flag to build less.
+      # This allow us to spo syntax/type error more quickly.
+      - name: Build release dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: esy @ocaml-$OCAML_VERSION build-dependencies --release
+
+      - name: Build project in release
+        run: esy @ocaml-$OCAML_VERSION build --release
+
+      # Now that our core project build let builds others deps
+      - name: Build dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: esy @ocaml-$OCAML_VERSION build-dependencies
+
+      - name: Build project
+        run: esy @ocaml-$OCAML_VERSION build
+
+      # Here we cleanup if we have a cache fail because we use restore-keys.
+      # restore-keys take the old store even on cache fail.
+      # So, we have deps we don't care anymore. We prune them.
+      - name: Clean global store
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: esy @ocaml-$OCAML_VERSION cleanup .
+
+      - name: Test
+        run: esy @ocaml-$OCAML_VERSION test
