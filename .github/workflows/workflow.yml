@@ -23,6 +23,10 @@ jobs:
     env:
       OCAML_VERSION: ${{ matrix.ocaml-version }}
 
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/setup-node@v1.4.2
         with:

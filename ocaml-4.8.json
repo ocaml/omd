@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "ocaml": "~4.8.1"
+  "source": "./package.json",
+  "override": {
+    "dependencies": {
+      "ocaml": "~4.8.1"
+    }
   }
 }
