@@ -89,4 +89,4 @@ jobs:
       #   run: esy @ocaml-$OCAML_VERSION cleanup .
 
       - name: Test
-        run: esy @ocaml-$OCAML_VERSION test
+        run: esy @ocaml-$OCAML_VERSION dune runtest
