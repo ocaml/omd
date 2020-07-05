@@ -8,7 +8,8 @@
   dune.inc.new
   (run ./extract_tests.exe -write-dune-file
        %{dep:spec.txt}
-       %{dep:attributes.md})))
+       %{dep:attributes.md}
+       %{dep:def_list.md})))
 
 (include dune.inc)
 

@@ -1,5 +1,5 @@
 (rule
- (deps spec.txt attributes.md)
+ (deps spec.txt attributes.md def_list.md)
  (targets
   spec-001.md spec-001.html
   spec-002.md spec-002.html
@@ -664,7 +664,8 @@
   attributes-012.md attributes-012.html
   attributes-013.md attributes-013.html
   attributes-014.md attributes-014.html
-  attributes-015.md attributes-015.html)
+  attributes-015.md attributes-015.html
+  def_list-001.md def_list-001.html)
  (action (run ./extract_tests.exe -generate-test-files %{deps})))
 (rule
  (action
@@ -4665,6 +4666,13 @@
 (rule
  (alias attributes-015)
  (action (diff attributes-015.html attributes-015.html.new)))
+(rule
+ (action
+  (with-stdout-to def_list-001.html.new
+   (run ./omd.exe %{dep:def_list-001.md}))))
+(rule
+ (alias def_list-001)
+ (action (diff def_list-001.html def_list-001.html.new)))
 (alias
  (name runtest)
  (deps
@@ -5311,4 +5319,5 @@
   (alias attributes-012)
   (alias attributes-013)
   (alias attributes-014)
-  (alias attributes-015)))
+  (alias attributes-015)
+  (alias def_list-001)))
