@@ -1,5 +1,5 @@
 (rule
- (deps spec.txt)
+ (deps spec.txt attributes.md)
  (targets
   spec-001.md spec-001.html
   spec-002.md spec-002.html
@@ -649,8 +649,23 @@
   spec-646.md spec-646.html
   spec-647.md spec-647.html
   spec-648.md spec-648.html
-  spec-649.md spec-649.html)
- (action (run ./extract_tests.exe -generate-test-files)))
+  spec-649.md spec-649.html
+  attributes-001.md attributes-001.html
+  attributes-002.md attributes-002.html
+  attributes-003.md attributes-003.html
+  attributes-004.md attributes-004.html
+  attributes-005.md attributes-005.html
+  attributes-006.md attributes-006.html
+  attributes-007.md attributes-007.html
+  attributes-008.md attributes-008.html
+  attributes-009.md attributes-009.html
+  attributes-010.md attributes-010.html
+  attributes-011.md attributes-011.html
+  attributes-012.md attributes-012.html
+  attributes-013.md attributes-013.html
+  attributes-014.md attributes-014.html
+  attributes-015.md attributes-015.html)
+ (action (run ./extract_tests.exe -generate-test-files %{deps})))
 (rule
  (action
   (with-stdout-to spec-001.html.new (run ./omd.exe %{dep:spec-001.md}))))
@@ -4545,6 +4560,111 @@
 (rule
  (alias spec-649)
  (action (diff spec-649.html spec-649.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-001.html.new
+   (run ./omd.exe %{dep:attributes-001.md}))))
+(rule
+ (alias attributes-001)
+ (action (diff attributes-001.html attributes-001.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-002.html.new
+   (run ./omd.exe %{dep:attributes-002.md}))))
+(rule
+ (alias attributes-002)
+ (action (diff attributes-002.html attributes-002.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-003.html.new
+   (run ./omd.exe %{dep:attributes-003.md}))))
+(rule
+ (alias attributes-003)
+ (action (diff attributes-003.html attributes-003.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-004.html.new
+   (run ./omd.exe %{dep:attributes-004.md}))))
+(rule
+ (alias attributes-004)
+ (action (diff attributes-004.html attributes-004.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-005.html.new
+   (run ./omd.exe %{dep:attributes-005.md}))))
+(rule
+ (alias attributes-005)
+ (action (diff attributes-005.html attributes-005.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-006.html.new
+   (run ./omd.exe %{dep:attributes-006.md}))))
+(rule
+ (alias attributes-006)
+ (action (diff attributes-006.html attributes-006.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-007.html.new
+   (run ./omd.exe %{dep:attributes-007.md}))))
+(rule
+ (alias attributes-007)
+ (action (diff attributes-007.html attributes-007.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-008.html.new
+   (run ./omd.exe %{dep:attributes-008.md}))))
+(rule
+ (alias attributes-008)
+ (action (diff attributes-008.html attributes-008.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-009.html.new
+   (run ./omd.exe %{dep:attributes-009.md}))))
+(rule
+ (alias attributes-009)
+ (action (diff attributes-009.html attributes-009.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-010.html.new
+   (run ./omd.exe %{dep:attributes-010.md}))))
+(rule
+ (alias attributes-010)
+ (action (diff attributes-010.html attributes-010.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-011.html.new
+   (run ./omd.exe %{dep:attributes-011.md}))))
+(rule
+ (alias attributes-011)
+ (action (diff attributes-011.html attributes-011.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-012.html.new
+   (run ./omd.exe %{dep:attributes-012.md}))))
+(rule
+ (alias attributes-012)
+ (action (diff attributes-012.html attributes-012.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-013.html.new
+   (run ./omd.exe %{dep:attributes-013.md}))))
+(rule
+ (alias attributes-013)
+ (action (diff attributes-013.html attributes-013.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-014.html.new
+   (run ./omd.exe %{dep:attributes-014.md}))))
+(rule
+ (alias attributes-014)
+ (action (diff attributes-014.html attributes-014.html.new)))
+(rule
+ (action
+  (with-stdout-to attributes-015.html.new
+   (run ./omd.exe %{dep:attributes-015.md}))))
+(rule
+ (alias attributes-015)
+ (action (diff attributes-015.html attributes-015.html.new)))
 (alias
  (name runtest)
  (deps
@@ -5176,4 +5296,19 @@
   (alias spec-646)
   (alias spec-647)
   (alias spec-648)
-  (alias spec-649)))
+  (alias spec-649)
+  (alias attributes-001)
+  (alias attributes-002)
+  (alias attributes-003)
+  (alias attributes-004)
+  (alias attributes-005)
+  (alias attributes-006)
+  (alias attributes-007)
+  (alias attributes-008)
+  (alias attributes-009)
+  (alias attributes-010)
+  (alias attributes-011)
+  (alias attributes-012)
+  (alias attributes-013)
+  (alias attributes-014)
+  (alias attributes-015)))
