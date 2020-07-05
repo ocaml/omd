@@ -1,4 +1,4 @@
-(lang dune 2.5)
+(lang dune 2.0)
 
 (name omd)
 (version 2.0.0~alpha1)
