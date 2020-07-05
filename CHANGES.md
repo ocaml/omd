@@ -4,6 +4,8 @@ next (2.0.0)
 - Big refactoring by @nojb. Changes in interface (simplification of code, might
   affect performance a little). To be tested!
 
+- Lower OCaml requirement to 4.04.2  (#213, @jfrolich)
+
 1.3.x
 -----
 
