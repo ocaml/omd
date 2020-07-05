@@ -14,7 +14,6 @@ let with_open_in fn f =
   protect ~finally:(fun () -> close_in_noerr ic)
     (fun () -> f ic)
 
-
 let () =
   with_open_in Sys.argv.(1) @@ fun ic ->
   print_string (normalize_html (Omd.to_html (Omd.of_channel ic)))

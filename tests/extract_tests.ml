@@ -33,9 +33,6 @@ let with_open_in fn f =
   protect ~finally:(fun () -> close_in_noerr ic)
     (fun () -> f ic)
 
-
-
-
 let with_open_out fn f =
   let oc = open_out fn in
   protect ~finally:(fun () -> close_out_noerr oc)

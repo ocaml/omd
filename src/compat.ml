@@ -28,5 +28,5 @@ module Buffer = struct
       Buffer.add_char b (Char.unsafe_chr (0x80 lor ((u lsr 12) land 0x3F)));
       Buffer.add_char b (Char.unsafe_chr (0x80 lor ((u lsr 6) land 0x3F)));
       Buffer.add_char b (Char.unsafe_chr (0x80 lor (u land 0x3F)))
-    | _ -> assert false
+  | _ -> assert false
 end
