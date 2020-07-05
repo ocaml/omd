@@ -4,7 +4,10 @@
  (modules extract_tests))
 
 (rule
- (with-stdout-to dune.inc.new (run ./extract_tests.exe -write-dune-file)))
+ (with-stdout-to
+  dune.inc.new
+  (run ./extract_tests.exe -write-dune-file
+       %{dep:spec.txt})))
 
 (include dune.inc)
 

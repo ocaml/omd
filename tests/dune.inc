@@ -650,7 +650,7 @@
   spec-647.md spec-647.html
   spec-648.md spec-648.html
   spec-649.md spec-649.html)
- (action (run ./extract_tests.exe -generate-test-files)))
+ (action (run ./extract_tests.exe -generate-test-files %{deps})))
 (rule
  (action
   (with-stdout-to spec-001.html.new (run ./omd.exe %{dep:spec-001.md}))))
