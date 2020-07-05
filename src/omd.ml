@@ -25,3 +25,6 @@ let to_html doc =
 
 let to_sexp ast =
   Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
+
+let to_ocamldoc doc =
+  Ocamldoc.to_string (Ocamldoc.of_doc doc)

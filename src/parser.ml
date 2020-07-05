@@ -1,4 +1,5 @@
 open Ast
+open Compat
 
 module Sub : sig
   type t

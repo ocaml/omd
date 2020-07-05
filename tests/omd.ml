@@ -7,8 +7,9 @@ let normalize_html s =
 
 let with_open_in fn f =
   let ic = open_in fn in
-  Fun.protect ~finally:(fun () -> close_in_noerr ic)
-    (fun () -> f ic)
+  let result = f ic in
+  close_in_noerr ic;
+  result
 
 let () =
   with_open_in Sys.argv.(1) @@ fun ic ->

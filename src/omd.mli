@@ -68,3 +68,5 @@ val of_string: string -> doc
 val to_html: doc -> string
 
 val to_sexp: doc -> string
+
+val to_ocamldoc: doc -> string
