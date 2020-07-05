@@ -80,9 +80,9 @@ jobs:
       # Here we cleanup if we have a cache fail because we use restore-keys.
       # restore-keys take the old store even on cache fail.
       # So, we have deps we don't care anymore. We prune them.
-      - name: Clean global store
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: esy @ocaml-$OCAML_VERSION cleanup .
+      # - name: Clean global store
+      #   if: steps.deps-cache.outputs.cache-hit != 'true'
+      #   run: esy @ocaml-$OCAML_VERSION cleanup .
 
       - name: Test
         run: esy @ocaml-$OCAML_VERSION test
