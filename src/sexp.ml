@@ -6,10 +6,9 @@ type t =
 
 let atom s = Atom s
 
-let rec link_def : 'a. ('a -> t) -> 'a link_def -> t =
-  fun f {label; destination; title; _} ->
-    let title = match title with Some title -> [Atom title] | None -> [] in
-    List (Atom "link-def" :: f label :: Atom destination :: title)
+let rec link {label; destination; title; _} =
+  let title = match title with Some title -> [Atom title] | None -> [] in
+  List (Atom "link" :: inline label :: Atom destination :: title)
 
 and inline {il_desc; _} =
   match il_desc with
@@ -28,7 +27,7 @@ and inline {il_desc; _} =
   | Soft_break ->
       Atom "soft-break"
   | Link def ->
-      List [Atom "url"; link_def inline def]
+      List [Atom "url"; link def]
   | Html s ->
       List [Atom "html"; Atom s]
   | Image _ ->
@@ -50,8 +49,6 @@ let rec block {bl_desc; bl_attributes = _} =
       List [Atom "code-block"; Atom info]
   | Html_block s ->
       List [Atom "html"; Atom s]
-  | Link_def {label; destination; _} ->
-      List [Atom "link-def"; Atom label; Atom destination]
   | Definition_list l ->
       List [Atom "def-list";
             List (List.map (fun elt ->

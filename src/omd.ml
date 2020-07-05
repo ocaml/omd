@@ -7,20 +7,18 @@ type doc = block list
 let parse_inline defs s =
   Parser.inline defs (Parser.P.of_string s)
 
-let parse_inlines md =
+let parse_inlines (md, defs) =
   let defs =
-    let f (def, attr) = {def with label = Parser.normalize def.label}, attr in
-    List.map f (Raw.defs md)
+    let f (def : link_def) = {def with label = Parser.normalize def.label} in
+    List.map f defs
   in
   List.map (Mapper.map (parse_inline defs)) md
 
 let of_channel ic =
-  let md = Pre.of_channel ic in
-  parse_inlines md
+  parse_inlines (Pre.of_channel ic)
 
 let of_string s =
-  let md = Pre.of_string s in
-  parse_inlines md
+  parse_inlines (Pre.of_string s)
 
 let to_html doc =
   Html.to_string (Html.of_doc doc)

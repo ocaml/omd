@@ -1561,7 +1561,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      {Ast.label; destination; title = None}
+      {Ast.label = mk (Text label); destination; title = None}
   | _ ->
       raise Fail
 
@@ -1592,10 +1592,10 @@ let rec inline defs st =
         let lab1 = inline defs (of_string lab) in
         let reflink lab' =
           let s = normalize lab' in
-          match List.find_opt (fun ({label; _}, _) -> label = s) defs with
-          | Some (def, attr) ->
+          match List.find_opt (fun ({label; _} : link_def) -> label = s) defs with
+          | Some {label = _; destination; title; attributes = attr} ->
               let r =
-                let def = {def with label = lab1} in
+                let def = {label = lab1; destination; title} in
                 match kind with Pre.Img -> Image def | Url -> Link def
               in
               loop (Pre.R (mk ~attr r) :: text acc) st
@@ -1635,7 +1635,6 @@ let rec inline defs st =
     | '<' as c ->
         begin match protect autolink st with
         | def ->
-            let def = {def with label = mk (Text def.label)} in
             let attr = inline_attribute_string st in
             loop (Pre.R (mk ~attr (Link def)) :: text acc) st
         | exception Fail ->
@@ -1775,9 +1774,9 @@ let rec inline defs st =
                   begin match link_label false st with
                   | lab ->
                       let s = normalize lab in
-                      begin match List.find_opt (fun ({label; _}, _) -> label = s) defs with
-                      | Some (def, attr) ->
-                          let def = {def with label} in
+                      begin match List.find_opt (fun ({label; _} : link_def) -> label = s) defs with
+                      | Some {label = _; destination; title; attributes = attr} ->
+                          let def = {label; destination; title} in
                           let r = match k with Img -> Image def | Url -> Link def in
                           loop (Pre.R (mk ~attr r) :: acc') st
                       | None ->
@@ -1872,10 +1871,10 @@ let link_reference_definition st =
   let attributes = inline_attribute_string st in
   match protect (ws1 >>> link_title <<< sp <<< eol) st with
   | title ->
-      {Ast.label; destination; title = Some title}, attributes
+      {label; destination; title = Some title; attributes}
   | exception Fail ->
       (sp >>> eol) st;
-      {Ast.label; destination; title = None}, attributes
+      {label; destination; title = None; attributes}
 
 let link_reference_definitions st =
   let rec loop acc =

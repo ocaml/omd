@@ -3,14 +3,14 @@
 type attributes =
   (string * string) list
 
-type 'a link_def =
+type link =
   {
-    label: 'a;
+    label: inline;
     destination: string;
     title: string option;
   }
 
-type inline =
+and inline =
   {
     il_desc: inline_desc;
     il_attributes: attributes;
@@ -24,8 +24,8 @@ and inline_desc =
   | Code of string
   | Hard_break
   | Soft_break
-  | Link of inline link_def
-  | Image of inline link_def
+  | Link of link
+  | Image of link
   | Html of string
 
 type list_type =
@@ -56,7 +56,6 @@ and block_desc =
   | Heading of int * inline
   | Code_block of string * string
   | Html_block of string
-  | Link_def of string link_def
   | Definition_list of def_elt list
 
 type doc = block list

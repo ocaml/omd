@@ -39,7 +39,8 @@ module Pre = struct
     let i = loop 0 in
     if i > 0 then String.sub s i (String.length s - i) else s
 
-  let rec close {blocks; next} =
+  let rec close link_defs {blocks; next} =
+    let finish = finish link_defs in
     match next with
     | Rblockquote state ->
         mk (Raw.Blockquote (finish state)) :: blocks
@@ -49,10 +50,7 @@ module Pre = struct
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
-        let blocks =
-          let f (def, attr) blocks = mk ~attr (Raw.Link_def def) :: blocks in
-          List.fold_right f defs blocks
-        in
+        link_defs := defs @ !link_defs;
         if s = "" then blocks else mk (Paragraph s) :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), [], attr) ->
         mk ~attr (Code_block (label, "")) :: blocks
@@ -73,8 +71,8 @@ module Pre = struct
     | Rempty ->
         blocks
 
-  and finish state =
-    List.rev (close state)
+  and finish link_defs state =
+    List.rev (close link_defs state)
 
   let empty =
     {blocks = []; next = Rempty}
@@ -82,7 +80,10 @@ module Pre = struct
   let classify_line s =
     Parser.parse s
 
-  let rec process {blocks; next} s =
+  let rec process link_defs {blocks; next} s =
+    let process = process link_defs in
+    let close = close link_defs in
+    let finish = finish link_defs in
     match next, classify_line s with
     | Rempty, Parser.Lempty ->
         {blocks; next = Rempty}
@@ -211,16 +212,18 @@ module Pre = struct
             process {blocks = close {blocks; next}; next = Rempty} s
         end
 
-  let process state s =
-    process state (Sub.of_string s)
+  let process link_defs state s =
+    process link_defs state (Sub.of_string s)
 
   let of_channel ic =
+    let link_defs = ref [] in
     let rec loop state =
       match input_line ic with
       | s ->
-          loop (process state s)
+          loop (process link_defs state s)
       | exception End_of_file ->
-          finish state
+          let blocks = finish link_defs state in
+          blocks, List.rev !link_defs
     in
     loop empty
 
@@ -245,11 +248,14 @@ module Pre = struct
     loop false off
 
   let of_string s =
+    let link_defs = ref [] in
     let rec loop state = function
-      | None -> finish state
+      | None ->
+          let blocks = finish link_defs state in
+          blocks, List.rev !link_defs
       | Some off ->
           let s, off = read_line s off in
-          loop (process state s) off
+          loop (process link_defs state s) off
     in
     loop empty (Some 0)
 end

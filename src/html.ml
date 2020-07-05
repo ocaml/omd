@@ -200,8 +200,6 @@ let rec block {bl_desc; bl_attributes = attr} =
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
       elt Block "dl" attr (Some (concat_map f l))
-  | Link_def _ ->
-      Null
 
 let of_doc doc =
   concat_map block doc
