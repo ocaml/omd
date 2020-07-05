@@ -30,7 +30,7 @@ jobs:
           node-version: 12
       - uses: actions/checkout@v2.2.0
       - name: Install esy
-        run: npm @ocaml-$OCAML_VERSION install -g esy
+        run: npm install -g esy
 
       - name: Try to restore install cache
         uses: actions/cache@v2
