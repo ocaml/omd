@@ -120,9 +120,7 @@ let write_dune_file test_specs tests =
 let li_begin_re = Str.regexp_string "<li>\n"
 let li_end_re = Str.regexp_string "\n</li>"
 
-let normalize_html s =
-  Str.global_replace li_end_re "</li>"
-    (Str.global_replace li_begin_re "<li>" s)
+let normalize_html s = Soup.(parse s |> pretty_print)
 
 let generate_test_files tests =
   let f {filename; example; markdown; html} =
