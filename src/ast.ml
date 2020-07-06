@@ -1,13 +1,6 @@
 type attributes =
   (string * string) list
 
-type 'a link_def =
-  {
-    label: 'a;
-    destination: string;
-    title: string option;
-  }
-
 type list_type =
   | Ordered of int * char
   | Bullet of char
@@ -21,6 +14,14 @@ let same_block_list_kind k1 k2 =
   | Ordered (_, c1), Ordered (_, c2)
   | Bullet c1, Bullet c2 -> c1 = c2
   | _ -> false
+
+type link_def =
+  {
+    label: string;
+    destination: string;
+    title: string option;
+    attributes: attributes;
+  }
 
 module type T = sig
   type t
@@ -47,22 +48,17 @@ module MakeBlock (I : T) = struct
     | Heading of int * I.t
     | Code_block of string * string
     | Html_block of string
-    | Link_def of string link_def
     | Definition_list of def_elt list
-
-  let defs ast =
-    let rec loop acc {bl_desc; bl_attributes} =
-      match bl_desc with
-      | List (_, _, bls) -> List.fold_left (List.fold_left loop) acc bls
-      | Blockquote l -> List.fold_left loop acc l
-      | Paragraph _ | Thematic_break | Heading _
-      | Definition_list _ | Code_block _ | Html_block _ -> acc
-      | Link_def def -> (def, bl_attributes) :: acc
-    in
-    List.rev (List.fold_left loop [] ast)
 end
 
-type inline =
+type link =
+  {
+    label: inline;
+    destination: string;
+    title: string option;
+  }
+
+and inline =
   {
     il_desc: inline_desc;
     il_attributes: attributes;
@@ -76,8 +72,8 @@ and inline_desc =
   | Code of string
   | Hard_break
   | Soft_break
-  | Link of inline link_def
-  | Image of inline link_def
+  | Link of link
+  | Image of link
   | Html of string
 
 module Raw = MakeBlock (String)
@@ -110,8 +106,6 @@ module MakeMapper (Src : T) (Dst : T) = struct
           Code_block (label, code)
       | Html_block x ->
           Html_block x
-      | Link_def x ->
-          Link_def x
     in
     {bl_desc; bl_attributes}
 end
