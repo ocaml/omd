@@ -1,3 +1,7 @@
+let protect ~finally f =
+  match f () with
+  | exception e -> finally (); raise e
+  | r -> finally (); r
 let li_begin_re = Str.regexp_string "<li>\n"
 let li_end_re = Str.regexp_string "\n</li>"
 
@@ -7,7 +11,7 @@ let normalize_html s =
 
 let with_open_in fn f =
   let ic = open_in fn in
-  Fun.protect ~finally:(fun () -> close_in_noerr ic)
+  protect ~finally:(fun () -> close_in_noerr ic)
     (fun () -> f ic)
 
 let () =

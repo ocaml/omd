@@ -14,7 +14,7 @@ https://github.com/ocaml/omd/issues.
 Dependencies
 ------------
 
-The minimum version of OCaml required is 4.09. Omd does not currently have any
+The minimum version of OCaml required is 4.04.2 Omd does not currently have any
 dependencies apart from the standard library.
 
 Installation
