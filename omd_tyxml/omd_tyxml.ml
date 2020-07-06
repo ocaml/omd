@@ -1,12 +1,8 @@
 open Tyxml
 
-let of_code attrs c = Html.[code ~a:attrs [txt c]]
-
-let of_attribute (attr, value) =
-  Html.Unsafe.string_attrib attr value
-
-let of_attributes attrs =
-  List.map of_attribute attrs
+(* TODO Document *)
+(* TODO Fix tests *)
+(* TODO self-review and cleanup *)
 
 exception Invalid_markdown of string
 
@@ -14,8 +10,6 @@ exception Unsupported_attribute of string
 
 let of_omd_attributes attrs =
   List.map (fun (a, v) -> Html.Unsafe.string_attrib a v) attrs
-(* module Attrs = struct
- * end *)
 
 (* TODO move into Omd module *)
 let rec inline_to_plaintext : Omd.inline -> string =
@@ -32,9 +26,9 @@ let rec inline_to_plaintext : Omd.inline -> string =
   | Html s -> s
   | Link l | Image l -> inline_to_plaintext l.label
 
+let of_code attrs c = Html.[code ~a:attrs [txt c]]
+
 let rec of_inline ({il_attributes; il_desc} : Omd.inline) =
-  (* let a = of_attributes il_attributes in *)
-  (* TODO Attributes *)
   let attrs = of_omd_attributes il_attributes in
   match il_desc with
   | Code c     -> of_code attrs c
@@ -54,11 +48,13 @@ and of_link_label ({il_attributes; il_desc} as il : Omd.inline) =
   match il_desc with
   | Code _ | Text _   | Concat _
   | Emph _ | Strong _ | Image _ -> List.map Html.Unsafe.coerce_elt (of_inline il)
-  | _        -> raise (Failure "TODO invalid link label")
+  | _  -> raise (Failure "TODO invalid link label")
 
 and of_link attrs (l : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri l.destination in
-  let attrs = (Html.a_href escaped_url :: attrs) @ Option.to_list (Option.map Html.a_title l.title)  in
+  let attrs =
+    (Html.a_href escaped_url :: attrs) @ (Option.map Html.a_title l.title |> Option.to_list)
+  in
   Html.(a ~a:attrs (of_link_label l.label))
 
 and of_img attrs (img : Omd.link) =
@@ -79,7 +75,7 @@ let of_heading n attrs content =
     | 6 -> h6
     | m -> raise (Invalid_markdown (Printf.sprintf "heading number %d" m))
   in
-  h ~a:(of_omd_attributes attrs) (of_inline content)
+  h ~a:attrs (of_inline content)
 
 let of_code_block src attrs content =
   let src_attr = match src with
@@ -88,24 +84,18 @@ let of_code_block src attrs content =
   in
   Html.(pre ~a:attrs [code ~a:src_attr [txt content]])
 
-(* This function is partial because the Omd AST includes nodes which do not
-   correspond to any HTML element. *)
 let rec of_block : Omd.block -> _ Html.elt =
   fun block ->
-  (* FIXME *)
   let attrs = of_omd_attributes block.bl_attributes in
-  try
-    match block.bl_desc with
-    | Paragraph i                -> Html.p (of_inline i)
-    | List (typ, spacing, items) -> of_list typ spacing items
-    | Blockquote content         -> Html.blockquote (List.map of_block content)
-    | Thematic_break             -> Html.hr ()
-    | Heading (n, content)       -> of_heading n block.bl_attributes content
-    | Code_block (src, c)        -> of_code_block src attrs c
-    | Html_block html            -> Html.Unsafe.data html
-    | Definition_list content    -> of_definition_list content
-  with (Failure err) ->
-    Html.(h1 [txt  ("Error " ^ err)])
+  match block.bl_desc with
+  | Paragraph content          -> Html.p (of_inline content)
+  | List (typ, spacing, items) -> of_list typ spacing items
+  | Blockquote content         -> Html.blockquote (List.map of_block content)
+  | Thematic_break             -> Html.hr ()
+  | Heading (n, content)       -> of_heading n attrs content
+  | Code_block (src, code)     -> of_code_block src attrs code
+  | Html_block html            -> Html.Unsafe.data html
+  | Definition_list content    -> of_definition_list content
 
 and of_list typ spacing items =
   let of_list_block (bl : Omd.block) =
@@ -130,8 +120,8 @@ and of_definition_list defs =
     Html.dd (of_inline d |> List.map Html.Unsafe.coerce_elt)
   in
   let def ({term; defs} : Omd.def_elt) =
-    Html.(dt (of_inline term |> List.map Html.Unsafe.coerce_elt)
-          :: List.map definiens defs)
+    Html.(dt (of_inline term |> List.map Html.Unsafe.coerce_elt))
+    :: List.map definiens defs
   in
   Html.dl (List.concat_map def defs)
 
