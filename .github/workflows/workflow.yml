@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "/home/runneradmin/.opam"
-          key: ${{ matrix.os }}-a${{ matrix.ocaml-version }}
+          key: ${{ matrix.os }}--${{ matrix.ocaml-version }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
