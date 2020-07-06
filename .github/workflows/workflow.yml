@@ -6,9 +6,6 @@ on:
 
 jobs:
   build:
-    defaults:
-      run:
-        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -40,20 +37,16 @@ jobs:
 
       - name: Try to restore opam cache (Windows)
         if: runner.os == 'Windows'
-        id: opam-cache-windows
+        id: opam-cache--windows
         uses: actions/cache@v2
         with:
-          path: "/home/runneradmin/.opam"
+          path: "C:\\cygwin\\home\\runneradmin\\.opam"
           key: windows-cache-${{ matrix.ocaml-version }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
-
-      # - name: Get opam root path
-      #   id: opam
-      #   run: echo "$(opam var root)"
 
       - run: opam install . --deps-only --with-doc --with-test
 
