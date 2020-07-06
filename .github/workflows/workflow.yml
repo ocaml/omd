@@ -31,6 +31,11 @@ jobs:
         id: opam
         run: echo "::set-output name=dir::$(opam var root)"
 
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
       - name: Try to restore opam cache
         id: opam-cache
         uses: actions/cache@v2
@@ -44,11 +49,6 @@ jobs:
         with:
           path: "_build"
           key: ${{ matrix.os }}-${{ matrix.ocaml-version }}
-
-      - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
-        with:
-          ocaml-version: ${{ matrix.ocaml-version }}
 
       - run: opam install . --deps-only --with-doc --with-test
 
