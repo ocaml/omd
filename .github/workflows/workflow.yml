@@ -37,11 +37,11 @@ jobs:
 
       - name: Try to restore opam cache (Windows)
         if: runner.os == 'Windows'
-        id: opam-cache--windows
+        id: opam-cache-windows
         uses: actions/cache@v2
         with:
           path: "C:\\cygwin\\home\\runneradmin\\.opam"
-          key: windows-cache-${{ matrix.ocaml-version }}
+          key: windows-cache--${{ matrix.ocaml-version }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
