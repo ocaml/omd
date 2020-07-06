@@ -63,7 +63,6 @@ type doc = block list
 
 val of_channel: in_channel -> doc
 
-
 val of_string: string -> doc
 
 val to_html: doc -> string
