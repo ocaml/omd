@@ -51,9 +51,9 @@ jobs:
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
 
-      - name: Get opam root path
-        id: opam
-        run: echo "$(opam var root)"
+      # - name: Get opam root path
+      #   id: opam
+      #   run: echo "$(opam var root)"
 
       - run: opam install . --deps-only --with-doc --with-test
 
