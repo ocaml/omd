@@ -43,8 +43,8 @@ jobs:
         id: opam-cache-windows
         uses: actions/cache@v2
         with:
-          path: "C:/cygwin/home/runneradmin/.opam"
-          key: ${{ matrix.os }}--${{ matrix.ocaml-version }}
+          path: "/home/runneradmin/.opam"
+          key: ${{ matrix.os }}-a${{ matrix.ocaml-version }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
