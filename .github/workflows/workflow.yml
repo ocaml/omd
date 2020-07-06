@@ -6,6 +6,9 @@ on:
 
 jobs:
   build:
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +41,10 @@ jobs:
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
+
+      - name: Get opam root path
+        id: opam
+        run: echo "$(opam var root)"
 
       - name: Try to restore build cache
         id: build-cache
