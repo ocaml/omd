@@ -68,3 +68,8 @@ val of_string: string -> doc
 val to_html: doc -> string
 
 val to_sexp: doc -> string
+
+(** Values for internal usage *)
+module Internal : sig
+  val escape_uri : string -> string
+end
