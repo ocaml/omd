@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "/home/runneradmin/.opam"
-          key: ${{ matrix.os }}--${{ matrix.ocaml-version }}
+          key: windows-cache-${{ matrix.ocaml-version }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
@@ -54,13 +54,6 @@ jobs:
       - name: Get opam root path
         id: opam
         run: echo "$(opam var root)"
-
-      # - name: Try to restore build cache
-      #   id: build-cache
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: "_build"
-      #     key: ${{ matrix.os }}-${{ matrix.ocaml-version }}
 
       - run: opam install . --deps-only --with-doc --with-test
 
