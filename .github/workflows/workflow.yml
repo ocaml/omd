@@ -55,12 +55,12 @@ jobs:
         id: opam
         run: echo "$(opam var root)"
 
-      - name: Try to restore build cache
-        id: build-cache
-        uses: actions/cache@v2
-        with:
-          path: "_build"
-          key: ${{ matrix.os }}-${{ matrix.ocaml-version }}
+      # - name: Try to restore build cache
+      #   id: build-cache
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: "_build"
+      #     key: ${{ matrix.os }}-${{ matrix.ocaml-version }}
 
       - run: opam install . --deps-only --with-doc --with-test
 
