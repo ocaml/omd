@@ -27,14 +27,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get opam root path
-        id: opam
-        run: echo "::set-output name=dir::$(opam var root)"
-
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
+
+      - name: Get opam root path
+        id: opam
+        run: echo "::set-output name=dir::$(opam var root)"
 
       - name: Try to restore opam cache
         id: opam-cache
