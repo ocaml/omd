@@ -26,8 +26,8 @@ package installs both the OMD library and the command line tool `omd`.")
  (name omd-tyxml)
  (synopsis "A library to convert OMD's markdown representation to Tyxml")
  (description
-  "This optional library enables user of OMD to convert values of type Omd.t,
-representing parsed markdown, into values of type Tyxml.t, which provides
+  "This optional library enables user of OMD to convert values of type Omd.doc,
+representing parsed markdown, into values of type Tyxml.Html.t, which provides
 statically correct represenations of HTML.")
  (tags (org:ocamllabs org:mirage))
  (depends omd tyxml (lambdasoup :with-test)))

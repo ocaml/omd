@@ -3,8 +3,8 @@ opam-version: "2.0"
 version: "2.0.0"
 synopsis: "A library to convert OMD's markdown representation to Tyxml"
 description: """
-This optional library enables user of OMD to convert values of type Omd.t,
-representing parsed markdown, into values of type Tyxml.t, which provides
+This optional library enables user of OMD to convert values of type Omd.doc,
+representing parsed markdown, into values of type Tyxml.Html.t, which provides
 statically correct represenations of HTML."""
 authors: [
   "Philippe Wang <philippe.wang@gmail.com>"
