@@ -1,7 +1,13 @@
 (executable
  (name extract_tests)
- (libraries str lambdasoup)
+ (libraries str common)
  (modules extract_tests))
+
+;  Code shared between various parts of the testing apartus
+(library
+ (name common)
+ (libraries lambdasoup)
+ (modules common))
 
 ;  Generate and run tests for the core omd package
 (rule
@@ -16,7 +22,7 @@
 
 (executable
  (name omd)
- (libraries str omd omd_tyxml tyxml lambdasoup)
+ (libraries str omd omd_tyxml tyxml common)
  (modules omd))
 
 ;  Generate the rules for diff-based tests

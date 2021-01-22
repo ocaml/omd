@@ -2,26 +2,26 @@
 
 let disabled =
   [
-    164;
-    175;
-    184;
-    185;
-    334;
-    353;
-    410;
-    411;
-    414;
-    415;
-    416;
-    428;
-    468;
-    469;
-    486;
-    516;
-    536;
-    570;
-    519;
-    591;
+    (* 164;
+     * 175;
+     * 184;
+     * 185;
+     * 334;
+     * 353;
+     * 410;
+     * 411;
+     * 414;
+     * 415;
+     * 416;
+     * 428;
+     * 468;
+     * 469;
+     * 486;
+     * 516;
+     * 536;
+     * 570;
+     * 519;
+     * 591; *)
   ]
 
 let with_open_in fn f =
@@ -75,7 +75,7 @@ let parse_test_spec filename =
               let rec get_html () =
                 let line = input_line ic in
                 if begins_with line test_delim then
-                  let html = Buffer.contents buf in
+                  let html = Buffer.contents buf |> Common.normalize_html in
                   {filename; example; markdown; html}
                 else begin
                   add_line buf line;
@@ -117,18 +117,13 @@ let write_dune_file test_specs tests =
     "@[<v1>(alias@ (name runtest)@ @[<v1>(deps%t)@])@]@."
     (fun ppf -> List.iter (pp ppf) tests)
 
-let li_begin_re = Str.regexp_string "<li>\n"
-let li_end_re = Str.regexp_string "\n</li>"
-
-let normalize_html s = Soup.(parse s |> pretty_print)
-
 let generate_test_files tests =
   let f {filename; example; markdown; html} =
     let base = Filename.remove_extension filename in
     with_open_out (Printf.sprintf "%s-%03d.md" base example)
       (fun oc -> output_string oc markdown);
     with_open_out (Printf.sprintf "%s-%03d.html" base example)
-      (fun oc -> output_string oc (normalize_html html))
+      (fun oc -> output_string oc html)
   in
   List.iter f tests
 
