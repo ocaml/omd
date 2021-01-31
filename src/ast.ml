@@ -23,34 +23,6 @@ type link_def =
     attributes: attributes;
   }
 
-module type T = sig
-  type t
-end
-
-module MakeBlock (I : T) = struct
-  type def_elt =
-    {
-      term: I.t;
-      defs: I.t list;
-    }
-
-  and block =
-    {
-      bl_desc: block_desc;
-      bl_attributes: attributes;
-    }
-
-  and block_desc =
-    | Paragraph of I.t
-    | List of list_type * list_spacing * block list list
-    | Blockquote of block list
-    | Thematic_break
-    | Heading of int * I.t
-    | Code_block of string * string
-    | Html_block of string
-    | Definition_list of def_elt list
-end
-
 type link =
   {
     label: inline;
@@ -76,38 +48,26 @@ and inline_desc =
   | Image of link
   | Html of string
 
-module Raw = MakeBlock (String)
+type def_elt =
+  {
+    term: inline;
+    defs: inline list;
+  }
 
-module Inline = struct type t = inline end
+and block =
+  {
+    bl_desc: block_desc;
+    bl_attributes: attributes;
+  }
 
-include MakeBlock (Inline)
+and block_desc =
+  | Paragraph of inline
+  | List of list_type * list_spacing * block list list
+  | Blockquote of block list
+  | Thematic_break
+  | Heading of int * inline
+  | Code_block of string * string
+  | Html_block of string
+  | Definition_list of def_elt list
 
-module MakeMapper (Src : T) (Dst : T) = struct
-  module SrcBlock = MakeBlock(Src)
-  module DstBlock = MakeBlock(Dst)
-
-  let rec map (f : Src.t -> Dst.t) : SrcBlock.block -> DstBlock.block =
-    fun {bl_desc; bl_attributes} ->
-    let bl_desc =
-      match bl_desc with
-      | SrcBlock.Paragraph x -> DstBlock.Paragraph (f x)
-      | List (ty, sp, bl) ->
-          List (ty, sp, List.map (List.map (map f)) bl)
-      | Blockquote xs ->
-          Blockquote (List.map (map f) xs)
-      | Thematic_break ->
-          Thematic_break
-      | Heading (level, text) ->
-          Heading (level, f text)
-      | Definition_list l ->
-          let f {SrcBlock.term; defs} = {DstBlock.term = f term; defs = List.map f defs} in
-          Definition_list (List.map f l)
-      | Code_block (label, code) ->
-          Code_block (label, code)
-      | Html_block x ->
-          Html_block x
-    in
-    {bl_desc; bl_attributes}
-end
-
-module Mapper = MakeMapper (String) (Inline)
+type doc = block list

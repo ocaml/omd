@@ -1,11 +1,11 @@
 let with_open_in fn f =
-  let ic = open_in fn in
+  let ic = open_in_bin fn in
   match f ic with
   | r -> close_in ic; r
   | exception e -> close_in_noerr ic; raise e
 
 let with_open_out fn f =
-  let oc = open_out fn in
+  let oc = open_out_bin fn in
   match f oc with
   | r -> close_out oc; r
   | exception e -> close_out_noerr oc; raise e

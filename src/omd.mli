@@ -61,10 +61,10 @@ and block_desc =
 type doc = block list
 (** A markdown document *)
 
-val of_channel: in_channel -> doc
-
 val of_string: string -> doc
+
+val of_channel: in_channel -> doc
 
 val to_html: doc -> string
 
-val to_sexp: doc -> string
+(* val to_sexp: doc -> string *)
