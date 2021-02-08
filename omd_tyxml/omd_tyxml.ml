@@ -4,6 +4,11 @@ open Tyxml
 (* TODO Fix tests *)
 (* TODO self-review and cleanup *)
 
+let cons_opt x_opt xs =
+  match x_opt with
+  | None -> xs
+  | Some x -> x :: xs
+
 exception Invalid_markdown of string
 
 exception Unsupported_attribute of string
@@ -59,13 +64,13 @@ and of_link_label ({il_desc; il_attributes} : Omd.inline) =
 and of_link attrs (l : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri l.destination in
   let attrs =
-    (Html.a_href escaped_url :: attrs) @ (Option.map Html.a_title l.title |> Option.to_list)
+    cons_opt (Option.map Html.a_title l.title) (Html.a_href escaped_url :: attrs)
   in
   Html.(a ~a:attrs (of_link_label l.label))
 
 and of_img attrs (img : Omd.link) : Html_types.phrasing_without_interactive Html.elt =
   let escaped_url = Omd.Internal.escape_uri img.destination in
-  let attrs = attrs @ (Option.map Html.a_title img.title |> Option.to_list) in
+  let attrs = cons_opt (Option.map Html.a_title img.title) attrs in
   let alt = inline_to_plaintext img.label in
   Html.(img ~src:escaped_url ~alt ~a:attrs ())
 
