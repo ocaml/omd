@@ -75,7 +75,7 @@ and of_img attrs (img : Omd.link) : Html_types.phrasing_without_interactive Html
   Html.(img ~src:escaped_url ~alt ~a:attrs ())
 
 let of_heading n attrs content =
-  let h =
+  let ctr =
     let open Html in
     match n with
     | 1 -> h1
@@ -84,9 +84,9 @@ let of_heading n attrs content =
     | 4 -> h4
     | 5 -> h5
     | 6 -> h6
-    | m -> raise (Invalid_markdown (Printf.sprintf "heading number %d" m))
+    | _ -> p  (* See ATX Headings in the tests/spec.txt *)
   in
-  h ~a:attrs (of_inline content)
+  ctr ~a:attrs (of_inline content)
 
 let of_code_block src attrs content =
   let src_attr = match src with
