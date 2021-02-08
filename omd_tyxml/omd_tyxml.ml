@@ -11,6 +11,7 @@ exception Unsupported_attribute of string
 let of_omd_attributes attrs =
   List.map (fun (a, v) -> Html.Unsafe.string_attrib a v) attrs
 
+
 (* TODO move into Omd module *)
 let rec inline_to_plaintext : Omd.inline -> string =
   fun il ->
@@ -26,9 +27,10 @@ let rec inline_to_plaintext : Omd.inline -> string =
   | Html s -> s
   | Link l | Image l -> inline_to_plaintext l.label
 
+
 let of_code attrs c = Html.[code ~a:attrs [txt c]]
 
-let rec of_inline ({il_attributes; il_desc} : Omd.inline) =
+let rec of_inline ({il_attributes; il_desc} : Omd.inline) : Html_types.phrasing Html.elt list =
   let attrs = of_omd_attributes il_attributes in
   match il_desc with
   | Code c     -> of_code attrs c
@@ -38,17 +40,21 @@ let rec of_inline ({il_attributes; il_desc} : Omd.inline) =
   | Hard_break -> Html.[br ~a:[] ()]
   (* TODO Add option for verified html ?*)
   | Html raw   -> Html.Unsafe.[data raw]
-  | Image img  -> [of_img attrs img]
   | Link l     -> [of_link attrs l]
+  | Image img  -> [(of_img attrs img :> Html_types.phrasing Html.elt)]
   | Soft_break -> Html.[txt "\n"]
   | Text t     -> Html.[txt t]
 
-and of_link_label ({il_attributes; il_desc} as il : Omd.inline) =
-  let _attr = il_attributes in
+and of_link_label ({il_desc; il_attributes} : Omd.inline) =
+  let attrs = of_omd_attributes il_attributes in
   match il_desc with
-  | Code _ | Text _   | Concat _
-  | Emph _ | Strong _ | Image _ -> List.map Html.Unsafe.coerce_elt (of_inline il)
-  | _  -> raise (Failure "TODO invalid link label")
+  | Text t     -> Html.[txt t]
+  | Code c     -> of_code attrs c
+  | Concat ls  -> List.concat_map of_link_label ls
+  | Emph e     -> Html.[em ~a:[] (of_link_label e)]
+  | Strong s   -> Html.[strong ~a:[] (of_link_label s)]
+  | Image img  -> [of_img attrs img]
+  | _          -> []
 
 and of_link attrs (l : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri l.destination in
@@ -57,7 +63,7 @@ and of_link attrs (l : Omd.link) =
   in
   Html.(a ~a:attrs (of_link_label l.label))
 
-and of_img attrs (img : Omd.link) =
+and of_img attrs (img : Omd.link) : Html_types.phrasing_without_interactive Html.elt =
   let escaped_url = Omd.Internal.escape_uri img.destination in
   let attrs = attrs @ (Option.map Html.a_title img.title |> Option.to_list) in
   let alt = inline_to_plaintext img.label in
