@@ -35,21 +35,50 @@ let rec inline_to_plaintext : Omd.inline -> string =
 
 let of_code attrs c = Html.[code ~a:attrs [txt c]]
 
-(* TODO Dedup the inline funsj *)
+(* NOTE: The unfortunate duplication of inline handlers seems to be necessary
+   to get the Tyxml types constructed formed correctly. *)
+(* TODO Support verified html (instead of using Html.Unsafe.data) ?*)
 let rec of_inline ({il_attributes; il_desc} : Omd.inline) : Html_types.phrasing Html.elt list =
   let attrs = of_omd_attributes il_attributes in
   match il_desc with
   | Code c     -> of_code attrs c
-  | Concat ls  -> List.concat_map of_inline ls
   | Emph e     -> Html.[em ~a:[] (of_inline e)]
   | Strong s   -> Html.[strong ~a:[] (of_inline s)]
   | Hard_break -> Html.[br ~a:[] ()]
-  (* TODO Add option for verified html ?*)
   | Html raw   -> Html.Unsafe.[data raw]
-  | Link l     -> [of_link attrs l]
-  | Image img  -> [(of_img attrs img :> Html_types.phrasing Html.elt)]
   | Soft_break -> Html.[txt "\n"]
   | Text t     -> Html.[txt t]
+  | Concat ls  -> List.concat_map of_inline ls
+  | Link l     -> [of_link attrs l]
+  | Image img  -> [(of_img attrs img :> Html_types.phrasing Html.elt)]
+
+and of_list_item_content ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content_fun Html.elt list =
+  let attrs = of_omd_attributes il_attributes in
+  match il_desc with
+  | Code c     -> of_code attrs c
+  | Emph e     -> Html.[em ~a:[] (of_inline e)]
+  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
+  | Hard_break -> Html.[br ~a:[] ()]
+  | Html raw   -> Html.Unsafe.[data raw]
+  | Soft_break -> Html.[txt "\n"]
+  | Text t     -> Html.[txt t]
+  | Concat ls  -> List.concat_map of_list_item_content ls
+  | Link l     -> [(of_link attrs l :> Html_types.li_content_fun Html.elt)]
+  | Image img  -> [(of_img attrs img :> Html_types.li_content_fun Html.elt)]
+
+and of_def_term ({il_desc; il_attributes} : Omd.inline) : Html_types.dt_content Html.elt list =
+  let attrs = of_omd_attributes il_attributes in
+  match il_desc with
+  | Code c     -> of_code attrs c
+  | Emph e     -> Html.[em ~a:[] (of_inline e)]
+  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
+  | Hard_break -> Html.[br ~a:[] ()]
+  | Html raw   -> Html.Unsafe.[data raw]
+  | Soft_break -> Html.[txt "\n"]
+  | Text t     -> Html.[txt t]
+  | Concat ls  -> List.concat_map of_def_term ls
+  | Link l     -> [(of_link attrs l :> Html_types.dt_content Html.elt)]
+  | Image img  -> [(of_img attrs img :> Html_types.dt_content Html.elt)]
 
 and of_link_label ({il_desc; il_attributes} : Omd.inline) =
   let attrs = of_omd_attributes il_attributes in
@@ -61,36 +90,6 @@ and of_link_label ({il_desc; il_attributes} : Omd.inline) =
   | Strong s   -> Html.[strong ~a:[] (of_link_label s)]
   | Image img  -> [(of_img attrs img :> Html_types.phrasing_without_interactive Html.elt)]
   | _          -> []
-
-and of_list_item_content ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content_fun Html.elt list =
-  let attrs = of_omd_attributes il_attributes in
-  match il_desc with
-  | Code c     -> of_code attrs c
-  | Concat ls  -> List.concat_map of_list_item_content ls
-  | Emph e     -> Html.[em ~a:[] (of_inline e)]
-  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
-  | Hard_break -> Html.[br ~a:[] ()]
-  (* TODO Add option for verified html ?*)
-  | Html raw   -> Html.Unsafe.[data raw]
-  | Link l     -> [(of_link attrs l :> Html_types.li_content_fun Html.elt)]
-  | Image img  -> [(of_img attrs img :> Html_types.li_content_fun Html.elt)]
-  | Soft_break -> Html.[txt "\n"]
-  | Text t     -> Html.[txt t]
-
-and of_def_term ({il_desc; il_attributes} : Omd.inline) : Html_types.dt_content Html.elt list =
-  let attrs = of_omd_attributes il_attributes in
-  match il_desc with
-  | Code c     -> of_code attrs c
-  | Concat ls  -> List.concat_map of_def_term ls
-  | Emph e     -> Html.[em ~a:[] (of_inline e)]
-  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
-  | Hard_break -> Html.[br ~a:[] ()]
-  (* TODO Add option for verified html ?*)
-  | Html raw   -> Html.Unsafe.[data raw]
-  | Link l     -> [(of_link attrs l :> Html_types.dt_content Html.elt)]
-  | Image img  -> [(of_img attrs img :> Html_types.dt_content Html.elt)]
-  | Soft_break -> Html.[txt "\n"]
-  | Text t     -> Html.[txt t]
 
 and of_link attrs (l : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri l.destination in
