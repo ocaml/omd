@@ -58,8 +58,23 @@ and of_link_label ({il_desc; il_attributes} : Omd.inline) =
   | Concat ls  -> List.concat_map of_link_label ls
   | Emph e     -> Html.[em ~a:[] (of_link_label e)]
   | Strong s   -> Html.[strong ~a:[] (of_link_label s)]
-  | Image img  -> [of_img attrs img]
+  | Image img  -> [(of_img attrs img :> Html_types.phrasing_without_interactive Html.elt)]
   | _          -> []
+
+and of_list_item ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content_fun Html.elt list =
+  let attrs = of_omd_attributes il_attributes in
+  match il_desc with
+  | Code c     -> of_code attrs c
+  | Concat ls  -> List.concat_map of_list_item ls
+  | Emph e     -> Html.[em ~a:[] (of_inline e)]
+  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
+  | Hard_break -> Html.[br ~a:[] ()]
+  (* TODO Add option for verified html ?*)
+  | Html raw   -> Html.Unsafe.[data raw]
+  | Link l     -> [(of_link attrs l :> Html_types.li_content_fun Html.elt)]
+  | Image img  -> [(of_img attrs img :> Html_types.li_content_fun Html.elt)]
+  | Soft_break -> Html.[txt "\n"]
+  | Text t     -> Html.[txt t]
 
 and of_link attrs (l : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri l.destination in
@@ -68,7 +83,7 @@ and of_link attrs (l : Omd.link) =
   in
   Html.(a ~a:attrs (of_link_label l.label))
 
-and of_img attrs (img : Omd.link) : Html_types.phrasing_without_interactive Html.elt =
+and of_img attrs (img : Omd.link) =
   let escaped_url = Omd.Internal.escape_uri img.destination in
   let attrs = cons_opt (Option.map Html.a_title img.title) attrs in
   let alt = inline_to_plaintext img.label in
@@ -109,9 +124,9 @@ let rec of_block : Omd.block -> _ Html.elt =
   | Definition_list content    -> of_definition_list content
 
 and of_list typ spacing items =
-  let of_list_block (bl : Omd.block) =
+  let of_list_block (bl : Omd.block) : Html_types.li_content Html.elt list =
     match bl.bl_desc, spacing with
-    | Paragraph il, Tight -> of_inline il |> List.map Html.Unsafe.coerce_elt
+    | Paragraph il, Tight -> of_list_item il
     | _ -> [of_block bl]
   in
   let itemize i =
