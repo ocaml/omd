@@ -35,6 +35,7 @@ let rec inline_to_plaintext : Omd.inline -> string =
 
 let of_code attrs c = Html.[code ~a:attrs [txt c]]
 
+(* TODO Dedup the inline funsj *)
 let rec of_inline ({il_attributes; il_desc} : Omd.inline) : Html_types.phrasing Html.elt list =
   let attrs = of_omd_attributes il_attributes in
   match il_desc with
@@ -61,11 +62,11 @@ and of_link_label ({il_desc; il_attributes} : Omd.inline) =
   | Image img  -> [(of_img attrs img :> Html_types.phrasing_without_interactive Html.elt)]
   | _          -> []
 
-and of_list_item ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content_fun Html.elt list =
+and of_list_item_content ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content_fun Html.elt list =
   let attrs = of_omd_attributes il_attributes in
   match il_desc with
   | Code c     -> of_code attrs c
-  | Concat ls  -> List.concat_map of_list_item ls
+  | Concat ls  -> List.concat_map of_list_item_content ls
   | Emph e     -> Html.[em ~a:[] (of_inline e)]
   | Strong s   -> Html.[strong ~a:[] (of_inline s)]
   | Hard_break -> Html.[br ~a:[] ()]
@@ -73,6 +74,21 @@ and of_list_item ({il_desc; il_attributes} : Omd.inline) : Html_types.li_content
   | Html raw   -> Html.Unsafe.[data raw]
   | Link l     -> [(of_link attrs l :> Html_types.li_content_fun Html.elt)]
   | Image img  -> [(of_img attrs img :> Html_types.li_content_fun Html.elt)]
+  | Soft_break -> Html.[txt "\n"]
+  | Text t     -> Html.[txt t]
+
+and of_def_term ({il_desc; il_attributes} : Omd.inline) : Html_types.dt_content Html.elt list =
+  let attrs = of_omd_attributes il_attributes in
+  match il_desc with
+  | Code c     -> of_code attrs c
+  | Concat ls  -> List.concat_map of_def_term ls
+  | Emph e     -> Html.[em ~a:[] (of_inline e)]
+  | Strong s   -> Html.[strong ~a:[] (of_inline s)]
+  | Hard_break -> Html.[br ~a:[] ()]
+  (* TODO Add option for verified html ?*)
+  | Html raw   -> Html.Unsafe.[data raw]
+  | Link l     -> [(of_link attrs l :> Html_types.dt_content Html.elt)]
+  | Image img  -> [(of_img attrs img :> Html_types.dt_content Html.elt)]
   | Soft_break -> Html.[txt "\n"]
   | Text t     -> Html.[txt t]
 
@@ -126,7 +142,7 @@ let rec of_block : Omd.block -> _ Html.elt =
 and of_list typ spacing items =
   let of_list_block (bl : Omd.block) : Html_types.li_content Html.elt list =
     match bl.bl_desc, spacing with
-    | Paragraph il, Tight -> of_list_item il
+    | Paragraph il, Tight -> of_list_item_content il
     | _ -> [of_block bl]
   in
   let itemize i =
@@ -142,14 +158,17 @@ and of_list typ spacing items =
   |> element
 
 and of_definition_list defs =
+  (* "The word or phrase that defines the definiendum in a definition." *)
   let definiens d =
-    Html.dd (of_inline d |> List.map Html.Unsafe.coerce_elt)
+    Html.dd (of_list_item_content d)
   in
-  let def ({term; defs} : Omd.def_elt) =
-    Html.(dt (of_inline term |> List.map Html.Unsafe.coerce_elt))
-    :: List.map definiens defs
+  (* "The term—word or phrase—defined in a definition." *)
+  let definiendum ({term; defs} : Omd.def_elt) =
+    let definientia : Html_types.dl_content Html.elt list = List.map definiens defs in
+    Html.(dt (of_def_term term))
+    :: definientia
   in
-  Html.dl (List.concat_map def defs)
+  Html.dl (List.concat_map definiendum defs)
 
 let of_omd ?(title="") : Omd.doc -> Tyxml.Html.doc =
   fun omd ->
