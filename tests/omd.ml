@@ -10,13 +10,13 @@ let replacements =
   ; Str.regexp_string "</pre><pre ", "</pre>\n<pre "
   ]
 
-
 let tyxml_elt_to_string t =
   Format.asprintf "%a" Tyxml.Html.(pp_elt ~indent:false ()) t
 
 let html_of_omd s =
   s
-  |> List.map (fun b -> b |> Omd_tyxml.of_block |> tyxml_elt_to_string)
+  |> Omd_tyxml.of_fragment
+  |> List.map tyxml_elt_to_string
   |> String.concat ""
 
 let denormalize_html str =
