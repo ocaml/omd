@@ -69,6 +69,7 @@ val to_html: doc -> string
 
 val to_sexp: doc -> string
 
+(* TODO rm if we can integrate Tyxml into main Omd package *)
 (** Values for internal usage *)
 module Internal : sig
   val escape_uri : string -> string

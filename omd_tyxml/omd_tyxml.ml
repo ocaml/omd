@@ -161,6 +161,9 @@ and of_block : Omd.block -> Html_types.flow5 Html.elt =
   | Code_block (src, code)     -> of_code_block src attrs code
   | Definition_list content    -> of_definition_list content
 
+
+(* API *)
+
 let of_fragment : Omd.doc -> Html_types.flow5 Html.elt list =
   fun omd -> List.map of_block omd
 
