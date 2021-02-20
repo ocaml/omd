@@ -1,5 +1,6 @@
 (* Extract test cases from Spec *)
 
+(* TODO Remove if we can use Tyxml for html generation *)
 let disabled =
   [
     (* 164;

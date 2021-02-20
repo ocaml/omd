@@ -1,7 +1,5 @@
 open Tyxml
 
-(* TODO Document *)
-
 (** TODO move into Omd if we don't replace the html module with this one *)
 
 (** [cons_opt opt_x xs] is (x :: xs) if [opt_x] is [Some x] or else just [xs].*)
