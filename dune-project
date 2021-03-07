@@ -1,7 +1,7 @@
 (lang dune 2.5)
 
 (name omd)
-(version 2.0.0)
+(version 2.0.0~alpha1)
 
 (generate_opam_files)
 
