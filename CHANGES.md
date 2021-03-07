@@ -1,5 +1,5 @@
-next (2.0.0)
-------------
+2.0.0~alpha1 (next)
+-------------------
 
 - Lower OCaml requirement to 4.04.2  (#213, @jfrolich)
 
