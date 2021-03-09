@@ -20,6 +20,7 @@ homepage: "https://github.com/ocaml/omd"
 bug-reports: "https://github.com/ocaml/omd/issues"
 depends: [
   "dune" {>= "2.5"}
+  "ocaml" {>= "4.04"}
 ]
 build: [
   ["dune" "subst"] {pinned}
