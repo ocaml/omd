@@ -78,10 +78,8 @@ let escape_uri s =
   String.iter (function
       | '!' | '*' | '\'' | '(' | ')' | ';' | ':'
       | '@' | '=' | '+' | '$' | ',' | '/' | '?' | '%'
-      | '#' | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' as c ->
+      | '#' | 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_' | '.' | '~' | '&' as c ->
           Buffer.add_char b c
-      | '&' ->
-          Buffer.add_string b "&amp;"
       | _ as c ->
           Printf.bprintf b "%%%2X" (Char.code c)
     ) s;
