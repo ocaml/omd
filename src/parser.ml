@@ -1401,7 +1401,7 @@ let link_destination st =
         match peek_exn st with
         | '>' ->
             junk st; Buffer.contents buf
-        | ' ' | '\t' | '\010'..'\013' | '<' ->
+        | '\010'..'\013' | '<' ->
             raise Fail
         | '\\' ->
             escape buf st; loop ()
