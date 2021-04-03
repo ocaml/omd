@@ -14,5 +14,3 @@ type t =
 val of_doc : attributes block list -> t
 
 val to_string : t -> string
-
-val to_plain_text : t -> string

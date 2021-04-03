@@ -87,11 +87,13 @@ let escape_uri s =
 
 let to_plain_text t =
   let buf = Buffer.create 1024 in
-  let rec go = function
-    | Element (_, _, _, Some t) -> go t
-    | Text t -> Buffer.add_string buf t
-    | Concat (t1, t2) -> go t1; go t2
-    | _ -> ()
+  let rec go {il_desc; _ } =
+    match il_desc with
+    | Concat l -> List.iter go l
+    | Text t | Code t -> Buffer.add_string buf t
+    | Emph i | Strong i | Link { label = i; _ } | Image { label = i; _ }-> go i
+    | Hard_break | Soft_break -> Buffer.add_char buf ' '
+    | Html _ -> ()
   in
   go t;
   Buffer.contents buf
@@ -115,7 +117,7 @@ and img label destination title attrs =
   in
   let attrs =
     ("src", escape_uri destination) ::
-    ("alt", to_plain_text (inline label)) :: attrs
+    ("alt", to_plain_text label) :: attrs
   in
   elt Inline "img" attrs None
 
