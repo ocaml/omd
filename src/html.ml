@@ -121,37 +121,35 @@ and img label destination title attrs =
   in
   elt Inline "img" attrs None
 
-and inline {il_desc; il_attributes = attr} =
-  match il_desc with
-  | Concat l ->
+and inline = function
+  | Ast.Concat (_, l) ->
       concat_map inline l
-  | Text t ->
+  | Text (_, t) ->
       text t
-  | Emph il ->
+  | Emph (attr, il) ->
       elt Inline "em" attr (Some (inline il))
-  | Strong il ->
+  | Strong (attr, il) ->
       elt Inline "strong" attr (Some (inline il))
-  | Code s ->
+  | Code (attr, s) ->
       elt Inline "code" attr (Some (text s))
-  | Hard_break ->
+  | Hard_break attr ->
       concat (elt Inline "br" attr None) nl
-  | Soft_break ->
+  | Soft_break _ ->
       nl
-  | Html body ->
+  | Html (_, body) ->
       raw body
-  | Link {label; destination; title} ->
+  | Link (attr, {label; destination; title}) ->
       url label destination title attr
-  | Image {label; destination; title} ->
+  | Image (attr, {label; destination; title}) ->
       img label destination title attr
 
-let rec block {bl_desc; bl_attributes = attr} =
-  match bl_desc with
-  | Blockquote q ->
+let rec block = function
+  | Blockquote (attr, q) ->
       elt Block "blockquote" attr
         (Some (concat nl (concat_map block q)))
-  | Paragraph md ->
+  | Paragraph (attr, md) ->
       elt Block "p" attr (Some (inline md))
-  | List (ty, sp, bl) ->
+  | List (attr, ty, sp, bl) ->
       let name = match ty with Ordered _ -> "ol" | Bullet _ -> "ul" in
       let attr =
         match ty with
@@ -162,14 +160,14 @@ let rec block {bl_desc; bl_attributes = attr} =
       in
       let li t =
         let block' t =
-          match t.bl_desc, sp with
-          | Paragraph t, Tight -> concat (inline t) nl
+          match t, sp with
+          | Paragraph (_, t), Tight -> concat (inline t) nl
           | _ -> block t
         in
         let nl = if sp = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t))) in
       elt Block name attr (Some (concat nl (concat_map li bl)))
-  | Code_block (label, code) ->
+  | Code_block (attr, label, code) ->
       let code_attr =
         if String.trim label = "" then []
         else ["class", "language-" ^ label]
@@ -177,11 +175,11 @@ let rec block {bl_desc; bl_attributes = attr} =
       let c = text code in
       elt Block "pre" attr
         (Some (elt Inline "code" code_attr (Some c)))
-  | Thematic_break ->
+  | Thematic_break attr ->
       elt Block "hr" attr None
-  | Html_block body ->
+  | Html_block (_, body) ->
       raw body
-  | Heading (level, text) ->
+  | Heading (attr, level, text) ->
       let name =
         match level with
         | 1 -> "h1"
@@ -193,7 +191,7 @@ let rec block {bl_desc; bl_attributes = attr} =
         | _ -> "p"
       in
       elt Block name attr (Some (inline text))
-  | Definition_list l ->
+  | Definition_list (attr, l) ->
       let f {term; defs} =
         concat
           (elt Block "dt" [] (Some (inline term)))
