@@ -3,31 +3,6 @@
 type attributes =
   (string * string) list
 
-type link =
-  {
-    label: inline;
-    destination: string;
-    title: string option;
-  }
-
-and inline =
-  {
-    il_desc: inline_desc;
-    il_attributes: attributes;
-  }
-
-and inline_desc =
-  | Concat of inline list
-  | Text of string
-  | Emph of inline
-  | Strong of inline
-  | Code of string
-  | Hard_break
-  | Soft_break
-  | Link of link
-  | Image of link
-  | Html of string
-
 type list_type =
   | Ordered of int * char
   | Bullet of char
@@ -36,29 +11,43 @@ type list_spacing =
   | Loose
   | Tight
 
-type def_elt =
+type 'attr link =
   {
-    term: inline;
-    defs: inline list;
+    label: 'attr inline;
+    destination: string;
+    title: string option;
   }
 
-and block =
+and 'attr inline =
+  | Concat of 'attr * 'attr inline list
+  | Text of 'attr * string
+  | Emph of 'attr * 'attr inline
+  | Strong of 'attr * 'attr inline
+  | Code of 'attr * string
+  | Hard_break of 'attr
+  | Soft_break of 'attr
+  | Link of 'attr * 'attr link
+  | Image of 'attr * 'attr link
+  | Html of 'attr * string
+
+
+type 'attr def_elt =
   {
-    bl_desc: block_desc;
-    bl_attributes: attributes;
+    term: 'attr inline;
+    defs: 'attr inline list;
   }
 
-and block_desc =
-  | Paragraph of inline
-  | List of list_type * list_spacing * block list list
-  | Blockquote of block list
-  | Thematic_break
-  | Heading of int * inline
-  | Code_block of string * string
-  | Html_block of string
-  | Definition_list of def_elt list
+type 'attr block =
+  | Paragraph of 'attr * 'attr inline
+  | List of 'attr * list_type * list_spacing * 'attr block list list
+  | Blockquote of 'attr * 'attr block list
+  | Thematic_break of 'attr
+  | Heading of 'attr * int * 'attr inline
+  | Code_block of 'attr * string * string
+  | Html_block of 'attr * string
+  | Definition_list of 'attr * 'attr def_elt list
 
-type doc = block list
+type doc = attributes block list
 (** A markdown document *)
 
 val of_channel: in_channel -> doc

@@ -2,13 +2,10 @@ open Ast
 
 module Sub = Parser.Sub
 
-let mk ?(attr = []) desc =
-  {Ast.Raw.bl_desc = desc; bl_attributes = attr}
-
 module Pre = struct
   type container =
     | Rblockquote of t
-    | Rlist of list_type * list_spacing * bool * int * Raw.block list list * t
+    | Rlist of list_type * list_spacing * bool * int * attributes Raw.block list list * t
     | Rparagraph of string list
     | Rfenced_code of int * int * Parser.code_block_kind * (string * string) * string list * attributes
     | Rindented_code of string list
@@ -18,7 +15,7 @@ module Pre = struct
 
   and t =
     {
-      blocks: Raw.block list;
+      blocks: attributes Raw.block list;
       next: container;
     }
 
@@ -43,31 +40,31 @@ module Pre = struct
     let finish = finish link_defs in
     match next with
     | Rblockquote state ->
-        mk (Raw.Blockquote (finish state)) :: blocks
+        Raw.Blockquote ([], (finish state)) :: blocks
     | Rlist (ty, sp, _, _, closed_items, state) ->
-        mk (List (ty, sp, List.rev (finish state :: closed_items))) :: blocks
+        List ([], ty, sp, List.rev (finish state :: closed_items)) :: blocks
     | Rparagraph l ->
         let s = concat (List.map trim_left l) in
         let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
         let s = String.sub s off (String.length s - off) |> String.trim in
         link_defs := defs @ !link_defs;
-        if s = "" then blocks else mk (Paragraph s) :: blocks
+        if s = "" then blocks else Paragraph ([], s) :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), [], attr) ->
-        mk ~attr (Code_block (label, "")) :: blocks
+        Code_block (attr, label, "") :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), l, attr) ->
-        mk ~attr (Code_block (label, concat l)) :: blocks
+        Code_block (attr, label, concat l) :: blocks
     | Rdef_list (term, defs) ->
         let l, blocks =
           match blocks with
-          | {Raw.bl_desc = Definition_list l; _} :: b -> l, b
+          | Definition_list (_, l) :: b -> l, b
           | b -> [], b
         in
-        mk (Raw.Definition_list (l @ [{ Raw.term; defs = List.rev defs}])) :: blocks
+        Definition_list ([], l @ [{ term; defs = List.rev defs}]) :: blocks
     | Rindented_code l -> (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
-        mk (Code_block ("", concat (loop l))) :: blocks
+        Code_block ([], "", concat (loop l)) :: blocks
     | Rhtml (_, l) ->
-        mk (Html_block (concat l)) :: blocks
+       Html_block ([], concat l) :: blocks
     | Rempty ->
         blocks
 
@@ -90,11 +87,11 @@ module Pre = struct
     | Rempty, Lblockquote s ->
         {blocks; next = Rblockquote (process empty s)}
     | Rempty, Lthematic_break ->
-        {blocks = mk Thematic_break :: blocks; next = Rempty}
+        {blocks = Thematic_break [] :: blocks; next = Rempty}
     | Rempty, Lsetext_heading (2, n) when n >= 3 ->
-        {blocks = mk Thematic_break :: blocks; next = Rempty}
+        {blocks = Thematic_break [] :: blocks; next = Rempty}
     | Rempty, Latx_heading (level, text, attr) ->
-        {blocks = mk ~attr (Heading (level, text)) :: blocks; next = Rempty}
+        {blocks = Heading (attr, level, text) :: blocks; next = Rempty}
     | Rempty, Lfenced_code (ind, num, q, info, a) ->
         {blocks; next = Rfenced_code (ind, num, q, info, [], a)}
     | Rempty, Lhtml (_, kind) ->
@@ -117,7 +114,7 @@ module Pre = struct
         process {blocks = close {blocks; next}; next = Rempty} s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
         let text = String.trim (String.concat "\n" (List.rev lines)) in
-        {blocks = mk (Heading (level, text)) :: blocks; next = Rempty}
+        {blocks = Heading ([], level, text) :: blocks; next = Rempty}
     | Rparagraph lines, _ ->
         {blocks; next = Rparagraph (Sub.to_string s :: lines)}
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _) when num' >= num && q = q1 ->
