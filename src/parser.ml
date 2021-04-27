@@ -1569,19 +1569,68 @@ let inline_link =
     (pair link_destination (option None (ws1 >>> some link_title)))
   <<< ws <<< char ')'
 
+let get_buf buf =
+  let s = Buffer.contents buf in
+  Buffer.clear buf;
+  s
+
+let text buf acc =
+  if Buffer.length buf = 0 then
+    acc
+  else
+    Pre.R (Text ([], get_buf buf)) :: acc
+
+let inline_pre buf acc st =
+  let pos = pos st in
+  let rec gobble_open_backtick n =
+    match peek st with
+    | Some '`' -> junk st; gobble_open_backtick (succ n)
+    | Some _ ->
+        let acc = text buf acc in
+        let bufcode = Buffer.create 17 in
+        let finish () =
+          let content = Buffer.contents bufcode in
+          let content =
+            if String.length content >= 2 &&
+                content.[0] = ' ' &&
+                content.[String.length content - 1] = ' ' (* FIXME not fully whitespace *)
+            then
+              String.sub content 1 (String.length content - 2)
+            else
+              content
+          in
+          let attr = inline_attribute_string st in
+          Pre.R (Code (attr, content)) :: acc
+        in
+        let rec gobble_body start m =
+          match peek st with
+          | Some '`' ->
+              junk st; gobble_body start (succ m)
+          | _ when m = n -> finish ()
+          | Some (' ' | '\t' | '\010'..'\013' as c) ->
+              if m > 0 then Buffer.add_string bufcode (String.make m '`');
+              Buffer.add_char bufcode (if c = '\010' then ' ' else c);
+              junk st; gobble_body (start && m = 0) 0
+          | Some c ->
+              junk st;
+              (* if seen_ws then Buffer.add_char bufcode ' '; *)
+              if m > 0 then Buffer.add_string bufcode (String.make m '`');
+              Buffer.add_char bufcode c;
+              gobble_body false 0
+          | None ->
+              Buffer.add_string buf (range st pos n);
+              set_pos st (pos + n);
+              acc
+        in
+        gobble_body true 0
+    | None ->
+        Buffer.add_string buf (String.make n '`'); acc
+  in
+  gobble_open_backtick 0
+
 let rec inline defs st =
   let buf = Buffer.create 0 in
-  let get_buf () =
-    let s = Buffer.contents buf in
-    Buffer.clear buf;
-    s
-  in
-  let text acc =
-    if Buffer.length buf = 0 then
-      acc
-    else
-      Pre.R (Text ([], get_buf ())) :: acc
-  in
+  let text acc = text buf acc in
   let rec reference_link kind acc st =
     let off0 = pos st in
     match protect (link_label true) st with
@@ -1664,65 +1713,7 @@ let rec inline defs st =
         | Some _ | None ->
             Buffer.add_char buf c; loop acc st
         end
-    | '`' ->
-        let pos = pos st in
-        let rec loop2 n =
-          match peek st with
-          | Some '`' ->
-              junk st; loop2 (succ n)
-          | Some _ ->
-              let acc = text acc in
-              let bufcode = Buffer.create 17 in
-              let finish () =
-                let content = Buffer.contents bufcode in
-                let content =
-                  if String.length content >= 2 &&
-                     content.[0] = ' ' &&
-                     content.[String.length content - 1] = ' ' (* FIXME not fully whitespace *)
-                  then
-                    String.sub content 1 (String.length content - 2)
-                  else
-                    content
-                in
-                let attr = inline_attribute_string st in
-                loop (Pre.R (Code (attr, content)) :: acc) st
-              in
-              let rec loop3 start m =
-                match peek st with
-                | Some '`' ->
-                    junk st; loop3 start (succ m)
-                | Some (' ' | '\t' | '\010'..'\013' as c) ->
-                    if m = n then
-                      finish ()
-                    else begin
-                      if m > 0 then Buffer.add_string bufcode (String.make m '`');
-                      Buffer.add_char bufcode (if c = '\010' then ' ' else c);
-                      junk st; loop3 (start && m = 0) 0
-                    end
-                | Some c ->
-                    if m = n then
-                      finish ()
-                    else begin
-                      junk st;
-                      (* if seen_ws then Buffer.add_char bufcode ' '; *)
-                      if m > 0 then Buffer.add_string bufcode (String.make m '`');
-                      Buffer.add_char bufcode c;
-                      loop3 false 0
-                    end
-                | None ->
-                    if m = n then
-                      finish ()
-                    else begin
-                      Buffer.add_string buf (range st pos n);
-                      set_pos st (pos + n);
-                      loop acc st
-                    end
-              in
-              loop3 true 0
-          | None ->
-              Buffer.add_string buf (String.make n '`'); loop acc st
-        in
-        loop2 0
+    | '`' -> loop (inline_pre buf acc st) st
     | '\\' as c ->
         junk st;
         begin match peek st with

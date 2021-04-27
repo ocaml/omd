@@ -87,12 +87,11 @@ let escape_uri s =
 
 let to_plain_text t =
   let buf = Buffer.create 1024 in
-  let rec go {il_desc; _ } =
-    match il_desc with
-    | Concat l -> List.iter go l
-    | Text t | Code t -> Buffer.add_string buf t
-    | Emph i | Strong i | Link { label = i; _ } | Image { label = i; _ }-> go i
-    | Hard_break | Soft_break -> Buffer.add_char buf ' '
+  let rec go : _ inline -> unit = function
+    | Concat (_, l) -> List.iter go l
+    | Text (_, t) | Code (_, t) -> Buffer.add_string buf t
+    | Emph (_, i) | Strong (_, i) | Link (_, { label = i; _ }) | Image (_, { label = i; _ }) -> go i
+    | Hard_break _ | Soft_break _ -> Buffer.add_char buf ' '
     | Html _ -> ()
   in
   go t;
