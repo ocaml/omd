@@ -6,7 +6,6 @@ let protect ~finally f =
 
 let disabled =
   [
-    164;
     175;
     184;
     185;
@@ -20,12 +19,9 @@ let disabled =
     428;
     468;
     469;
-    486;
     516;
-    536;
-    570;
     519;
-    591;
+    536;
   ]
 
 let with_open_in fn f =
