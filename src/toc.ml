@@ -1,4 +1,5 @@
 open Ast
+open Compat
 
 let rec remove_links inline =
   match inline with
