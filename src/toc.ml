@@ -4,7 +4,7 @@ let headers doc =
   let headers = ref [] in
   let rec loop blocks =
     List.iter (function
-        | Heading (_, level, inline) -> headers := (level, inline, "TODO id") :: !headers
+        | Heading (attr, level, inline) -> headers := (attr, level, inline) :: !headers
         | Blockquote (_, blocks) -> loop blocks
         | List (_, _, _, block_lists) -> List.iter loop block_lists
         | Paragraph _
@@ -22,7 +22,7 @@ let headers doc =
    [level].  *)
 let rec find_start headers level number subsections =
   match headers with
-  | (header_level, _, _) :: tl when header_level > level ->
+  | (_, header_level, _) :: tl when header_level > level ->
       (* Skip, right [level]-header not yet reached. *)
       if number = 0 then
         (* Assume empty section at [level], do not consume token. *)
@@ -30,7 +30,7 @@ let rec find_start headers level number subsections =
          | [] -> headers (* no subsection to find *)
          | n :: subsections -> find_start headers (level + 1) n subsections)
       else find_start tl level number subsections
-  | (header_level, _, _) :: tl when header_level = level ->
+  | (_, header_level, _) :: tl when header_level = level ->
       (* At proper [level].  Have we reached the [number] one? *)
       if number <= 1 then (
         match subsections with
@@ -42,31 +42,43 @@ let rec find_start headers level number subsections =
       (* Sought [level] has not been found in the current section *)
       []
 
-(* Assume we are at the start of the headers we are interested in.
-   Return the list of TOC entries for [min_level] and the [headers]
-   not used for the TOC entries. *)
-let rec make_toc (headers: (int * 'a inline * string) list) ~min_level ~max_level =
+
+let unordered_list items =
+  List ([], Bullet '*', Tight, items)
+
+let find_id attributes =
+  List.find_map (function
+      | k, v when String.equal "id" k -> Some v
+      | _ -> None)
+    attributes
+
+let link attributes label =
+  let inline =
+    match find_id attributes with
+    | None -> label
+    | Some id -> Link([], {label; destination = "#" ^ id; title=None})
+  in
+  Paragraph ([], inline)
+
+let rec make_toc (headers: ('attr * int * 'a inline) list) ~min_level ~max_level =
   match headers with
   | _ when min_level > max_level -> [], headers
   | [] -> [], []
-  | (level, _, _) :: _ when level < min_level -> [], headers
-  | (level, _, _) :: tl when level > max_level ->  make_toc tl ~min_level ~max_level
-  | (level, t, id) :: tl when level = min_level ->
+  | (_, level, _) :: _ when level < min_level -> [], headers
+  | (_, level, _) :: tl when level > max_level ->  make_toc tl ~min_level ~max_level
+  | (attr, level, t) :: tl when level = min_level ->
       let sub_toc, tl = make_toc tl ~min_level:(min_level + 1) ~max_level in
       let toc_entry =
         match sub_toc with
-        | [] -> [ Paragraph ([], Link([], {label=t; destination="#" ^ id; title=None})) ]
-        | _ -> [
-            Paragraph ([], Link([], {label=t; destination="#" ^ id; title=None}));
-            List ([], Bullet '*', Tight, sub_toc);
-          ]
+        | [] -> [ link attr t ]
+        | _ -> [ link attr t ; unordered_list sub_toc ]
       in
       let toc, tl = make_toc tl ~min_level ~max_level in
       toc_entry :: toc, tl
   | _ ->
       let sub_toc, tl = make_toc headers ~min_level:(min_level + 1) ~max_level in
       let toc, tl = make_toc tl ~min_level ~max_level in
-      [List ([], Bullet '*', Tight, sub_toc)] :: toc, tl
+      [unordered_list sub_toc] :: toc, tl
 
 let toc ?(start=[]) ?(depth=2) doc =
   if depth < 1 then invalid_arg "Omd.toc: ~depth must be >= 1";
@@ -81,4 +93,4 @@ let toc ?(start=[]) ?(depth=2) doc =
   let toc, _ = make_toc headers  ~min_level:(len + 1) ~max_level:(len + depth) in
   match toc with
   | [] -> []
-  | _ -> [List([], Bullet '*', Tight, toc)]
+  | _ -> [unordered_list toc]
