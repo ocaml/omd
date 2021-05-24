@@ -58,6 +58,6 @@ val to_html: doc -> string
 
 val to_sexp: doc -> string
 
-val headers : 'attr block list -> ('attr * int * 'attr inline) list
+val headers : ?remove_links:bool -> 'attr block list -> ('attr * int * 'attr inline) list
 
 val toc : ?start: int list -> ?depth:int -> doc -> doc

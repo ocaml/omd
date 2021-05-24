@@ -1,21 +1,41 @@
 open Ast
 
-let headers doc =
-  let headers = ref [] in
-  let rec loop blocks =
-    List.iter (function
-        | Heading (attr, level, inline) -> headers := (attr, level, inline) :: !headers
-        | Blockquote (_, blocks) -> loop blocks
-        | List (_, _, _, block_lists) -> List.iter loop block_lists
-        | Paragraph _
-        | Thematic_break _
-        | Html_block _
-        | Definition_list _
-        | Code_block _ -> ()
-      ) blocks
-  in
-  loop doc;
-  List.rev !headers
+let rec remove_links inline =
+  match inline with
+  | Concat (attr, inlines) -> Concat (attr, List.map remove_links inlines)
+  | Emph (attr, inline) -> Emph (attr, remove_links inline)
+  | Strong (attr, inline) -> Emph (attr, remove_links inline)
+  | Link (_, link) -> link.label
+  | Image (attr, link) ->
+      Image (attr, {link with label = remove_links link.label})
+  | Hard_break _
+  | Soft_break _
+  | Html _
+  | Code _
+  | Text _ -> inline
+
+let headers =
+  let remove_links_f = remove_links in
+  fun ?(remove_links=false) doc ->
+    let headers = ref [] in
+    let rec loop blocks =
+      List.iter (function
+          | Heading (attr, level, inline) ->
+              let inline =
+                if remove_links then remove_links_f inline else inline
+              in
+              headers := (attr, level, inline) :: !headers
+          | Blockquote (_, blocks) -> loop blocks
+          | List (_, _, _, block_lists) -> List.iter loop block_lists
+          | Paragraph _
+          | Thematic_break _
+          | Html_block _
+          | Definition_list _
+          | Code_block _ -> ()
+        ) blocks
+    in
+    loop doc;
+    List.rev !headers
 
 (* Given a list of headers — in the order of the document — go to the
    requested subsection.  We first seek for the [number]th header at
@@ -41,7 +61,6 @@ let rec find_start headers level number subsections =
   | _ ->
       (* Sought [level] has not been found in the current section *)
       []
-
 
 let unordered_list items =
   List ([], Bullet '*', Tight, items)
@@ -82,7 +101,7 @@ let rec make_toc (headers: ('attr * int * 'a inline) list) ~min_level ~max_level
 
 let toc ?(start=[]) ?(depth=2) doc =
   if depth < 1 then invalid_arg "Omd.toc: ~depth must be >= 1";
-  let headers = headers (* ~remove_header_links:true *) doc in
+  let headers = headers ~remove_links:true doc in
   let headers =
     match start with
     | [] -> headers
