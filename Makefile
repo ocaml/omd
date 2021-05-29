@@ -3,7 +3,7 @@
 #
 # @file
 
-.PHONY: test
+.PHONY: test build
 
 build:
 	dune build
