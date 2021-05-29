@@ -7,6 +7,25 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Use OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.12.x
+          dune-cache: true
+      - name: Opam lint
+        run: |
+          opam depext opam-dune-lint --install
+          opam exec -- opam-dune-lint
+      - name: Format lint
+        run: |
+          opam depext ocamlformat=$(grep 'version' .ocamlformat | awk -F '=' '{ print $2 }' | tr -d ' ') --install
+          opam exec -- dune build @fmt
+
   build:
     strategy:
       fail-fast: false
@@ -15,27 +34,22 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        ocaml-version:
+        ocaml-compiler:
+          # Decision on version matrix informed by https://discuss.ocaml.org/t/which-ocaml-compiler-versions-should-we-run-against-in-ci/7933/2
           - 4.04.2
-          - 4.05.0
-          - 4.06.1
-          - 4.07.1
-          - 4.08.1
-          - 4.09.1
-
+          - 4.12.x
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-version: ${{ matrix.ocaml-version }}
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Install deps
+        run: opam install . --deps-only --with-doc --with-test
+      - name: Build
+        run: opam exec -- dune build
 
-      - run: opam install . --deps-only --with-doc --with-test
-
-      - run: opam exec -- dune build
-
-      - run: opam exec -- dune runtest
+      - name: Test
+        run: opam exec -- dune runtest
