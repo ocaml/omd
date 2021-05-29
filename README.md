@@ -26,16 +26,18 @@ The recommended way to install `omd` is via the [opam package manager][opam]:
 $ opam install omd
 ```
 
-You can also build it manually with:
+You can also build it manually from source with:
 
 ```sh
-$ dune build
+$ git clone https://github.com/ocaml/omd.git
+$ cd omd
+$ make build
 ```
 
-You can run the testsuite by doing:
+You can run the test suite with
 
 ```sh
-$ dune runtest
+$ make test
 ```
 
 History
