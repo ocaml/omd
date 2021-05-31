@@ -36,6 +36,8 @@ let htmlentities s =
       begin match s.[i] with
       | '"' ->
           Buffer.add_string b "&quot;"
+      | '\'' ->
+          Buffer.add_string b "&apos;"
       | '&' ->
           Buffer.add_string b "&amp;"
       | '<' ->
