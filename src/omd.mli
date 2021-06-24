@@ -1,7 +1,6 @@
 (** A markdown parser in OCaml. *)
 
-type attributes =
-  (string * string) list
+type attributes = (string * string) list
 
 type list_type =
   | Ordered of int * char
@@ -12,10 +11,9 @@ type list_spacing =
   | Tight
 
 type 'attr link =
-  {
-    label: 'attr inline;
-    destination: string;
-    title: string option;
+  { label : 'attr inline
+  ; destination : string
+  ; title : string option
   }
 
 and 'attr inline =
@@ -30,11 +28,9 @@ and 'attr inline =
   | Image of 'attr * 'attr link
   | Html of 'attr * string
 
-
 type 'attr def_elt =
-  {
-    term: 'attr inline;
-    defs: 'attr inline list;
+  { term : 'attr inline
+  ; defs : 'attr inline list
   }
 
 type 'attr block =
@@ -50,14 +46,15 @@ type 'attr block =
 type doc = attributes block list
 (** A markdown document *)
 
-val of_channel: in_channel -> doc
+val of_channel : in_channel -> doc
 
-val of_string: string -> doc
+val of_string : string -> doc
 
-val to_html: doc -> string
+val to_html : doc -> string
 
-val to_sexp: doc -> string
+val to_sexp : doc -> string
 
-val headers : ?remove_links:bool -> 'attr block list -> ('attr * int * 'attr inline) list
+val headers :
+  ?remove_links:bool -> 'attr block list -> ('attr * int * 'attr inline) list
 
-val toc : ?start: int list -> ?depth:int -> doc -> doc
+val toc : ?start:int list -> ?depth:int -> doc -> doc
