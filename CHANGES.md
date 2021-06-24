@@ -1,5 +1,20 @@
-2.0.0~alpha1 (next)
--------------------
+2.0.0~alpha2
+------------
+
+- Clean up AST representation (#229, @sonologico)
+
+- Restore table of contents generation functionality (#240, @sonologico)
+
+- Fix parsing of <...>-style links and inline code parsing (#233, @SquidDev)
+
+- Fix handing of the nonbreaking whitespace character, ASCII code 160 (#247,
+  @shonfeder)
+
+- Downgrade dune requirements to 2.0 (@nobj)
+
+
+2.0.0~alpha1
+------------
 
 - Lower OCaml requirement to 4.04.2  (#213, @jfrolich)
 
