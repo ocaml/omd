@@ -6,10 +6,8 @@
 (rule
  (with-stdout-to
   dune.inc.new
-  (run ./extract_tests.exe -write-dune-file
-       %{dep:spec.txt}
-       %{dep:attributes.md}
-       %{dep:def_list.md})))
+  (run ./extract_tests.exe -write-dune-file %{dep:spec.txt}
+    %{dep:attributes.md} %{dep:def_list.md})))
 
 (include dune.inc)
 
@@ -20,4 +18,5 @@
 
 (rule
  (alias gen)
- (action (diff dune.inc dune.inc.new)))
+ (action
+  (diff dune.inc dune.inc.new)))
