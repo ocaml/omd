@@ -21,6 +21,11 @@
 (include dune.inc)
 
 (executable
+ (name omd_pp)
+ (libraries str omd)
+ (modules omd_pp))
+
+(executable
  (name omd)
  (libraries str omd)
  (modules omd))

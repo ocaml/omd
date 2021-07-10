@@ -10,6 +10,17 @@ let protect ~finally f =
 
 let disabled = []
 
+(* Some pp tests won't work because of escaping characters *)
+let pp_disabled =
+  [ 
+    51;  (* ==== is lost, need that information to reconstruct header *)
+    52;  (* see above *)
+    65;  (* see above *)
+    98;  (* Code in blockquote weirdness *)
+    222; (* Code in blockquote using indentation only! *)
+    511;
+  ] @ (List.init 500 (fun i -> 200 + i))
+
 let with_open_in fn f =
   let ic = open_in fn in
   protect ~finally:(fun () -> close_in_noerr ic) (fun () -> f ic)
@@ -94,9 +105,26 @@ let write_dune_file test_specs tests =
         example
         base
         example;
+      if not (List.mem example pp_disabled) then Format.printf
+        "@[<v1>(rule@ @[<hov1>(action@ @[<hov1>(with-stdout-to \
+         %s-%03d.html.pp.new@ @[<hov1>(run@ ./omd_pp.exe@ \
+         %%{dep:%s-%03d.md})@])@])@])@]@."
+        base
+        example
+        base
+        example;
       Format.printf
         "@[<v1>(rule@ @[<hov1>(alias %s-%03d)@]@ @[<hov1>(action@ \
          @[<hov1>(diff@ %s-%03d.html %s-%03d.html.new)@])@])@]@."
+        base
+        example
+        base
+        example
+        base
+        example;
+      if not (List.mem example pp_disabled) then Format.printf
+        "@[<v1>(rule@ @[<hov1>(alias %s-%03d)@]@ @[<hov1>(action@ \
+         @[<hov1>(diff@ %s-%03d.html %s-%03d.html.pp.new)@])@])@]@."
         base
         example
         base
