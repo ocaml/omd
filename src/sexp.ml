@@ -31,8 +31,8 @@ let rec block = function
   | List (_, _, _, bls) ->
       List
         (Atom "list"
-         ::
-         List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) bls)
+        :: List.map (fun xs -> List (Atom "list-item" :: List.map block xs)) bls
+        )
   | Blockquote (_, xs) -> List (Atom "blockquote" :: List.map block xs)
   | Thematic_break _ -> Atom "thematic-break"
   | Heading (_, level, text) ->

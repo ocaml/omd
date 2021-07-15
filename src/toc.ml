@@ -46,7 +46,7 @@ let headers =
 
 (* Given a list of headers — in the order of the document — go to the
    requested subsection.  We first seek for the [number]th header at
-   [level].  *)
+   [level]. *)
 let rec find_start headers level number subsections =
   match headers with
   | (_, header_level, _) :: tl when header_level > level ->
