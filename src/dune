@@ -1,7 +1,9 @@
 (library
  (name omd)
  (public_name omd)
- (flags :standard -w -30))
+ (flags :standard -w -30)
+ (inline_tests)
+ (preprocess (pps ppx_expect)))
 
 (rule
  (with-stdout-to
