@@ -695,7 +695,10 @@
   (with-stdout-to spec-001.html.new (run ./omd.exe %{dep:spec-001.md}))))
 (rule
  (action
-  (with-stdout-to spec-001.html.pp.new (run ./omd_pp.exe %{dep:spec-001.md}))))
+  (progn (with-stdout-to spec-001.md.pp
+          (run ./omd_pp.exe print %{dep:spec-001.md}))
+          (with-stdout-to spec-001.html.pp.new
+          (run ./omd_pp.exe html spec-001.md.pp)))))
 (rule
  (alias spec-001)
  (action (diff spec-001.html spec-001.html.new)))
@@ -707,7 +710,10 @@
   (with-stdout-to spec-002.html.new (run ./omd.exe %{dep:spec-002.md}))))
 (rule
  (action
-  (with-stdout-to spec-002.html.pp.new (run ./omd_pp.exe %{dep:spec-002.md}))))
+  (progn (with-stdout-to spec-002.md.pp
+          (run ./omd_pp.exe print %{dep:spec-002.md}))
+          (with-stdout-to spec-002.html.pp.new
+          (run ./omd_pp.exe html spec-002.md.pp)))))
 (rule
  (alias spec-002)
  (action (diff spec-002.html spec-002.html.new)))
@@ -719,7 +725,10 @@
   (with-stdout-to spec-003.html.new (run ./omd.exe %{dep:spec-003.md}))))
 (rule
  (action
-  (with-stdout-to spec-003.html.pp.new (run ./omd_pp.exe %{dep:spec-003.md}))))
+  (progn (with-stdout-to spec-003.md.pp
+          (run ./omd_pp.exe print %{dep:spec-003.md}))
+          (with-stdout-to spec-003.html.pp.new
+          (run ./omd_pp.exe html spec-003.md.pp)))))
 (rule
  (alias spec-003)
  (action (diff spec-003.html spec-003.html.new)))
@@ -731,7 +740,10 @@
   (with-stdout-to spec-004.html.new (run ./omd.exe %{dep:spec-004.md}))))
 (rule
  (action
-  (with-stdout-to spec-004.html.pp.new (run ./omd_pp.exe %{dep:spec-004.md}))))
+  (progn (with-stdout-to spec-004.md.pp
+          (run ./omd_pp.exe print %{dep:spec-004.md}))
+          (with-stdout-to spec-004.html.pp.new
+          (run ./omd_pp.exe html spec-004.md.pp)))))
 (rule
  (alias spec-004)
  (action (diff spec-004.html spec-004.html.new)))
@@ -743,7 +755,10 @@
   (with-stdout-to spec-005.html.new (run ./omd.exe %{dep:spec-005.md}))))
 (rule
  (action
-  (with-stdout-to spec-005.html.pp.new (run ./omd_pp.exe %{dep:spec-005.md}))))
+  (progn (with-stdout-to spec-005.md.pp
+          (run ./omd_pp.exe print %{dep:spec-005.md}))
+          (with-stdout-to spec-005.html.pp.new
+          (run ./omd_pp.exe html spec-005.md.pp)))))
 (rule
  (alias spec-005)
  (action (diff spec-005.html spec-005.html.new)))
@@ -755,7 +770,10 @@
   (with-stdout-to spec-006.html.new (run ./omd.exe %{dep:spec-006.md}))))
 (rule
  (action
-  (with-stdout-to spec-006.html.pp.new (run ./omd_pp.exe %{dep:spec-006.md}))))
+  (progn (with-stdout-to spec-006.md.pp
+          (run ./omd_pp.exe print %{dep:spec-006.md}))
+          (with-stdout-to spec-006.html.pp.new
+          (run ./omd_pp.exe html spec-006.md.pp)))))
 (rule
  (alias spec-006)
  (action (diff spec-006.html spec-006.html.new)))
@@ -767,7 +785,10 @@
   (with-stdout-to spec-007.html.new (run ./omd.exe %{dep:spec-007.md}))))
 (rule
  (action
-  (with-stdout-to spec-007.html.pp.new (run ./omd_pp.exe %{dep:spec-007.md}))))
+  (progn (with-stdout-to spec-007.md.pp
+          (run ./omd_pp.exe print %{dep:spec-007.md}))
+          (with-stdout-to spec-007.html.pp.new
+          (run ./omd_pp.exe html spec-007.md.pp)))))
 (rule
  (alias spec-007)
  (action (diff spec-007.html spec-007.html.new)))
@@ -779,7 +800,10 @@
   (with-stdout-to spec-008.html.new (run ./omd.exe %{dep:spec-008.md}))))
 (rule
  (action
-  (with-stdout-to spec-008.html.pp.new (run ./omd_pp.exe %{dep:spec-008.md}))))
+  (progn (with-stdout-to spec-008.md.pp
+          (run ./omd_pp.exe print %{dep:spec-008.md}))
+          (with-stdout-to spec-008.html.pp.new
+          (run ./omd_pp.exe html spec-008.md.pp)))))
 (rule
  (alias spec-008)
  (action (diff spec-008.html spec-008.html.new)))
@@ -791,7 +815,10 @@
   (with-stdout-to spec-009.html.new (run ./omd.exe %{dep:spec-009.md}))))
 (rule
  (action
-  (with-stdout-to spec-009.html.pp.new (run ./omd_pp.exe %{dep:spec-009.md}))))
+  (progn (with-stdout-to spec-009.md.pp
+          (run ./omd_pp.exe print %{dep:spec-009.md}))
+          (with-stdout-to spec-009.html.pp.new
+          (run ./omd_pp.exe html spec-009.md.pp)))))
 (rule
  (alias spec-009)
  (action (diff spec-009.html spec-009.html.new)))
@@ -803,7 +830,10 @@
   (with-stdout-to spec-010.html.new (run ./omd.exe %{dep:spec-010.md}))))
 (rule
  (action
-  (with-stdout-to spec-010.html.pp.new (run ./omd_pp.exe %{dep:spec-010.md}))))
+  (progn (with-stdout-to spec-010.md.pp
+          (run ./omd_pp.exe print %{dep:spec-010.md}))
+          (with-stdout-to spec-010.html.pp.new
+          (run ./omd_pp.exe html spec-010.md.pp)))))
 (rule
  (alias spec-010)
  (action (diff spec-010.html spec-010.html.new)))
@@ -815,7 +845,10 @@
   (with-stdout-to spec-011.html.new (run ./omd.exe %{dep:spec-011.md}))))
 (rule
  (action
-  (with-stdout-to spec-011.html.pp.new (run ./omd_pp.exe %{dep:spec-011.md}))))
+  (progn (with-stdout-to spec-011.md.pp
+          (run ./omd_pp.exe print %{dep:spec-011.md}))
+          (with-stdout-to spec-011.html.pp.new
+          (run ./omd_pp.exe html spec-011.md.pp)))))
 (rule
  (alias spec-011)
  (action (diff spec-011.html spec-011.html.new)))
@@ -827,7 +860,10 @@
   (with-stdout-to spec-012.html.new (run ./omd.exe %{dep:spec-012.md}))))
 (rule
  (action
-  (with-stdout-to spec-012.html.pp.new (run ./omd_pp.exe %{dep:spec-012.md}))))
+  (progn (with-stdout-to spec-012.md.pp
+          (run ./omd_pp.exe print %{dep:spec-012.md}))
+          (with-stdout-to spec-012.html.pp.new
+          (run ./omd_pp.exe html spec-012.md.pp)))))
 (rule
  (alias spec-012)
  (action (diff spec-012.html spec-012.html.new)))
@@ -839,7 +875,10 @@
   (with-stdout-to spec-013.html.new (run ./omd.exe %{dep:spec-013.md}))))
 (rule
  (action
-  (with-stdout-to spec-013.html.pp.new (run ./omd_pp.exe %{dep:spec-013.md}))))
+  (progn (with-stdout-to spec-013.md.pp
+          (run ./omd_pp.exe print %{dep:spec-013.md}))
+          (with-stdout-to spec-013.html.pp.new
+          (run ./omd_pp.exe html spec-013.md.pp)))))
 (rule
  (alias spec-013)
  (action (diff spec-013.html spec-013.html.new)))
@@ -851,7 +890,10 @@
   (with-stdout-to spec-014.html.new (run ./omd.exe %{dep:spec-014.md}))))
 (rule
  (action
-  (with-stdout-to spec-014.html.pp.new (run ./omd_pp.exe %{dep:spec-014.md}))))
+  (progn (with-stdout-to spec-014.md.pp
+          (run ./omd_pp.exe print %{dep:spec-014.md}))
+          (with-stdout-to spec-014.html.pp.new
+          (run ./omd_pp.exe html spec-014.md.pp)))))
 (rule
  (alias spec-014)
  (action (diff spec-014.html spec-014.html.new)))
@@ -863,7 +905,10 @@
   (with-stdout-to spec-015.html.new (run ./omd.exe %{dep:spec-015.md}))))
 (rule
  (action
-  (with-stdout-to spec-015.html.pp.new (run ./omd_pp.exe %{dep:spec-015.md}))))
+  (progn (with-stdout-to spec-015.md.pp
+          (run ./omd_pp.exe print %{dep:spec-015.md}))
+          (with-stdout-to spec-015.html.pp.new
+          (run ./omd_pp.exe html spec-015.md.pp)))))
 (rule
  (alias spec-015)
  (action (diff spec-015.html spec-015.html.new)))
@@ -875,7 +920,10 @@
   (with-stdout-to spec-016.html.new (run ./omd.exe %{dep:spec-016.md}))))
 (rule
  (action
-  (with-stdout-to spec-016.html.pp.new (run ./omd_pp.exe %{dep:spec-016.md}))))
+  (progn (with-stdout-to spec-016.md.pp
+          (run ./omd_pp.exe print %{dep:spec-016.md}))
+          (with-stdout-to spec-016.html.pp.new
+          (run ./omd_pp.exe html spec-016.md.pp)))))
 (rule
  (alias spec-016)
  (action (diff spec-016.html spec-016.html.new)))
@@ -887,7 +935,10 @@
   (with-stdout-to spec-017.html.new (run ./omd.exe %{dep:spec-017.md}))))
 (rule
  (action
-  (with-stdout-to spec-017.html.pp.new (run ./omd_pp.exe %{dep:spec-017.md}))))
+  (progn (with-stdout-to spec-017.md.pp
+          (run ./omd_pp.exe print %{dep:spec-017.md}))
+          (with-stdout-to spec-017.html.pp.new
+          (run ./omd_pp.exe html spec-017.md.pp)))))
 (rule
  (alias spec-017)
  (action (diff spec-017.html spec-017.html.new)))
@@ -899,7 +950,10 @@
   (with-stdout-to spec-018.html.new (run ./omd.exe %{dep:spec-018.md}))))
 (rule
  (action
-  (with-stdout-to spec-018.html.pp.new (run ./omd_pp.exe %{dep:spec-018.md}))))
+  (progn (with-stdout-to spec-018.md.pp
+          (run ./omd_pp.exe print %{dep:spec-018.md}))
+          (with-stdout-to spec-018.html.pp.new
+          (run ./omd_pp.exe html spec-018.md.pp)))))
 (rule
  (alias spec-018)
  (action (diff spec-018.html spec-018.html.new)))
@@ -911,7 +965,10 @@
   (with-stdout-to spec-019.html.new (run ./omd.exe %{dep:spec-019.md}))))
 (rule
  (action
-  (with-stdout-to spec-019.html.pp.new (run ./omd_pp.exe %{dep:spec-019.md}))))
+  (progn (with-stdout-to spec-019.md.pp
+          (run ./omd_pp.exe print %{dep:spec-019.md}))
+          (with-stdout-to spec-019.html.pp.new
+          (run ./omd_pp.exe html spec-019.md.pp)))))
 (rule
  (alias spec-019)
  (action (diff spec-019.html spec-019.html.new)))
@@ -923,7 +980,10 @@
   (with-stdout-to spec-020.html.new (run ./omd.exe %{dep:spec-020.md}))))
 (rule
  (action
-  (with-stdout-to spec-020.html.pp.new (run ./omd_pp.exe %{dep:spec-020.md}))))
+  (progn (with-stdout-to spec-020.md.pp
+          (run ./omd_pp.exe print %{dep:spec-020.md}))
+          (with-stdout-to spec-020.html.pp.new
+          (run ./omd_pp.exe html spec-020.md.pp)))))
 (rule
  (alias spec-020)
  (action (diff spec-020.html spec-020.html.new)))
@@ -935,7 +995,10 @@
   (with-stdout-to spec-021.html.new (run ./omd.exe %{dep:spec-021.md}))))
 (rule
  (action
-  (with-stdout-to spec-021.html.pp.new (run ./omd_pp.exe %{dep:spec-021.md}))))
+  (progn (with-stdout-to spec-021.md.pp
+          (run ./omd_pp.exe print %{dep:spec-021.md}))
+          (with-stdout-to spec-021.html.pp.new
+          (run ./omd_pp.exe html spec-021.md.pp)))))
 (rule
  (alias spec-021)
  (action (diff spec-021.html spec-021.html.new)))
@@ -947,7 +1010,10 @@
   (with-stdout-to spec-022.html.new (run ./omd.exe %{dep:spec-022.md}))))
 (rule
  (action
-  (with-stdout-to spec-022.html.pp.new (run ./omd_pp.exe %{dep:spec-022.md}))))
+  (progn (with-stdout-to spec-022.md.pp
+          (run ./omd_pp.exe print %{dep:spec-022.md}))
+          (with-stdout-to spec-022.html.pp.new
+          (run ./omd_pp.exe html spec-022.md.pp)))))
 (rule
  (alias spec-022)
  (action (diff spec-022.html spec-022.html.new)))
@@ -959,7 +1025,10 @@
   (with-stdout-to spec-023.html.new (run ./omd.exe %{dep:spec-023.md}))))
 (rule
  (action
-  (with-stdout-to spec-023.html.pp.new (run ./omd_pp.exe %{dep:spec-023.md}))))
+  (progn (with-stdout-to spec-023.md.pp
+          (run ./omd_pp.exe print %{dep:spec-023.md}))
+          (with-stdout-to spec-023.html.pp.new
+          (run ./omd_pp.exe html spec-023.md.pp)))))
 (rule
  (alias spec-023)
  (action (diff spec-023.html spec-023.html.new)))
@@ -971,7 +1040,10 @@
   (with-stdout-to spec-024.html.new (run ./omd.exe %{dep:spec-024.md}))))
 (rule
  (action
-  (with-stdout-to spec-024.html.pp.new (run ./omd_pp.exe %{dep:spec-024.md}))))
+  (progn (with-stdout-to spec-024.md.pp
+          (run ./omd_pp.exe print %{dep:spec-024.md}))
+          (with-stdout-to spec-024.html.pp.new
+          (run ./omd_pp.exe html spec-024.md.pp)))))
 (rule
  (alias spec-024)
  (action (diff spec-024.html spec-024.html.new)))
@@ -983,7 +1055,10 @@
   (with-stdout-to spec-025.html.new (run ./omd.exe %{dep:spec-025.md}))))
 (rule
  (action
-  (with-stdout-to spec-025.html.pp.new (run ./omd_pp.exe %{dep:spec-025.md}))))
+  (progn (with-stdout-to spec-025.md.pp
+          (run ./omd_pp.exe print %{dep:spec-025.md}))
+          (with-stdout-to spec-025.html.pp.new
+          (run ./omd_pp.exe html spec-025.md.pp)))))
 (rule
  (alias spec-025)
  (action (diff spec-025.html spec-025.html.new)))
@@ -995,7 +1070,10 @@
   (with-stdout-to spec-026.html.new (run ./omd.exe %{dep:spec-026.md}))))
 (rule
  (action
-  (with-stdout-to spec-026.html.pp.new (run ./omd_pp.exe %{dep:spec-026.md}))))
+  (progn (with-stdout-to spec-026.md.pp
+          (run ./omd_pp.exe print %{dep:spec-026.md}))
+          (with-stdout-to spec-026.html.pp.new
+          (run ./omd_pp.exe html spec-026.md.pp)))))
 (rule
  (alias spec-026)
  (action (diff spec-026.html spec-026.html.new)))
@@ -1007,7 +1085,10 @@
   (with-stdout-to spec-027.html.new (run ./omd.exe %{dep:spec-027.md}))))
 (rule
  (action
-  (with-stdout-to spec-027.html.pp.new (run ./omd_pp.exe %{dep:spec-027.md}))))
+  (progn (with-stdout-to spec-027.md.pp
+          (run ./omd_pp.exe print %{dep:spec-027.md}))
+          (with-stdout-to spec-027.html.pp.new
+          (run ./omd_pp.exe html spec-027.md.pp)))))
 (rule
  (alias spec-027)
  (action (diff spec-027.html spec-027.html.new)))
@@ -1019,7 +1100,10 @@
   (with-stdout-to spec-028.html.new (run ./omd.exe %{dep:spec-028.md}))))
 (rule
  (action
-  (with-stdout-to spec-028.html.pp.new (run ./omd_pp.exe %{dep:spec-028.md}))))
+  (progn (with-stdout-to spec-028.md.pp
+          (run ./omd_pp.exe print %{dep:spec-028.md}))
+          (with-stdout-to spec-028.html.pp.new
+          (run ./omd_pp.exe html spec-028.md.pp)))))
 (rule
  (alias spec-028)
  (action (diff spec-028.html spec-028.html.new)))
@@ -1031,7 +1115,10 @@
   (with-stdout-to spec-029.html.new (run ./omd.exe %{dep:spec-029.md}))))
 (rule
  (action
-  (with-stdout-to spec-029.html.pp.new (run ./omd_pp.exe %{dep:spec-029.md}))))
+  (progn (with-stdout-to spec-029.md.pp
+          (run ./omd_pp.exe print %{dep:spec-029.md}))
+          (with-stdout-to spec-029.html.pp.new
+          (run ./omd_pp.exe html spec-029.md.pp)))))
 (rule
  (alias spec-029)
  (action (diff spec-029.html spec-029.html.new)))
@@ -1043,7 +1130,10 @@
   (with-stdout-to spec-030.html.new (run ./omd.exe %{dep:spec-030.md}))))
 (rule
  (action
-  (with-stdout-to spec-030.html.pp.new (run ./omd_pp.exe %{dep:spec-030.md}))))
+  (progn (with-stdout-to spec-030.md.pp
+          (run ./omd_pp.exe print %{dep:spec-030.md}))
+          (with-stdout-to spec-030.html.pp.new
+          (run ./omd_pp.exe html spec-030.md.pp)))))
 (rule
  (alias spec-030)
  (action (diff spec-030.html spec-030.html.new)))
@@ -1055,7 +1145,10 @@
   (with-stdout-to spec-031.html.new (run ./omd.exe %{dep:spec-031.md}))))
 (rule
  (action
-  (with-stdout-to spec-031.html.pp.new (run ./omd_pp.exe %{dep:spec-031.md}))))
+  (progn (with-stdout-to spec-031.md.pp
+          (run ./omd_pp.exe print %{dep:spec-031.md}))
+          (with-stdout-to spec-031.html.pp.new
+          (run ./omd_pp.exe html spec-031.md.pp)))))
 (rule
  (alias spec-031)
  (action (diff spec-031.html spec-031.html.new)))
@@ -1067,7 +1160,10 @@
   (with-stdout-to spec-032.html.new (run ./omd.exe %{dep:spec-032.md}))))
 (rule
  (action
-  (with-stdout-to spec-032.html.pp.new (run ./omd_pp.exe %{dep:spec-032.md}))))
+  (progn (with-stdout-to spec-032.md.pp
+          (run ./omd_pp.exe print %{dep:spec-032.md}))
+          (with-stdout-to spec-032.html.pp.new
+          (run ./omd_pp.exe html spec-032.md.pp)))))
 (rule
  (alias spec-032)
  (action (diff spec-032.html spec-032.html.new)))
@@ -1079,7 +1175,10 @@
   (with-stdout-to spec-033.html.new (run ./omd.exe %{dep:spec-033.md}))))
 (rule
  (action
-  (with-stdout-to spec-033.html.pp.new (run ./omd_pp.exe %{dep:spec-033.md}))))
+  (progn (with-stdout-to spec-033.md.pp
+          (run ./omd_pp.exe print %{dep:spec-033.md}))
+          (with-stdout-to spec-033.html.pp.new
+          (run ./omd_pp.exe html spec-033.md.pp)))))
 (rule
  (alias spec-033)
  (action (diff spec-033.html spec-033.html.new)))
@@ -1091,7 +1190,10 @@
   (with-stdout-to spec-034.html.new (run ./omd.exe %{dep:spec-034.md}))))
 (rule
  (action
-  (with-stdout-to spec-034.html.pp.new (run ./omd_pp.exe %{dep:spec-034.md}))))
+  (progn (with-stdout-to spec-034.md.pp
+          (run ./omd_pp.exe print %{dep:spec-034.md}))
+          (with-stdout-to spec-034.html.pp.new
+          (run ./omd_pp.exe html spec-034.md.pp)))))
 (rule
  (alias spec-034)
  (action (diff spec-034.html spec-034.html.new)))
@@ -1103,7 +1205,10 @@
   (with-stdout-to spec-035.html.new (run ./omd.exe %{dep:spec-035.md}))))
 (rule
  (action
-  (with-stdout-to spec-035.html.pp.new (run ./omd_pp.exe %{dep:spec-035.md}))))
+  (progn (with-stdout-to spec-035.md.pp
+          (run ./omd_pp.exe print %{dep:spec-035.md}))
+          (with-stdout-to spec-035.html.pp.new
+          (run ./omd_pp.exe html spec-035.md.pp)))))
 (rule
  (alias spec-035)
  (action (diff spec-035.html spec-035.html.new)))
@@ -1115,7 +1220,10 @@
   (with-stdout-to spec-036.html.new (run ./omd.exe %{dep:spec-036.md}))))
 (rule
  (action
-  (with-stdout-to spec-036.html.pp.new (run ./omd_pp.exe %{dep:spec-036.md}))))
+  (progn (with-stdout-to spec-036.md.pp
+          (run ./omd_pp.exe print %{dep:spec-036.md}))
+          (with-stdout-to spec-036.html.pp.new
+          (run ./omd_pp.exe html spec-036.md.pp)))))
 (rule
  (alias spec-036)
  (action (diff spec-036.html spec-036.html.new)))
@@ -1127,7 +1235,10 @@
   (with-stdout-to spec-037.html.new (run ./omd.exe %{dep:spec-037.md}))))
 (rule
  (action
-  (with-stdout-to spec-037.html.pp.new (run ./omd_pp.exe %{dep:spec-037.md}))))
+  (progn (with-stdout-to spec-037.md.pp
+          (run ./omd_pp.exe print %{dep:spec-037.md}))
+          (with-stdout-to spec-037.html.pp.new
+          (run ./omd_pp.exe html spec-037.md.pp)))))
 (rule
  (alias spec-037)
  (action (diff spec-037.html spec-037.html.new)))
@@ -1139,7 +1250,10 @@
   (with-stdout-to spec-038.html.new (run ./omd.exe %{dep:spec-038.md}))))
 (rule
  (action
-  (with-stdout-to spec-038.html.pp.new (run ./omd_pp.exe %{dep:spec-038.md}))))
+  (progn (with-stdout-to spec-038.md.pp
+          (run ./omd_pp.exe print %{dep:spec-038.md}))
+          (with-stdout-to spec-038.html.pp.new
+          (run ./omd_pp.exe html spec-038.md.pp)))))
 (rule
  (alias spec-038)
  (action (diff spec-038.html spec-038.html.new)))
@@ -1151,7 +1265,10 @@
   (with-stdout-to spec-039.html.new (run ./omd.exe %{dep:spec-039.md}))))
 (rule
  (action
-  (with-stdout-to spec-039.html.pp.new (run ./omd_pp.exe %{dep:spec-039.md}))))
+  (progn (with-stdout-to spec-039.md.pp
+          (run ./omd_pp.exe print %{dep:spec-039.md}))
+          (with-stdout-to spec-039.html.pp.new
+          (run ./omd_pp.exe html spec-039.md.pp)))))
 (rule
  (alias spec-039)
  (action (diff spec-039.html spec-039.html.new)))
@@ -1163,7 +1280,10 @@
   (with-stdout-to spec-040.html.new (run ./omd.exe %{dep:spec-040.md}))))
 (rule
  (action
-  (with-stdout-to spec-040.html.pp.new (run ./omd_pp.exe %{dep:spec-040.md}))))
+  (progn (with-stdout-to spec-040.md.pp
+          (run ./omd_pp.exe print %{dep:spec-040.md}))
+          (with-stdout-to spec-040.html.pp.new
+          (run ./omd_pp.exe html spec-040.md.pp)))))
 (rule
  (alias spec-040)
  (action (diff spec-040.html spec-040.html.new)))
@@ -1175,7 +1295,10 @@
   (with-stdout-to spec-041.html.new (run ./omd.exe %{dep:spec-041.md}))))
 (rule
  (action
-  (with-stdout-to spec-041.html.pp.new (run ./omd_pp.exe %{dep:spec-041.md}))))
+  (progn (with-stdout-to spec-041.md.pp
+          (run ./omd_pp.exe print %{dep:spec-041.md}))
+          (with-stdout-to spec-041.html.pp.new
+          (run ./omd_pp.exe html spec-041.md.pp)))))
 (rule
  (alias spec-041)
  (action (diff spec-041.html spec-041.html.new)))
@@ -1187,7 +1310,10 @@
   (with-stdout-to spec-042.html.new (run ./omd.exe %{dep:spec-042.md}))))
 (rule
  (action
-  (with-stdout-to spec-042.html.pp.new (run ./omd_pp.exe %{dep:spec-042.md}))))
+  (progn (with-stdout-to spec-042.md.pp
+          (run ./omd_pp.exe print %{dep:spec-042.md}))
+          (with-stdout-to spec-042.html.pp.new
+          (run ./omd_pp.exe html spec-042.md.pp)))))
 (rule
  (alias spec-042)
  (action (diff spec-042.html spec-042.html.new)))
@@ -1199,7 +1325,10 @@
   (with-stdout-to spec-043.html.new (run ./omd.exe %{dep:spec-043.md}))))
 (rule
  (action
-  (with-stdout-to spec-043.html.pp.new (run ./omd_pp.exe %{dep:spec-043.md}))))
+  (progn (with-stdout-to spec-043.md.pp
+          (run ./omd_pp.exe print %{dep:spec-043.md}))
+          (with-stdout-to spec-043.html.pp.new
+          (run ./omd_pp.exe html spec-043.md.pp)))))
 (rule
  (alias spec-043)
  (action (diff spec-043.html spec-043.html.new)))
@@ -1211,7 +1340,10 @@
   (with-stdout-to spec-044.html.new (run ./omd.exe %{dep:spec-044.md}))))
 (rule
  (action
-  (with-stdout-to spec-044.html.pp.new (run ./omd_pp.exe %{dep:spec-044.md}))))
+  (progn (with-stdout-to spec-044.md.pp
+          (run ./omd_pp.exe print %{dep:spec-044.md}))
+          (with-stdout-to spec-044.html.pp.new
+          (run ./omd_pp.exe html spec-044.md.pp)))))
 (rule
  (alias spec-044)
  (action (diff spec-044.html spec-044.html.new)))
@@ -1223,7 +1355,10 @@
   (with-stdout-to spec-045.html.new (run ./omd.exe %{dep:spec-045.md}))))
 (rule
  (action
-  (with-stdout-to spec-045.html.pp.new (run ./omd_pp.exe %{dep:spec-045.md}))))
+  (progn (with-stdout-to spec-045.md.pp
+          (run ./omd_pp.exe print %{dep:spec-045.md}))
+          (with-stdout-to spec-045.html.pp.new
+          (run ./omd_pp.exe html spec-045.md.pp)))))
 (rule
  (alias spec-045)
  (action (diff spec-045.html spec-045.html.new)))
@@ -1235,7 +1370,10 @@
   (with-stdout-to spec-046.html.new (run ./omd.exe %{dep:spec-046.md}))))
 (rule
  (action
-  (with-stdout-to spec-046.html.pp.new (run ./omd_pp.exe %{dep:spec-046.md}))))
+  (progn (with-stdout-to spec-046.md.pp
+          (run ./omd_pp.exe print %{dep:spec-046.md}))
+          (with-stdout-to spec-046.html.pp.new
+          (run ./omd_pp.exe html spec-046.md.pp)))))
 (rule
  (alias spec-046)
  (action (diff spec-046.html spec-046.html.new)))
@@ -1247,7 +1385,10 @@
   (with-stdout-to spec-047.html.new (run ./omd.exe %{dep:spec-047.md}))))
 (rule
  (action
-  (with-stdout-to spec-047.html.pp.new (run ./omd_pp.exe %{dep:spec-047.md}))))
+  (progn (with-stdout-to spec-047.md.pp
+          (run ./omd_pp.exe print %{dep:spec-047.md}))
+          (with-stdout-to spec-047.html.pp.new
+          (run ./omd_pp.exe html spec-047.md.pp)))))
 (rule
  (alias spec-047)
  (action (diff spec-047.html spec-047.html.new)))
@@ -1259,7 +1400,10 @@
   (with-stdout-to spec-048.html.new (run ./omd.exe %{dep:spec-048.md}))))
 (rule
  (action
-  (with-stdout-to spec-048.html.pp.new (run ./omd_pp.exe %{dep:spec-048.md}))))
+  (progn (with-stdout-to spec-048.md.pp
+          (run ./omd_pp.exe print %{dep:spec-048.md}))
+          (with-stdout-to spec-048.html.pp.new
+          (run ./omd_pp.exe html spec-048.md.pp)))))
 (rule
  (alias spec-048)
  (action (diff spec-048.html spec-048.html.new)))
@@ -1271,7 +1415,10 @@
   (with-stdout-to spec-049.html.new (run ./omd.exe %{dep:spec-049.md}))))
 (rule
  (action
-  (with-stdout-to spec-049.html.pp.new (run ./omd_pp.exe %{dep:spec-049.md}))))
+  (progn (with-stdout-to spec-049.md.pp
+          (run ./omd_pp.exe print %{dep:spec-049.md}))
+          (with-stdout-to spec-049.html.pp.new
+          (run ./omd_pp.exe html spec-049.md.pp)))))
 (rule
  (alias spec-049)
  (action (diff spec-049.html spec-049.html.new)))
@@ -1283,7 +1430,10 @@
   (with-stdout-to spec-050.html.new (run ./omd.exe %{dep:spec-050.md}))))
 (rule
  (action
-  (with-stdout-to spec-050.html.pp.new (run ./omd_pp.exe %{dep:spec-050.md}))))
+  (progn (with-stdout-to spec-050.md.pp
+          (run ./omd_pp.exe print %{dep:spec-050.md}))
+          (with-stdout-to spec-050.html.pp.new
+          (run ./omd_pp.exe html spec-050.md.pp)))))
 (rule
  (alias spec-050)
  (action (diff spec-050.html spec-050.html.new)))
@@ -1307,7 +1457,10 @@
   (with-stdout-to spec-053.html.new (run ./omd.exe %{dep:spec-053.md}))))
 (rule
  (action
-  (with-stdout-to spec-053.html.pp.new (run ./omd_pp.exe %{dep:spec-053.md}))))
+  (progn (with-stdout-to spec-053.md.pp
+          (run ./omd_pp.exe print %{dep:spec-053.md}))
+          (with-stdout-to spec-053.html.pp.new
+          (run ./omd_pp.exe html spec-053.md.pp)))))
 (rule
  (alias spec-053)
  (action (diff spec-053.html spec-053.html.new)))
@@ -1319,7 +1472,10 @@
   (with-stdout-to spec-054.html.new (run ./omd.exe %{dep:spec-054.md}))))
 (rule
  (action
-  (with-stdout-to spec-054.html.pp.new (run ./omd_pp.exe %{dep:spec-054.md}))))
+  (progn (with-stdout-to spec-054.md.pp
+          (run ./omd_pp.exe print %{dep:spec-054.md}))
+          (with-stdout-to spec-054.html.pp.new
+          (run ./omd_pp.exe html spec-054.md.pp)))))
 (rule
  (alias spec-054)
  (action (diff spec-054.html spec-054.html.new)))
@@ -1331,7 +1487,10 @@
   (with-stdout-to spec-055.html.new (run ./omd.exe %{dep:spec-055.md}))))
 (rule
  (action
-  (with-stdout-to spec-055.html.pp.new (run ./omd_pp.exe %{dep:spec-055.md}))))
+  (progn (with-stdout-to spec-055.md.pp
+          (run ./omd_pp.exe print %{dep:spec-055.md}))
+          (with-stdout-to spec-055.html.pp.new
+          (run ./omd_pp.exe html spec-055.md.pp)))))
 (rule
  (alias spec-055)
  (action (diff spec-055.html spec-055.html.new)))
@@ -1343,7 +1502,10 @@
   (with-stdout-to spec-056.html.new (run ./omd.exe %{dep:spec-056.md}))))
 (rule
  (action
-  (with-stdout-to spec-056.html.pp.new (run ./omd_pp.exe %{dep:spec-056.md}))))
+  (progn (with-stdout-to spec-056.md.pp
+          (run ./omd_pp.exe print %{dep:spec-056.md}))
+          (with-stdout-to spec-056.html.pp.new
+          (run ./omd_pp.exe html spec-056.md.pp)))))
 (rule
  (alias spec-056)
  (action (diff spec-056.html spec-056.html.new)))
@@ -1355,7 +1517,10 @@
   (with-stdout-to spec-057.html.new (run ./omd.exe %{dep:spec-057.md}))))
 (rule
  (action
-  (with-stdout-to spec-057.html.pp.new (run ./omd_pp.exe %{dep:spec-057.md}))))
+  (progn (with-stdout-to spec-057.md.pp
+          (run ./omd_pp.exe print %{dep:spec-057.md}))
+          (with-stdout-to spec-057.html.pp.new
+          (run ./omd_pp.exe html spec-057.md.pp)))))
 (rule
  (alias spec-057)
  (action (diff spec-057.html spec-057.html.new)))
@@ -1367,7 +1532,10 @@
   (with-stdout-to spec-058.html.new (run ./omd.exe %{dep:spec-058.md}))))
 (rule
  (action
-  (with-stdout-to spec-058.html.pp.new (run ./omd_pp.exe %{dep:spec-058.md}))))
+  (progn (with-stdout-to spec-058.md.pp
+          (run ./omd_pp.exe print %{dep:spec-058.md}))
+          (with-stdout-to spec-058.html.pp.new
+          (run ./omd_pp.exe html spec-058.md.pp)))))
 (rule
  (alias spec-058)
  (action (diff spec-058.html spec-058.html.new)))
@@ -1379,7 +1547,10 @@
   (with-stdout-to spec-059.html.new (run ./omd.exe %{dep:spec-059.md}))))
 (rule
  (action
-  (with-stdout-to spec-059.html.pp.new (run ./omd_pp.exe %{dep:spec-059.md}))))
+  (progn (with-stdout-to spec-059.md.pp
+          (run ./omd_pp.exe print %{dep:spec-059.md}))
+          (with-stdout-to spec-059.html.pp.new
+          (run ./omd_pp.exe html spec-059.md.pp)))))
 (rule
  (alias spec-059)
  (action (diff spec-059.html spec-059.html.new)))
@@ -1391,7 +1562,10 @@
   (with-stdout-to spec-060.html.new (run ./omd.exe %{dep:spec-060.md}))))
 (rule
  (action
-  (with-stdout-to spec-060.html.pp.new (run ./omd_pp.exe %{dep:spec-060.md}))))
+  (progn (with-stdout-to spec-060.md.pp
+          (run ./omd_pp.exe print %{dep:spec-060.md}))
+          (with-stdout-to spec-060.html.pp.new
+          (run ./omd_pp.exe html spec-060.md.pp)))))
 (rule
  (alias spec-060)
  (action (diff spec-060.html spec-060.html.new)))
@@ -1403,7 +1577,10 @@
   (with-stdout-to spec-061.html.new (run ./omd.exe %{dep:spec-061.md}))))
 (rule
  (action
-  (with-stdout-to spec-061.html.pp.new (run ./omd_pp.exe %{dep:spec-061.md}))))
+  (progn (with-stdout-to spec-061.md.pp
+          (run ./omd_pp.exe print %{dep:spec-061.md}))
+          (with-stdout-to spec-061.html.pp.new
+          (run ./omd_pp.exe html spec-061.md.pp)))))
 (rule
  (alias spec-061)
  (action (diff spec-061.html spec-061.html.new)))
@@ -1415,7 +1592,10 @@
   (with-stdout-to spec-062.html.new (run ./omd.exe %{dep:spec-062.md}))))
 (rule
  (action
-  (with-stdout-to spec-062.html.pp.new (run ./omd_pp.exe %{dep:spec-062.md}))))
+  (progn (with-stdout-to spec-062.md.pp
+          (run ./omd_pp.exe print %{dep:spec-062.md}))
+          (with-stdout-to spec-062.html.pp.new
+          (run ./omd_pp.exe html spec-062.md.pp)))))
 (rule
  (alias spec-062)
  (action (diff spec-062.html spec-062.html.new)))
@@ -1427,7 +1607,10 @@
   (with-stdout-to spec-063.html.new (run ./omd.exe %{dep:spec-063.md}))))
 (rule
  (action
-  (with-stdout-to spec-063.html.pp.new (run ./omd_pp.exe %{dep:spec-063.md}))))
+  (progn (with-stdout-to spec-063.md.pp
+          (run ./omd_pp.exe print %{dep:spec-063.md}))
+          (with-stdout-to spec-063.html.pp.new
+          (run ./omd_pp.exe html spec-063.md.pp)))))
 (rule
  (alias spec-063)
  (action (diff spec-063.html spec-063.html.new)))
@@ -1439,7 +1622,10 @@
   (with-stdout-to spec-064.html.new (run ./omd.exe %{dep:spec-064.md}))))
 (rule
  (action
-  (with-stdout-to spec-064.html.pp.new (run ./omd_pp.exe %{dep:spec-064.md}))))
+  (progn (with-stdout-to spec-064.md.pp
+          (run ./omd_pp.exe print %{dep:spec-064.md}))
+          (with-stdout-to spec-064.html.pp.new
+          (run ./omd_pp.exe html spec-064.md.pp)))))
 (rule
  (alias spec-064)
  (action (diff spec-064.html spec-064.html.new)))
@@ -1457,7 +1643,10 @@
   (with-stdout-to spec-066.html.new (run ./omd.exe %{dep:spec-066.md}))))
 (rule
  (action
-  (with-stdout-to spec-066.html.pp.new (run ./omd_pp.exe %{dep:spec-066.md}))))
+  (progn (with-stdout-to spec-066.md.pp
+          (run ./omd_pp.exe print %{dep:spec-066.md}))
+          (with-stdout-to spec-066.html.pp.new
+          (run ./omd_pp.exe html spec-066.md.pp)))))
 (rule
  (alias spec-066)
  (action (diff spec-066.html spec-066.html.new)))
@@ -1469,7 +1658,10 @@
   (with-stdout-to spec-067.html.new (run ./omd.exe %{dep:spec-067.md}))))
 (rule
  (action
-  (with-stdout-to spec-067.html.pp.new (run ./omd_pp.exe %{dep:spec-067.md}))))
+  (progn (with-stdout-to spec-067.md.pp
+          (run ./omd_pp.exe print %{dep:spec-067.md}))
+          (with-stdout-to spec-067.html.pp.new
+          (run ./omd_pp.exe html spec-067.md.pp)))))
 (rule
  (alias spec-067)
  (action (diff spec-067.html spec-067.html.new)))
@@ -1481,7 +1673,10 @@
   (with-stdout-to spec-068.html.new (run ./omd.exe %{dep:spec-068.md}))))
 (rule
  (action
-  (with-stdout-to spec-068.html.pp.new (run ./omd_pp.exe %{dep:spec-068.md}))))
+  (progn (with-stdout-to spec-068.md.pp
+          (run ./omd_pp.exe print %{dep:spec-068.md}))
+          (with-stdout-to spec-068.html.pp.new
+          (run ./omd_pp.exe html spec-068.md.pp)))))
 (rule
  (alias spec-068)
  (action (diff spec-068.html spec-068.html.new)))
@@ -1493,7 +1688,10 @@
   (with-stdout-to spec-069.html.new (run ./omd.exe %{dep:spec-069.md}))))
 (rule
  (action
-  (with-stdout-to spec-069.html.pp.new (run ./omd_pp.exe %{dep:spec-069.md}))))
+  (progn (with-stdout-to spec-069.md.pp
+          (run ./omd_pp.exe print %{dep:spec-069.md}))
+          (with-stdout-to spec-069.html.pp.new
+          (run ./omd_pp.exe html spec-069.md.pp)))))
 (rule
  (alias spec-069)
  (action (diff spec-069.html spec-069.html.new)))
@@ -1505,7 +1703,10 @@
   (with-stdout-to spec-070.html.new (run ./omd.exe %{dep:spec-070.md}))))
 (rule
  (action
-  (with-stdout-to spec-070.html.pp.new (run ./omd_pp.exe %{dep:spec-070.md}))))
+  (progn (with-stdout-to spec-070.md.pp
+          (run ./omd_pp.exe print %{dep:spec-070.md}))
+          (with-stdout-to spec-070.html.pp.new
+          (run ./omd_pp.exe html spec-070.md.pp)))))
 (rule
  (alias spec-070)
  (action (diff spec-070.html spec-070.html.new)))
@@ -1517,7 +1718,10 @@
   (with-stdout-to spec-071.html.new (run ./omd.exe %{dep:spec-071.md}))))
 (rule
  (action
-  (with-stdout-to spec-071.html.pp.new (run ./omd_pp.exe %{dep:spec-071.md}))))
+  (progn (with-stdout-to spec-071.md.pp
+          (run ./omd_pp.exe print %{dep:spec-071.md}))
+          (with-stdout-to spec-071.html.pp.new
+          (run ./omd_pp.exe html spec-071.md.pp)))))
 (rule
  (alias spec-071)
  (action (diff spec-071.html spec-071.html.new)))
@@ -1529,7 +1733,10 @@
   (with-stdout-to spec-072.html.new (run ./omd.exe %{dep:spec-072.md}))))
 (rule
  (action
-  (with-stdout-to spec-072.html.pp.new (run ./omd_pp.exe %{dep:spec-072.md}))))
+  (progn (with-stdout-to spec-072.md.pp
+          (run ./omd_pp.exe print %{dep:spec-072.md}))
+          (with-stdout-to spec-072.html.pp.new
+          (run ./omd_pp.exe html spec-072.md.pp)))))
 (rule
  (alias spec-072)
  (action (diff spec-072.html spec-072.html.new)))
@@ -1541,7 +1748,10 @@
   (with-stdout-to spec-073.html.new (run ./omd.exe %{dep:spec-073.md}))))
 (rule
  (action
-  (with-stdout-to spec-073.html.pp.new (run ./omd_pp.exe %{dep:spec-073.md}))))
+  (progn (with-stdout-to spec-073.md.pp
+          (run ./omd_pp.exe print %{dep:spec-073.md}))
+          (with-stdout-to spec-073.html.pp.new
+          (run ./omd_pp.exe html spec-073.md.pp)))))
 (rule
  (alias spec-073)
  (action (diff spec-073.html spec-073.html.new)))
@@ -1553,7 +1763,10 @@
   (with-stdout-to spec-074.html.new (run ./omd.exe %{dep:spec-074.md}))))
 (rule
  (action
-  (with-stdout-to spec-074.html.pp.new (run ./omd_pp.exe %{dep:spec-074.md}))))
+  (progn (with-stdout-to spec-074.md.pp
+          (run ./omd_pp.exe print %{dep:spec-074.md}))
+          (with-stdout-to spec-074.html.pp.new
+          (run ./omd_pp.exe html spec-074.md.pp)))))
 (rule
  (alias spec-074)
  (action (diff spec-074.html spec-074.html.new)))
@@ -1565,7 +1778,10 @@
   (with-stdout-to spec-075.html.new (run ./omd.exe %{dep:spec-075.md}))))
 (rule
  (action
-  (with-stdout-to spec-075.html.pp.new (run ./omd_pp.exe %{dep:spec-075.md}))))
+  (progn (with-stdout-to spec-075.md.pp
+          (run ./omd_pp.exe print %{dep:spec-075.md}))
+          (with-stdout-to spec-075.html.pp.new
+          (run ./omd_pp.exe html spec-075.md.pp)))))
 (rule
  (alias spec-075)
  (action (diff spec-075.html spec-075.html.new)))
@@ -1577,7 +1793,10 @@
   (with-stdout-to spec-076.html.new (run ./omd.exe %{dep:spec-076.md}))))
 (rule
  (action
-  (with-stdout-to spec-076.html.pp.new (run ./omd_pp.exe %{dep:spec-076.md}))))
+  (progn (with-stdout-to spec-076.md.pp
+          (run ./omd_pp.exe print %{dep:spec-076.md}))
+          (with-stdout-to spec-076.html.pp.new
+          (run ./omd_pp.exe html spec-076.md.pp)))))
 (rule
  (alias spec-076)
  (action (diff spec-076.html spec-076.html.new)))
@@ -1589,7 +1808,10 @@
   (with-stdout-to spec-077.html.new (run ./omd.exe %{dep:spec-077.md}))))
 (rule
  (action
-  (with-stdout-to spec-077.html.pp.new (run ./omd_pp.exe %{dep:spec-077.md}))))
+  (progn (with-stdout-to spec-077.md.pp
+          (run ./omd_pp.exe print %{dep:spec-077.md}))
+          (with-stdout-to spec-077.html.pp.new
+          (run ./omd_pp.exe html spec-077.md.pp)))))
 (rule
  (alias spec-077)
  (action (diff spec-077.html spec-077.html.new)))
@@ -1601,7 +1823,10 @@
   (with-stdout-to spec-078.html.new (run ./omd.exe %{dep:spec-078.md}))))
 (rule
  (action
-  (with-stdout-to spec-078.html.pp.new (run ./omd_pp.exe %{dep:spec-078.md}))))
+  (progn (with-stdout-to spec-078.md.pp
+          (run ./omd_pp.exe print %{dep:spec-078.md}))
+          (with-stdout-to spec-078.html.pp.new
+          (run ./omd_pp.exe html spec-078.md.pp)))))
 (rule
  (alias spec-078)
  (action (diff spec-078.html spec-078.html.new)))
@@ -1613,7 +1838,10 @@
   (with-stdout-to spec-079.html.new (run ./omd.exe %{dep:spec-079.md}))))
 (rule
  (action
-  (with-stdout-to spec-079.html.pp.new (run ./omd_pp.exe %{dep:spec-079.md}))))
+  (progn (with-stdout-to spec-079.md.pp
+          (run ./omd_pp.exe print %{dep:spec-079.md}))
+          (with-stdout-to spec-079.html.pp.new
+          (run ./omd_pp.exe html spec-079.md.pp)))))
 (rule
  (alias spec-079)
  (action (diff spec-079.html spec-079.html.new)))
@@ -1625,7 +1853,10 @@
   (with-stdout-to spec-080.html.new (run ./omd.exe %{dep:spec-080.md}))))
 (rule
  (action
-  (with-stdout-to spec-080.html.pp.new (run ./omd_pp.exe %{dep:spec-080.md}))))
+  (progn (with-stdout-to spec-080.md.pp
+          (run ./omd_pp.exe print %{dep:spec-080.md}))
+          (with-stdout-to spec-080.html.pp.new
+          (run ./omd_pp.exe html spec-080.md.pp)))))
 (rule
  (alias spec-080)
  (action (diff spec-080.html spec-080.html.new)))
@@ -1637,7 +1868,10 @@
   (with-stdout-to spec-081.html.new (run ./omd.exe %{dep:spec-081.md}))))
 (rule
  (action
-  (with-stdout-to spec-081.html.pp.new (run ./omd_pp.exe %{dep:spec-081.md}))))
+  (progn (with-stdout-to spec-081.md.pp
+          (run ./omd_pp.exe print %{dep:spec-081.md}))
+          (with-stdout-to spec-081.html.pp.new
+          (run ./omd_pp.exe html spec-081.md.pp)))))
 (rule
  (alias spec-081)
  (action (diff spec-081.html spec-081.html.new)))
@@ -1649,7 +1883,10 @@
   (with-stdout-to spec-082.html.new (run ./omd.exe %{dep:spec-082.md}))))
 (rule
  (action
-  (with-stdout-to spec-082.html.pp.new (run ./omd_pp.exe %{dep:spec-082.md}))))
+  (progn (with-stdout-to spec-082.md.pp
+          (run ./omd_pp.exe print %{dep:spec-082.md}))
+          (with-stdout-to spec-082.html.pp.new
+          (run ./omd_pp.exe html spec-082.md.pp)))))
 (rule
  (alias spec-082)
  (action (diff spec-082.html spec-082.html.new)))
@@ -1661,7 +1898,10 @@
   (with-stdout-to spec-083.html.new (run ./omd.exe %{dep:spec-083.md}))))
 (rule
  (action
-  (with-stdout-to spec-083.html.pp.new (run ./omd_pp.exe %{dep:spec-083.md}))))
+  (progn (with-stdout-to spec-083.md.pp
+          (run ./omd_pp.exe print %{dep:spec-083.md}))
+          (with-stdout-to spec-083.html.pp.new
+          (run ./omd_pp.exe html spec-083.md.pp)))))
 (rule
  (alias spec-083)
  (action (diff spec-083.html spec-083.html.new)))
@@ -1673,7 +1913,10 @@
   (with-stdout-to spec-084.html.new (run ./omd.exe %{dep:spec-084.md}))))
 (rule
  (action
-  (with-stdout-to spec-084.html.pp.new (run ./omd_pp.exe %{dep:spec-084.md}))))
+  (progn (with-stdout-to spec-084.md.pp
+          (run ./omd_pp.exe print %{dep:spec-084.md}))
+          (with-stdout-to spec-084.html.pp.new
+          (run ./omd_pp.exe html spec-084.md.pp)))))
 (rule
  (alias spec-084)
  (action (diff spec-084.html spec-084.html.new)))
@@ -1685,7 +1928,10 @@
   (with-stdout-to spec-085.html.new (run ./omd.exe %{dep:spec-085.md}))))
 (rule
  (action
-  (with-stdout-to spec-085.html.pp.new (run ./omd_pp.exe %{dep:spec-085.md}))))
+  (progn (with-stdout-to spec-085.md.pp
+          (run ./omd_pp.exe print %{dep:spec-085.md}))
+          (with-stdout-to spec-085.html.pp.new
+          (run ./omd_pp.exe html spec-085.md.pp)))))
 (rule
  (alias spec-085)
  (action (diff spec-085.html spec-085.html.new)))
@@ -1697,7 +1943,10 @@
   (with-stdout-to spec-086.html.new (run ./omd.exe %{dep:spec-086.md}))))
 (rule
  (action
-  (with-stdout-to spec-086.html.pp.new (run ./omd_pp.exe %{dep:spec-086.md}))))
+  (progn (with-stdout-to spec-086.md.pp
+          (run ./omd_pp.exe print %{dep:spec-086.md}))
+          (with-stdout-to spec-086.html.pp.new
+          (run ./omd_pp.exe html spec-086.md.pp)))))
 (rule
  (alias spec-086)
  (action (diff spec-086.html spec-086.html.new)))
@@ -1709,7 +1958,10 @@
   (with-stdout-to spec-087.html.new (run ./omd.exe %{dep:spec-087.md}))))
 (rule
  (action
-  (with-stdout-to spec-087.html.pp.new (run ./omd_pp.exe %{dep:spec-087.md}))))
+  (progn (with-stdout-to spec-087.md.pp
+          (run ./omd_pp.exe print %{dep:spec-087.md}))
+          (with-stdout-to spec-087.html.pp.new
+          (run ./omd_pp.exe html spec-087.md.pp)))))
 (rule
  (alias spec-087)
  (action (diff spec-087.html spec-087.html.new)))
@@ -1721,7 +1973,10 @@
   (with-stdout-to spec-088.html.new (run ./omd.exe %{dep:spec-088.md}))))
 (rule
  (action
-  (with-stdout-to spec-088.html.pp.new (run ./omd_pp.exe %{dep:spec-088.md}))))
+  (progn (with-stdout-to spec-088.md.pp
+          (run ./omd_pp.exe print %{dep:spec-088.md}))
+          (with-stdout-to spec-088.html.pp.new
+          (run ./omd_pp.exe html spec-088.md.pp)))))
 (rule
  (alias spec-088)
  (action (diff spec-088.html spec-088.html.new)))
@@ -1733,7 +1988,10 @@
   (with-stdout-to spec-089.html.new (run ./omd.exe %{dep:spec-089.md}))))
 (rule
  (action
-  (with-stdout-to spec-089.html.pp.new (run ./omd_pp.exe %{dep:spec-089.md}))))
+  (progn (with-stdout-to spec-089.md.pp
+          (run ./omd_pp.exe print %{dep:spec-089.md}))
+          (with-stdout-to spec-089.html.pp.new
+          (run ./omd_pp.exe html spec-089.md.pp)))))
 (rule
  (alias spec-089)
  (action (diff spec-089.html spec-089.html.new)))
@@ -1745,7 +2003,10 @@
   (with-stdout-to spec-090.html.new (run ./omd.exe %{dep:spec-090.md}))))
 (rule
  (action
-  (with-stdout-to spec-090.html.pp.new (run ./omd_pp.exe %{dep:spec-090.md}))))
+  (progn (with-stdout-to spec-090.md.pp
+          (run ./omd_pp.exe print %{dep:spec-090.md}))
+          (with-stdout-to spec-090.html.pp.new
+          (run ./omd_pp.exe html spec-090.md.pp)))))
 (rule
  (alias spec-090)
  (action (diff spec-090.html spec-090.html.new)))
@@ -1757,7 +2018,10 @@
   (with-stdout-to spec-091.html.new (run ./omd.exe %{dep:spec-091.md}))))
 (rule
  (action
-  (with-stdout-to spec-091.html.pp.new (run ./omd_pp.exe %{dep:spec-091.md}))))
+  (progn (with-stdout-to spec-091.md.pp
+          (run ./omd_pp.exe print %{dep:spec-091.md}))
+          (with-stdout-to spec-091.html.pp.new
+          (run ./omd_pp.exe html spec-091.md.pp)))))
 (rule
  (alias spec-091)
  (action (diff spec-091.html spec-091.html.new)))
@@ -1769,7 +2033,10 @@
   (with-stdout-to spec-092.html.new (run ./omd.exe %{dep:spec-092.md}))))
 (rule
  (action
-  (with-stdout-to spec-092.html.pp.new (run ./omd_pp.exe %{dep:spec-092.md}))))
+  (progn (with-stdout-to spec-092.md.pp
+          (run ./omd_pp.exe print %{dep:spec-092.md}))
+          (with-stdout-to spec-092.html.pp.new
+          (run ./omd_pp.exe html spec-092.md.pp)))))
 (rule
  (alias spec-092)
  (action (diff spec-092.html spec-092.html.new)))
@@ -1781,7 +2048,10 @@
   (with-stdout-to spec-093.html.new (run ./omd.exe %{dep:spec-093.md}))))
 (rule
  (action
-  (with-stdout-to spec-093.html.pp.new (run ./omd_pp.exe %{dep:spec-093.md}))))
+  (progn (with-stdout-to spec-093.md.pp
+          (run ./omd_pp.exe print %{dep:spec-093.md}))
+          (with-stdout-to spec-093.html.pp.new
+          (run ./omd_pp.exe html spec-093.md.pp)))))
 (rule
  (alias spec-093)
  (action (diff spec-093.html spec-093.html.new)))
@@ -1793,7 +2063,10 @@
   (with-stdout-to spec-094.html.new (run ./omd.exe %{dep:spec-094.md}))))
 (rule
  (action
-  (with-stdout-to spec-094.html.pp.new (run ./omd_pp.exe %{dep:spec-094.md}))))
+  (progn (with-stdout-to spec-094.md.pp
+          (run ./omd_pp.exe print %{dep:spec-094.md}))
+          (with-stdout-to spec-094.html.pp.new
+          (run ./omd_pp.exe html spec-094.md.pp)))))
 (rule
  (alias spec-094)
  (action (diff spec-094.html spec-094.html.new)))
@@ -1805,7 +2078,10 @@
   (with-stdout-to spec-095.html.new (run ./omd.exe %{dep:spec-095.md}))))
 (rule
  (action
-  (with-stdout-to spec-095.html.pp.new (run ./omd_pp.exe %{dep:spec-095.md}))))
+  (progn (with-stdout-to spec-095.md.pp
+          (run ./omd_pp.exe print %{dep:spec-095.md}))
+          (with-stdout-to spec-095.html.pp.new
+          (run ./omd_pp.exe html spec-095.md.pp)))))
 (rule
  (alias spec-095)
  (action (diff spec-095.html spec-095.html.new)))
@@ -1817,7 +2093,10 @@
   (with-stdout-to spec-096.html.new (run ./omd.exe %{dep:spec-096.md}))))
 (rule
  (action
-  (with-stdout-to spec-096.html.pp.new (run ./omd_pp.exe %{dep:spec-096.md}))))
+  (progn (with-stdout-to spec-096.md.pp
+          (run ./omd_pp.exe print %{dep:spec-096.md}))
+          (with-stdout-to spec-096.html.pp.new
+          (run ./omd_pp.exe html spec-096.md.pp)))))
 (rule
  (alias spec-096)
  (action (diff spec-096.html spec-096.html.new)))
@@ -1829,7 +2108,10 @@
   (with-stdout-to spec-097.html.new (run ./omd.exe %{dep:spec-097.md}))))
 (rule
  (action
-  (with-stdout-to spec-097.html.pp.new (run ./omd_pp.exe %{dep:spec-097.md}))))
+  (progn (with-stdout-to spec-097.md.pp
+          (run ./omd_pp.exe print %{dep:spec-097.md}))
+          (with-stdout-to spec-097.html.pp.new
+          (run ./omd_pp.exe html spec-097.md.pp)))))
 (rule
  (alias spec-097)
  (action (diff spec-097.html spec-097.html.new)))
@@ -1847,7 +2129,10 @@
   (with-stdout-to spec-099.html.new (run ./omd.exe %{dep:spec-099.md}))))
 (rule
  (action
-  (with-stdout-to spec-099.html.pp.new (run ./omd_pp.exe %{dep:spec-099.md}))))
+  (progn (with-stdout-to spec-099.md.pp
+          (run ./omd_pp.exe print %{dep:spec-099.md}))
+          (with-stdout-to spec-099.html.pp.new
+          (run ./omd_pp.exe html spec-099.md.pp)))))
 (rule
  (alias spec-099)
  (action (diff spec-099.html spec-099.html.new)))
@@ -1859,7 +2144,10 @@
   (with-stdout-to spec-100.html.new (run ./omd.exe %{dep:spec-100.md}))))
 (rule
  (action
-  (with-stdout-to spec-100.html.pp.new (run ./omd_pp.exe %{dep:spec-100.md}))))
+  (progn (with-stdout-to spec-100.md.pp
+          (run ./omd_pp.exe print %{dep:spec-100.md}))
+          (with-stdout-to spec-100.html.pp.new
+          (run ./omd_pp.exe html spec-100.md.pp)))))
 (rule
  (alias spec-100)
  (action (diff spec-100.html spec-100.html.new)))
@@ -1871,7 +2159,10 @@
   (with-stdout-to spec-101.html.new (run ./omd.exe %{dep:spec-101.md}))))
 (rule
  (action
-  (with-stdout-to spec-101.html.pp.new (run ./omd_pp.exe %{dep:spec-101.md}))))
+  (progn (with-stdout-to spec-101.md.pp
+          (run ./omd_pp.exe print %{dep:spec-101.md}))
+          (with-stdout-to spec-101.html.pp.new
+          (run ./omd_pp.exe html spec-101.md.pp)))))
 (rule
  (alias spec-101)
  (action (diff spec-101.html spec-101.html.new)))
@@ -1883,7 +2174,10 @@
   (with-stdout-to spec-102.html.new (run ./omd.exe %{dep:spec-102.md}))))
 (rule
  (action
-  (with-stdout-to spec-102.html.pp.new (run ./omd_pp.exe %{dep:spec-102.md}))))
+  (progn (with-stdout-to spec-102.md.pp
+          (run ./omd_pp.exe print %{dep:spec-102.md}))
+          (with-stdout-to spec-102.html.pp.new
+          (run ./omd_pp.exe html spec-102.md.pp)))))
 (rule
  (alias spec-102)
  (action (diff spec-102.html spec-102.html.new)))
@@ -1895,7 +2189,10 @@
   (with-stdout-to spec-103.html.new (run ./omd.exe %{dep:spec-103.md}))))
 (rule
  (action
-  (with-stdout-to spec-103.html.pp.new (run ./omd_pp.exe %{dep:spec-103.md}))))
+  (progn (with-stdout-to spec-103.md.pp
+          (run ./omd_pp.exe print %{dep:spec-103.md}))
+          (with-stdout-to spec-103.html.pp.new
+          (run ./omd_pp.exe html spec-103.md.pp)))))
 (rule
  (alias spec-103)
  (action (diff spec-103.html spec-103.html.new)))
@@ -1907,7 +2204,10 @@
   (with-stdout-to spec-104.html.new (run ./omd.exe %{dep:spec-104.md}))))
 (rule
  (action
-  (with-stdout-to spec-104.html.pp.new (run ./omd_pp.exe %{dep:spec-104.md}))))
+  (progn (with-stdout-to spec-104.md.pp
+          (run ./omd_pp.exe print %{dep:spec-104.md}))
+          (with-stdout-to spec-104.html.pp.new
+          (run ./omd_pp.exe html spec-104.md.pp)))))
 (rule
  (alias spec-104)
  (action (diff spec-104.html spec-104.html.new)))
@@ -1919,7 +2219,10 @@
   (with-stdout-to spec-105.html.new (run ./omd.exe %{dep:spec-105.md}))))
 (rule
  (action
-  (with-stdout-to spec-105.html.pp.new (run ./omd_pp.exe %{dep:spec-105.md}))))
+  (progn (with-stdout-to spec-105.md.pp
+          (run ./omd_pp.exe print %{dep:spec-105.md}))
+          (with-stdout-to spec-105.html.pp.new
+          (run ./omd_pp.exe html spec-105.md.pp)))))
 (rule
  (alias spec-105)
  (action (diff spec-105.html spec-105.html.new)))
@@ -1931,7 +2234,10 @@
   (with-stdout-to spec-106.html.new (run ./omd.exe %{dep:spec-106.md}))))
 (rule
  (action
-  (with-stdout-to spec-106.html.pp.new (run ./omd_pp.exe %{dep:spec-106.md}))))
+  (progn (with-stdout-to spec-106.md.pp
+          (run ./omd_pp.exe print %{dep:spec-106.md}))
+          (with-stdout-to spec-106.html.pp.new
+          (run ./omd_pp.exe html spec-106.md.pp)))))
 (rule
  (alias spec-106)
  (action (diff spec-106.html spec-106.html.new)))
@@ -1943,7 +2249,10 @@
   (with-stdout-to spec-107.html.new (run ./omd.exe %{dep:spec-107.md}))))
 (rule
  (action
-  (with-stdout-to spec-107.html.pp.new (run ./omd_pp.exe %{dep:spec-107.md}))))
+  (progn (with-stdout-to spec-107.md.pp
+          (run ./omd_pp.exe print %{dep:spec-107.md}))
+          (with-stdout-to spec-107.html.pp.new
+          (run ./omd_pp.exe html spec-107.md.pp)))))
 (rule
  (alias spec-107)
  (action (diff spec-107.html spec-107.html.new)))
@@ -1955,7 +2264,10 @@
   (with-stdout-to spec-108.html.new (run ./omd.exe %{dep:spec-108.md}))))
 (rule
  (action
-  (with-stdout-to spec-108.html.pp.new (run ./omd_pp.exe %{dep:spec-108.md}))))
+  (progn (with-stdout-to spec-108.md.pp
+          (run ./omd_pp.exe print %{dep:spec-108.md}))
+          (with-stdout-to spec-108.html.pp.new
+          (run ./omd_pp.exe html spec-108.md.pp)))))
 (rule
  (alias spec-108)
  (action (diff spec-108.html spec-108.html.new)))
@@ -1967,7 +2279,10 @@
   (with-stdout-to spec-109.html.new (run ./omd.exe %{dep:spec-109.md}))))
 (rule
  (action
-  (with-stdout-to spec-109.html.pp.new (run ./omd_pp.exe %{dep:spec-109.md}))))
+  (progn (with-stdout-to spec-109.md.pp
+          (run ./omd_pp.exe print %{dep:spec-109.md}))
+          (with-stdout-to spec-109.html.pp.new
+          (run ./omd_pp.exe html spec-109.md.pp)))))
 (rule
  (alias spec-109)
  (action (diff spec-109.html spec-109.html.new)))
@@ -1979,7 +2294,10 @@
   (with-stdout-to spec-110.html.new (run ./omd.exe %{dep:spec-110.md}))))
 (rule
  (action
-  (with-stdout-to spec-110.html.pp.new (run ./omd_pp.exe %{dep:spec-110.md}))))
+  (progn (with-stdout-to spec-110.md.pp
+          (run ./omd_pp.exe print %{dep:spec-110.md}))
+          (with-stdout-to spec-110.html.pp.new
+          (run ./omd_pp.exe html spec-110.md.pp)))))
 (rule
  (alias spec-110)
  (action (diff spec-110.html spec-110.html.new)))
@@ -1991,7 +2309,10 @@
   (with-stdout-to spec-111.html.new (run ./omd.exe %{dep:spec-111.md}))))
 (rule
  (action
-  (with-stdout-to spec-111.html.pp.new (run ./omd_pp.exe %{dep:spec-111.md}))))
+  (progn (with-stdout-to spec-111.md.pp
+          (run ./omd_pp.exe print %{dep:spec-111.md}))
+          (with-stdout-to spec-111.html.pp.new
+          (run ./omd_pp.exe html spec-111.md.pp)))))
 (rule
  (alias spec-111)
  (action (diff spec-111.html spec-111.html.new)))
@@ -2003,7 +2324,10 @@
   (with-stdout-to spec-112.html.new (run ./omd.exe %{dep:spec-112.md}))))
 (rule
  (action
-  (with-stdout-to spec-112.html.pp.new (run ./omd_pp.exe %{dep:spec-112.md}))))
+  (progn (with-stdout-to spec-112.md.pp
+          (run ./omd_pp.exe print %{dep:spec-112.md}))
+          (with-stdout-to spec-112.html.pp.new
+          (run ./omd_pp.exe html spec-112.md.pp)))))
 (rule
  (alias spec-112)
  (action (diff spec-112.html spec-112.html.new)))
@@ -2015,7 +2339,10 @@
   (with-stdout-to spec-113.html.new (run ./omd.exe %{dep:spec-113.md}))))
 (rule
  (action
-  (with-stdout-to spec-113.html.pp.new (run ./omd_pp.exe %{dep:spec-113.md}))))
+  (progn (with-stdout-to spec-113.md.pp
+          (run ./omd_pp.exe print %{dep:spec-113.md}))
+          (with-stdout-to spec-113.html.pp.new
+          (run ./omd_pp.exe html spec-113.md.pp)))))
 (rule
  (alias spec-113)
  (action (diff spec-113.html spec-113.html.new)))
@@ -2027,7 +2354,10 @@
   (with-stdout-to spec-114.html.new (run ./omd.exe %{dep:spec-114.md}))))
 (rule
  (action
-  (with-stdout-to spec-114.html.pp.new (run ./omd_pp.exe %{dep:spec-114.md}))))
+  (progn (with-stdout-to spec-114.md.pp
+          (run ./omd_pp.exe print %{dep:spec-114.md}))
+          (with-stdout-to spec-114.html.pp.new
+          (run ./omd_pp.exe html spec-114.md.pp)))))
 (rule
  (alias spec-114)
  (action (diff spec-114.html spec-114.html.new)))
@@ -2039,7 +2369,10 @@
   (with-stdout-to spec-115.html.new (run ./omd.exe %{dep:spec-115.md}))))
 (rule
  (action
-  (with-stdout-to spec-115.html.pp.new (run ./omd_pp.exe %{dep:spec-115.md}))))
+  (progn (with-stdout-to spec-115.md.pp
+          (run ./omd_pp.exe print %{dep:spec-115.md}))
+          (with-stdout-to spec-115.html.pp.new
+          (run ./omd_pp.exe html spec-115.md.pp)))))
 (rule
  (alias spec-115)
  (action (diff spec-115.html spec-115.html.new)))
@@ -2051,7 +2384,10 @@
   (with-stdout-to spec-116.html.new (run ./omd.exe %{dep:spec-116.md}))))
 (rule
  (action
-  (with-stdout-to spec-116.html.pp.new (run ./omd_pp.exe %{dep:spec-116.md}))))
+  (progn (with-stdout-to spec-116.md.pp
+          (run ./omd_pp.exe print %{dep:spec-116.md}))
+          (with-stdout-to spec-116.html.pp.new
+          (run ./omd_pp.exe html spec-116.md.pp)))))
 (rule
  (alias spec-116)
  (action (diff spec-116.html spec-116.html.new)))
@@ -2063,7 +2399,10 @@
   (with-stdout-to spec-117.html.new (run ./omd.exe %{dep:spec-117.md}))))
 (rule
  (action
-  (with-stdout-to spec-117.html.pp.new (run ./omd_pp.exe %{dep:spec-117.md}))))
+  (progn (with-stdout-to spec-117.md.pp
+          (run ./omd_pp.exe print %{dep:spec-117.md}))
+          (with-stdout-to spec-117.html.pp.new
+          (run ./omd_pp.exe html spec-117.md.pp)))))
 (rule
  (alias spec-117)
  (action (diff spec-117.html spec-117.html.new)))
@@ -2075,7 +2414,10 @@
   (with-stdout-to spec-118.html.new (run ./omd.exe %{dep:spec-118.md}))))
 (rule
  (action
-  (with-stdout-to spec-118.html.pp.new (run ./omd_pp.exe %{dep:spec-118.md}))))
+  (progn (with-stdout-to spec-118.md.pp
+          (run ./omd_pp.exe print %{dep:spec-118.md}))
+          (with-stdout-to spec-118.html.pp.new
+          (run ./omd_pp.exe html spec-118.md.pp)))))
 (rule
  (alias spec-118)
  (action (diff spec-118.html spec-118.html.new)))
@@ -2087,7 +2429,10 @@
   (with-stdout-to spec-119.html.new (run ./omd.exe %{dep:spec-119.md}))))
 (rule
  (action
-  (with-stdout-to spec-119.html.pp.new (run ./omd_pp.exe %{dep:spec-119.md}))))
+  (progn (with-stdout-to spec-119.md.pp
+          (run ./omd_pp.exe print %{dep:spec-119.md}))
+          (with-stdout-to spec-119.html.pp.new
+          (run ./omd_pp.exe html spec-119.md.pp)))))
 (rule
  (alias spec-119)
  (action (diff spec-119.html spec-119.html.new)))
@@ -2099,7 +2444,10 @@
   (with-stdout-to spec-120.html.new (run ./omd.exe %{dep:spec-120.md}))))
 (rule
  (action
-  (with-stdout-to spec-120.html.pp.new (run ./omd_pp.exe %{dep:spec-120.md}))))
+  (progn (with-stdout-to spec-120.md.pp
+          (run ./omd_pp.exe print %{dep:spec-120.md}))
+          (with-stdout-to spec-120.html.pp.new
+          (run ./omd_pp.exe html spec-120.md.pp)))))
 (rule
  (alias spec-120)
  (action (diff spec-120.html spec-120.html.new)))
@@ -2111,7 +2459,10 @@
   (with-stdout-to spec-121.html.new (run ./omd.exe %{dep:spec-121.md}))))
 (rule
  (action
-  (with-stdout-to spec-121.html.pp.new (run ./omd_pp.exe %{dep:spec-121.md}))))
+  (progn (with-stdout-to spec-121.md.pp
+          (run ./omd_pp.exe print %{dep:spec-121.md}))
+          (with-stdout-to spec-121.html.pp.new
+          (run ./omd_pp.exe html spec-121.md.pp)))))
 (rule
  (alias spec-121)
  (action (diff spec-121.html spec-121.html.new)))
@@ -2123,7 +2474,10 @@
   (with-stdout-to spec-122.html.new (run ./omd.exe %{dep:spec-122.md}))))
 (rule
  (action
-  (with-stdout-to spec-122.html.pp.new (run ./omd_pp.exe %{dep:spec-122.md}))))
+  (progn (with-stdout-to spec-122.md.pp
+          (run ./omd_pp.exe print %{dep:spec-122.md}))
+          (with-stdout-to spec-122.html.pp.new
+          (run ./omd_pp.exe html spec-122.md.pp)))))
 (rule
  (alias spec-122)
  (action (diff spec-122.html spec-122.html.new)))
@@ -2135,7 +2489,10 @@
   (with-stdout-to spec-123.html.new (run ./omd.exe %{dep:spec-123.md}))))
 (rule
  (action
-  (with-stdout-to spec-123.html.pp.new (run ./omd_pp.exe %{dep:spec-123.md}))))
+  (progn (with-stdout-to spec-123.md.pp
+          (run ./omd_pp.exe print %{dep:spec-123.md}))
+          (with-stdout-to spec-123.html.pp.new
+          (run ./omd_pp.exe html spec-123.md.pp)))))
 (rule
  (alias spec-123)
  (action (diff spec-123.html spec-123.html.new)))
@@ -2147,7 +2504,10 @@
   (with-stdout-to spec-124.html.new (run ./omd.exe %{dep:spec-124.md}))))
 (rule
  (action
-  (with-stdout-to spec-124.html.pp.new (run ./omd_pp.exe %{dep:spec-124.md}))))
+  (progn (with-stdout-to spec-124.md.pp
+          (run ./omd_pp.exe print %{dep:spec-124.md}))
+          (with-stdout-to spec-124.html.pp.new
+          (run ./omd_pp.exe html spec-124.md.pp)))))
 (rule
  (alias spec-124)
  (action (diff spec-124.html spec-124.html.new)))
@@ -2159,7 +2519,10 @@
   (with-stdout-to spec-125.html.new (run ./omd.exe %{dep:spec-125.md}))))
 (rule
  (action
-  (with-stdout-to spec-125.html.pp.new (run ./omd_pp.exe %{dep:spec-125.md}))))
+  (progn (with-stdout-to spec-125.md.pp
+          (run ./omd_pp.exe print %{dep:spec-125.md}))
+          (with-stdout-to spec-125.html.pp.new
+          (run ./omd_pp.exe html spec-125.md.pp)))))
 (rule
  (alias spec-125)
  (action (diff spec-125.html spec-125.html.new)))
@@ -2171,7 +2534,10 @@
   (with-stdout-to spec-126.html.new (run ./omd.exe %{dep:spec-126.md}))))
 (rule
  (action
-  (with-stdout-to spec-126.html.pp.new (run ./omd_pp.exe %{dep:spec-126.md}))))
+  (progn (with-stdout-to spec-126.md.pp
+          (run ./omd_pp.exe print %{dep:spec-126.md}))
+          (with-stdout-to spec-126.html.pp.new
+          (run ./omd_pp.exe html spec-126.md.pp)))))
 (rule
  (alias spec-126)
  (action (diff spec-126.html spec-126.html.new)))
@@ -2183,7 +2549,10 @@
   (with-stdout-to spec-127.html.new (run ./omd.exe %{dep:spec-127.md}))))
 (rule
  (action
-  (with-stdout-to spec-127.html.pp.new (run ./omd_pp.exe %{dep:spec-127.md}))))
+  (progn (with-stdout-to spec-127.md.pp
+          (run ./omd_pp.exe print %{dep:spec-127.md}))
+          (with-stdout-to spec-127.html.pp.new
+          (run ./omd_pp.exe html spec-127.md.pp)))))
 (rule
  (alias spec-127)
  (action (diff spec-127.html spec-127.html.new)))
@@ -2195,7 +2564,10 @@
   (with-stdout-to spec-128.html.new (run ./omd.exe %{dep:spec-128.md}))))
 (rule
  (action
-  (with-stdout-to spec-128.html.pp.new (run ./omd_pp.exe %{dep:spec-128.md}))))
+  (progn (with-stdout-to spec-128.md.pp
+          (run ./omd_pp.exe print %{dep:spec-128.md}))
+          (with-stdout-to spec-128.html.pp.new
+          (run ./omd_pp.exe html spec-128.md.pp)))))
 (rule
  (alias spec-128)
  (action (diff spec-128.html spec-128.html.new)))
@@ -2207,7 +2579,10 @@
   (with-stdout-to spec-129.html.new (run ./omd.exe %{dep:spec-129.md}))))
 (rule
  (action
-  (with-stdout-to spec-129.html.pp.new (run ./omd_pp.exe %{dep:spec-129.md}))))
+  (progn (with-stdout-to spec-129.md.pp
+          (run ./omd_pp.exe print %{dep:spec-129.md}))
+          (with-stdout-to spec-129.html.pp.new
+          (run ./omd_pp.exe html spec-129.md.pp)))))
 (rule
  (alias spec-129)
  (action (diff spec-129.html spec-129.html.new)))
@@ -2219,7 +2594,10 @@
   (with-stdout-to spec-130.html.new (run ./omd.exe %{dep:spec-130.md}))))
 (rule
  (action
-  (with-stdout-to spec-130.html.pp.new (run ./omd_pp.exe %{dep:spec-130.md}))))
+  (progn (with-stdout-to spec-130.md.pp
+          (run ./omd_pp.exe print %{dep:spec-130.md}))
+          (with-stdout-to spec-130.html.pp.new
+          (run ./omd_pp.exe html spec-130.md.pp)))))
 (rule
  (alias spec-130)
  (action (diff spec-130.html spec-130.html.new)))
@@ -2231,7 +2609,10 @@
   (with-stdout-to spec-131.html.new (run ./omd.exe %{dep:spec-131.md}))))
 (rule
  (action
-  (with-stdout-to spec-131.html.pp.new (run ./omd_pp.exe %{dep:spec-131.md}))))
+  (progn (with-stdout-to spec-131.md.pp
+          (run ./omd_pp.exe print %{dep:spec-131.md}))
+          (with-stdout-to spec-131.html.pp.new
+          (run ./omd_pp.exe html spec-131.md.pp)))))
 (rule
  (alias spec-131)
  (action (diff spec-131.html spec-131.html.new)))
@@ -2243,7 +2624,10 @@
   (with-stdout-to spec-132.html.new (run ./omd.exe %{dep:spec-132.md}))))
 (rule
  (action
-  (with-stdout-to spec-132.html.pp.new (run ./omd_pp.exe %{dep:spec-132.md}))))
+  (progn (with-stdout-to spec-132.md.pp
+          (run ./omd_pp.exe print %{dep:spec-132.md}))
+          (with-stdout-to spec-132.html.pp.new
+          (run ./omd_pp.exe html spec-132.md.pp)))))
 (rule
  (alias spec-132)
  (action (diff spec-132.html spec-132.html.new)))
@@ -2255,7 +2639,10 @@
   (with-stdout-to spec-133.html.new (run ./omd.exe %{dep:spec-133.md}))))
 (rule
  (action
-  (with-stdout-to spec-133.html.pp.new (run ./omd_pp.exe %{dep:spec-133.md}))))
+  (progn (with-stdout-to spec-133.md.pp
+          (run ./omd_pp.exe print %{dep:spec-133.md}))
+          (with-stdout-to spec-133.html.pp.new
+          (run ./omd_pp.exe html spec-133.md.pp)))))
 (rule
  (alias spec-133)
  (action (diff spec-133.html spec-133.html.new)))
@@ -2267,7 +2654,10 @@
   (with-stdout-to spec-134.html.new (run ./omd.exe %{dep:spec-134.md}))))
 (rule
  (action
-  (with-stdout-to spec-134.html.pp.new (run ./omd_pp.exe %{dep:spec-134.md}))))
+  (progn (with-stdout-to spec-134.md.pp
+          (run ./omd_pp.exe print %{dep:spec-134.md}))
+          (with-stdout-to spec-134.html.pp.new
+          (run ./omd_pp.exe html spec-134.md.pp)))))
 (rule
  (alias spec-134)
  (action (diff spec-134.html spec-134.html.new)))
@@ -2279,7 +2669,10 @@
   (with-stdout-to spec-135.html.new (run ./omd.exe %{dep:spec-135.md}))))
 (rule
  (action
-  (with-stdout-to spec-135.html.pp.new (run ./omd_pp.exe %{dep:spec-135.md}))))
+  (progn (with-stdout-to spec-135.md.pp
+          (run ./omd_pp.exe print %{dep:spec-135.md}))
+          (with-stdout-to spec-135.html.pp.new
+          (run ./omd_pp.exe html spec-135.md.pp)))))
 (rule
  (alias spec-135)
  (action (diff spec-135.html spec-135.html.new)))
@@ -2291,7 +2684,10 @@
   (with-stdout-to spec-136.html.new (run ./omd.exe %{dep:spec-136.md}))))
 (rule
  (action
-  (with-stdout-to spec-136.html.pp.new (run ./omd_pp.exe %{dep:spec-136.md}))))
+  (progn (with-stdout-to spec-136.md.pp
+          (run ./omd_pp.exe print %{dep:spec-136.md}))
+          (with-stdout-to spec-136.html.pp.new
+          (run ./omd_pp.exe html spec-136.md.pp)))))
 (rule
  (alias spec-136)
  (action (diff spec-136.html spec-136.html.new)))
@@ -2303,7 +2699,10 @@
   (with-stdout-to spec-137.html.new (run ./omd.exe %{dep:spec-137.md}))))
 (rule
  (action
-  (with-stdout-to spec-137.html.pp.new (run ./omd_pp.exe %{dep:spec-137.md}))))
+  (progn (with-stdout-to spec-137.md.pp
+          (run ./omd_pp.exe print %{dep:spec-137.md}))
+          (with-stdout-to spec-137.html.pp.new
+          (run ./omd_pp.exe html spec-137.md.pp)))))
 (rule
  (alias spec-137)
  (action (diff spec-137.html spec-137.html.new)))
@@ -2315,7 +2714,10 @@
   (with-stdout-to spec-138.html.new (run ./omd.exe %{dep:spec-138.md}))))
 (rule
  (action
-  (with-stdout-to spec-138.html.pp.new (run ./omd_pp.exe %{dep:spec-138.md}))))
+  (progn (with-stdout-to spec-138.md.pp
+          (run ./omd_pp.exe print %{dep:spec-138.md}))
+          (with-stdout-to spec-138.html.pp.new
+          (run ./omd_pp.exe html spec-138.md.pp)))))
 (rule
  (alias spec-138)
  (action (diff spec-138.html spec-138.html.new)))
@@ -2327,7 +2729,10 @@
   (with-stdout-to spec-139.html.new (run ./omd.exe %{dep:spec-139.md}))))
 (rule
  (action
-  (with-stdout-to spec-139.html.pp.new (run ./omd_pp.exe %{dep:spec-139.md}))))
+  (progn (with-stdout-to spec-139.md.pp
+          (run ./omd_pp.exe print %{dep:spec-139.md}))
+          (with-stdout-to spec-139.html.pp.new
+          (run ./omd_pp.exe html spec-139.md.pp)))))
 (rule
  (alias spec-139)
  (action (diff spec-139.html spec-139.html.new)))
@@ -2339,7 +2744,10 @@
   (with-stdout-to spec-140.html.new (run ./omd.exe %{dep:spec-140.md}))))
 (rule
  (action
-  (with-stdout-to spec-140.html.pp.new (run ./omd_pp.exe %{dep:spec-140.md}))))
+  (progn (with-stdout-to spec-140.md.pp
+          (run ./omd_pp.exe print %{dep:spec-140.md}))
+          (with-stdout-to spec-140.html.pp.new
+          (run ./omd_pp.exe html spec-140.md.pp)))))
 (rule
  (alias spec-140)
  (action (diff spec-140.html spec-140.html.new)))
@@ -2351,7 +2759,10 @@
   (with-stdout-to spec-141.html.new (run ./omd.exe %{dep:spec-141.md}))))
 (rule
  (action
-  (with-stdout-to spec-141.html.pp.new (run ./omd_pp.exe %{dep:spec-141.md}))))
+  (progn (with-stdout-to spec-141.md.pp
+          (run ./omd_pp.exe print %{dep:spec-141.md}))
+          (with-stdout-to spec-141.html.pp.new
+          (run ./omd_pp.exe html spec-141.md.pp)))))
 (rule
  (alias spec-141)
  (action (diff spec-141.html spec-141.html.new)))
@@ -2363,7 +2774,10 @@
   (with-stdout-to spec-142.html.new (run ./omd.exe %{dep:spec-142.md}))))
 (rule
  (action
-  (with-stdout-to spec-142.html.pp.new (run ./omd_pp.exe %{dep:spec-142.md}))))
+  (progn (with-stdout-to spec-142.md.pp
+          (run ./omd_pp.exe print %{dep:spec-142.md}))
+          (with-stdout-to spec-142.html.pp.new
+          (run ./omd_pp.exe html spec-142.md.pp)))))
 (rule
  (alias spec-142)
  (action (diff spec-142.html spec-142.html.new)))
@@ -2375,7 +2789,10 @@
   (with-stdout-to spec-143.html.new (run ./omd.exe %{dep:spec-143.md}))))
 (rule
  (action
-  (with-stdout-to spec-143.html.pp.new (run ./omd_pp.exe %{dep:spec-143.md}))))
+  (progn (with-stdout-to spec-143.md.pp
+          (run ./omd_pp.exe print %{dep:spec-143.md}))
+          (with-stdout-to spec-143.html.pp.new
+          (run ./omd_pp.exe html spec-143.md.pp)))))
 (rule
  (alias spec-143)
  (action (diff spec-143.html spec-143.html.new)))
@@ -2387,7 +2804,10 @@
   (with-stdout-to spec-144.html.new (run ./omd.exe %{dep:spec-144.md}))))
 (rule
  (action
-  (with-stdout-to spec-144.html.pp.new (run ./omd_pp.exe %{dep:spec-144.md}))))
+  (progn (with-stdout-to spec-144.md.pp
+          (run ./omd_pp.exe print %{dep:spec-144.md}))
+          (with-stdout-to spec-144.html.pp.new
+          (run ./omd_pp.exe html spec-144.md.pp)))))
 (rule
  (alias spec-144)
  (action (diff spec-144.html spec-144.html.new)))
@@ -2399,7 +2819,10 @@
   (with-stdout-to spec-145.html.new (run ./omd.exe %{dep:spec-145.md}))))
 (rule
  (action
-  (with-stdout-to spec-145.html.pp.new (run ./omd_pp.exe %{dep:spec-145.md}))))
+  (progn (with-stdout-to spec-145.md.pp
+          (run ./omd_pp.exe print %{dep:spec-145.md}))
+          (with-stdout-to spec-145.html.pp.new
+          (run ./omd_pp.exe html spec-145.md.pp)))))
 (rule
  (alias spec-145)
  (action (diff spec-145.html spec-145.html.new)))
@@ -2411,7 +2834,10 @@
   (with-stdout-to spec-146.html.new (run ./omd.exe %{dep:spec-146.md}))))
 (rule
  (action
-  (with-stdout-to spec-146.html.pp.new (run ./omd_pp.exe %{dep:spec-146.md}))))
+  (progn (with-stdout-to spec-146.md.pp
+          (run ./omd_pp.exe print %{dep:spec-146.md}))
+          (with-stdout-to spec-146.html.pp.new
+          (run ./omd_pp.exe html spec-146.md.pp)))))
 (rule
  (alias spec-146)
  (action (diff spec-146.html spec-146.html.new)))
@@ -2423,7 +2849,10 @@
   (with-stdout-to spec-147.html.new (run ./omd.exe %{dep:spec-147.md}))))
 (rule
  (action
-  (with-stdout-to spec-147.html.pp.new (run ./omd_pp.exe %{dep:spec-147.md}))))
+  (progn (with-stdout-to spec-147.md.pp
+          (run ./omd_pp.exe print %{dep:spec-147.md}))
+          (with-stdout-to spec-147.html.pp.new
+          (run ./omd_pp.exe html spec-147.md.pp)))))
 (rule
  (alias spec-147)
  (action (diff spec-147.html spec-147.html.new)))
@@ -2435,7 +2864,10 @@
   (with-stdout-to spec-148.html.new (run ./omd.exe %{dep:spec-148.md}))))
 (rule
  (action
-  (with-stdout-to spec-148.html.pp.new (run ./omd_pp.exe %{dep:spec-148.md}))))
+  (progn (with-stdout-to spec-148.md.pp
+          (run ./omd_pp.exe print %{dep:spec-148.md}))
+          (with-stdout-to spec-148.html.pp.new
+          (run ./omd_pp.exe html spec-148.md.pp)))))
 (rule
  (alias spec-148)
  (action (diff spec-148.html spec-148.html.new)))
@@ -2447,7 +2879,10 @@
   (with-stdout-to spec-149.html.new (run ./omd.exe %{dep:spec-149.md}))))
 (rule
  (action
-  (with-stdout-to spec-149.html.pp.new (run ./omd_pp.exe %{dep:spec-149.md}))))
+  (progn (with-stdout-to spec-149.md.pp
+          (run ./omd_pp.exe print %{dep:spec-149.md}))
+          (with-stdout-to spec-149.html.pp.new
+          (run ./omd_pp.exe html spec-149.md.pp)))))
 (rule
  (alias spec-149)
  (action (diff spec-149.html spec-149.html.new)))
@@ -2459,7 +2894,10 @@
   (with-stdout-to spec-150.html.new (run ./omd.exe %{dep:spec-150.md}))))
 (rule
  (action
-  (with-stdout-to spec-150.html.pp.new (run ./omd_pp.exe %{dep:spec-150.md}))))
+  (progn (with-stdout-to spec-150.md.pp
+          (run ./omd_pp.exe print %{dep:spec-150.md}))
+          (with-stdout-to spec-150.html.pp.new
+          (run ./omd_pp.exe html spec-150.md.pp)))))
 (rule
  (alias spec-150)
  (action (diff spec-150.html spec-150.html.new)))
@@ -2471,7 +2909,10 @@
   (with-stdout-to spec-151.html.new (run ./omd.exe %{dep:spec-151.md}))))
 (rule
  (action
-  (with-stdout-to spec-151.html.pp.new (run ./omd_pp.exe %{dep:spec-151.md}))))
+  (progn (with-stdout-to spec-151.md.pp
+          (run ./omd_pp.exe print %{dep:spec-151.md}))
+          (with-stdout-to spec-151.html.pp.new
+          (run ./omd_pp.exe html spec-151.md.pp)))))
 (rule
  (alias spec-151)
  (action (diff spec-151.html spec-151.html.new)))
@@ -2483,7 +2924,10 @@
   (with-stdout-to spec-152.html.new (run ./omd.exe %{dep:spec-152.md}))))
 (rule
  (action
-  (with-stdout-to spec-152.html.pp.new (run ./omd_pp.exe %{dep:spec-152.md}))))
+  (progn (with-stdout-to spec-152.md.pp
+          (run ./omd_pp.exe print %{dep:spec-152.md}))
+          (with-stdout-to spec-152.html.pp.new
+          (run ./omd_pp.exe html spec-152.md.pp)))))
 (rule
  (alias spec-152)
  (action (diff spec-152.html spec-152.html.new)))
@@ -2495,7 +2939,10 @@
   (with-stdout-to spec-153.html.new (run ./omd.exe %{dep:spec-153.md}))))
 (rule
  (action
-  (with-stdout-to spec-153.html.pp.new (run ./omd_pp.exe %{dep:spec-153.md}))))
+  (progn (with-stdout-to spec-153.md.pp
+          (run ./omd_pp.exe print %{dep:spec-153.md}))
+          (with-stdout-to spec-153.html.pp.new
+          (run ./omd_pp.exe html spec-153.md.pp)))))
 (rule
  (alias spec-153)
  (action (diff spec-153.html spec-153.html.new)))
@@ -2507,7 +2954,10 @@
   (with-stdout-to spec-154.html.new (run ./omd.exe %{dep:spec-154.md}))))
 (rule
  (action
-  (with-stdout-to spec-154.html.pp.new (run ./omd_pp.exe %{dep:spec-154.md}))))
+  (progn (with-stdout-to spec-154.md.pp
+          (run ./omd_pp.exe print %{dep:spec-154.md}))
+          (with-stdout-to spec-154.html.pp.new
+          (run ./omd_pp.exe html spec-154.md.pp)))))
 (rule
  (alias spec-154)
  (action (diff spec-154.html spec-154.html.new)))
@@ -2519,7 +2969,10 @@
   (with-stdout-to spec-155.html.new (run ./omd.exe %{dep:spec-155.md}))))
 (rule
  (action
-  (with-stdout-to spec-155.html.pp.new (run ./omd_pp.exe %{dep:spec-155.md}))))
+  (progn (with-stdout-to spec-155.md.pp
+          (run ./omd_pp.exe print %{dep:spec-155.md}))
+          (with-stdout-to spec-155.html.pp.new
+          (run ./omd_pp.exe html spec-155.md.pp)))))
 (rule
  (alias spec-155)
  (action (diff spec-155.html spec-155.html.new)))
@@ -2531,7 +2984,10 @@
   (with-stdout-to spec-156.html.new (run ./omd.exe %{dep:spec-156.md}))))
 (rule
  (action
-  (with-stdout-to spec-156.html.pp.new (run ./omd_pp.exe %{dep:spec-156.md}))))
+  (progn (with-stdout-to spec-156.md.pp
+          (run ./omd_pp.exe print %{dep:spec-156.md}))
+          (with-stdout-to spec-156.html.pp.new
+          (run ./omd_pp.exe html spec-156.md.pp)))))
 (rule
  (alias spec-156)
  (action (diff spec-156.html spec-156.html.new)))
@@ -2543,7 +2999,10 @@
   (with-stdout-to spec-157.html.new (run ./omd.exe %{dep:spec-157.md}))))
 (rule
  (action
-  (with-stdout-to spec-157.html.pp.new (run ./omd_pp.exe %{dep:spec-157.md}))))
+  (progn (with-stdout-to spec-157.md.pp
+          (run ./omd_pp.exe print %{dep:spec-157.md}))
+          (with-stdout-to spec-157.html.pp.new
+          (run ./omd_pp.exe html spec-157.md.pp)))))
 (rule
  (alias spec-157)
  (action (diff spec-157.html spec-157.html.new)))
@@ -2555,7 +3014,10 @@
   (with-stdout-to spec-158.html.new (run ./omd.exe %{dep:spec-158.md}))))
 (rule
  (action
-  (with-stdout-to spec-158.html.pp.new (run ./omd_pp.exe %{dep:spec-158.md}))))
+  (progn (with-stdout-to spec-158.md.pp
+          (run ./omd_pp.exe print %{dep:spec-158.md}))
+          (with-stdout-to spec-158.html.pp.new
+          (run ./omd_pp.exe html spec-158.md.pp)))))
 (rule
  (alias spec-158)
  (action (diff spec-158.html spec-158.html.new)))
@@ -2567,7 +3029,10 @@
   (with-stdout-to spec-159.html.new (run ./omd.exe %{dep:spec-159.md}))))
 (rule
  (action
-  (with-stdout-to spec-159.html.pp.new (run ./omd_pp.exe %{dep:spec-159.md}))))
+  (progn (with-stdout-to spec-159.md.pp
+          (run ./omd_pp.exe print %{dep:spec-159.md}))
+          (with-stdout-to spec-159.html.pp.new
+          (run ./omd_pp.exe html spec-159.md.pp)))))
 (rule
  (alias spec-159)
  (action (diff spec-159.html spec-159.html.new)))
@@ -2579,7 +3044,10 @@
   (with-stdout-to spec-160.html.new (run ./omd.exe %{dep:spec-160.md}))))
 (rule
  (action
-  (with-stdout-to spec-160.html.pp.new (run ./omd_pp.exe %{dep:spec-160.md}))))
+  (progn (with-stdout-to spec-160.md.pp
+          (run ./omd_pp.exe print %{dep:spec-160.md}))
+          (with-stdout-to spec-160.html.pp.new
+          (run ./omd_pp.exe html spec-160.md.pp)))))
 (rule
  (alias spec-160)
  (action (diff spec-160.html spec-160.html.new)))
@@ -2591,7 +3059,10 @@
   (with-stdout-to spec-161.html.new (run ./omd.exe %{dep:spec-161.md}))))
 (rule
  (action
-  (with-stdout-to spec-161.html.pp.new (run ./omd_pp.exe %{dep:spec-161.md}))))
+  (progn (with-stdout-to spec-161.md.pp
+          (run ./omd_pp.exe print %{dep:spec-161.md}))
+          (with-stdout-to spec-161.html.pp.new
+          (run ./omd_pp.exe html spec-161.md.pp)))))
 (rule
  (alias spec-161)
  (action (diff spec-161.html spec-161.html.new)))
@@ -2603,7 +3074,10 @@
   (with-stdout-to spec-162.html.new (run ./omd.exe %{dep:spec-162.md}))))
 (rule
  (action
-  (with-stdout-to spec-162.html.pp.new (run ./omd_pp.exe %{dep:spec-162.md}))))
+  (progn (with-stdout-to spec-162.md.pp
+          (run ./omd_pp.exe print %{dep:spec-162.md}))
+          (with-stdout-to spec-162.html.pp.new
+          (run ./omd_pp.exe html spec-162.md.pp)))))
 (rule
  (alias spec-162)
  (action (diff spec-162.html spec-162.html.new)))
@@ -2615,7 +3089,10 @@
   (with-stdout-to spec-163.html.new (run ./omd.exe %{dep:spec-163.md}))))
 (rule
  (action
-  (with-stdout-to spec-163.html.pp.new (run ./omd_pp.exe %{dep:spec-163.md}))))
+  (progn (with-stdout-to spec-163.md.pp
+          (run ./omd_pp.exe print %{dep:spec-163.md}))
+          (with-stdout-to spec-163.html.pp.new
+          (run ./omd_pp.exe html spec-163.md.pp)))))
 (rule
  (alias spec-163)
  (action (diff spec-163.html spec-163.html.new)))
@@ -2627,7 +3104,10 @@
   (with-stdout-to spec-164.html.new (run ./omd.exe %{dep:spec-164.md}))))
 (rule
  (action
-  (with-stdout-to spec-164.html.pp.new (run ./omd_pp.exe %{dep:spec-164.md}))))
+  (progn (with-stdout-to spec-164.md.pp
+          (run ./omd_pp.exe print %{dep:spec-164.md}))
+          (with-stdout-to spec-164.html.pp.new
+          (run ./omd_pp.exe html spec-164.md.pp)))))
 (rule
  (alias spec-164)
  (action (diff spec-164.html spec-164.html.new)))
@@ -2639,7 +3119,10 @@
   (with-stdout-to spec-165.html.new (run ./omd.exe %{dep:spec-165.md}))))
 (rule
  (action
-  (with-stdout-to spec-165.html.pp.new (run ./omd_pp.exe %{dep:spec-165.md}))))
+  (progn (with-stdout-to spec-165.md.pp
+          (run ./omd_pp.exe print %{dep:spec-165.md}))
+          (with-stdout-to spec-165.html.pp.new
+          (run ./omd_pp.exe html spec-165.md.pp)))))
 (rule
  (alias spec-165)
  (action (diff spec-165.html spec-165.html.new)))
@@ -2651,7 +3134,10 @@
   (with-stdout-to spec-166.html.new (run ./omd.exe %{dep:spec-166.md}))))
 (rule
  (action
-  (with-stdout-to spec-166.html.pp.new (run ./omd_pp.exe %{dep:spec-166.md}))))
+  (progn (with-stdout-to spec-166.md.pp
+          (run ./omd_pp.exe print %{dep:spec-166.md}))
+          (with-stdout-to spec-166.html.pp.new
+          (run ./omd_pp.exe html spec-166.md.pp)))))
 (rule
  (alias spec-166)
  (action (diff spec-166.html spec-166.html.new)))
@@ -2663,7 +3149,10 @@
   (with-stdout-to spec-167.html.new (run ./omd.exe %{dep:spec-167.md}))))
 (rule
  (action
-  (with-stdout-to spec-167.html.pp.new (run ./omd_pp.exe %{dep:spec-167.md}))))
+  (progn (with-stdout-to spec-167.md.pp
+          (run ./omd_pp.exe print %{dep:spec-167.md}))
+          (with-stdout-to spec-167.html.pp.new
+          (run ./omd_pp.exe html spec-167.md.pp)))))
 (rule
  (alias spec-167)
  (action (diff spec-167.html spec-167.html.new)))
@@ -2675,7 +3164,10 @@
   (with-stdout-to spec-168.html.new (run ./omd.exe %{dep:spec-168.md}))))
 (rule
  (action
-  (with-stdout-to spec-168.html.pp.new (run ./omd_pp.exe %{dep:spec-168.md}))))
+  (progn (with-stdout-to spec-168.md.pp
+          (run ./omd_pp.exe print %{dep:spec-168.md}))
+          (with-stdout-to spec-168.html.pp.new
+          (run ./omd_pp.exe html spec-168.md.pp)))))
 (rule
  (alias spec-168)
  (action (diff spec-168.html spec-168.html.new)))
@@ -2687,7 +3179,10 @@
   (with-stdout-to spec-169.html.new (run ./omd.exe %{dep:spec-169.md}))))
 (rule
  (action
-  (with-stdout-to spec-169.html.pp.new (run ./omd_pp.exe %{dep:spec-169.md}))))
+  (progn (with-stdout-to spec-169.md.pp
+          (run ./omd_pp.exe print %{dep:spec-169.md}))
+          (with-stdout-to spec-169.html.pp.new
+          (run ./omd_pp.exe html spec-169.md.pp)))))
 (rule
  (alias spec-169)
  (action (diff spec-169.html spec-169.html.new)))
@@ -2699,7 +3194,10 @@
   (with-stdout-to spec-170.html.new (run ./omd.exe %{dep:spec-170.md}))))
 (rule
  (action
-  (with-stdout-to spec-170.html.pp.new (run ./omd_pp.exe %{dep:spec-170.md}))))
+  (progn (with-stdout-to spec-170.md.pp
+          (run ./omd_pp.exe print %{dep:spec-170.md}))
+          (with-stdout-to spec-170.html.pp.new
+          (run ./omd_pp.exe html spec-170.md.pp)))))
 (rule
  (alias spec-170)
  (action (diff spec-170.html spec-170.html.new)))
@@ -2711,7 +3209,10 @@
   (with-stdout-to spec-171.html.new (run ./omd.exe %{dep:spec-171.md}))))
 (rule
  (action
-  (with-stdout-to spec-171.html.pp.new (run ./omd_pp.exe %{dep:spec-171.md}))))
+  (progn (with-stdout-to spec-171.md.pp
+          (run ./omd_pp.exe print %{dep:spec-171.md}))
+          (with-stdout-to spec-171.html.pp.new
+          (run ./omd_pp.exe html spec-171.md.pp)))))
 (rule
  (alias spec-171)
  (action (diff spec-171.html spec-171.html.new)))
@@ -2723,7 +3224,10 @@
   (with-stdout-to spec-172.html.new (run ./omd.exe %{dep:spec-172.md}))))
 (rule
  (action
-  (with-stdout-to spec-172.html.pp.new (run ./omd_pp.exe %{dep:spec-172.md}))))
+  (progn (with-stdout-to spec-172.md.pp
+          (run ./omd_pp.exe print %{dep:spec-172.md}))
+          (with-stdout-to spec-172.html.pp.new
+          (run ./omd_pp.exe html spec-172.md.pp)))))
 (rule
  (alias spec-172)
  (action (diff spec-172.html spec-172.html.new)))
@@ -2735,7 +3239,10 @@
   (with-stdout-to spec-173.html.new (run ./omd.exe %{dep:spec-173.md}))))
 (rule
  (action
-  (with-stdout-to spec-173.html.pp.new (run ./omd_pp.exe %{dep:spec-173.md}))))
+  (progn (with-stdout-to spec-173.md.pp
+          (run ./omd_pp.exe print %{dep:spec-173.md}))
+          (with-stdout-to spec-173.html.pp.new
+          (run ./omd_pp.exe html spec-173.md.pp)))))
 (rule
  (alias spec-173)
  (action (diff spec-173.html spec-173.html.new)))
@@ -2747,7 +3254,10 @@
   (with-stdout-to spec-174.html.new (run ./omd.exe %{dep:spec-174.md}))))
 (rule
  (action
-  (with-stdout-to spec-174.html.pp.new (run ./omd_pp.exe %{dep:spec-174.md}))))
+  (progn (with-stdout-to spec-174.md.pp
+          (run ./omd_pp.exe print %{dep:spec-174.md}))
+          (with-stdout-to spec-174.html.pp.new
+          (run ./omd_pp.exe html spec-174.md.pp)))))
 (rule
  (alias spec-174)
  (action (diff spec-174.html spec-174.html.new)))
@@ -2759,7 +3269,10 @@
   (with-stdout-to spec-175.html.new (run ./omd.exe %{dep:spec-175.md}))))
 (rule
  (action
-  (with-stdout-to spec-175.html.pp.new (run ./omd_pp.exe %{dep:spec-175.md}))))
+  (progn (with-stdout-to spec-175.md.pp
+          (run ./omd_pp.exe print %{dep:spec-175.md}))
+          (with-stdout-to spec-175.html.pp.new
+          (run ./omd_pp.exe html spec-175.md.pp)))))
 (rule
  (alias spec-175)
  (action (diff spec-175.html spec-175.html.new)))
@@ -2771,7 +3284,10 @@
   (with-stdout-to spec-176.html.new (run ./omd.exe %{dep:spec-176.md}))))
 (rule
  (action
-  (with-stdout-to spec-176.html.pp.new (run ./omd_pp.exe %{dep:spec-176.md}))))
+  (progn (with-stdout-to spec-176.md.pp
+          (run ./omd_pp.exe print %{dep:spec-176.md}))
+          (with-stdout-to spec-176.html.pp.new
+          (run ./omd_pp.exe html spec-176.md.pp)))))
 (rule
  (alias spec-176)
  (action (diff spec-176.html spec-176.html.new)))
@@ -2783,7 +3299,10 @@
   (with-stdout-to spec-177.html.new (run ./omd.exe %{dep:spec-177.md}))))
 (rule
  (action
-  (with-stdout-to spec-177.html.pp.new (run ./omd_pp.exe %{dep:spec-177.md}))))
+  (progn (with-stdout-to spec-177.md.pp
+          (run ./omd_pp.exe print %{dep:spec-177.md}))
+          (with-stdout-to spec-177.html.pp.new
+          (run ./omd_pp.exe html spec-177.md.pp)))))
 (rule
  (alias spec-177)
  (action (diff spec-177.html spec-177.html.new)))
@@ -2795,7 +3314,10 @@
   (with-stdout-to spec-178.html.new (run ./omd.exe %{dep:spec-178.md}))))
 (rule
  (action
-  (with-stdout-to spec-178.html.pp.new (run ./omd_pp.exe %{dep:spec-178.md}))))
+  (progn (with-stdout-to spec-178.md.pp
+          (run ./omd_pp.exe print %{dep:spec-178.md}))
+          (with-stdout-to spec-178.html.pp.new
+          (run ./omd_pp.exe html spec-178.md.pp)))))
 (rule
  (alias spec-178)
  (action (diff spec-178.html spec-178.html.new)))
@@ -2807,7 +3329,10 @@
   (with-stdout-to spec-179.html.new (run ./omd.exe %{dep:spec-179.md}))))
 (rule
  (action
-  (with-stdout-to spec-179.html.pp.new (run ./omd_pp.exe %{dep:spec-179.md}))))
+  (progn (with-stdout-to spec-179.md.pp
+          (run ./omd_pp.exe print %{dep:spec-179.md}))
+          (with-stdout-to spec-179.html.pp.new
+          (run ./omd_pp.exe html spec-179.md.pp)))))
 (rule
  (alias spec-179)
  (action (diff spec-179.html spec-179.html.new)))
@@ -2819,7 +3344,10 @@
   (with-stdout-to spec-180.html.new (run ./omd.exe %{dep:spec-180.md}))))
 (rule
  (action
-  (with-stdout-to spec-180.html.pp.new (run ./omd_pp.exe %{dep:spec-180.md}))))
+  (progn (with-stdout-to spec-180.md.pp
+          (run ./omd_pp.exe print %{dep:spec-180.md}))
+          (with-stdout-to spec-180.html.pp.new
+          (run ./omd_pp.exe html spec-180.md.pp)))))
 (rule
  (alias spec-180)
  (action (diff spec-180.html spec-180.html.new)))
@@ -2831,7 +3359,10 @@
   (with-stdout-to spec-181.html.new (run ./omd.exe %{dep:spec-181.md}))))
 (rule
  (action
-  (with-stdout-to spec-181.html.pp.new (run ./omd_pp.exe %{dep:spec-181.md}))))
+  (progn (with-stdout-to spec-181.md.pp
+          (run ./omd_pp.exe print %{dep:spec-181.md}))
+          (with-stdout-to spec-181.html.pp.new
+          (run ./omd_pp.exe html spec-181.md.pp)))))
 (rule
  (alias spec-181)
  (action (diff spec-181.html spec-181.html.new)))
@@ -2843,7 +3374,10 @@
   (with-stdout-to spec-182.html.new (run ./omd.exe %{dep:spec-182.md}))))
 (rule
  (action
-  (with-stdout-to spec-182.html.pp.new (run ./omd_pp.exe %{dep:spec-182.md}))))
+  (progn (with-stdout-to spec-182.md.pp
+          (run ./omd_pp.exe print %{dep:spec-182.md}))
+          (with-stdout-to spec-182.html.pp.new
+          (run ./omd_pp.exe html spec-182.md.pp)))))
 (rule
  (alias spec-182)
  (action (diff spec-182.html spec-182.html.new)))
@@ -2855,7 +3389,10 @@
   (with-stdout-to spec-183.html.new (run ./omd.exe %{dep:spec-183.md}))))
 (rule
  (action
-  (with-stdout-to spec-183.html.pp.new (run ./omd_pp.exe %{dep:spec-183.md}))))
+  (progn (with-stdout-to spec-183.md.pp
+          (run ./omd_pp.exe print %{dep:spec-183.md}))
+          (with-stdout-to spec-183.html.pp.new
+          (run ./omd_pp.exe html spec-183.md.pp)))))
 (rule
  (alias spec-183)
  (action (diff spec-183.html spec-183.html.new)))
@@ -2867,7 +3404,10 @@
   (with-stdout-to spec-184.html.new (run ./omd.exe %{dep:spec-184.md}))))
 (rule
  (action
-  (with-stdout-to spec-184.html.pp.new (run ./omd_pp.exe %{dep:spec-184.md}))))
+  (progn (with-stdout-to spec-184.md.pp
+          (run ./omd_pp.exe print %{dep:spec-184.md}))
+          (with-stdout-to spec-184.html.pp.new
+          (run ./omd_pp.exe html spec-184.md.pp)))))
 (rule
  (alias spec-184)
  (action (diff spec-184.html spec-184.html.new)))
@@ -2879,7 +3419,10 @@
   (with-stdout-to spec-185.html.new (run ./omd.exe %{dep:spec-185.md}))))
 (rule
  (action
-  (with-stdout-to spec-185.html.pp.new (run ./omd_pp.exe %{dep:spec-185.md}))))
+  (progn (with-stdout-to spec-185.md.pp
+          (run ./omd_pp.exe print %{dep:spec-185.md}))
+          (with-stdout-to spec-185.html.pp.new
+          (run ./omd_pp.exe html spec-185.md.pp)))))
 (rule
  (alias spec-185)
  (action (diff spec-185.html spec-185.html.new)))
@@ -2891,7 +3434,10 @@
   (with-stdout-to spec-186.html.new (run ./omd.exe %{dep:spec-186.md}))))
 (rule
  (action
-  (with-stdout-to spec-186.html.pp.new (run ./omd_pp.exe %{dep:spec-186.md}))))
+  (progn (with-stdout-to spec-186.md.pp
+          (run ./omd_pp.exe print %{dep:spec-186.md}))
+          (with-stdout-to spec-186.html.pp.new
+          (run ./omd_pp.exe html spec-186.md.pp)))))
 (rule
  (alias spec-186)
  (action (diff spec-186.html spec-186.html.new)))
@@ -2903,7 +3449,10 @@
   (with-stdout-to spec-187.html.new (run ./omd.exe %{dep:spec-187.md}))))
 (rule
  (action
-  (with-stdout-to spec-187.html.pp.new (run ./omd_pp.exe %{dep:spec-187.md}))))
+  (progn (with-stdout-to spec-187.md.pp
+          (run ./omd_pp.exe print %{dep:spec-187.md}))
+          (with-stdout-to spec-187.html.pp.new
+          (run ./omd_pp.exe html spec-187.md.pp)))))
 (rule
  (alias spec-187)
  (action (diff spec-187.html spec-187.html.new)))
@@ -2915,7 +3464,10 @@
   (with-stdout-to spec-188.html.new (run ./omd.exe %{dep:spec-188.md}))))
 (rule
  (action
-  (with-stdout-to spec-188.html.pp.new (run ./omd_pp.exe %{dep:spec-188.md}))))
+  (progn (with-stdout-to spec-188.md.pp
+          (run ./omd_pp.exe print %{dep:spec-188.md}))
+          (with-stdout-to spec-188.html.pp.new
+          (run ./omd_pp.exe html spec-188.md.pp)))))
 (rule
  (alias spec-188)
  (action (diff spec-188.html spec-188.html.new)))
@@ -2927,7 +3479,10 @@
   (with-stdout-to spec-189.html.new (run ./omd.exe %{dep:spec-189.md}))))
 (rule
  (action
-  (with-stdout-to spec-189.html.pp.new (run ./omd_pp.exe %{dep:spec-189.md}))))
+  (progn (with-stdout-to spec-189.md.pp
+          (run ./omd_pp.exe print %{dep:spec-189.md}))
+          (with-stdout-to spec-189.html.pp.new
+          (run ./omd_pp.exe html spec-189.md.pp)))))
 (rule
  (alias spec-189)
  (action (diff spec-189.html spec-189.html.new)))
@@ -2939,7 +3494,10 @@
   (with-stdout-to spec-190.html.new (run ./omd.exe %{dep:spec-190.md}))))
 (rule
  (action
-  (with-stdout-to spec-190.html.pp.new (run ./omd_pp.exe %{dep:spec-190.md}))))
+  (progn (with-stdout-to spec-190.md.pp
+          (run ./omd_pp.exe print %{dep:spec-190.md}))
+          (with-stdout-to spec-190.html.pp.new
+          (run ./omd_pp.exe html spec-190.md.pp)))))
 (rule
  (alias spec-190)
  (action (diff spec-190.html spec-190.html.new)))
@@ -2951,7 +3509,10 @@
   (with-stdout-to spec-191.html.new (run ./omd.exe %{dep:spec-191.md}))))
 (rule
  (action
-  (with-stdout-to spec-191.html.pp.new (run ./omd_pp.exe %{dep:spec-191.md}))))
+  (progn (with-stdout-to spec-191.md.pp
+          (run ./omd_pp.exe print %{dep:spec-191.md}))
+          (with-stdout-to spec-191.html.pp.new
+          (run ./omd_pp.exe html spec-191.md.pp)))))
 (rule
  (alias spec-191)
  (action (diff spec-191.html spec-191.html.new)))
@@ -2963,7 +3524,10 @@
   (with-stdout-to spec-192.html.new (run ./omd.exe %{dep:spec-192.md}))))
 (rule
  (action
-  (with-stdout-to spec-192.html.pp.new (run ./omd_pp.exe %{dep:spec-192.md}))))
+  (progn (with-stdout-to spec-192.md.pp
+          (run ./omd_pp.exe print %{dep:spec-192.md}))
+          (with-stdout-to spec-192.html.pp.new
+          (run ./omd_pp.exe html spec-192.md.pp)))))
 (rule
  (alias spec-192)
  (action (diff spec-192.html spec-192.html.new)))
@@ -2975,7 +3539,10 @@
   (with-stdout-to spec-193.html.new (run ./omd.exe %{dep:spec-193.md}))))
 (rule
  (action
-  (with-stdout-to spec-193.html.pp.new (run ./omd_pp.exe %{dep:spec-193.md}))))
+  (progn (with-stdout-to spec-193.md.pp
+          (run ./omd_pp.exe print %{dep:spec-193.md}))
+          (with-stdout-to spec-193.html.pp.new
+          (run ./omd_pp.exe html spec-193.md.pp)))))
 (rule
  (alias spec-193)
  (action (diff spec-193.html spec-193.html.new)))
@@ -2987,7 +3554,10 @@
   (with-stdout-to spec-194.html.new (run ./omd.exe %{dep:spec-194.md}))))
 (rule
  (action
-  (with-stdout-to spec-194.html.pp.new (run ./omd_pp.exe %{dep:spec-194.md}))))
+  (progn (with-stdout-to spec-194.md.pp
+          (run ./omd_pp.exe print %{dep:spec-194.md}))
+          (with-stdout-to spec-194.html.pp.new
+          (run ./omd_pp.exe html spec-194.md.pp)))))
 (rule
  (alias spec-194)
  (action (diff spec-194.html spec-194.html.new)))
@@ -2999,7 +3569,10 @@
   (with-stdout-to spec-195.html.new (run ./omd.exe %{dep:spec-195.md}))))
 (rule
  (action
-  (with-stdout-to spec-195.html.pp.new (run ./omd_pp.exe %{dep:spec-195.md}))))
+  (progn (with-stdout-to spec-195.md.pp
+          (run ./omd_pp.exe print %{dep:spec-195.md}))
+          (with-stdout-to spec-195.html.pp.new
+          (run ./omd_pp.exe html spec-195.md.pp)))))
 (rule
  (alias spec-195)
  (action (diff spec-195.html spec-195.html.new)))
@@ -3011,7 +3584,10 @@
   (with-stdout-to spec-196.html.new (run ./omd.exe %{dep:spec-196.md}))))
 (rule
  (action
-  (with-stdout-to spec-196.html.pp.new (run ./omd_pp.exe %{dep:spec-196.md}))))
+  (progn (with-stdout-to spec-196.md.pp
+          (run ./omd_pp.exe print %{dep:spec-196.md}))
+          (with-stdout-to spec-196.html.pp.new
+          (run ./omd_pp.exe html spec-196.md.pp)))))
 (rule
  (alias spec-196)
  (action (diff spec-196.html spec-196.html.new)))
@@ -3023,7 +3599,10 @@
   (with-stdout-to spec-197.html.new (run ./omd.exe %{dep:spec-197.md}))))
 (rule
  (action
-  (with-stdout-to spec-197.html.pp.new (run ./omd_pp.exe %{dep:spec-197.md}))))
+  (progn (with-stdout-to spec-197.md.pp
+          (run ./omd_pp.exe print %{dep:spec-197.md}))
+          (with-stdout-to spec-197.html.pp.new
+          (run ./omd_pp.exe html spec-197.md.pp)))))
 (rule
  (alias spec-197)
  (action (diff spec-197.html spec-197.html.new)))
@@ -3035,7 +3614,10 @@
   (with-stdout-to spec-198.html.new (run ./omd.exe %{dep:spec-198.md}))))
 (rule
  (action
-  (with-stdout-to spec-198.html.pp.new (run ./omd_pp.exe %{dep:spec-198.md}))))
+  (progn (with-stdout-to spec-198.md.pp
+          (run ./omd_pp.exe print %{dep:spec-198.md}))
+          (with-stdout-to spec-198.html.pp.new
+          (run ./omd_pp.exe html spec-198.md.pp)))))
 (rule
  (alias spec-198)
  (action (diff spec-198.html spec-198.html.new)))
@@ -3047,7 +3629,10 @@
   (with-stdout-to spec-199.html.new (run ./omd.exe %{dep:spec-199.md}))))
 (rule
  (action
-  (with-stdout-to spec-199.html.pp.new (run ./omd_pp.exe %{dep:spec-199.md}))))
+  (progn (with-stdout-to spec-199.md.pp
+          (run ./omd_pp.exe print %{dep:spec-199.md}))
+          (with-stdout-to spec-199.html.pp.new
+          (run ./omd_pp.exe html spec-199.md.pp)))))
 (rule
  (alias spec-199)
  (action (diff spec-199.html spec-199.html.new)))
@@ -5778,8 +6363,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-001.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-001.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-001.md}))))
+  (progn (with-stdout-to gfm_table_spec-001.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-001.md}))
+          (with-stdout-to gfm_table_spec-001.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-001.md.pp)))))
 (rule
  (alias gfm_table_spec-001)
  (action (diff gfm_table_spec-001.html gfm_table_spec-001.html.new)))
@@ -5792,8 +6379,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-002.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-002.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-002.md}))))
+  (progn (with-stdout-to gfm_table_spec-002.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-002.md}))
+          (with-stdout-to gfm_table_spec-002.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-002.md.pp)))))
 (rule
  (alias gfm_table_spec-002)
  (action (diff gfm_table_spec-002.html gfm_table_spec-002.html.new)))
@@ -5806,8 +6395,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-003.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-003.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-003.md}))))
+  (progn (with-stdout-to gfm_table_spec-003.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-003.md}))
+          (with-stdout-to gfm_table_spec-003.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-003.md.pp)))))
 (rule
  (alias gfm_table_spec-003)
  (action (diff gfm_table_spec-003.html gfm_table_spec-003.html.new)))
@@ -5820,8 +6411,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-004.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-004.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-004.md}))))
+  (progn (with-stdout-to gfm_table_spec-004.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-004.md}))
+          (with-stdout-to gfm_table_spec-004.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-004.md.pp)))))
 (rule
  (alias gfm_table_spec-004)
  (action (diff gfm_table_spec-004.html gfm_table_spec-004.html.new)))
@@ -5834,8 +6427,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-005.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-005.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-005.md}))))
+  (progn (with-stdout-to gfm_table_spec-005.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-005.md}))
+          (with-stdout-to gfm_table_spec-005.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-005.md.pp)))))
 (rule
  (alias gfm_table_spec-005)
  (action (diff gfm_table_spec-005.html gfm_table_spec-005.html.new)))
@@ -5848,8 +6443,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-006.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-006.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-006.md}))))
+  (progn (with-stdout-to gfm_table_spec-006.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-006.md}))
+          (with-stdout-to gfm_table_spec-006.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-006.md.pp)))))
 (rule
  (alias gfm_table_spec-006)
  (action (diff gfm_table_spec-006.html gfm_table_spec-006.html.new)))
@@ -5862,8 +6459,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-007.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-007.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-007.md}))))
+  (progn (with-stdout-to gfm_table_spec-007.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-007.md}))
+          (with-stdout-to gfm_table_spec-007.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-007.md.pp)))))
 (rule
  (alias gfm_table_spec-007)
  (action (diff gfm_table_spec-007.html gfm_table_spec-007.html.new)))
@@ -5876,8 +6475,10 @@
    (run ./omd.exe %{dep:gfm_table_spec-008.md}))))
 (rule
  (action
-  (with-stdout-to gfm_table_spec-008.html.pp.new
-   (run ./omd_pp.exe %{dep:gfm_table_spec-008.md}))))
+  (progn (with-stdout-to gfm_table_spec-008.md.pp
+          (run ./omd_pp.exe print %{dep:gfm_table_spec-008.md}))
+          (with-stdout-to gfm_table_spec-008.html.pp.new
+          (run ./omd_pp.exe html gfm_table_spec-008.md.pp)))))
 (rule
  (alias gfm_table_spec-008)
  (action (diff gfm_table_spec-008.html gfm_table_spec-008.html.new)))
@@ -5890,8 +6491,10 @@
    (run ./omd.exe %{dep:extra_table_tests-001.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-001.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-001.md}))))
+  (progn (with-stdout-to extra_table_tests-001.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-001.md}))
+          (with-stdout-to extra_table_tests-001.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-001.md.pp)))))
 (rule
  (alias extra_table_tests-001)
  (action (diff extra_table_tests-001.html extra_table_tests-001.html.new)))
@@ -5904,8 +6507,10 @@
    (run ./omd.exe %{dep:extra_table_tests-002.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-002.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-002.md}))))
+  (progn (with-stdout-to extra_table_tests-002.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-002.md}))
+          (with-stdout-to extra_table_tests-002.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-002.md.pp)))))
 (rule
  (alias extra_table_tests-002)
  (action (diff extra_table_tests-002.html extra_table_tests-002.html.new)))
@@ -5918,8 +6523,10 @@
    (run ./omd.exe %{dep:extra_table_tests-003.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-003.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-003.md}))))
+  (progn (with-stdout-to extra_table_tests-003.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-003.md}))
+          (with-stdout-to extra_table_tests-003.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-003.md.pp)))))
 (rule
  (alias extra_table_tests-003)
  (action (diff extra_table_tests-003.html extra_table_tests-003.html.new)))
@@ -5932,8 +6539,10 @@
    (run ./omd.exe %{dep:extra_table_tests-004.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-004.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-004.md}))))
+  (progn (with-stdout-to extra_table_tests-004.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-004.md}))
+          (with-stdout-to extra_table_tests-004.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-004.md.pp)))))
 (rule
  (alias extra_table_tests-004)
  (action (diff extra_table_tests-004.html extra_table_tests-004.html.new)))
@@ -5946,8 +6555,10 @@
    (run ./omd.exe %{dep:extra_table_tests-005.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-005.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-005.md}))))
+  (progn (with-stdout-to extra_table_tests-005.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-005.md}))
+          (with-stdout-to extra_table_tests-005.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-005.md.pp)))))
 (rule
  (alias extra_table_tests-005)
  (action (diff extra_table_tests-005.html extra_table_tests-005.html.new)))
@@ -5960,8 +6571,10 @@
    (run ./omd.exe %{dep:extra_table_tests-006.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-006.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-006.md}))))
+  (progn (with-stdout-to extra_table_tests-006.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-006.md}))
+          (with-stdout-to extra_table_tests-006.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-006.md.pp)))))
 (rule
  (alias extra_table_tests-006)
  (action (diff extra_table_tests-006.html extra_table_tests-006.html.new)))
@@ -5974,8 +6587,10 @@
    (run ./omd.exe %{dep:extra_table_tests-007.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-007.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-007.md}))))
+  (progn (with-stdout-to extra_table_tests-007.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-007.md}))
+          (with-stdout-to extra_table_tests-007.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-007.md.pp)))))
 (rule
  (alias extra_table_tests-007)
  (action (diff extra_table_tests-007.html extra_table_tests-007.html.new)))
@@ -5988,8 +6603,10 @@
    (run ./omd.exe %{dep:extra_table_tests-008.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-008.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-008.md}))))
+  (progn (with-stdout-to extra_table_tests-008.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-008.md}))
+          (with-stdout-to extra_table_tests-008.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-008.md.pp)))))
 (rule
  (alias extra_table_tests-008)
  (action (diff extra_table_tests-008.html extra_table_tests-008.html.new)))
@@ -6002,8 +6619,10 @@
    (run ./omd.exe %{dep:extra_table_tests-009.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-009.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-009.md}))))
+  (progn (with-stdout-to extra_table_tests-009.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-009.md}))
+          (with-stdout-to extra_table_tests-009.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-009.md.pp)))))
 (rule
  (alias extra_table_tests-009)
  (action (diff extra_table_tests-009.html extra_table_tests-009.html.new)))
@@ -6016,8 +6635,10 @@
    (run ./omd.exe %{dep:extra_table_tests-010.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-010.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-010.md}))))
+  (progn (with-stdout-to extra_table_tests-010.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-010.md}))
+          (with-stdout-to extra_table_tests-010.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-010.md.pp)))))
 (rule
  (alias extra_table_tests-010)
  (action (diff extra_table_tests-010.html extra_table_tests-010.html.new)))
@@ -6030,8 +6651,10 @@
    (run ./omd.exe %{dep:extra_table_tests-011.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-011.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-011.md}))))
+  (progn (with-stdout-to extra_table_tests-011.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-011.md}))
+          (with-stdout-to extra_table_tests-011.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-011.md.pp)))))
 (rule
  (alias extra_table_tests-011)
  (action (diff extra_table_tests-011.html extra_table_tests-011.html.new)))
@@ -6044,8 +6667,10 @@
    (run ./omd.exe %{dep:extra_table_tests-012.md}))))
 (rule
  (action
-  (with-stdout-to extra_table_tests-012.html.pp.new
-   (run ./omd_pp.exe %{dep:extra_table_tests-012.md}))))
+  (progn (with-stdout-to extra_table_tests-012.md.pp
+          (run ./omd_pp.exe print %{dep:extra_table_tests-012.md}))
+          (with-stdout-to extra_table_tests-012.html.pp.new
+          (run ./omd_pp.exe html extra_table_tests-012.md.pp)))))
 (rule
  (alias extra_table_tests-012)
  (action (diff extra_table_tests-012.html extra_table_tests-012.html.new)))
@@ -6058,8 +6683,10 @@
    (run ./omd.exe %{dep:attributes-001.md}))))
 (rule
  (action
-  (with-stdout-to attributes-001.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-001.md}))))
+  (progn (with-stdout-to attributes-001.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-001.md}))
+          (with-stdout-to attributes-001.html.pp.new
+          (run ./omd_pp.exe html attributes-001.md.pp)))))
 (rule
  (alias attributes-001)
  (action (diff attributes-001.html attributes-001.html.new)))
@@ -6072,8 +6699,10 @@
    (run ./omd.exe %{dep:attributes-002.md}))))
 (rule
  (action
-  (with-stdout-to attributes-002.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-002.md}))))
+  (progn (with-stdout-to attributes-002.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-002.md}))
+          (with-stdout-to attributes-002.html.pp.new
+          (run ./omd_pp.exe html attributes-002.md.pp)))))
 (rule
  (alias attributes-002)
  (action (diff attributes-002.html attributes-002.html.new)))
@@ -6086,8 +6715,10 @@
    (run ./omd.exe %{dep:attributes-003.md}))))
 (rule
  (action
-  (with-stdout-to attributes-003.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-003.md}))))
+  (progn (with-stdout-to attributes-003.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-003.md}))
+          (with-stdout-to attributes-003.html.pp.new
+          (run ./omd_pp.exe html attributes-003.md.pp)))))
 (rule
  (alias attributes-003)
  (action (diff attributes-003.html attributes-003.html.new)))
@@ -6100,8 +6731,10 @@
    (run ./omd.exe %{dep:attributes-004.md}))))
 (rule
  (action
-  (with-stdout-to attributes-004.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-004.md}))))
+  (progn (with-stdout-to attributes-004.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-004.md}))
+          (with-stdout-to attributes-004.html.pp.new
+          (run ./omd_pp.exe html attributes-004.md.pp)))))
 (rule
  (alias attributes-004)
  (action (diff attributes-004.html attributes-004.html.new)))
@@ -6114,8 +6747,10 @@
    (run ./omd.exe %{dep:attributes-005.md}))))
 (rule
  (action
-  (with-stdout-to attributes-005.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-005.md}))))
+  (progn (with-stdout-to attributes-005.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-005.md}))
+          (with-stdout-to attributes-005.html.pp.new
+          (run ./omd_pp.exe html attributes-005.md.pp)))))
 (rule
  (alias attributes-005)
  (action (diff attributes-005.html attributes-005.html.new)))
@@ -6128,8 +6763,10 @@
    (run ./omd.exe %{dep:attributes-006.md}))))
 (rule
  (action
-  (with-stdout-to attributes-006.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-006.md}))))
+  (progn (with-stdout-to attributes-006.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-006.md}))
+          (with-stdout-to attributes-006.html.pp.new
+          (run ./omd_pp.exe html attributes-006.md.pp)))))
 (rule
  (alias attributes-006)
  (action (diff attributes-006.html attributes-006.html.new)))
@@ -6142,8 +6779,10 @@
    (run ./omd.exe %{dep:attributes-007.md}))))
 (rule
  (action
-  (with-stdout-to attributes-007.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-007.md}))))
+  (progn (with-stdout-to attributes-007.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-007.md}))
+          (with-stdout-to attributes-007.html.pp.new
+          (run ./omd_pp.exe html attributes-007.md.pp)))))
 (rule
  (alias attributes-007)
  (action (diff attributes-007.html attributes-007.html.new)))
@@ -6156,8 +6795,10 @@
    (run ./omd.exe %{dep:attributes-008.md}))))
 (rule
  (action
-  (with-stdout-to attributes-008.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-008.md}))))
+  (progn (with-stdout-to attributes-008.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-008.md}))
+          (with-stdout-to attributes-008.html.pp.new
+          (run ./omd_pp.exe html attributes-008.md.pp)))))
 (rule
  (alias attributes-008)
  (action (diff attributes-008.html attributes-008.html.new)))
@@ -6170,8 +6811,10 @@
    (run ./omd.exe %{dep:attributes-009.md}))))
 (rule
  (action
-  (with-stdout-to attributes-009.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-009.md}))))
+  (progn (with-stdout-to attributes-009.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-009.md}))
+          (with-stdout-to attributes-009.html.pp.new
+          (run ./omd_pp.exe html attributes-009.md.pp)))))
 (rule
  (alias attributes-009)
  (action (diff attributes-009.html attributes-009.html.new)))
@@ -6184,8 +6827,10 @@
    (run ./omd.exe %{dep:attributes-010.md}))))
 (rule
  (action
-  (with-stdout-to attributes-010.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-010.md}))))
+  (progn (with-stdout-to attributes-010.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-010.md}))
+          (with-stdout-to attributes-010.html.pp.new
+          (run ./omd_pp.exe html attributes-010.md.pp)))))
 (rule
  (alias attributes-010)
  (action (diff attributes-010.html attributes-010.html.new)))
@@ -6198,8 +6843,10 @@
    (run ./omd.exe %{dep:attributes-011.md}))))
 (rule
  (action
-  (with-stdout-to attributes-011.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-011.md}))))
+  (progn (with-stdout-to attributes-011.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-011.md}))
+          (with-stdout-to attributes-011.html.pp.new
+          (run ./omd_pp.exe html attributes-011.md.pp)))))
 (rule
  (alias attributes-011)
  (action (diff attributes-011.html attributes-011.html.new)))
@@ -6212,8 +6859,10 @@
    (run ./omd.exe %{dep:attributes-012.md}))))
 (rule
  (action
-  (with-stdout-to attributes-012.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-012.md}))))
+  (progn (with-stdout-to attributes-012.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-012.md}))
+          (with-stdout-to attributes-012.html.pp.new
+          (run ./omd_pp.exe html attributes-012.md.pp)))))
 (rule
  (alias attributes-012)
  (action (diff attributes-012.html attributes-012.html.new)))
@@ -6226,8 +6875,10 @@
    (run ./omd.exe %{dep:attributes-013.md}))))
 (rule
  (action
-  (with-stdout-to attributes-013.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-013.md}))))
+  (progn (with-stdout-to attributes-013.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-013.md}))
+          (with-stdout-to attributes-013.html.pp.new
+          (run ./omd_pp.exe html attributes-013.md.pp)))))
 (rule
  (alias attributes-013)
  (action (diff attributes-013.html attributes-013.html.new)))
@@ -6240,8 +6891,10 @@
    (run ./omd.exe %{dep:attributes-014.md}))))
 (rule
  (action
-  (with-stdout-to attributes-014.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-014.md}))))
+  (progn (with-stdout-to attributes-014.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-014.md}))
+          (with-stdout-to attributes-014.html.pp.new
+          (run ./omd_pp.exe html attributes-014.md.pp)))))
 (rule
  (alias attributes-014)
  (action (diff attributes-014.html attributes-014.html.new)))
@@ -6254,8 +6907,10 @@
    (run ./omd.exe %{dep:attributes-015.md}))))
 (rule
  (action
-  (with-stdout-to attributes-015.html.pp.new
-   (run ./omd_pp.exe %{dep:attributes-015.md}))))
+  (progn (with-stdout-to attributes-015.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-015.md}))
+          (with-stdout-to attributes-015.html.pp.new
+          (run ./omd_pp.exe html attributes-015.md.pp)))))
 (rule
  (alias attributes-015)
  (action (diff attributes-015.html attributes-015.html.new)))
@@ -6268,8 +6923,10 @@
    (run ./omd.exe %{dep:def_list-001.md}))))
 (rule
  (action
-  (with-stdout-to def_list-001.html.pp.new
-   (run ./omd_pp.exe %{dep:def_list-001.md}))))
+  (progn (with-stdout-to def_list-001.md.pp
+          (run ./omd_pp.exe print %{dep:def_list-001.md}))
+          (with-stdout-to def_list-001.html.pp.new
+          (run ./omd_pp.exe html def_list-001.md.pp)))))
 (rule
  (alias def_list-001)
  (action (diff def_list-001.html def_list-001.html.new)))

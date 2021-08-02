@@ -106,9 +106,16 @@ let write_dune_file test_specs tests =
         base
         example;
       if not (List.mem example pp_disabled) then Format.printf
-        "@[<v1>(rule@ @[<hov1>(action@ @[<hov1>(with-stdout-to \
-         %s-%03d.html.pp.new@ @[<hov1>(run@ ./omd_pp.exe@ \
-         %%{dep:%s-%03d.md})@])@])@])@]@."
+        "@[<v1>(rule@ @[<hov1>(action@ @[<hov1>(progn @[<hov1>(with-stdout-to \
+        %s-%03d.md.pp@ @[<hov1>(run@ ./omd_pp.exe print \
+        %%{dep:%s-%03d.md}))@]@ \
+        (with-stdout-to \
+         %s-%03d.html.pp.new@ @[<hov1>(run@ ./omd_pp.exe html@ \
+         %s-%03d.md.pp)@])@])@])@])@]@."
+        base
+        example
+        base
+        example
         base
         example
         base
