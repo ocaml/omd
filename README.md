@@ -77,4 +77,3 @@ Sheets](https://github.com/dsheets/), [Jeremy
 Yallop](https://github.com/yallop/), and \<please insert your name here if you
 believe you've been forgotten\> for their feedbacks and contributions to this
 project.
-
