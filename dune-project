@@ -8,7 +8,8 @@
 (license ISC)
 (authors "Philippe Wang <philippe.wang@gmail.com>"
          "Nicolás Ojeda Bär <n.oje.bar@gmail.com>")
-(maintainers "Nicolás Ojeda Bär <n.oje.bar@gmail.com>")
+(maintainers "Shon Feder <shon.feder@gmail.com>"
+             "Raphael Sousa Santos <@sonologico>")
 (source (github ocaml/omd))
 
 (package
