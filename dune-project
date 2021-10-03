@@ -1,7 +1,8 @@
-(lang dune 2.0)
-
+(lang dune 2.7)
 (name omd)
 (version 2.0.0~alpha1)
+
+(cram enable)
 
 (generate_opam_files)
 
