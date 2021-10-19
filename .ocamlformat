@@ -1,4 +1,5 @@
-version = 0.19.0
+version = 0.20.0
+profile = conventional
 exp-grouping = preserve
 break-fun-sig = fit-or-vertical
 break-fun-decl = fit-or-vertical

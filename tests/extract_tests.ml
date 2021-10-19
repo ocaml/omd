@@ -23,9 +23,7 @@ let begins_with s s' =
   String.length s >= String.length s' && String.sub s 0 (String.length s') = s'
 
 let test_delim = "````````````````````````````````"
-
 let tab_re = Str.regexp_string "→"
-
 let insert_tabs s = Str.global_replace tab_re "\t" s
 
 type test =
@@ -116,7 +114,6 @@ let write_dune_file test_specs tests =
     (fun ppf -> List.iter (pp ppf) tests)
 
 let li_begin_re = Str.regexp_string "<li>\n"
-
 let li_end_re = Str.regexp_string "\n</li>"
 
 let normalize_html s =
@@ -147,7 +144,6 @@ let spec =
   ]
 
 let test_specs = ref []
-
 let add_to_list l x = l := x :: !l
 
 let () =

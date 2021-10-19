@@ -5,33 +5,19 @@ module Sub : sig
   type t
 
   val of_string : string -> t
-
   val to_string : t -> string
-
   val offset : int -> t -> t
-
   val lexbuf : t -> Lexing.lexbuf
-
   val contains : string -> t -> bool
-
   val print : Format.formatter -> t -> unit
-
   val head : ?rev:unit -> t -> char option
-
   val tail : ?rev:unit -> t -> t
-
   val heads : int -> t -> char list
-
   val tails : int -> t -> t
-
   val for_all : (char -> bool) -> t -> bool
-
   val exists : (char -> bool) -> t -> bool
-
   val is_empty : t -> bool
-
   val length : t -> int
-
   val sub : len:int -> t -> t
 end = struct
   type t =
@@ -41,11 +27,8 @@ end = struct
     }
 
   let of_string base = { base; off = 0; len = String.length base }
-
   let to_string { base; off; len } = String.sub base off len
-
   let print ppf s = Format.fprintf ppf "%S" (to_string s)
-
   let length { len; _ } = len
 
   let offset n { base; off; len } =
@@ -137,45 +120,26 @@ exception Fail
 
 module P : sig
   type state
-
   type 'a t = state -> 'a
 
   val of_string : string -> state
-
   val peek : char option t
-
   val peek_exn : char t
-
   val pos : state -> int
-
   val range : state -> int -> int -> string
-
   val set_pos : state -> int -> unit
-
   val junk : unit t
-
   val char : char -> unit t
-
   val next : char t
-
   val ( ||| ) : 'a t -> 'a t -> 'a t
-
   val ws : unit t
-
   val sp : unit t
-
   val ws1 : unit t
-
   val ( >>> ) : unit t -> 'a t -> 'a t
-
   val ( <<< ) : 'a t -> unit t -> 'a t
-
   val protect : 'a t -> 'a t
-
   val peek_before : char -> state -> char
-
   val peek_after : char -> state -> char
-
   val pair : 'a t -> 'b t -> ('a * 'b) t
 end = struct
   type state =
@@ -225,11 +189,8 @@ end = struct
       st.str.[st.pos + 1]
 
   let pos st = st.pos
-
   let range st pos n = String.sub st.str pos n
-
   let set_pos st pos = st.pos <- pos
-
   let junk st = if st.pos < String.length st.str then st.pos <- st.pos + 1
 
   let protect p st =
@@ -1483,7 +1444,6 @@ let option d p st =
   | exception Fail -> d
 
 let some p st = Some (p st)
-
 let attribute_value_specification = ws >>> char '=' >>> ws >>> attribute_value
 
 let ws1_buf buf st =

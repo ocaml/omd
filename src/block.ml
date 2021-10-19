@@ -89,7 +89,6 @@ module Pre = struct
   and finish link_defs state = List.rev (close link_defs state)
 
   let empty = { blocks = []; next = Rempty }
-
   let classify_line s = Parser.parse s
 
   let rec process link_defs { blocks; next } s =

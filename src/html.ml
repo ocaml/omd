@@ -12,9 +12,7 @@ type t =
   | Concat of t * t
 
 let elt etype name attrs childs = Element (etype, name, attrs, childs)
-
 let text s = Text s
-
 let raw s = Raw s
 
 let concat t1 t2 =

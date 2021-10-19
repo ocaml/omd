@@ -23,7 +23,6 @@ let process ic oc =
   output_string oc (Omd.to_html md)
 
 let input = ref []
-
 let output = ref ""
 
 let spec =
