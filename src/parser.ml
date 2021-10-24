@@ -311,7 +311,7 @@ type t =
   | Lhtml of bool * html_kind
   | Llist_item of list_type * int * Sub.t
   | Lparagraph
-  | Ldef_list of string
+  | Ldef_list of int * string
 
 let sp3 s =
   match Sub.head s with
@@ -959,11 +959,11 @@ let tag_string s =
   in
   loop (ws s)
 
-let def_list s =
+let def_list ind s =
   let s = Sub.tail s in
   match Sub.head s with
   | Some (' ' | '\t' | '\010' .. '\013') ->
-      Ldef_list (String.trim (Sub.to_string s))
+      Ldef_list (ind + 2, String.trim (Sub.to_string s))
   | _ -> raise Fail
 
 let indented_code ind s =
@@ -992,7 +992,7 @@ let parse s0 =
   | Some '*' -> (thematic_break ||| unordered_list_item ind) s
   | Some '+' -> unordered_list_item ind s
   | Some '0' .. '9' -> ordered_list_item ind s
-  | Some ':' -> def_list s
+  | Some ':' -> def_list ind s
   | Some _ -> (blank ||| indented_code ind) s
   | None -> Lempty
 

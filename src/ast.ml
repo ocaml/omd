@@ -22,14 +22,14 @@ end
 module MakeBlock (I : T) = struct
   type 'attr def_elt =
     { term : 'attr I.t
-    ; defs : 'attr I.t list
+    ; defs : 'attr block list list
     }
 
   (* A value of type 'attr is present in all variants of this type. We use it to associate
      extra information to each node in the AST. In the common case, the attributes type defined
      above is used. We might eventually have an alternative function to parse blocks while keeping
      concrete information such as source location and we'll use it for that as well. *)
-  type 'attr block =
+  and 'attr block =
     | Paragraph of 'attr * 'attr I.t
     | List of 'attr * list_type * list_spacing * 'attr block list list
     | Blockquote of 'attr * 'attr block list
@@ -37,7 +37,7 @@ module MakeBlock (I : T) = struct
     | Heading of 'attr * int * 'attr I.t
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
-    | Definition_list of 'attr * 'attr def_elt list
+    | Definition_list of 'attr * list_spacing * 'attr def_elt list
 end
 
 type 'attr link =
@@ -83,11 +83,11 @@ module MakeMapper (Src : T) (Dst : T) = struct
     | Blockquote (attr, xs) -> Blockquote (attr, List.map (map f) xs)
     | Thematic_break attr -> Thematic_break attr
     | Heading (attr, level, text) -> Heading (attr, level, f text)
-    | Definition_list (attr, l) ->
+    | Definition_list (attr, sp, l) ->
         let f { SrcBlock.term; defs } =
-          { DstBlock.term = f term; defs = List.map f defs }
+          { DstBlock.term = f term; defs = List.map (List.map (map f)) defs }
         in
-        Definition_list (attr, List.map f l)
+        Definition_list (attr, sp, List.map f l)
     | Code_block (attr, label, code) -> Code_block (attr, label, code)
     | Html_block (attr, x) -> Html_block (attr, x)
 end

@@ -39,13 +39,13 @@ let rec block = function
       List [ Atom "heading"; Atom (string_of_int level); inline text ]
   | Code_block (_, info, _) -> List [ Atom "code-block"; Atom info ]
   | Html_block (_, s) -> List [ Atom "html"; Atom s ]
-  | Definition_list (_, l) ->
+  | Definition_list (_, _, l) ->
       List
         [ Atom "def-list"
         ; List
             (List.map
                (fun elt ->
-                 List [ inline elt.term; List (List.map inline elt.defs) ])
+                  List [ inline elt.term; List (List.map (fun def -> List (List.map block def)) elt.defs) ])
                l)
         ]
 

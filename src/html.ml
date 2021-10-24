@@ -196,11 +196,16 @@ let rec block = function
         | _ -> "p"
       in
       elt Block name attr (Some (inline text))
-  | Definition_list (attr, l) ->
+  | Definition_list (attr, sp, l) ->
+      let block' t =
+        match (t, sp) with
+        | Paragraph (_, t), Tight -> concat (inline t) nl
+        | _ -> block t
+      in
       let f { term; defs } =
         concat
           (elt Block "dt" [] (Some (inline term)))
-          (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
+          (concat_map (fun s -> elt Block "dd" [] (Some (concat nl (concat_map block' s)))) defs)
       in
       elt Block "dl" attr (Some (concat_map f l))
 

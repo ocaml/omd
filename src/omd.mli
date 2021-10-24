@@ -30,10 +30,10 @@ and 'attr inline =
 
 type 'attr def_elt =
   { term : 'attr inline
-  ; defs : 'attr inline list
+  ; defs : 'attr block list list
   }
 
-type 'attr block =
+and 'attr block =
   | Paragraph of 'attr * 'attr inline
   | List of 'attr * list_type * list_spacing * 'attr block list list
   | Blockquote of 'attr * 'attr block list
@@ -41,7 +41,7 @@ type 'attr block =
   | Heading of 'attr * int * 'attr inline
   | Code_block of 'attr * string * string
   | Html_block of 'attr * string
-  | Definition_list of 'attr * 'attr def_elt list
+  | Definition_list of 'attr * list_spacing * 'attr def_elt list
 
 type doc = attributes block list
 (** A markdown document *)
