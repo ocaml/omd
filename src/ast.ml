@@ -20,16 +20,11 @@ module type T = sig
 end
 
 module MakeBlock (I : T) = struct
-  type 'attr def_elt =
-    { term : 'attr I.t
-    ; defs : 'attr block list list
-    }
-
   (* A value of type 'attr is present in all variants of this type. We use it to associate
      extra information to each node in the AST. In the common case, the attributes type defined
      above is used. We might eventually have an alternative function to parse blocks while keeping
      concrete information such as source location and we'll use it for that as well. *)
-  and 'attr block =
+  type 'attr block =
     | Paragraph of 'attr * 'attr I.t
     | List of 'attr * list_type * list_spacing * 'attr block list list
     | Blockquote of 'attr * 'attr block list
@@ -38,6 +33,12 @@ module MakeBlock (I : T) = struct
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
     | Definition_list of 'attr * list_spacing * 'attr def_elt list
+
+  and 'attr def_elt =
+    { term : 'attr I.t
+    ; defs : 'attr block list list
+    }
+
 end
 
 type 'attr link =
