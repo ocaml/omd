@@ -43,7 +43,6 @@ and 'attr def_elt =
   ; defs : 'attr block list list
   }
 
-
 type doc = attributes block list
 (** A markdown document *)
 

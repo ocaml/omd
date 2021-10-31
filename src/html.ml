@@ -205,7 +205,10 @@ let rec block = function
       let f { term; defs } =
         concat
           (elt Block "dt" [] (Some (inline term)))
-          (concat_map (fun s -> elt Block "dd" [] (Some (concat nl (concat_map block' s)))) defs)
+          (concat_map
+             (fun s ->
+               elt Block "dd" [] (Some (concat nl (concat_map block' s))))
+             defs)
       in
       elt Block "dl" attr (Some (concat_map f l))
 

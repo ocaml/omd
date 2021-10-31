@@ -45,7 +45,13 @@ let rec block = function
         ; List
             (List.map
                (fun elt ->
-                  List [ inline elt.term; List (List.map (fun def -> List (List.map block def)) elt.defs) ])
+                 List
+                   [ inline elt.term
+                   ; List
+                       (List.map
+                          (fun def -> List (List.map block def))
+                          elt.defs)
+                   ])
                l)
         ]
 

@@ -38,7 +38,6 @@ module MakeBlock (I : T) = struct
     { term : 'attr I.t
     ; defs : 'attr block list list
     }
-
 end
 
 type 'attr link =
