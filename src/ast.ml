@@ -27,12 +27,12 @@ module MakeBlock (I : T) = struct
   type 'attr block =
     | Paragraph of 'attr * 'attr I.t
     | List of 'attr * list_type * list_spacing * 'attr block list list
+    | Definition_list of 'attr * list_spacing * 'attr def_elt list
     | Blockquote of 'attr * 'attr block list
     | Thematic_break of 'attr
     | Heading of 'attr * int * 'attr I.t
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
-    | Definition_list of 'attr * list_spacing * 'attr def_elt list
 
   and 'attr def_elt =
     { term : 'attr I.t
