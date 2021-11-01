@@ -27,11 +27,11 @@ so this should be part of the first paragraph
 of the third term.
 
   But this should be the second paragraph of
-  the second paragram
+  the second paragraph
 
   Note that, currently, subsequent paragraphs cannot lazy wrap.
 For example, this line will be part of a new paragraph outside
-of the definitoin list entirely.
+of the definition list entirely.
 
 Fourth term
 : > There is a block quote in the 1st definition of the fourth term.
@@ -88,12 +88,12 @@ which is multiline
 so this should be part of the first paragraph
 of the third term.</p>
 <p>But this should be the second paragraph of
-the second paragram</p>
+the second paragraph</p>
 <p>Note that, currently, subsequent paragraphs cannot lazy wrap.</p>
 </dd>
 </dl>
 <p>For example, this line will be part of a new paragraph outside
-of the definitoin list entirely.</p>
+of the definition list entirely.</p>
 <dl><dt>Fourth term</dt>
 <dd>
 <blockquote>
