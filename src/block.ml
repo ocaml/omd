@@ -208,9 +208,7 @@ module Pre = struct
     | Rdef_list ({ empty_line_seen = false; _ } as deflist), Lparagraph ->
         (* Lazy wrapping *)
         let state = process deflist.state s in
-        { blocks
-        ; next = Rdef_list { deflist with state }
-        }
+        { blocks; next = Rdef_list { deflist with state } }
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rindented_code lines, Lindented_code s ->
