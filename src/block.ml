@@ -186,9 +186,8 @@ module Pre = struct
         { blocks
         ; next =
             Rdef_list
-              { term = deflist.term
-              ; indent
-              ; empty_line_seen = deflist.empty_line_seen
+              { deflist with
+                indent
               ; defs = finish deflist.state :: deflist.defs
               ; state = process empty (Sub.of_string def)
               }
@@ -197,38 +196,20 @@ module Pre = struct
         { blocks
         ; next =
             Rdef_list
-              { term = deflist.term
-              ; indent = deflist.indent
-              ; empty_line_seen = true
-              ; defs = deflist.defs
+              { deflist with
+                empty_line_seen = true
               ; state = process deflist.state s
               }
         }
     | Rdef_list deflist, _ when Parser.indent s >= deflist.indent ->
         let s = Sub.offset deflist.indent s in
         let state = process deflist.state s in
-        { blocks
-        ; next =
-            Rdef_list
-              { term = deflist.term
-              ; indent = deflist.indent
-              ; empty_line_seen = deflist.empty_line_seen
-              ; defs = deflist.defs
-              ; state
-              }
-        }
+        { blocks; next = Rdef_list { deflist with state } }
     | Rdef_list ({ empty_line_seen = false; _ } as deflist), Lparagraph ->
         (* Lazy wrapping *)
         let state = process deflist.state s in
         { blocks
-        ; next =
-            Rdef_list
-              { term = deflist.term
-              ; indent = deflist.indent
-              ; empty_line_seen = false
-              ; defs = deflist.defs
-              ; state
-              }
+        ; next = Rdef_list { deflist with state }
         }
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
