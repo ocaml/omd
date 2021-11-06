@@ -51,7 +51,7 @@ let main () =
     process stdin oc
   else
     let f filename = with_open_in filename @@ fun ic -> process ic oc in
-    List.iter f !input
+    List.(iter f (rev !input))
 
 let () =
   try main () with
