@@ -1,3 +1,9 @@
+unreleased
+----------
+
+- Preserve the order of input files in the HTML output to stdout (#258,
+  @patricoferris)
+
 2.0.0~alpha2
 ------------
 
