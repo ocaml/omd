@@ -665,7 +665,11 @@
   attributes-013.md attributes-013.html
   attributes-014.md attributes-014.html
   attributes-015.md attributes-015.html
-  def_list-001.md def_list-001.html)
+  def_list-001.md def_list-001.html
+  def_list-002.md def_list-002.html
+  def_list-003.md def_list-003.html
+  def_list-004.md def_list-004.html
+  def_list-005.md def_list-005.html)
  (action (run ./extract_tests.exe -generate-test-files %{deps})))
 (rule
  (action
@@ -4673,6 +4677,34 @@
 (rule
  (alias def_list-001)
  (action (diff def_list-001.html def_list-001.html.new)))
+(rule
+ (action
+  (with-stdout-to def_list-002.html.new
+   (run ./omd.exe %{dep:def_list-002.md}))))
+(rule
+ (alias def_list-002)
+ (action (diff def_list-002.html def_list-002.html.new)))
+(rule
+ (action
+  (with-stdout-to def_list-003.html.new
+   (run ./omd.exe %{dep:def_list-003.md}))))
+(rule
+ (alias def_list-003)
+ (action (diff def_list-003.html def_list-003.html.new)))
+(rule
+ (action
+  (with-stdout-to def_list-004.html.new
+   (run ./omd.exe %{dep:def_list-004.md}))))
+(rule
+ (alias def_list-004)
+ (action (diff def_list-004.html def_list-004.html.new)))
+(rule
+ (action
+  (with-stdout-to def_list-005.html.new
+   (run ./omd.exe %{dep:def_list-005.md}))))
+(rule
+ (alias def_list-005)
+ (action (diff def_list-005.html def_list-005.html.new)))
 (alias
  (name runtest)
  (deps
@@ -5325,4 +5357,8 @@
   (alias attributes-013)
   (alias attributes-014)
   (alias attributes-015)
-  (alias def_list-001)))
+  (alias def_list-001)
+  (alias def_list-002)
+  (alias def_list-003)
+  (alias def_list-004)
+  (alias def_list-005)))
