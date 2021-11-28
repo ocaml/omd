@@ -86,10 +86,25 @@ module Line = struct
    fun slice -> { slice; parsed = Parser.parse slice }
 end
 
-type _ block =
-  | Block : raw_block block
-  | Block_list : raw_block list block
-  | Document : raw_block list block
+module Block = struct
+  type t =
+    | Block of raw_block
+    (* Used to represent list items and the document  *)
+    | Block_list of raw_block list
+
+  let v b = Block b
+
+  let vs bs = Block_list bs
+
+  (** TODO replace with use of GADT *)
+  let to_raw_block = function
+    | Block b -> b
+    | _ -> failwith "invalid use of to_raw_block"
+
+  let to_raw_block_list = function
+    | Block_list bs -> bs
+    | _ -> failwith "invalid use of to_raw_block_list"
+end
 
 module rec Spec : sig
   (** A block of [module type Spec.T] specifies how to build a block from a line,
@@ -130,7 +145,7 @@ module rec Spec : sig
         for a blockquote) and the block should stay open, otherwise, if the line
         does not indicate that the block should stay open, it is [Close]. *)
 
-    val to_block : children:raw_block list -> t -> raw_block
+    val to_block : children:Block.t list -> t -> Block.t
     (** [to_block ~children t] creates a new block based on any state accumulated in [t]
         and the children in [children]. *)
 
@@ -170,7 +185,7 @@ module Paragraph : Spec = struct
 
   let to_block ~children:_ t =
     t |> Stack.to_list |> String.concat "\n" |> fun s ->
-    Ast.Raw.Paragraph ([], s)
+    Block.v (Ast.Raw.Paragraph ([], s))
 
   let child_blocks = []
 end
@@ -197,7 +212,9 @@ module Blockquote : Spec = struct
     | Parser.Lparagraph -> Spec.Open (Some line)
     | _ -> Spec.Close
 
-  let to_block ~children () = Ast.Raw.Blockquote ([], children)
+  let to_block ~children () =
+    let children = List.map Block.to_raw_block children in
+    Block.v (Ast.Raw.Blockquote ([], children))
 
   (** TODO Turn this into "Container block" *)
   let child_blocks = raise (Failure "TODO: All?")
@@ -235,11 +252,13 @@ module List : Spec = struct
         Spec.Open (Some line)
     | _ -> Spec.Close
 
-  (** TODO FUCK! How do we deal with the fact that List's don't take normal blocks!!! *)
   let to_block ~children t =
-    Ast.Raw.List ([], t.list_type, t.spacing, [children])
+    let children = List.map Block.to_raw_block_list children in
+    Block.v (Ast.Raw.List ([], t.list_type, t.spacing, children))
 
-  let child_blocks = raise (Failure "TODO: Only accepts ListItems. Convert to Meta_container kind")
+  let child_blocks =
+    raise
+      (Failure "TODO: Only accepts ListItems. Convert to Meta_container kind")
 end
 
 module Document : Spec = struct
@@ -269,28 +288,40 @@ end
 module Tree = struct
   module Node = struct
     (* See https://discuss.ocaml.org/t/the-shape-design-problem/7810/8 *)
-    type t = Node : (module Spec with type t = 'a) * 'a -> t
+    type t =
+      | Node :
+          { spec : (module Spec with type t = 'a)
+          ; builder : 'a
+          ; children : Block.t Stack.t
+          }
+          -> t
 
-    let get_mod : t -> (module Spec) = fun (Node ((module M), _)) -> (module M)
-
-    let get_val (type a) ((_, v) : (module Spec with type t = a) * a) = v
-
-    let v (type a) (module M : Spec with type t = a) (x : a) =
-      Node ((module M), x)
+    let v :
+        type a.
+        ?children:Block.t Stack.t -> (module Spec with type t = a) -> a -> t =
+     fun ?(children = Stack.empty) (module M) builder ->
+      Node { spec = (module M); builder; children }
 
     let remain_open : t -> Line.t -> Spec.status =
-     fun (Node ((module M), n)) line -> M.remain_open line n
+     fun (Node { spec = (module M); builder; _ }) line ->
+      M.remain_open line builder
 
-    let close ~children : t -> raw_block =
-     fun (Node ((module M), t)) -> M.to_block ~children t
+    let close : t -> Block.t =
+     fun (Node { spec = (module M); builder; children }) ->
+      let children = Stack.to_list children in
+      M.to_block ~children builder
 
-    (** [new_child node line] is [Some (child_node, rest_of_line)] if the
+    let add_child : Block.t -> t -> t =
+     fun block (Node t) ->
+      Node { t with children = Stack.push block t.children }
+
+    (** [open_child node line] is [Some (child_node, rest_of_line)] if the
         [child_node] can be created for [node] given the [line], and
         [rest_of_line] is whatever remaining data is parsed out of [line].  If
         no child can be crated, it is [None]. *)
-    let add_child : t -> Line.t -> (t * Line.t option) option =
+    let open_child : t -> Line.t -> (t * Line.t option) option =
      fun node line ->
-      let (Node ((module M), _)) = node in
+      let (Node { spec = (module M); _ }) = node in
       let rec find_child = function
         | [] -> None
         | (module S : Spec) :: specs ->
@@ -300,21 +331,17 @@ module Tree = struct
       in
       find_child M.child_blocks
 
-    let incorporate_line (Node ((module M), a) : t) line : t option =
-      M.incorporate_line line a |> Option.map (v (module M))
+    let incorporate_line (Node { spec = (module M); builder; children }) line :
+        t option =
+      M.incorporate_line line builder |> Option.map (v ~children (module M))
   end
 
   let ( let+ ) o f = Option.map f o
 
-  type node =
-    { node : Node.t  (** A node processing an open block *)
-    ; closed_children : raw_block Stack.t
-    }
-
   type t =
-    { parents : node Stack.t  (** The open parents of the current node *)
-    ; current : node  (** The currently focused node *)
-    ; children : node Stack.t  (** The open children of the current node *)
+    { parents : Node.t Stack.t  (** The open parents of the current node *)
+    ; current : Node.t  (** The currently focused node *)
+    ; children : Node.t Stack.t  (** The open children of the current node *)
     }
 
   let back : t -> t option =
@@ -347,47 +374,35 @@ module Tree = struct
 
   let empty =
     { parents = Stack.empty
-    ; current =
-        { node = Node ((module Document), Document.empty)
-        ; closed_children = Stack.empty
-        }
+    ; current = Node.v (module Document) Document.empty
     ; children = Stack.empty
     }
 
   let add_new_child_of_current : Node.t -> t -> t =
-   fun node t ->
+   fun child t ->
     if not (Stack.is_empty t.children) then
       failwith "invalid child addition: not at last child"
     else
-      { t with
-        children = Stack.push { node; closed_children = Stack.empty } t.children
-      }
-      |> fwd
-      |> Option.get
+      { t with children = Stack.push child t.children } |> fwd |> Option.get
 
   let update_current_node : (Node.t -> Node.t option) -> t -> t =
    fun f t ->
-    match f t.current.node with
+    match f t.current with
     | None -> t
-    | Some node -> { t with current = { t.current with node } }
-
-  let add_closed_child_to_current : raw_block -> t -> t =
-   fun child t ->
-    let closed_children = Stack.push child t.current.closed_children in
-    { t with current = { t.current with closed_children } }
+    | Some current -> { t with current }
 
   let close_current_node : t -> t =
    fun t ->
-    let children = t.current.closed_children |> Stack.to_list in
-    let closed_block = Node.close ~children t.current.node in
+    let child = Node.close t.current in
     match back t with
     | None -> failwith "invalid close of root node" (* FIXME *)
-    | Some t' -> add_closed_child_to_current closed_block t'
+    | Some t' ->
+        update_current_node (fun x -> Node.add_child child x |> Option.some) t'
 
   (** TODO *)
   let rec open_children_of_current : Line.t -> t -> t =
    fun line t ->
-    match Node.add_child t.current.node line with
+    match Node.open_child t.current line with
     (* Cannot add child to current, so close it, and add to parent *)
     | None -> t |> close_current_node |> open_children_of_current line
     (* Add the new child, and keep processing the line *)
@@ -412,7 +427,7 @@ end
  * - Add phantom type to track when node is at end? *)
 let rec sustain_blocks : State.t -> Line.t -> Line.t option * State.t =
  fun state line ->
-  match Tree.Node.remain_open state.tree.current.node line with
+  match Tree.Node.remain_open state.tree.current line with
   | Spec.Close ->
       (* (7) Block closing *)
       (Some line, { state with tree = Tree.close_current_node state.tree })
@@ -426,7 +441,7 @@ let rec sustain_blocks : State.t -> Line.t -> Line.t option * State.t =
 let parse : State.t -> Line.t -> State.t =
  fun state line ->
   (* (2) Coninuation incorporation *)
-  match Tree.Node.incorporate_line state.tree.current.node line with
+  match Tree.Node.incorporate_line state.tree.current line with
   | Some node ->
       let tree = Tree.update_current_node (Fun.const (Some node)) state.tree in
       { state with tree }
