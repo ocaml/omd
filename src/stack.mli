@@ -11,3 +11,5 @@ val empty : 'a t
 val is_empty : 'a t -> bool
 
 val map : ('a -> 'b) -> 'a t -> 'b t
+
+val iter : ('a -> unit) -> 'a t -> unit

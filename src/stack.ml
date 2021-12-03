@@ -1,5 +1,7 @@
 (** A simple functional stack implementation *)
 
+include List
+
 type 'a t = 'a list
 
 let pop = function
@@ -8,13 +10,10 @@ let pop = function
 
 let push = List.cons
 
-let to_list = Fun.id
+let to_list = List.rev
 
 let empty = []
 
 let is_empty = function
   | [] -> true
   | _ -> false
-
-let map = List.map
-
