@@ -1,7 +1,8 @@
 (library
  (name omd)
  (public_name omd)
- (flags :standard -w -30))
+ (flags :standard -w -30)
+ (preprocess (pps metapp.ppx)))
 
 (rule
  (with-stdout-to

@@ -65,6 +65,9 @@
    TODO: Add extraction of reference link defs
    10. Return the updated [tree]. *)
 
+(* TODO Add pps for these terms? *)
+(* TODO: Make logging configurable at compile time! (By compiler with built in ppx?) *)
+
 module Sub = Parser.Sub
 
 type link_def = Ast.attributes Ast.link_def
@@ -84,6 +87,8 @@ module Line = struct
 
   let of_slice : Parser.Sub.t -> t =
    fun slice -> { slice; parsed = Parser.parse slice }
+
+  let to_string { slice; _ } = Sub.to_string slice
 end
 
 module Block = struct
@@ -95,6 +100,20 @@ module Block = struct
   let v b = Block b
 
   let vs bs = Block_list bs
+
+  let name_raw = function
+    | Ast.Raw.Paragraph (_, _) -> "para"
+    | Ast.Raw.List (_, _, _, _) -> "ls"
+    | Ast.Raw.Blockquote (_, _) -> "bq"
+    | Ast.Raw.Thematic_break _ -> "hr"
+    | Ast.Raw.Heading (_, _, _) -> "hd"
+    | Ast.Raw.Code_block (_, _, _) -> "code"
+    | Ast.Raw.Html_block (_, _) -> "html"
+    | Ast.Raw.Definition_list (_, _) -> "dl"
+
+  let get_name = function
+    | Block b -> name_raw b
+    | Block_list bs -> List.map (fun b -> name_raw b) bs |> String.concat " "
 
   (** TODO replace with use of GADT *)
   let to_raw_block = function
@@ -110,8 +129,8 @@ module rec Spec : sig
   (** A block of [module type Spec.T] specifies how to build a block from a line,
       and which [Spec.T]s can be children of the block. *)
 
-  type status =
-    | Open of Line.t option
+  type 'a status =
+    | Open of 'a * Line.t option
     | Close
 
   (* TODO Different signatures for container blocks and leafe blocks?
@@ -126,9 +145,14 @@ module rec Spec : sig
   module type T = sig
     type t
 
-    val name : string
+    val kind : Kind.t
 
-    val empty : t
+    val is_containable : bool
+    (** [is_containable] is [true] if the specified block can be contained
+        directly by container blocks, as opposed to requiring a special
+        meta-container, like list items *)
+
+    val name : string
 
     val of_line : Line.t -> (t * Line.t option) option
     (** Given a line, produce the remaining line data, and
@@ -139,7 +163,7 @@ module rec Spec : sig
         into the block without opening any children, [t'] is updated block data
         incorporating [line], otherwise it is [None]. *)
 
-    val remain_open : Line.t -> t -> status
+    val remain_open : Line.t -> t -> t status
     (** [remain_open line] is [Open line'] when [line'] is the data left from
         [line] after consuming any tokens needed to keep the block open (e.g., a `>`
         for a blockquote) and the block should stay open, otherwise, if the line
@@ -148,13 +172,23 @@ module rec Spec : sig
     val to_block : children:Block.t list -> t -> Block.t
     (** [to_block ~children t] creates a new block based on any state accumulated in [t]
         and the children in [children]. *)
-
-    val child_blocks : (module Spec.T) list
-    (** [child_blocks] is a list of specs for the blocks that can be a child
-        of the specified block. *)
   end
 end =
   Spec
+
+and Kind : sig
+  (** See https://spec.commonmark.org/0.30/#container-blocks
+
+    > There are two basic kinds of container blocks: block quotes and list
+      items. Lists are meta-containers for list items.  *)
+  type t =
+    | Leaf  (** A block that only contains inlines *)
+    | Container  (** A block that can contains any other blocks *)
+    | Meta_container of (module Spec.T)
+        (** A block that contains a single, special class of blocks (e.g., lists
+        contain list items) *)
+end =
+  Kind
 
 module type Spec = Spec.T
 (* TODO move the blocks into `Spec` module?  *)
@@ -163,6 +197,10 @@ module type Spec = Spec.T
 
 module Paragraph : Spec = struct
   type t = string Stack.t
+
+  let kind = Kind.Leaf
+
+  let is_containable = true
 
   let name = "Paragraph"
 
@@ -178,16 +216,14 @@ module Paragraph : Spec = struct
     | Parser.Lparagraph -> Some (Stack.push (Sub.to_string slice) t)
     | _ -> None
 
-  let remain_open { Line.parsed; _ } _ =
+  let remain_open { Line.parsed; _ } t =
     match parsed with
-    | Parser.Lparagraph -> Spec.Open None
+    | Parser.Lparagraph -> Spec.Open (t, None)
     | _ -> Spec.Close
 
   let to_block ~children:_ t =
     t |> Stack.to_list |> String.concat "\n" |> fun s ->
     Block.v (Ast.Raw.Paragraph ([], s))
-
-  let child_blocks = []
 end
 
 (** Container blocks *)
@@ -195,9 +231,11 @@ end
 module Blockquote : Spec = struct
   type t = unit
 
-  let name = "Blockquote"
+  let kind = Kind.Container
 
-  let empty = ()
+  let is_containable = true
+
+  let name = "Blockquote"
 
   let of_line (line : Line.t) =
     match line.parsed with
@@ -206,21 +244,45 @@ module Blockquote : Spec = struct
 
   let incorporate_line _ _ = None
 
-  let remain_open (line : Line.t) _ =
+  let remain_open (line : Line.t) t =
     match line.parsed with
-    | Parser.Lblockquote s -> Spec.Open (Some (Line.of_slice s))
-    | Parser.Lparagraph -> Spec.Open (Some line)
+    | Parser.Lblockquote s -> Spec.Open (t, Some (Line.of_slice s))
+    | Parser.Lparagraph -> Spec.Open (t, Some line)
     | _ -> Spec.Close
 
   let to_block ~children () =
     let children = List.map Block.to_raw_block children in
     Block.v (Ast.Raw.Blockquote ([], children))
-
-  (** TODO Turn this into "Container block" *)
-  let child_blocks = raise (Failure "TODO: All?")
 end
 
-module List : Spec = struct
+module ListItem : Spec = struct
+  type t = unit
+
+  let kind = Kind.Container
+
+  let is_containable = false
+
+  let name = "ListItem"
+
+  let of_line (line : Line.t) =
+    match line.parsed with
+    | Parser.Llist_item (_, _, s) -> Some ((), Some (Line.of_slice s))
+    | _ -> None
+
+  let incorporate_line _ _ = None
+
+  let remain_open (line : Line.t) t =
+    match line.parsed with
+    | Parser.Lparagraph -> Spec.Open (t, Some line)
+    (* TODO Add support for indentation (unless that is more general) *)
+    | _ -> Spec.Close
+
+  let to_block ~children () =
+    children |> List.map Block.to_raw_block |> Block.vs
+end
+
+(* Meta containers  *)
+module ListBlock : Spec = struct
   type t =
     { list_type : Ast.list_type
     ; indent : int
@@ -228,11 +290,11 @@ module List : Spec = struct
     ; spacing : Ast.list_spacing
     }
 
-  let name = "List"
+  let kind = Kind.Meta_container (module ListItem)
 
-  let empty =
-    raise
-      (Failure "TODO Remove this constructor? No such thing as empty list...")
+  let is_containable = true
+
+  let name = "ListBlock"
 
   let of_line (line : Line.t) =
     match line.parsed with
@@ -245,28 +307,33 @@ module List : Spec = struct
 
   let incorporate_line _ _ = None
 
+  (* TODO: Handle seeing empty lines and switching to spacing *)
   let remain_open (line : Line.t) t =
     match line.parsed with
     | Parser.Llist_item (list_type, _, _)
       when Ast.same_block_list_kind list_type t.list_type ->
-        Spec.Open (Some line)
+        Spec.Open (t, Some line)
+    | Parser.Lempty -> Spec.Open ({ t with prev_empty = true }, None)
     | _ -> Spec.Close
 
   let to_block ~children t =
+    Debug.log (fun f ->
+        List.iter
+          (fun b -> f "[log] child of %s: %s" name (Block.get_name b))
+          children);
     let children = List.map Block.to_raw_block_list children in
     Block.v (Ast.Raw.List ([], t.list_type, t.spacing, children))
-
-  let child_blocks =
-    raise
-      (Failure "TODO: Only accepts ListItems. Convert to Meta_container kind")
 end
 
-module Document : Spec = struct
+(** TODO Removet his spec, obviated by division into leaf/container/meta_container block *)
+module Document : Spec with type t = unit = struct
   type t = unit
 
-  let name = "Document"
+  let kind = Kind.Container
 
-  let empty = ()
+  let is_containable = false
+
+  let name = "Document"
 
   (* The Document block is not created from any line *)
   let of_line _ = None
@@ -276,14 +343,21 @@ module Document : Spec = struct
 
   (* We only close this block manually *)
   (* TODO: Should Parser.t include an EOF constructor? Should this argument work on an option type?  *)
-  let remain_open line _ = Spec.Open (Some line)
+  let remain_open line t = Spec.Open (t, Some line)
 
   (** TODO Maybe we just never call `to_block` on this one node? *)
-  let to_block ~children:_ _ =
-    failwith "TODO cannot return a block due to document model"
-
-  let child_blocks : (module Spec.T) list = [ (module Blockquote) ]
+  let to_block ~children () = List.map Block.to_raw_block children |> Block.vs
 end
+
+let blocks : (module Spec) list =
+  [ (module Paragraph)
+  ; (module Blockquote)
+  ; (module ListItem)
+  ; (module ListBlock)
+  ; (module Document)
+  ]
+
+let containable = List.filter (fun (module M : Spec) -> M.is_containable) blocks
 
 module Tree = struct
   module Node = struct
@@ -302,18 +376,30 @@ module Tree = struct
      fun ?(children = Stack.empty) (module M) builder ->
       Node { spec = (module M); builder; children }
 
-    let remain_open : t -> Line.t -> Spec.status =
-     fun (Node { spec = (module M); builder; _ }) line ->
-      M.remain_open line builder
+    let name : t -> string = fun (Node { spec = (module M); _ }) -> M.name
+
+    let remain_open : t -> Line.t -> (t * Line.t option) option =
+     fun (Node ({ spec = (module M); builder; _ } as n)) line ->
+      match M.remain_open line builder with
+      | Spec.Close -> None
+      | Spec.Open (builder, line) -> Some (Node { n with builder }, line)
 
     let close : t -> Block.t =
      fun (Node { spec = (module M); builder; children }) ->
+      Debug.log (fun f -> f "[log] closing %s\n" M.name);
       let children = Stack.to_list children in
       M.to_block ~children builder
 
     let add_child : Block.t -> t -> t =
      fun block (Node t) ->
       Node { t with children = Stack.push block t.children }
+
+    let of_line_and_spec : Line.t -> (module Spec) -> (t * Line.t option) option
+        =
+     fun line (module M) ->
+      match M.of_line line with
+      | None -> None
+      | Some (n, line') -> Some (v (module M) n, line')
 
     (** [open_child node line] is [Some (child_node, rest_of_line)] if the
         [child_node] can be created for [node] given the [line], and
@@ -324,16 +410,27 @@ module Tree = struct
       let (Node { spec = (module M); _ }) = node in
       let rec find_child = function
         | [] -> None
-        | (module S : Spec) :: specs ->
-        match S.of_line line with
+        | spec :: specs ->
+        match of_line_and_spec line spec with
         | None -> find_child specs
-        | Some (n, line') -> Some (v (module S) n, line')
+        | Some node -> Some node
       in
-      find_child M.child_blocks
+      match M.kind with
+      | Kind.Leaf -> None
+      | Kind.Container -> find_child containable
+      | Kind.Meta_container child -> of_line_and_spec line child
 
     let incorporate_line (Node { spec = (module M); builder; children }) line :
         t option =
-      M.incorporate_line line builder |> Option.map (v ~children (module M))
+      match M.incorporate_line line builder with
+      | None -> None
+      | Some builder' ->
+          Debug.log (fun f ->
+              f
+                "[log] Incorporating '%s' into block %s\n"
+                (Line.to_string line)
+                M.name);
+          Some (v ~children (module M) builder')
   end
 
   let ( let+ ) o f = Option.map f o
@@ -372,17 +469,44 @@ module Tree = struct
     | None -> t
     | Some t' -> ffwd t'
 
+  let pop_current : t -> (Node.t * t) option =
+   fun { parents; current; children } ->
+    let+ parents', current', children' =
+      (* Try to replace the current with the next child *)
+      match Stack.pop children with
+      | Some (current', children') -> Some (parents, current', children')
+      | None ->
+      (* Otherwise replce current with the prev parent *)
+      match Stack.pop parents with
+      | Some (current', parents') -> Some (parents', current', children)
+      | None -> None
+    in
+    (current, { parents = parents'; current = current'; children = children' })
+
   let empty =
     { parents = Stack.empty
-    ; current = Node.v (module Document) Document.empty
+    ; current = Node.v (module Document) ()
     ; children = Stack.empty
     }
 
+  let log_tree : t -> unit =
+   fun t ->
+    Debug.log (fun f ->
+        f
+          "[log] Tree: {parents: [%s]; current: %s; children: %s}\n"
+          (Stack.map Node.name t.parents |> Stack.to_list |> String.concat ",")
+          (Node.name t.current)
+          (Stack.map Node.name t.children |> Stack.to_list |> String.concat ","))
+
   let add_new_child_of_current : Node.t -> t -> t =
    fun child t ->
-    if not (Stack.is_empty t.children) then
-      failwith "invalid child addition: not at last child"
-    else
+    if not (Stack.is_empty t.children) then (
+      log_tree t;
+      failwith
+        (Printf.sprintf
+           "invalid child addition %s: not at last child"
+           (Node.name child))
+    ) else
       { t with children = Stack.push child t.children } |> fwd |> Option.get
 
   let update_current_node : (Node.t -> Node.t option) -> t -> t =
@@ -391,25 +515,71 @@ module Tree = struct
     | None -> t
     | Some current -> { t with current }
 
+  let set_current : Node.t -> t -> t =
+   fun n t -> update_current_node (Fun.const (Some n)) t
+
+  (* It assumed that the list represented a lineage of blocks, with the youngest
+     child first in the list and oldest parent last *)
+  let close_lineage : Node.t list -> Block.t = function
+    | [] -> failwith "invalid lineage"
+    | n :: ns ->
+        Debug.log (fun f ->
+            f "[log] Closing lineage starting with %s\n" (Node.name n));
+        List.fold_left
+          (fun child parent -> Node.add_child child parent |> Node.close)
+          (Node.close n)
+          ns
+
+  exception Invalid_document_close
+
   let close_current_node : t -> t =
-   fun t ->
-    let child = Node.close t.current in
-    match back t with
-    | None -> failwith "invalid close of root node" (* FIXME *)
-    | Some t' ->
-        update_current_node (fun x -> Node.add_child child x |> Option.some) t'
+   fun { parents; current; children } ->
+    log_tree { parents; current; children };
+    let child = Stack.push current children |> Stack.to_list |> close_lineage in
+    match Stack.pop parents with
+    | None -> raise Invalid_document_close
+    | Some (current', parents') ->
+        Debug.log (fun f ->
+            f "[log] Current after close %s\n" (Node.name current'));
+        { parents = parents'
+        ; current = Node.add_child child current'
+        ; children = Stack.empty
+        }
 
   (** TODO *)
   let rec open_children_of_current : Line.t -> t -> t =
    fun line t ->
     match Node.open_child t.current line with
     (* Cannot add child to current, so close it, and add to parent *)
-    | None -> t |> close_current_node |> open_children_of_current line
+    | None ->
+        Debug.log (fun f ->
+            f
+              "[log] Cannot open child of %s with line '%s'\n"
+              (Node.name t.current)
+              (Line.to_string line));
+        t |> close_current_node |> open_children_of_current line
     (* Add the new child, and keep processing the line *)
     | Some (n, Some line') ->
+        Debug.log (fun f ->
+            f
+              "[log] Opened child %s of %s\n"
+              (Node.name n)
+              (Node.name t.current));
         add_new_child_of_current n t |> open_children_of_current line'
     (* Add the last child, because we're out of line *)
-    | Some (n, None) -> add_new_child_of_current n t
+    | Some (n, None) ->
+        Debug.log (fun f ->
+            f
+              "[log] Adding final child %s to %s: line is exhausted\n"
+              (Node.name n)
+              (Node.name t.current));
+        add_new_child_of_current n t
+
+  let to_document t =
+    Debug.log (fun f -> f "[log] Closing document block\n");
+    (* TODO Make safe, by removing Option.get operation *)
+    let { current; _ } = rewind t |> fwd |> Option.get |> close_current_node in
+    Node.close current |> Block.to_raw_block_list
 end
 
 module State = struct
@@ -419,6 +589,11 @@ module State = struct
     }
 
   let empty = { link_defs = []; tree = Tree.empty }
+
+  (** TODO Handle link_defs *)
+  let to_document t =
+    Debug.log (fun f -> f "[log] >>> Converting to document\n");
+    t.tree |> Tree.to_document
 end
 
 (* TODO Move into `Tree`: has no need of state? *)
@@ -428,14 +603,25 @@ end
 let rec sustain_blocks : State.t -> Line.t -> Line.t option * State.t =
  fun state line ->
   match Tree.Node.remain_open state.tree.current line with
-  | Spec.Close ->
+  | None ->
+      Debug.log (fun f ->
+          f
+            "[log] Closing %s since line '%s' cannot sustain\n"
+            (Tree.Node.name state.tree.current)
+            (Line.to_string line));
+      Tree.log_tree state.tree;
       (* (7) Block closing *)
       (Some line, { state with tree = Tree.close_current_node state.tree })
-  | Spec.Open None -> (None, state) (* No more line left for sustaining *)
-  | Spec.Open (Some line') ->
-  match Tree.fwd state.tree with
-  | None -> (Some line', state) (* No more live nodes to sustain *)
-  | Some tree -> sustain_blocks { state with tree } line'
+  | Some (node, line_opt) -> (
+      let tree' = state.tree |> Tree.set_current node in
+      match Tree.fwd tree' with
+      | None ->
+          (line_opt, { state with tree = tree' })
+          (* No more live nodes to sustain *)
+      | Some tree ->
+      match line_opt with
+      | None -> (None, { state with tree }) (* No more line ot process *)
+      | Some line' -> sustain_blocks { state with tree } line')
 (* Look to sustain further nodes *)
 
 let parse : State.t -> Line.t -> State.t =
@@ -445,13 +631,19 @@ let parse : State.t -> Line.t -> State.t =
   | Some node ->
       let tree = Tree.update_current_node (Fun.const (Some node)) state.tree in
       { state with tree }
-  | None ->
-  (* (4) Block sustaining *)
-  match sustain_blocks state line with
-  | None, state' -> state'
-  | Some line', state' ->
-      (* (8) Block opening *)
-      { state' with tree = Tree.open_children_of_current line' state'.tree }
+  | None -> (
+      (* (4) Block sustaining *)
+      let state = { state with tree = Tree.rewind state.tree } in
+      Debug.log (fun f -> f "[log] rewind\n");
+      Tree.log_tree state.tree;
+      match sustain_blocks state line with
+      | None, state' -> state'
+      | Some line', state' ->
+          (* (8) Block opening *)
+          Debug.log (fun f ->
+              f "[log] opening line: '%s'\n" (Line.to_string line'));
+          { state' with tree = Tree.open_children_of_current line' state'.tree }
+      )
 
 let read_line : string -> int -> string * int option =
  fun s off ->
@@ -472,16 +664,33 @@ let read_line : string -> int -> string * int option =
   in
   loop false off
 
-let seq_of_lines : string -> string Seq.t =
- fun s ->
-  let rec seq offset () =
-    match offset with
-    | None -> Seq.Nil
-    | Some off ->
-        let line, off' = read_line s off in
-        Seq.Cons (line, seq off')
-  in
-  seq (Some 0)
+let seq_of_string : string -> string Seq.t =
+ fun s -> Seq.unfold (Option.map (read_line s)) (Some 0)
 
-let of_string : string -> State.t =
- fun s -> seq_of_lines s |> Seq.map Line.v |> Seq.fold_left parse State.empty
+let seq_of_channel : in_channel -> string Seq.t =
+ fun ic ->
+  Seq.unfold
+    (fun () ->
+      try Some (input_line ic, ()) with
+      | End_of_file -> None)
+    ()
+
+let parse_seq : string Seq.t -> raw_block list * link_def list =
+ fun seq ->
+  let doc =
+    seq
+    |> Seq.map Line.v
+    |> Seq.fold_left parse State.empty
+    |> State.to_document
+  in
+  (doc, [])
+
+module Pre = struct
+  let of_channel : in_channel -> raw_block list * link_def list =
+   fun ic ->
+    (* ([], []) *)
+    seq_of_channel ic |> parse_seq
+
+  let of_string : string -> raw_block list * link_def list =
+   fun s -> seq_of_string s |> parse_seq
+end

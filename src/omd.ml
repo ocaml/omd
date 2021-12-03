@@ -1,4 +1,4 @@
-module Pre = Block.Pre
+module Pre = Block2.Pre
 include Ast
 
 type doc = attributes block list
