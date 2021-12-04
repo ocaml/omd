@@ -317,9 +317,9 @@ module ListBlock : Spec = struct
     | _ -> Spec.Close
 
   let to_block ~children t =
-    Debug.log (fun f ->
+    Logs.debug (fun f ->
         List.iter
-          (fun b -> f "[log] child of %s: %s" name (Block.get_name b))
+          (fun b -> f "child of %s: %s" name (Block.get_name b))
           children);
     let children = List.map Block.to_raw_block_list children in
     Block.v (Ast.Raw.List ([], t.list_type, t.spacing, children))
@@ -386,7 +386,7 @@ module Tree = struct
 
     let close : t -> Block.t =
      fun (Node { spec = (module M); builder; children }) ->
-      Debug.log (fun f -> f "[log] closing %s\n" M.name);
+      Logs.debug (fun f -> f "closing %s\n" M.name);
       let children = Stack.to_list children in
       M.to_block ~children builder
 
@@ -425,9 +425,9 @@ module Tree = struct
       match M.incorporate_line line builder with
       | None -> None
       | Some builder' ->
-          Debug.log (fun f ->
+          Logs.debug (fun f ->
               f
-                "[log] Incorporating '%s' into block %s\n"
+                "Incorporating '%s' into block %s\n"
                 (Line.to_string line)
                 M.name);
           Some (v ~children (module M) builder')
@@ -491,9 +491,9 @@ module Tree = struct
 
   let log_tree : t -> unit =
    fun t ->
-    Debug.log (fun f ->
+    Logs.debug (fun f ->
         f
-          "[log] Tree: {parents: [%s]; current: %s; children: %s}\n"
+          "Tree: {parents: [%s]; current: %s; children: %s}\n"
           (Stack.map Node.name t.parents |> Stack.to_list |> String.concat ",")
           (Node.name t.current)
           (Stack.map Node.name t.children |> Stack.to_list |> String.concat ","))
@@ -523,8 +523,8 @@ module Tree = struct
   let close_lineage : Node.t list -> Block.t = function
     | [] -> failwith "invalid lineage"
     | n :: ns ->
-        Debug.log (fun f ->
-            f "[log] Closing lineage starting with %s\n" (Node.name n));
+        Logs.debug (fun f ->
+            f "Closing lineage starting with %s\n" (Node.name n));
         List.fold_left
           (fun child parent -> Node.add_child child parent |> Node.close)
           (Node.close n)
@@ -539,8 +539,7 @@ module Tree = struct
     match Stack.pop parents with
     | None -> raise Invalid_document_close
     | Some (current', parents') ->
-        Debug.log (fun f ->
-            f "[log] Current after close %s\n" (Node.name current'));
+        Logs.debug (fun f -> f "Current after close %s\n" (Node.name current'));
         { parents = parents'
         ; current = Node.add_child child current'
         ; children = Stack.empty
@@ -552,31 +551,28 @@ module Tree = struct
     match Node.open_child t.current line with
     (* Cannot add child to current, so close it, and add to parent *)
     | None ->
-        Debug.log (fun f ->
+        Logs.debug (fun f ->
             f
-              "[log] Cannot open child of %s with line '%s'\n"
+              "Cannot open child of %s with line '%s'\n"
               (Node.name t.current)
               (Line.to_string line));
         t |> close_current_node |> open_children_of_current line
     (* Add the new child, and keep processing the line *)
     | Some (n, Some line') ->
-        Debug.log (fun f ->
-            f
-              "[log] Opened child %s of %s\n"
-              (Node.name n)
-              (Node.name t.current));
+        Logs.debug (fun f ->
+            f "Opened child %s of %s\n" (Node.name n) (Node.name t.current));
         add_new_child_of_current n t |> open_children_of_current line'
     (* Add the last child, because we're out of line *)
     | Some (n, None) ->
-        Debug.log (fun f ->
+        Logs.debug (fun f ->
             f
-              "[log] Adding final child %s to %s: line is exhausted\n"
+              "Adding final child %s to %s: line is exhausted\n"
               (Node.name n)
               (Node.name t.current));
         add_new_child_of_current n t
 
   let to_document t =
-    Debug.log (fun f -> f "[log] Closing document block\n");
+    Logs.debug (fun f -> f "Closing document block\n");
     (* TODO Make safe, by removing Option.get operation *)
     let { current; _ } = rewind t |> fwd |> Option.get |> close_current_node in
     Node.close current |> Block.to_raw_block_list
@@ -592,7 +588,7 @@ module State = struct
 
   (** TODO Handle link_defs *)
   let to_document t =
-    Debug.log (fun f -> f "[log] >>> Converting to document\n");
+    Logs.debug (fun f -> f ">>> Converting to document\n");
     t.tree |> Tree.to_document
 end
 
@@ -604,9 +600,9 @@ let rec sustain_blocks : State.t -> Line.t -> Line.t option * State.t =
  fun state line ->
   match Tree.Node.remain_open state.tree.current line with
   | None ->
-      Debug.log (fun f ->
+      Logs.debug (fun f ->
           f
-            "[log] Closing %s since line '%s' cannot sustain\n"
+            "Closing %s since line '%s' cannot sustain\n"
             (Tree.Node.name state.tree.current)
             (Line.to_string line));
       Tree.log_tree state.tree;
@@ -634,14 +630,13 @@ let parse : State.t -> Line.t -> State.t =
   | None -> (
       (* (4) Block sustaining *)
       let state = { state with tree = Tree.rewind state.tree } in
-      Debug.log (fun f -> f "[log] rewind\n");
+      Logs.debug (fun f -> f "rewind\n");
       Tree.log_tree state.tree;
       match sustain_blocks state line with
       | None, state' -> state'
       | Some line', state' ->
           (* (8) Block opening *)
-          Debug.log (fun f ->
-              f "[log] opening line: '%s'\n" (Line.to_string line'));
+          Logs.debug (fun f -> f "opening line: '%s'\n" (Line.to_string line'));
           { state' with tree = Tree.open_children_of_current line' state'.tree }
       )
 
