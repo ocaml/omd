@@ -1,4 +1,7 @@
 (executable
  (name main)
  (public_name omd)
- (libraries omd))
+ (libraries omd
+            ; Uncomment for debug logging
+            logs logs.fmt fmt
+))
