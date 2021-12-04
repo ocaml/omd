@@ -2,7 +2,7 @@
  (name omd)
  (public_name omd)
  (flags :standard -w -30)
- (preprocess (pps metapp.ppx)))
+ (libraries logs))
 
 (rule
  (with-stdout-to

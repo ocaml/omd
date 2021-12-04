@@ -23,6 +23,7 @@ bug-reports: "https://github.com/ocaml/omd/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.04"}
+  "logs" {>= "0.7.0"}
   "odoc" {with-doc}
 ]
 build: [
