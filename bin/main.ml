@@ -37,8 +37,8 @@ let spec =
 
 let main () =
   (* Uncomment for debug logging *)
-  Logs.set_reporter (Logs_fmt.reporter ());
-  Logs.set_level (Some Logs.Debug);
+  (* Logs.set_reporter (Logs_fmt.reporter ());
+   * Logs.set_level (Some Logs.Debug); *)
   Arg.parse
     (Arg.align spec)
     (fun s -> input := s :: !input)

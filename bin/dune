@@ -3,5 +3,5 @@
  (public_name omd)
  (libraries omd
             ; Uncomment for debug logging
-            logs logs.fmt fmt
+            ; logs logs.fmt fmt
 ))
