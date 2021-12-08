@@ -34,7 +34,7 @@ jobs:
         run: opam exec -- make build
 
       - name: Test
-        run: opam exec -- make make
+        run: opam exec -- make test
 
   lint-doc:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
           dune-cache: true
 
       - name: Lint fmt
-        uses: ocaml/setup-ocaml/lint-fmt@v2
+        uses: ocaml/setup-ocaml/lint-fmt@fix-lint-fmt
 
   lint-opam:
     runs-on: ubuntu-latest
