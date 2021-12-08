@@ -1,31 +1,10 @@
 name: Main workflow
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
+  - push
+  - pull_request
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Use OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: 4.12.x
-          dune-cache: true
-      - name: Opam lint
-        run: |
-          opam depext opam-dune-lint --install
-          opam exec -- opam-dune-lint
-      - name: Format lint
-        run: |
-          opam depext ocamlformat=$(grep 'version' .ocamlformat | awk -F '=' '{ print $2 }' | tr -d ' ') --install
-          opam exec -- dune build @fmt
-
   build:
     strategy:
       fail-fast: false
@@ -37,19 +16,67 @@ jobs:
         ocaml-compiler:
           # Decision on version matrix informed by https://discuss.ocaml.org/t/which-ocaml-compiler-versions-should-we-run-against-in-ci/7933/2
           - 4.04.2
-          - 4.12.x
+          - 4.13.x
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
       - name: Install deps
         run: opam install . --deps-only --with-doc --with-test
+
       - name: Build
-        run: opam exec -- dune build
+        run: opam exec -- make build
 
       - name: Test
-        run: opam exec -- dune runtest
+        run: opam exec -- make make
+
+  lint-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml 4.13.x
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.13.x
+          dune-cache: true
+
+      - name: Lint doc
+        uses: ocaml/setup-ocaml/lint-doc@v2
+
+  lint-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml 4.13.x
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.13.x
+          dune-cache: true
+
+      - name: Lint fmt
+        uses: ocaml/setup-ocaml/lint-fmt@v2
+
+  lint-opam:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml 4.13.x
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.13.x
+          dune-cache: true
+
+      - name: Lint opam
+        uses: ocaml/setup-ocaml/lint-opam@v2
