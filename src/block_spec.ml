@@ -82,8 +82,8 @@ module rec Spec : sig
 
     val incorporate_line : Line.t -> t -> t option
     (** [incorporate_line line t] is [Some t'] when [line] can be incorporated
-        into the block without opening any children, [t'] is updated block data
-        incorporating [line], otherwise it is [None]. *)
+        into the block without opening any children and [t'] is the updated
+        block data from [t] incorporating [line], otherwise it is [None]. *)
 
     val remain_open : Line.t -> t -> t status
     (** [remain_open line] is [Open line'] when [line'] is the data left from
