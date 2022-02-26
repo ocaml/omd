@@ -44,3 +44,15 @@ module Buffer = struct
         Buffer.add_char b (Char.unsafe_chr (0x80 lor (u land 0x3F)))
     | _ -> assert false
 end
+
+module String = struct
+  include String
+
+  let for_all p s =
+    let n = length s in
+    let rec loop i =
+      if i = n then true
+      else if p (unsafe_get s i) then loop (succ i)
+      else false in
+    loop 0
+end

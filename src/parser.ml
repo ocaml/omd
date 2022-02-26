@@ -1911,10 +1911,13 @@ let inline_pre buf acc st =
           let content = Buffer.contents bufcode in
           let content =
             if
+              String.for_all (fun c -> c = ' ') content
+            then
+              content
+            else if
               String.length content >= 2
               && content.[0] = ' '
               && content.[String.length content - 1] = ' '
-              (* FIXME not fully whitespace *)
             then
               String.sub content 1 (String.length content - 2)
             else
