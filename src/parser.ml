@@ -1910,9 +1910,7 @@ let inline_pre buf acc st =
         let finish () =
           let content = Buffer.contents bufcode in
           let content =
-            if
-              String.for_all (fun c -> c = ' ') content
-            then
+            if String.for_all (fun c -> c = ' ') content then
               content
             else if
               String.length content >= 2
