@@ -12,17 +12,11 @@ type t =
   | Concat of t * t
 
 let elt etype name attrs childs = Element (etype, name, attrs, childs)
-
 let text s = Text s
-
 let raw s = Raw s
 
 let concat t1 t2 =
-  match (t1, t2) with
-  | Null, t
-  | t, Null ->
-      t
-  | _ -> Concat (t1, t2)
+  match (t1, t2) with Null, t | t, Null -> t | _ -> Concat (t1, t2)
 
 let concat_map f l = List.fold_left (fun accu x -> concat accu (f x)) Null l
 
@@ -30,8 +24,7 @@ let concat_map f l = List.fold_left (fun accu x -> concat accu (f x)) Null l
 let htmlentities s =
   let b = Buffer.create (String.length s) in
   let rec loop i =
-    if i >= String.length s then
-      Buffer.contents b
+    if i >= String.length s then Buffer.contents b
     else begin
       begin
         match s.[i] with
@@ -91,17 +84,13 @@ let to_plain_text t =
   let buf = Buffer.create 1024 in
   let rec go : _ inline -> unit = function
     | Concat (_, l) -> List.iter go l
-    | Text (_, t)
-    | Code (_, t) ->
-        Buffer.add_string buf t
+    | Text (_, t) | Code (_, t) -> Buffer.add_string buf t
     | Emph (_, i)
     | Strong (_, i)
     | Link (_, { label = i; _ })
     | Image (_, { label = i; _ }) ->
         go i
-    | Hard_break _
-    | Soft_break _ ->
-        Buffer.add_char buf ' '
+    | Hard_break _ | Soft_break _ -> Buffer.add_char buf ' '
     | Html _ -> ()
   in
   go t;
@@ -111,18 +100,14 @@ let nl = Raw "\n"
 
 let rec url label destination title attrs =
   let attrs =
-    match title with
-    | None -> attrs
-    | Some title -> ("title", title) :: attrs
+    match title with None -> attrs | Some title -> ("title", title) :: attrs
   in
   let attrs = ("href", escape_uri destination) :: attrs in
   elt Inline "a" attrs (Some (inline label))
 
 and img label destination title attrs =
   let attrs =
-    match title with
-    | None -> attrs
-    | Some title -> ("title", title) :: attrs
+    match title with None -> attrs | Some title -> ("title", title) :: attrs
   in
   let attrs =
     ("src", escape_uri destination) :: ("alt", to_plain_text label) :: attrs
@@ -148,11 +133,7 @@ let rec block = function
       elt Block "blockquote" attr (Some (concat nl (concat_map block q)))
   | Paragraph (attr, md) -> elt Block "p" attr (Some (inline md))
   | List (attr, ty, sp, bl) ->
-      let name =
-        match ty with
-        | Ordered _ -> "ol"
-        | Bullet _ -> "ul"
-      in
+      let name = match ty with Ordered _ -> "ol" | Bullet _ -> "ul" in
       let attr =
         match ty with
         | Ordered (n, _) when n <> 1 -> ("start", string_of_int n) :: attr
@@ -164,21 +145,14 @@ let rec block = function
           | Paragraph (_, t), Tight -> concat (inline t) nl
           | _ -> block t
         in
-        let nl =
-          if sp = Tight then
-            Null
-          else
-            nl
-        in
+        let nl = if sp = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t)))
       in
       elt Block name attr (Some (concat nl (concat_map li bl)))
   | Code_block (attr, label, code) ->
       let code_attr =
-        if String.trim label = "" then
-          []
-        else
-          [ ("class", "language-" ^ label) ]
+        if String.trim label = "" then []
+        else [ ("class", "language-" ^ label) ]
       in
       let c = text code in
       elt Block "pre" attr (Some (elt Inline "code" code_attr (Some c)))
