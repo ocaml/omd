@@ -1,3 +1,7 @@
+type output_mode =
+  | Html
+  | Markdown
+
 let with_open_in fn f =
   let ic = open_in fn in
   match f ic with
@@ -18,18 +22,32 @@ let with_open_out fn f =
       close_out_noerr oc;
       raise e
 
-let process ic oc =
+let process mode ic oc =
   let md = Omd.of_channel ic in
-  output_string oc (Omd.to_html md)
+  let s =
+    match mode with
+    | Html -> Omd.to_html md
+    | Markdown -> Omd.to_markdown md
+  in
+  output_string oc s
 
 let input = ref []
 
 let output = ref ""
 
+let output_mode = ref Html
+
 let spec =
   [ ( "-o"
     , Arg.Set_string output
     , " file.html Specify the output file (default is stdout)." )
+  ; ( "--mode"
+    , String
+        (function
+        | "html" -> output_mode := Html
+        | "markdown" -> output_mode := Markdown
+        | _ -> raise (Arg.Bad "Accepted modes are html and markdown"))
+    , " html|markdown Specify the output mode (default is html)." )
   ; ( "--"
     , Rest (fun s -> input := s :: !input)
     , " Consider all remaining arguments as input file names." )
@@ -48,9 +66,11 @@ let main () =
   in
   with_output @@ fun oc ->
   if !input = [] then
-    process stdin oc
+    process !output_mode stdin oc
   else
-    let f filename = with_open_in filename @@ fun ic -> process ic oc in
+    let f filename =
+      with_open_in filename @@ fun ic -> process !output_mode ic oc
+    in
     List.(iter f (rev !input))
 
 let () =
