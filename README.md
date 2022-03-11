@@ -25,6 +25,8 @@ Dependencies can be installed by running:
 
 ```sh
 $ opam install . --deps-only
+# or
+$ make deps
 ```
 
 Installation
@@ -41,7 +43,6 @@ You can also build it manually from source with:
 ```sh
 $ git clone https://github.com/ocaml/omd.git
 $ cd omd
-$ opam install . --deps-only
 $ make build
 ```
 
