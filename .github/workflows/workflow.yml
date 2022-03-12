@@ -17,6 +17,8 @@ jobs:
         with:
           ocaml-compiler: 4.12.x
           dune-cache: true
+      - name: Install deps
+        run: opam install . --deps-only
       - name: Opam lint
         run: |
           opam depext opam-dune-lint --install
