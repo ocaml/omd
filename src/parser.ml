@@ -810,7 +810,7 @@ let known_tags =
   ; "ul"
   ]
 
-let special_tags = [ "script"; "pre"; "style" ]
+let special_tags = [ "pre"; "script"; "style"; "textarea" ]
 
 let known_tag s =
   let s = String.lowercase_ascii s in
