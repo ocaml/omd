@@ -42,7 +42,7 @@ end = struct
     ; len : int
     }
 
-  let of_string ?(off=0) base = { base; off; len = String.length base - off }
+  let of_string ?(off = 0) base = { base; off; len = String.length base - off }
 
   let to_string { base; off; len } = String.sub base off len
 
@@ -176,7 +176,7 @@ module P : sig
 
   val pair : 'a t -> 'b t -> ('a * 'b) t
 
-  val on_sub : (Sub.t -> ('a * Sub.t)) -> 'a t
+  val on_sub : (Sub.t -> 'a * Sub.t) -> 'a t
 end = struct
   type state =
     { str : string
@@ -1059,8 +1059,7 @@ let entity buf st =
   junk st;
   match on_sub entity st with
   | cs -> List.iter (Buffer.add_utf_8_uchar buf) cs
-  | exception Fail ->
-      Buffer.add_char buf '&'
+  | exception Fail -> Buffer.add_char buf '&'
 
 module Pre = struct
   type delim =
