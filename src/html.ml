@@ -80,6 +80,32 @@ let escape_uri s =
     s;
   Buffer.contents b
 
+let is_alphabetical = function
+  | 'A' .. 'Z'
+  | 'a' .. 'z' ->
+      true
+  | _ -> false
+
+let skip_while p s =
+  let i = ref 0 in
+  while !i < String.length s && p s.[!i] do
+    i := !i + 1
+  done;
+  !i
+
+let slugify s =
+  let offset = skip_while (Fun.negate is_alphabetical) s in
+  let length = String.length s - offset in
+  let s = String.sub s offset length in
+  let b = Buffer.create length in
+  String.iter
+    (function
+      | 'A' .. 'Z' as c -> Buffer.add_char b (Char.lowercase_ascii c)
+      | ' ' -> Buffer.add_char b '-'
+      | _ as c -> Printf.bprintf b "%c" c)
+    s;
+  Buffer.contents b
+
 let to_plain_text t =
   let buf = Buffer.create 1024 in
   let rec go : _ inline -> unit = function
@@ -168,6 +194,12 @@ let rec block = function
         | 5 -> "h5"
         | 6 -> "h6"
         | _ -> "p"
+      in
+      let attr =
+        if List.mem_assoc "id" attr then
+          attr
+        else
+          ("id", slugify (to_plain_text text)) :: attr
       in
       elt Block name attr (Some (inline text))
   | Definition_list (attr, l) ->
