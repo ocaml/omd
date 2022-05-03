@@ -46,6 +46,48 @@ type 'attr block =
 type doc = attributes block list
 (** A markdown document *)
 
+val txt : ?attrs:attributes -> string -> attributes inline
+
+val em : ?attrs:attributes -> attributes inline -> attributes inline
+
+val strong : ?attrs:attributes -> attributes inline -> attributes inline
+
+val code : ?attrs:attributes -> string -> attributes inline
+
+val hard_break : attributes -> attributes inline
+
+val soft_break : attributes -> attributes inline
+
+val link : ?attrs:attributes -> attributes link -> attributes inline
+
+val img : ?attrs:attributes -> attributes link -> attributes inline
+
+val html : ?attrs:attributes -> string -> attributes inline
+
+val pg : ?attrs:attributes -> attributes inline -> attributes block
+
+val ul :
+     ?attrs:attributes
+  -> ?spacing:list_spacing
+  -> attributes block list list
+  -> attributes block
+
+val ol :
+     ?attrs:attributes
+  -> ?spacing:list_spacing
+  -> attributes block list list
+  -> attributes block
+
+val blq : ?attrs:attributes -> attributes block list -> attributes block
+
+val hr : attributes -> attributes block
+
+val code_block : ?attrs:attributes -> label:string -> string -> attributes block
+
+val html_block : ?attrs:attributes -> string -> attributes block
+
+val def_list : ?attrs:attributes -> attributes def_elt list -> attributes block
+
 val of_channel : in_channel -> doc
 val of_string : string -> doc
 val to_html : doc -> string
