@@ -12,5 +12,5 @@ type t =
   | Null
   | Concat of t * t
 
-val of_doc : attributes block list -> t
+val of_doc : ?auto_identifiers:bool -> attributes block list -> t
 val to_string : t -> string
