@@ -64,7 +64,7 @@ jobs:
           dune-cache: true
 
       - name: Lint fmt
-        uses: ocaml/setup-ocaml/lint-fmt@fix-lint-fmt
+        uses: ocaml/setup-ocaml/lint-fmt@v2
 
   lint-opam:
     runs-on: ubuntu-latest
