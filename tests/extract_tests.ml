@@ -9,7 +9,7 @@ let protect ~finally f =
       r
 
 let disabled =
-  [ 175; 184; 185; 334; 410; 411; 414; 415; 416; 428; 468; 469; 516; 536 ]
+  [ 175; 184; 185; 410; 411; 414; 415; 416; 428; 468; 469; 516; 536 ]
 
 let with_open_in fn f =
   let ic = open_in fn in
@@ -23,9 +23,7 @@ let begins_with s s' =
   String.length s >= String.length s' && String.sub s 0 (String.length s') = s'
 
 let test_delim = "````````````````````````````````"
-
 let tab_re = Str.regexp_string "→"
-
 let insert_tabs s = Str.global_replace tab_re "\t" s
 
 type test =
@@ -64,14 +62,15 @@ let parse_test_spec filename =
                 end
               in
               get_html ()
-            end else begin
+            end
+            else begin
               add_line buf line;
               get_test ()
             end
           in
           go (get_test () :: tests) (succ example)
-        end else
-          go tests example
+        end
+        else go tests example
   in
   go [] 1
 
@@ -116,7 +115,6 @@ let write_dune_file test_specs tests =
     (fun ppf -> List.iter (pp ppf) tests)
 
 let li_begin_re = Str.regexp_string "<li>\n"
-
 let li_end_re = Str.regexp_string "\n</li>"
 
 let normalize_html s =
@@ -147,7 +145,6 @@ let spec =
   ]
 
 let test_specs = ref []
-
 let add_to_list l x = l := x :: !l
 
 let () =

@@ -3,10 +3,13 @@
 #
 # @file
 
-.PHONY: test build fmt
+.PHONY: test build fmt deps
 
-build:
+build: deps
 	dune build
+
+deps:
+	opam install . --deps-only --yes
 
 test:
 	dune build @gen --auto-promote

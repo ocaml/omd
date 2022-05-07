@@ -22,14 +22,25 @@ let process ic oc =
   let md = Omd.of_channel ic in
   output_string oc (Omd.to_html md)
 
-let input = ref []
+let print_version () =
+  let version =
+    match Build_info.V1.version () with
+    | None -> "n/a"
+    | Some v -> Build_info.V1.Version.to_string v
+  in
+  print_endline version;
+  exit 0
 
+let input = ref []
 let output = ref ""
 
 let spec =
   [ ( "-o"
     , Arg.Set_string output
     , " file.html Specify the output file (default is stdout)." )
+  ; ( "--version"
+    , Arg.Unit print_version
+    , " Display the version of the currently installed omd." )
   ; ( "--"
     , Rest (fun s -> input := s :: !input)
     , " Consider all remaining arguments as input file names." )
@@ -41,14 +52,10 @@ let main () =
     (fun s -> input := s :: !input)
     "omd [options] [inputfile1 .. inputfileN] [options]";
   let with_output f =
-    if !output = "" then
-      f stdout
-    else
-      with_open_out !output f
+    if !output = "" then f stdout else with_open_out !output f
   in
   with_output @@ fun oc ->
-  if !input = [] then
-    process stdin oc
+  if !input = [] then process stdin oc
   else
     let f filename = with_open_in filename @@ fun ic -> process ic oc in
     List.(iter f (rev !input))

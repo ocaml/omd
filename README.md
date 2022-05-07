@@ -14,8 +14,20 @@ https://github.com/ocaml/omd/issues.
 Dependencies
 ------------
 
-The minimum version of OCaml required is 4.04.2 Omd does not currently have any
-dependencies apart from the standard library.
+The minimum version of OCaml required is 4.04.2. `omd` depends on the standard library
+and the following packages:
+
+```
+dune-build-info
+```
+
+Dependencies can be installed by running:
+
+```sh
+$ opam install . --deps-only
+# or
+$ make deps
+```
 
 Installation
 ------------
