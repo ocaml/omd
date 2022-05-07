@@ -22,6 +22,15 @@ let process ic oc =
   let md = Omd.of_channel ic in
   output_string oc (Omd.to_html md)
 
+let print_version () =
+  let version =
+    match Build_info.V1.version () with
+    | None -> "n/a"
+    | Some v -> Build_info.V1.Version.to_string v
+  in
+  print_endline version;
+  exit 0
+
 let input = ref []
 let output = ref ""
 
@@ -29,6 +38,9 @@ let spec =
   [ ( "-o"
     , Arg.Set_string output
     , " file.html Specify the output file (default is stdout)." )
+  ; ( "--version"
+    , Arg.Unit print_version
+    , " Display the version of the currently installed omd." )
   ; ( "--"
     , Rest (fun s -> input := s :: !input)
     , " Consider all remaining arguments as input file names." )
