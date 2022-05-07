@@ -9,12 +9,7 @@ let rec remove_links inline =
   | Link (_, link) -> link.label
   | Image (attr, link) ->
       Image (attr, { link with label = remove_links link.label })
-  | Hard_break _
-  | Soft_break _
-  | Html _
-  | Code _
-  | Text _ ->
-      inline
+  | Hard_break _ | Soft_break _ | Html _ | Code _ | Text _ -> inline
 
 let headers =
   let remove_links_f = remove_links in
@@ -25,18 +20,12 @@ let headers =
         (function
           | Heading (attr, level, inline) ->
               let inline =
-                if remove_links then
-                  remove_links_f inline
-                else
-                  inline
+                if remove_links then remove_links_f inline else inline
               in
               headers := (attr, level, inline) :: !headers
           | Blockquote (_, blocks) -> loop blocks
           | List (_, _, _, block_lists) -> List.iter loop block_lists
-          | Paragraph _
-          | Thematic_break _
-          | Html_block _
-          | Definition_list _
+          | Paragraph _ | Thematic_break _ | Html_block _ | Definition_list _
           | Code_block _ ->
               ())
         blocks
@@ -56,16 +45,14 @@ let rec find_start headers level number subsections =
         match subsections with
         | [] -> headers (* no subsection to find *)
         | n :: subsections -> find_start headers (level + 1) n subsections
-      else
-        find_start tl level number subsections
+      else find_start tl level number subsections
   | (_, header_level, _) :: tl when header_level = level ->
       (* At proper [level].  Have we reached the [number] one? *)
       if number <= 1 then
         match subsections with
         | [] -> tl (* no subsection to find *)
         | n :: subsections -> find_start tl (level + 1) n subsections
-      else
-        find_start tl level (number - 1) subsections
+      else find_start tl level (number - 1) subsections
   | _ ->
       (* Sought [level] has not been found in the current section *)
       []
@@ -74,9 +61,7 @@ let unordered_list items = List ([], Bullet '*', Tight, items)
 
 let find_id attributes =
   List.find_map
-    (function
-      | k, v when String.equal "id" k -> Some v
-      | _ -> None)
+    (function k, v when String.equal "id" k -> Some v | _ -> None)
     attributes
 
 let link attributes label =
@@ -125,6 +110,4 @@ let toc ?(start = []) ?(depth = 2) doc =
   in
   let len = List.length start in
   let toc, _ = make_toc headers ~min_level:(len + 1) ~max_level:(len + depth) in
-  match toc with
-  | [] -> []
-  | _ -> [ unordered_list toc ]
+  match toc with [] -> [] | _ -> [ unordered_list toc ]
