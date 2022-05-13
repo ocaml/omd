@@ -54,9 +54,9 @@ val strong : ?attrs:attributes -> attributes inline -> attributes inline
 
 val code : ?attrs:attributes -> string -> attributes inline
 
-val hard_break : attributes -> attributes inline
+val hard_break : attributes inline
 
-val soft_break : attributes -> attributes inline
+val soft_break : attributes inline
 
 val link : ?attrs:attributes -> attributes link -> attributes inline
 
@@ -80,7 +80,7 @@ val ol :
 
 val blq : ?attrs:attributes -> attributes block list -> attributes block
 
-val hr : attributes -> attributes block
+val hr : attributes block
 
 val code_block : ?attrs:attributes -> label:string -> string -> attributes block
 

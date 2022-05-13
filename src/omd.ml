@@ -22,9 +22,9 @@ let strong ?(attrs = []) il = Strong (attrs, il)
 
 let code ?(attrs = []) s = Code (attrs, s)
 
-let hard_break attrs = Hard_break attrs
+let hard_break = Hard_break []
 
-let soft_break attrs = Soft_break attrs
+let soft_break = Soft_break []
 
 let link ?(attrs = []) li = Link (attrs, li)
 
@@ -41,7 +41,7 @@ let ol ?(attrs = []) ?(spacing = Loose) l =
 
 let blq ?(attrs = []) blocks = Blockquote (attrs, blocks)
 
-let hr attrs = Thematic_break attrs
+let hr = Thematic_break []
 
 let code_block ?(attrs = []) ~label s = Code_block (attrs, label, s)
 
