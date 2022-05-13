@@ -907,7 +907,28 @@ module Pre = struct
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
-          | (Emph (_, post, q2, n2) as x) :: xs when is_closer x && q1 = q2 ->
+          | (Emph (_, post, q2, n2) as x) :: xs as xall when is_closer x && q1 = q2 ->
+            if
+              is_opener x
+              && (n1 + n2) mod 3 = 0
+              && n1 mod 3 != 0
+              && n2 mod 3 != 0
+            then
+              let rec find_next_emph = function
+                | Emph (_, _, _, n) :: _ -> Some n
+                | _ :: xs -> find_next_emph xs
+                | [] -> None
+              in
+              let next_emph = find_next_emph xs in
+              match next_emph with
+              | None -> loop (x :: acc) xs
+              | Some n ->
+                  if (n + n2) mod 3 = 0 && n mod 3 != 0 && n2 mod 3 != 0 then
+                    loop (x :: acc) xs
+                  else
+                    let xs' = parse_emph xall in
+                    loop acc xs'
+            else
               let xs =
                 if n1 >= 2 && n2 >= 2 then
                   if n2 > 2 then Emph (Punct, post, q2, n2 - 2) :: xs else xs
