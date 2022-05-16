@@ -170,9 +170,13 @@ and inline = function
   | Image (attr, { label; destination; title }) ->
       img label destination title attr
 
-let rec block = function
+let rec block ~auto_identifiers = function
   | Blockquote (attr, q) ->
-      elt Block "blockquote" attr (Some (concat nl (concat_map block q)))
+      elt
+        Block
+        "blockquote"
+        attr
+        (Some (concat nl (concat_map (block ~auto_identifiers) q)))
   | Paragraph (attr, md) -> elt Block "p" attr (Some (inline md))
   | List (attr, ty, sp, bl) ->
       let name = match ty with Ordered _ -> "ol" | Bullet _ -> "ul" in
@@ -185,7 +189,7 @@ let rec block = function
         let block' t =
           match (t, sp) with
           | Paragraph (_, t), Tight -> concat (inline t) nl
-          | _ -> block t
+          | _ -> block ~auto_identifiers t
         in
         let nl = if sp = Tight then Null else nl in
         elt Block "li" [] (Some (concat nl (concat_map block' t)))
@@ -212,7 +216,7 @@ let rec block = function
         | _ -> "p"
       in
       let attr =
-        if List.mem_assoc "id" attr then
+        if (not auto_identifiers) || List.mem_assoc "id" attr then
           attr
         else
           ("id", slugify (to_plain_text text)) :: attr
@@ -226,7 +230,8 @@ let rec block = function
       in
       elt Block "dl" attr (Some (concat_map f l))
 
-let of_doc doc = concat_map block doc
+let of_doc ?(auto_identifiers = true) doc =
+  concat_map (block ~auto_identifiers) doc
 
 let to_string t =
   let buf = Buffer.create 1024 in

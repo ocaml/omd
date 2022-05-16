@@ -76,7 +76,7 @@ val html_bl : ?attrs:attributes -> string -> attributes block
 val dl : ?attrs:attributes -> attributes def_elt list -> attributes block
 val of_channel : in_channel -> doc
 val of_string : string -> doc
-val to_html : doc -> string
+val to_html : ?auto_identifiers:bool -> doc -> string
 val to_sexp : doc -> string
 
 val headers :
