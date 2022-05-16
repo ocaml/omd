@@ -80,12 +80,6 @@ let escape_uri s =
     s;
   Buffer.contents b
 
-let is_alphabetical = function
-  | 'A' .. 'Z'
-  | 'a' .. 'z' ->
-      true
-  | _ -> false
-
 let skip_while p s =
   let i = ref 0 in
   while !i < String.length s && p s.[!i] do
@@ -94,17 +88,39 @@ let skip_while p s =
   !i
 
 let slugify s =
-  let offset = skip_while (fun c -> not (is_alphabetical c)) s in
+  let s = String.trim s in
+  let offset =
+    skip_while (fun c -> not (Uucp.Alpha.is_alphabetic (Uchar.of_char c))) s
+  in
   let length = String.length s - offset in
   let s = String.sub s offset length in
   let b = Buffer.create length in
-  String.iter
-    (function
-      | 'A' .. 'Z' as c -> Buffer.add_char b (Char.lowercase_ascii c)
-      | ' ' -> Buffer.add_char b '-'
-      | _ as c -> Printf.bprintf b "%c" c)
-    s;
-  Buffer.contents b
+  let fold () _ = function
+    | `Malformed _ -> Uutf.Buffer.add_utf_8 b Uutf.u_rep
+    | `Uchar u -> (
+        if Uucp.Alpha.is_alphabetic u || Uucp.Num.is_hex_digit u then
+          match Uucp.Case.Map.to_lower u with
+          | `Self -> Uutf.Buffer.add_utf_8 b u
+          | `Uchars us -> List.iter (Uutf.Buffer.add_utf_8 b) us
+        else
+          try
+            match Uchar.to_char u with
+            | '.'
+            | '-'
+            | '_' ->
+                Uutf.Buffer.add_utf_8 b u
+            | ' ' -> Uutf.Buffer.add_utf_8 b (Uchar.of_char '-')
+            | _ -> ()
+          with
+          | Invalid_argument _ -> ())
+  in
+  Uutf.String.fold_utf_8 fold () s;
+  let s = Buffer.contents b in
+  (* let length = String.length s in
+  if length > 0 && s.[length - 1] = '-' then
+    String.sub s 0 (length - 1)
+  else *)
+    s
 
 let to_plain_text t =
   let buf = Buffer.create 1024 in
