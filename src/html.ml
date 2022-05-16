@@ -94,7 +94,7 @@ let skip_while p s =
   !i
 
 let slugify s =
-  let offset = skip_while (Fun.negate is_alphabetical) s in
+  let offset = skip_while (fun c -> not (is_alphabetical c)) s in
   let length = String.length s - offset in
   let s = String.sub s offset length in
   let b = Buffer.create length in
