@@ -98,22 +98,32 @@ let trim_start_while p s =
 let underscore = Uchar.of_char '_'
 let hyphen = Uchar.of_char '-'
 let period = Uchar.of_char '.'
+let is_white_space = Uucp.White.is_white_space
+let is_alphabetic = Uucp.Alpha.is_alphabetic
+let is_hex_digit = Uucp.Num.is_hex_digit
 
 let slugify s =
-  let s = trim_start_while (fun c -> not (Uucp.Alpha.is_alphabetic c)) s in
+  let s = trim_start_while (fun c -> not (is_alphabetic c)) s in
   let length = String.length s in
   let b = Buffer.create length in
+  let last_is_ws = ref false in
+  let add_to_buffer u =
+    if !last_is_ws = true then begin
+      Uutf.Buffer.add_utf_8 b (Uchar.of_char '-');
+      last_is_ws := false
+    end;
+    Uutf.Buffer.add_utf_8 b u
+  in
   let fold () _ = function
-    | `Malformed _ -> Uutf.Buffer.add_utf_8 b Uutf.u_rep
+    | `Malformed _ -> add_to_buffer Uutf.u_rep
+    | `Uchar u when is_white_space u && not !last_is_ws -> last_is_ws := true
+    | `Uchar u when is_white_space u && !last_is_ws -> ()
     | `Uchar u ->
-        (if Uucp.Alpha.is_alphabetic u || Uucp.Num.is_hex_digit u then
+        (if is_alphabetic u || is_hex_digit u then
          match Uucp.Case.Map.to_lower u with
-         | `Self -> Uutf.Buffer.add_utf_8 b u
-         | `Uchars us -> List.iter (Uutf.Buffer.add_utf_8 b) us);
-        if Uucp.White.is_white_space u then
-          Uutf.Buffer.add_utf_8 b (Uchar.of_char '-');
-        if u = underscore || u = hyphen || u = period then
-          Uutf.Buffer.add_utf_8 b u
+         | `Self -> add_to_buffer u
+         | `Uchars us -> List.iter add_to_buffer us);
+        if u = underscore || u = hyphen || u = period then add_to_buffer u
   in
   Uutf.String.fold_utf_8 fold () s;
   Buffer.contents b
@@ -212,10 +222,8 @@ let rec block ~auto_identifiers = function
         | _ -> "p"
       in
       let attr =
-        if (not auto_identifiers) || List.mem_assoc "id" attr then
-          attr
-        else
-          ("id", slugify (to_plain_text text)) :: attr
+        if (not auto_identifiers) || List.mem_assoc "id" attr then attr
+        else ("id", slugify (to_plain_text text)) :: attr
       in
       elt Block name attr (Some (inline text))
   | Definition_list (attr, l) ->
