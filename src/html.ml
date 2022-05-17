@@ -80,47 +80,43 @@ let escape_uri s =
     s;
   Buffer.contents b
 
-let skip_while p s =
-  let i = ref 0 in
-  while !i < String.length s && p s.[!i] do
-    i := !i + 1
-  done;
-  !i
+let trim_start_while p s =
+  let start = ref true in
+  let b = Buffer.create (String.length s) in
+  Uutf.String.fold_utf_8
+    (fun () _ -> function
+      | `Malformed _ -> Buffer.add_string b s
+      | `Uchar u when p u && !start -> ()
+      | `Uchar u when !start ->
+          start := false;
+          Uutf.Buffer.add_utf_8 b u
+      | `Uchar u -> Uutf.Buffer.add_utf_8 b u)
+    ()
+    s;
+  Buffer.contents b
+
+let underscore = Uchar.of_char '_'
+let hyphen = Uchar.of_char '-'
+let period = Uchar.of_char '.'
 
 let slugify s =
-  let s = String.trim s in
-  let offset =
-    skip_while (fun c -> not (Uucp.Alpha.is_alphabetic (Uchar.of_char c))) s
-  in
-  let length = String.length s - offset in
-  let s = String.sub s offset length in
+  let s = trim_start_while (fun c -> not (Uucp.Alpha.is_alphabetic c)) s in
+  let length = String.length s in
   let b = Buffer.create length in
   let fold () _ = function
     | `Malformed _ -> Uutf.Buffer.add_utf_8 b Uutf.u_rep
-    | `Uchar u -> (
-        if Uucp.Alpha.is_alphabetic u || Uucp.Num.is_hex_digit u then
-          match Uucp.Case.Map.to_lower u with
-          | `Self -> Uutf.Buffer.add_utf_8 b u
-          | `Uchars us -> List.iter (Uutf.Buffer.add_utf_8 b) us
-        else
-          try
-            match Uchar.to_char u with
-            | '.'
-            | '-'
-            | '_' ->
-                Uutf.Buffer.add_utf_8 b u
-            | ' ' -> Uutf.Buffer.add_utf_8 b (Uchar.of_char '-')
-            | _ -> ()
-          with
-          | Invalid_argument _ -> ())
+    | `Uchar u ->
+        (if Uucp.Alpha.is_alphabetic u || Uucp.Num.is_hex_digit u then
+         match Uucp.Case.Map.to_lower u with
+         | `Self -> Uutf.Buffer.add_utf_8 b u
+         | `Uchars us -> List.iter (Uutf.Buffer.add_utf_8 b) us);
+        if Uucp.White.is_white_space u then
+          Uutf.Buffer.add_utf_8 b (Uchar.of_char '-');
+        if u = underscore || u = hyphen || u = period then
+          Uutf.Buffer.add_utf_8 b u
   in
   Uutf.String.fold_utf_8 fold () s;
-  let s = Buffer.contents b in
-  (* let length = String.length s in
-  if length > 0 && s.[length - 1] = '-' then
-    String.sub s 0 (length - 1)
-  else *)
-    s
+  Buffer.contents b
 
 let to_plain_text t =
   let buf = Buffer.create 1024 in
