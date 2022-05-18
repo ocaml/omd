@@ -102,6 +102,8 @@ let is_white_space = Uucp.White.is_white_space
 let is_alphabetic = Uucp.Alpha.is_alphabetic
 let is_hex_digit = Uucp.Num.is_hex_digit
 
+(* Based on pandoc algorithm to derive id's.
+   See: https://pandoc.org/MANUAL.html#extension-auto_identifiers *)
 let slugify s =
   let s = trim_start_while (fun c -> not (is_alphabetic c)) s in
   let length = String.length s in
