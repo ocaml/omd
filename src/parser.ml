@@ -907,46 +907,47 @@ module Pre = struct
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
-          | (Emph (_, post, q2, n2) as x) :: xs as xall when is_closer x && q1 = q2 ->
-            if
-              is_opener x
-              && (n1 + n2) mod 3 = 0
-              && n1 mod 3 != 0
-              && n2 mod 3 != 0
-            then
-              let rec find_next_emph = function
-                | Emph (_, _, _, n) :: _ -> Some n
-                | _ :: xs -> find_next_emph xs
-                | [] -> None
-              in
-              let next_emph = find_next_emph xs in
-              match next_emph with
-              | None -> loop (x :: acc) xs
-              | Some n ->
-                  if (n + n2) mod 3 = 0 && n mod 3 != 0 && n2 mod 3 != 0 then
-                    loop (x :: acc) xs
-                  else
-                    let xs' = parse_emph xall in
-                    loop acc xs'
-            else
-              let xs =
-                if n1 >= 2 && n2 >= 2 then
-                  if n2 > 2 then Emph (Other, post, q2, n2 - 2) :: xs else xs
-                else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs
-                else xs
-              in
-              let r =
-                let il = concat (List.map to_r (parse_emph (List.rev acc))) in
-                if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
-                else R (Emph ([], il)) :: xs
-              in
-              let r =
-                if n1 >= 2 && n2 >= 2 then
-                  if n1 > 2 then Emph (pre, Other, q1, n1 - 2) :: r else r
-                else if n1 > 1 then Emph (pre, Punct, q1, n1 - 1) :: r
-                else r
-              in
-              parse_emph r
+          | (Emph (_, post, q2, n2) as x) :: xs as xall
+            when is_closer x && q1 = q2 ->
+              if
+                is_opener x
+                && (n1 + n2) mod 3 = 0
+                && n1 mod 3 != 0
+                && n2 mod 3 != 0
+              then
+                let rec find_next_emph = function
+                  | Emph (_, _, _, n) :: _ -> Some n
+                  | _ :: xs -> find_next_emph xs
+                  | [] -> None
+                in
+                let next_emph = find_next_emph xs in
+                match next_emph with
+                | None -> loop (x :: acc) xs
+                | Some n ->
+                    if (n + n2) mod 3 = 0 && n mod 3 != 0 && n2 mod 3 != 0 then
+                      loop (x :: acc) xs
+                    else
+                      let xs' = parse_emph xall in
+                      loop acc xs'
+              else
+                let xs =
+                  if n1 >= 2 && n2 >= 2 then
+                    if n2 > 2 then Emph (Other, post, q2, n2 - 2) :: xs else xs
+                  else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs
+                  else xs
+                in
+                let r =
+                  let il = concat (List.map to_r (parse_emph (List.rev acc))) in
+                  if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
+                  else R (Emph ([], il)) :: xs
+                in
+                let r =
+                  if n1 >= 2 && n2 >= 2 then
+                    if n1 > 2 then Emph (pre, Other, q1, n1 - 2) :: r else r
+                  else if n1 > 1 then Emph (pre, Punct, q1, n1 - 1) :: r
+                  else r
+                in
+                parse_emph r
           | (Emph _ as x) :: xs1 as xs when is_opener x ->
               let xs' = parse_emph xs in
               if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
