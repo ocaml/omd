@@ -9,18 +9,11 @@ module List = struct
 
   let rec find_map f = function
     | [] -> None
-    | x :: xs ->
-    match f x with
-    | None -> find_map f xs
-    | y -> y
+    | x :: xs -> ( match f x with None -> find_map f xs | y -> y)
 
   let rec find_opt p = function
     | [] -> None
-    | x :: l ->
-        if p x then
-          Some x
-        else
-          find_opt p l
+    | x :: l -> if p x then Some x else find_opt p l
 end
 
 module Buffer = struct
@@ -51,12 +44,9 @@ module String = struct
   let for_all p s =
     let n = length s in
     let rec loop i =
-      if i = n then
-        true
-      else if p (unsafe_get s i) then
-        loop (succ i)
-      else
-        false
+      if i = n then true
+      else if p (unsafe_get s i) then loop (succ i)
+      else false
     in
     loop 0
 end

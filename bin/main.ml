@@ -32,7 +32,6 @@ let print_version () =
   exit 0
 
 let input = ref []
-
 let output = ref ""
 
 let spec =
@@ -53,14 +52,10 @@ let main () =
     (fun s -> input := s :: !input)
     "omd [options] [inputfile1 .. inputfileN] [options]";
   let with_output f =
-    if !output = "" then
-      f stdout
-    else
-      with_open_out !output f
+    if !output = "" then f stdout else with_open_out !output f
   in
   with_output @@ fun oc ->
-  if !input = [] then
-    process stdin oc
+  if !input = [] then process stdin oc
   else
     let f filename = with_open_in filename @@ fun ic -> process ic oc in
     List.(iter f (rev !input))

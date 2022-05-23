@@ -8,7 +8,6 @@ let protect ~finally f =
       r
 
 let li_begin_re = Str.regexp_string "<li>\n"
-
 let li_end_re = Str.regexp_string "\n</li>"
 
 let normalize_html s =

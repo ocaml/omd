@@ -33,20 +33,11 @@ module Pre = struct
 
   let trim_left s =
     let rec loop i =
-      if i >= String.length s then
-        i
-      else
-        match s.[i] with
-        | ' '
-        | '\t' ->
-            loop (succ i)
-        | _ -> i
+      if i >= String.length s then i
+      else match s.[i] with ' ' | '\t' -> loop (succ i) | _ -> i
     in
     let i = loop 0 in
-    if i > 0 then
-      String.sub s i (String.length s - i)
-    else
-      s
+    if i > 0 then String.sub s i (String.length s - i) else s
 
   let rec close link_defs { blocks; next } =
     let finish = finish link_defs in
@@ -61,10 +52,7 @@ module Pre = struct
         in
         let s = String.sub s off (String.length s - off) |> String.trim in
         link_defs := defs @ !link_defs;
-        if s = "" then
-          blocks
-        else
-          Paragraph ([], s) :: blocks
+        if s = "" then blocks else Paragraph ([], s) :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), [], attr) ->
         Code_block (attr, label, "") :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), l, attr) ->
@@ -78,10 +66,7 @@ module Pre = struct
         Definition_list ([], l @ [ { term; defs = List.rev defs } ]) :: blocks
     | Rindented_code l ->
         (* TODO: trim from the right *)
-        let rec loop = function
-          | "" :: l -> loop l
-          | _ as l -> l
-        in
+        let rec loop = function "" :: l -> loop l | _ as l -> l in
         Code_block ([], "", concat (loop l)) :: blocks
     | Rhtml (_, l) -> Html_block ([], concat l) :: blocks
     | Rempty -> blocks
@@ -89,7 +74,6 @@ module Pre = struct
   and finish link_defs state = List.rev (close link_defs state)
 
   let empty = { blocks = []; next = Rempty }
-
   let classify_line s = Parser.parse s
 
   let rec process link_defs { blocks; next } s =
@@ -139,10 +123,7 @@ module Pre = struct
     | Rfenced_code (ind, num, q, info, lines, a), _ ->
         let s =
           let ind = min (Parser.indent s) ind in
-          if ind > 0 then
-            Sub.offset ind s
-          else
-            s
+          if ind > 0 then Sub.offset ind s else s
         in
         { blocks
         ; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)
@@ -195,21 +176,13 @@ module Pre = struct
                 true
             | _ -> false
           in
-          if prev_empty && new_block state.next then
-            Loose
-          else
-            style
+          if prev_empty && new_block state.next then Loose else style
         in
         { blocks; next = Rlist (kind, style, false, ind, items, state) }
     | ( Rlist (kind, style, prev_empty, _, items, state)
       , Llist_item (kind', ind, s) )
       when same_block_list_kind kind kind' ->
-        let style =
-          if prev_empty then
-            Loose
-          else
-            style
-        in
+        let style = if prev_empty then Loose else style in
         { blocks
         ; next =
             Rlist
@@ -230,8 +203,7 @@ module Pre = struct
               | None -> None)
           | Rparagraph (_ :: _ as lines) -> (
               match classify_line s with
-              | Parser.Lparagraph
-              | Lindented_code _
+              | Parser.Lparagraph | Lindented_code _
               | Lsetext_heading (1, _)
               | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
@@ -258,8 +230,7 @@ module Pre = struct
   let read_line s off =
     let buf = Buffer.create 128 in
     let rec loop cr_read off =
-      if off >= String.length s then
-        (Buffer.contents buf, None)
+      if off >= String.length s then (Buffer.contents buf, None)
       else
         match s.[off] with
         | '\n' -> (Buffer.contents buf, Some (succ off))

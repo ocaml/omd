@@ -7,11 +7,7 @@ type t =
 let atom s = Atom s
 
 let rec link { label; destination; title; _ } =
-  let title =
-    match title with
-    | Some title -> [ Atom title ]
-    | None -> []
-  in
+  let title = match title with Some title -> [ Atom title ] | None -> [] in
   List (Atom "link" :: inline label :: Atom destination :: title)
 
 and inline = function
@@ -53,15 +49,10 @@ let create ast = List (List.map block ast)
 
 let needs_quotes s =
   let rec loop i =
-    if i >= String.length s then
-      false
+    if i >= String.length s then false
     else
       match s.[i] with
-      | ' '
-      | '\t'
-      | '\x00' .. '\x1F'
-      | '\x7F' .. '\x9F' ->
-          true
+      | ' ' | '\t' | '\x00' .. '\x1F' | '\x7F' .. '\x9F' -> true
       | _ -> loop (succ i)
   in
   loop 0
