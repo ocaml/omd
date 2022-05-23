@@ -12,9 +12,9 @@ deps:
 	opam install . --deps-only --yes
 
 test:
-	-dune build @gen --auto-promote
-	dune test
+	dune build @gen --auto-promote
+	dune runtest
 
 fmt:
-	-dune build @fmt --auto-promote
+	dune build @fmt --auto-promote
 # end
