@@ -6,7 +6,7 @@ formats. In addition to the library, a command-line tool `omd` is included to
 easily convert markdown into HTML.
 
 Omd aims at implementing the [Commonmark](https://commonmark.org/) standard. The
-version currently targeted is [0.29](https://spec.commonmark.org/0.29/).
+version currently targeted is [0.30](https://spec.commonmark.org/0.30/).
 
 Omd is developed on GitHub. If you need to report an issue, please do so at
 https://github.com/ocaml/omd/issues.

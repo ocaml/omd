@@ -4,7 +4,7 @@ open Compat
 module Sub : sig
   type t
 
-  val of_string : string -> t
+  val of_string : ?off:int -> string -> t
   val to_string : t -> string
   val offset : int -> t -> t
   val lexbuf : t -> Lexing.lexbuf
@@ -17,6 +17,7 @@ module Sub : sig
   val for_all : (char -> bool) -> t -> bool
   val exists : (char -> bool) -> t -> bool
   val is_empty : t -> bool
+  val get_offset : t -> int
   val length : t -> int
   val sub : len:int -> t -> t
 end = struct
@@ -26,9 +27,10 @@ end = struct
     ; len : int
     }
 
-  let of_string base = { base; off = 0; len = String.length base }
+  let of_string ?(off = 0) base = { base; off; len = String.length base - off }
   let to_string { base; off; len } = String.sub base off len
   let print ppf s = Format.fprintf ppf "%S" (to_string s)
+  let get_offset { off; _ } = off
   let length { len; _ } = len
 
   let offset n { base; off; len } =
@@ -80,10 +82,9 @@ end = struct
     in
     loop n s
 
-  let tails n s =
+  let tails n { base; off; len } =
     if n < 0 then invalid_arg "tails";
-    let rec loop n s = if n = 0 then s else loop (pred n) (tail s) in
-    loop n s
+    { base; off = off + n; len = len - n }
 
   let is_empty s = length s = 0
 
@@ -127,6 +128,7 @@ module P : sig
   val peek_before : char -> state -> char
   val peek_after : char -> state -> char
   val pair : 'a t -> 'b t -> ('a * 'b) t
+  val on_sub : (Sub.t -> 'a * Sub.t) -> 'a t
 end = struct
   type state =
     { str : string
@@ -214,6 +216,11 @@ end = struct
     let x = p st in
     let y = q st in
     (x, y)
+
+  let on_sub fn st =
+    let result, s = fn (Sub.of_string ~off:st.pos st.str) in
+    st.pos <- Sub.get_offset s;
+    result
 end
 
 type html_kind =
@@ -399,7 +406,7 @@ let entity s =
   match Sub.heads 2 s with
   | '#' :: ('x' | 'X') :: _ ->
       let rec loop m n s =
-        if m > 8 then raise Fail;
+        if m > 6 then raise Fail;
         match Sub.head s with
         | Some ('a' .. 'f' as c) ->
             loop
@@ -425,7 +432,7 @@ let entity s =
       loop 0 0 (Sub.tails 2 s)
   | '#' :: _ ->
       let rec loop m n s =
-        if m > 8 then raise Fail;
+        if m > 7 then raise Fail;
         match Sub.head s with
         | Some ('0' .. '9' as c) ->
             loop (succ m) ((n * 10) + Char.code c - Char.code '0') (Sub.tail s)
@@ -622,7 +629,7 @@ let known_tags =
   ; "ul"
   ]
 
-let special_tags = [ "script"; "pre"; "style" ]
+let special_tags = [ "pre"; "script"; "style"; "textarea" ]
 
 let known_tag s =
   let s = String.lowercase_ascii s in
@@ -834,77 +841,10 @@ let inline_attribute_string s =
   attr
 
 let entity buf st =
-  let p = pos st in
-  if next st <> '&' then raise Fail;
-  match peek st with
-  | Some '#' -> (
-      junk st;
-      match peek st with
-      | Some ('x' | 'X') ->
-          junk st;
-          let rec aux n m =
-            if n > 8 then Buffer.add_string buf (range st p (pos st - p))
-            else
-              match peek st with
-              | Some ('0' .. '9' as c) ->
-                  junk st;
-                  aux (succ n) ((m * 16) + Char.code c - Char.code '0')
-              | Some ('a' .. 'f' as c) ->
-                  junk st;
-                  aux (succ n) ((m * 16) + Char.code c - Char.code 'a' + 10)
-              | Some ('A' .. 'F' as c) ->
-                  junk st;
-                  aux (succ n) ((m * 16) + Char.code c - Char.code 'A' + 10)
-              | Some ';' ->
-                  junk st;
-                  if n = 0 then Buffer.add_string buf (range st p (pos st - p))
-                  else
-                    let u =
-                      if Uchar.is_valid m && m <> 0 then Uchar.of_int m
-                      else Uchar.rep
-                    in
-                    Buffer.add_utf_8_uchar buf u
-              | Some _ | None -> Buffer.add_string buf (range st p (pos st - p))
-          in
-          aux 0 0
-      | Some '0' .. '9' ->
-          let rec aux n m =
-            if n > 8 then Buffer.add_string buf (range st p (pos st - p))
-            else
-              match peek st with
-              | Some ('0' .. '9' as c) ->
-                  junk st;
-                  aux (succ n) ((m * 10) + Char.code c - Char.code '0')
-              | Some ';' ->
-                  junk st;
-                  if n = 0 then Buffer.add_string buf (range st p (pos st - p))
-                  else
-                    let u =
-                      if Uchar.is_valid m && m <> 0 then Uchar.of_int m
-                      else Uchar.rep
-                    in
-                    Buffer.add_utf_8_uchar buf u
-              | Some _ | None -> Buffer.add_string buf (range st p (pos st - p))
-          in
-          aux 0 0
-      | Some _ | None -> Buffer.add_string buf (range st p (pos st - p)))
-  | Some ('0' .. '9' | 'a' .. 'z' | 'A' .. 'Z') ->
-      let q = pos st in
-      let rec aux () =
-        match peek st with
-        | Some ('0' .. '9' | 'a' .. 'z' | 'A' .. 'Z') ->
-            junk st;
-            aux ()
-        | Some ';' -> (
-            let name = range st q (pos st - q) in
-            junk st;
-            match Entities.f name with
-            | [] -> Buffer.add_string buf (range st p (pos st - p))
-            | _ :: _ as cps -> List.iter (Buffer.add_utf_8_uchar buf) cps)
-        | Some _ | None -> Buffer.add_string buf (range st p (pos st - p))
-      in
-      aux ()
-  | Some _ | None -> Buffer.add_string buf (range st p (pos st - p))
+  junk st;
+  match on_sub entity st with
+  | cs -> List.iter (Buffer.add_utf_8_uchar buf) cs
+  | exception Fail -> Buffer.add_char buf '&'
 
 module Pre = struct
   type delim =
