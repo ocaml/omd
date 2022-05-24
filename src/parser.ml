@@ -925,20 +925,21 @@ module Pre = struct
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
-          | (Emph (_, post, q2, n2) as x) :: xs as xall
+          | (Emph (_, post, q2, n2) as x) :: xs1 as xs
             when is_closer x && q1 = q2 ->
               if is_opener x && not (is_match n1 n2) then
-                match find_next_emph xs with
+                match find_next_emph xs1 with
                 | Some (_, _, _, n3) when is_match n3 n2 ->
-                    let xs' = parse_emph xall in
+                    let xs' = parse_emph xs in
                     loop acc xs'
-                | _ -> loop (x :: acc) xs
+                | _ -> loop (x :: acc) xs1
               else
                 let xs =
                   if n1 >= 2 && n2 >= 2 then
-                    if n2 > 2 then Emph (Other, post, q2, n2 - 2) :: xs else xs
-                  else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs
-                  else xs
+                    if n2 > 2 then Emph (Other, post, q2, n2 - 2) :: xs1
+                    else xs1
+                  else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs1
+                  else xs1
                 in
                 let r =
                   let il = concat (List.map to_r (parse_emph (List.rev acc))) in
