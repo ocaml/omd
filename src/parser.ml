@@ -915,25 +915,26 @@ module Pre = struct
     | _ :: xs -> find_next_closer_emph xs
     | [] -> None
 
+  (* If one of the delimiters can both open and close emphasis, then the sum of the lengths
+      of the delimiter runs containing the opening and closing delimiters must not be
+      a multiple of 3 unless both lengths are multiples of 3 *)
+  let is_match n1 n2 =
+    if (n1 + n2) mod 3 = 0 && n1 mod 3 != 0 && n2 mod 3 != 0 then false
+    else true
+
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
           | (Emph (_, post, q2, n2) as x) :: xs as xall
             when is_closer x && q1 = q2 ->
-              if
-                is_opener x
-                && (n1 + n2) mod 3 = 0
-                && n1 mod 3 != 0
-                && n2 mod 3 != 0
-              then
+              if is_opener x && not (is_match n1 n2) then
                 match find_next_emph xs with
                 | None -> loop (x :: acc) xs
-                | Some (_, _, _, n) ->
-                    if (n + n2) mod 3 = 0 && n mod 3 != 0 && n2 mod 3 != 0 then
-                      loop (x :: acc) xs
-                    else
+                | Some (_, _, _, n3) ->
+                    if is_match n3 n2 then
                       let xs' = parse_emph xall in
                       loop acc xs'
+                    else loop (x :: acc) xs
               else
                 let xs =
                   if n1 >= 2 && n2 >= 2 then
