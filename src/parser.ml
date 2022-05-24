@@ -909,6 +909,12 @@ module Pre = struct
     | _ :: xs -> find_next_emph xs
     | [] -> None
 
+  let rec find_next_closer_emph = function
+    | (Emph (pre, post, style, n) as e) :: _ when is_closer e ->
+        Some (pre, post, style, n)
+    | _ :: xs -> find_next_closer_emph xs
+    | [] -> None
+
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
@@ -948,14 +954,10 @@ module Pre = struct
                 in
                 parse_emph r
           | (Emph (_, _, q2, _) as x) :: xs1 as xs when is_opener x ->
-              let rec find_next_closer_emph = function
-                | (Emph (_, _, q, _) as x) :: _ when is_closer x -> Some q
-                | _ :: xs -> find_next_closer_emph xs
-                | [] -> None
-              in
-              let next_closer_emph = find_next_closer_emph xs1 in
               let is_next_closer_same =
-                match next_closer_emph with None -> false | Some q3 -> q2 = q3
+                match find_next_closer_emph xs1 with
+                | None -> false
+                | Some (_, _, q3, _) -> q2 = q3
               in
               if not is_next_closer_same then loop (x :: acc) xs1
               else
