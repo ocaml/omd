@@ -929,12 +929,10 @@ module Pre = struct
             when is_closer x && q1 = q2 ->
               if is_opener x && not (is_match n1 n2) then
                 match find_next_emph xs with
-                | None -> loop (x :: acc) xs
-                | Some (_, _, _, n3) ->
-                    if is_match n3 n2 then
-                      let xs' = parse_emph xall in
-                      loop acc xs'
-                    else loop (x :: acc) xs
+                | Some (_, _, _, n3) when is_match n3 n2 ->
+                    let xs' = parse_emph xall in
+                    loop acc xs'
+                | _ -> loop (x :: acc) xs
               else
                 let xs =
                   if n1 >= 2 && n2 >= 2 then
