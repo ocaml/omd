@@ -904,6 +904,11 @@ module Pre = struct
     | Emph (_, _, Underscore, n) -> Text ([], String.make n '_')
     | R x -> x
 
+  let rec find_next_emph = function
+    | Emph (pre, post, style, n) :: _ -> Some (pre, post, style, n)
+    | _ :: xs -> find_next_emph xs
+    | [] -> None
+
   let rec parse_emph = function
     | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
         let rec loop acc = function
@@ -915,15 +920,9 @@ module Pre = struct
                 && n1 mod 3 != 0
                 && n2 mod 3 != 0
               then
-                let rec find_next_emph = function
-                  | Emph (_, _, _, n) :: _ -> Some n
-                  | _ :: xs -> find_next_emph xs
-                  | [] -> None
-                in
-                let next_emph = find_next_emph xs in
-                match next_emph with
+                match find_next_emph xs with
                 | None -> loop (x :: acc) xs
-                | Some n ->
+                | Some (_, _, _, n) ->
                     if (n + n2) mod 3 = 0 && n mod 3 != 0 && n2 mod 3 != 0 then
                       loop (x :: acc) xs
                     else
