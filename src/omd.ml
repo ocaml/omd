@@ -18,22 +18,22 @@ let txt ?(attrs = []) s = Text (attrs, s)
 let em ?(attrs = []) il = Emph (attrs, il)
 let strong ?(attrs = []) il = Strong (attrs, il)
 let code ?(attrs = []) s = Code (attrs, s)
-let hard_break = Hard_break []
-let soft_break = Soft_break []
-let link ?(attrs = []) li = Link (attrs, li)
+let br = Hard_break []
+let nl = Soft_break []
+let a ?(attrs = []) li = Link (attrs, li)
 let img ?(attrs = []) li = Image (attrs, li)
 let html ?(attrs = []) s = Html (attrs, s)
-let pg ?(attrs = []) il = Paragraph (attrs, il)
+let p ?(attrs = []) il = Paragraph (attrs, il)
 let ul ?(attrs = []) ?(spacing = Loose) l = List (attrs, Bullet '-', spacing, l)
 
 let ol ?(attrs = []) ?(spacing = Loose) l =
   List (attrs, Ordered (1, '.'), spacing, l)
 
-let blq ?(attrs = []) blocks = Blockquote (attrs, blocks)
+let blockquote ?(attrs = []) blocks = Blockquote (attrs, blocks)
 let hr = Thematic_break []
-let code_block ?(attrs = []) ~label s = Code_block (attrs, label, s)
-let html_block ?(attrs = []) s = Html_block (attrs, s)
-let def_list ?(attrs = []) l = Definition_list (attrs, l)
+let code_bl ?(attrs = []) ~label s = Code_block (attrs, label, s)
+let html_bl ?(attrs = []) s = Html_block (attrs, s)
+let dl ?(attrs = []) l = Definition_list (attrs, l)
 let of_channel ic = parse_inlines (Pre.of_channel ic)
 let of_string s = parse_inlines (Pre.of_string s)
 let to_html doc = Html.to_string (Html.of_doc doc)
