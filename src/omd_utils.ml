@@ -58,7 +58,7 @@ let raise =
        eprintf "(OMD) Exception raised: %s\n%!" (Printexc.to_string e);
        raise e)
   else
-    Pervasives.raise
+    raise
 
 module StringSet : sig
   include Set.S with type elt = string

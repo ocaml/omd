@@ -38,7 +38,7 @@ let to_string html =
         | (a, Some v) ->
           if not (String.contains v '\'') then
             pp " %s='%s'" a v
-          else not (String.contains v '"') then
+          else if not (String.contains v '"') then
             pp " %s=\"%s\"" a v
           else
             (

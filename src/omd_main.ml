@@ -161,7 +161,6 @@ let patch_html_comments l =
 let tag_toc l =
   let open Omd_representation in
   let x =
-    let open Printf in
     object(self)
       (* [shield] is used to prevent endless loops.
          If one wants to use system threads at some point,
@@ -172,7 +171,7 @@ let tag_toc l =
           (function X(v) when v==e-> Some[] | _ -> None)
           md
       method name = "toc"
-      method to_html ?indent f md =
+      method to_html ?indent:_ f md =
         let r = f (Omd.toc(remove self md)) in
         Some r
       method to_sexpr f md =

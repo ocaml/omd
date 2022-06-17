@@ -17,7 +17,7 @@ class ref_container : object
 
   method add_ref name title url =
     c <- R.add name (url, title) c;
-    let ln = String.lowercase name in
+    let ln = String.lowercase_ascii name in
     if ln <> name then c2 <- R.add ln (url, title) c2
 
   method get_ref name =
@@ -25,7 +25,7 @@ class ref_container : object
       let (url, title) as r =
         try R.find name c
         with Not_found ->
-          let ln = String.lowercase name in
+          let ln = String.lowercase_ascii name in
           try R.find ln c
           with Not_found ->
             R.find ln c2
