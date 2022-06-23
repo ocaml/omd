@@ -3,9 +3,6 @@ name: Main workflow
 on:
   pull_request:
   push:
-  schedule:
-    # Prime the caches every Monday
-    - cron: 0 1 * * MON
 
 jobs:
   build:
@@ -30,6 +27,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          cache-prefix: 1.3.1-${{ matrix.container }}
 
       - run: opam install . --deps-only --with-test
 
