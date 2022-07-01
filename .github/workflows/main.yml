@@ -1,0 +1,36 @@
+name: Main workflow
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-compiler:
+          - 4.04.2
+          - 4.13.x
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          cache-prefix: 1.3.1-${{ matrix.container }}
+
+      - run: opam install . --deps-only --with-test
+
+      - run: opam exec -- dune build
+
+      - run: opam exec -- dune runtest

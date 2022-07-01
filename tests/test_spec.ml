@@ -140,7 +140,7 @@ let () =
 # header"
        [Ulp [[Paragraph [Omd.Text "A"]];
              [Paragraph [Omd.Text "B"]; Code_block ("", "code")]];
-        NL; H1 [Text "header"]];
+        NL; NL; H1 [Text "header"]];
 
   (* Code
    ***********************************************************************)
