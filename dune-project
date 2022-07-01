@@ -24,4 +24,5 @@ package installs both the OMD library and the command line tool `omd`.")
  (tags (org:ocamllabs org:mirage))
  (depends
   (ocaml (>= 4.04))
-   base-bigarray))
+  base-bigarray
+  base-bytes))
