@@ -4,7 +4,10 @@
  (modules :standard \ omd_main)
  (flags
   (:standard -w -50-6-27-32-39-33-35))
- (public_name omd))
+ (public_name omd)
+ (libraries
+   bigarray
+   bytes))
 
 (executable
  (name omd_main)
