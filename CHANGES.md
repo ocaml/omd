@@ -1,6 +1,8 @@
 unreleased
 ----------
 
+- Update parser to support CommonMark Spec 0.30 (#266, @SquidDev)
+
 - Preserve the order of input files in the HTML output to stdout (#258,
   @patricoferris)
 
