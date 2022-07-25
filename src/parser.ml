@@ -915,10 +915,12 @@ module Pre = struct
     | _ :: xs -> find_next_closer_emph xs
     | [] -> None
 
-  (* From the spec: "If one of the delimiters can both open and close emphasis, then the sum of the lengths
-      of the delimiter runs containing the opening and closing delimiters must not be
-      a multiple of 3 unless both lengths are multiples of 3" *)
-  let is_match n1 n2 =
+  (* Checks the lengths of two different emphasis delimiters to see if there can be a match.
+
+     From the spec: "If one of the delimiters can both open and close emphasis, then the sum of the lengths
+       of the delimiter runs containing the opening and closing delimiters must not be
+       a multiple of 3 unless both lengths are multiples of 3" *)
+  let is_emph_match n1 n2 =
     (*
       - *foo**bar**baz*
     
@@ -959,8 +961,8 @@ module Pre = struct
         let rec loop acc = function
           | (Emph (_, post, q2, n2) as x) :: xs1 as xs
             when is_closer x && q1 = q2 ->
-              (* At that point ☝️ we have an openener followed by a closer. Both are of the same style (either * or _) *)
-              if is_opener x && not (is_match n1 n2) then
+              (* At this point we have an openener followed by a closer. Both are of the same style (either * or _) *)
+              if is_opener x && not (is_emph_match n1 n2) then
                 (*
                  The second delimiter (the closer) is also an opener, and both delimiters don't match together,
                  according to the "mod 3" rule. In that case, we check if the next delimiter can match.
@@ -975,7 +977,7 @@ module Pre = struct
                                    considered as regular text. The end result will be: <em>foo**bar</em>baz*
                  *)
                 match find_next_emph xs1 with
-                | Some (_, _, _, n3) when is_match n3 n2 ->
+                | Some (_, _, _, n3) when is_emph_match n3 n2 ->
                     let xs' = parse_emph xs in
                     loop acc xs'
                 | _ -> loop (x :: acc) xs1
