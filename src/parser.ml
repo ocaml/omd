@@ -962,7 +962,8 @@ module Pre = struct
           | (Emph (_, post, q2, n2) as x2) :: xs1 as xs
             when is_closer x2 && q1 = q2 ->
               (* At this point we have an openener followed by a closer. Both are of the same style (either * or _) *)
-              if is_opener x2 && not (is_emph_match n1 n2) then
+              if (is_opener x2 || is_closer x1) && not (is_emph_match n1 n2)
+              then
                 (*
                  The second delimiter (the closer) is also an opener, and both delimiters don't match together,
                  according to the "mod 3" rule. In that case, we check if the next delimiter can match.
