@@ -957,12 +957,12 @@ module Pre = struct
     else true
 
   let rec parse_emph = function
-    | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
+    | (Emph (pre, _, q1, n1) as x1) :: xs when is_opener x1 ->
         let rec loop acc = function
-          | (Emph (_, post, q2, n2) as x) :: xs1 as xs
-            when is_closer x && q1 = q2 ->
+          | (Emph (_, post, q2, n2) as x2) :: xs1 as xs
+            when is_closer x2 && q1 = q2 ->
               (* At this point we have an openener followed by a closer. Both are of the same style (either * or _) *)
-              if is_opener x && not (is_emph_match n1 n2) then
+              if is_opener x2 && not (is_emph_match n1 n2) then
                 (*
                  The second delimiter (the closer) is also an opener, and both delimiters don't match together,
                  according to the "mod 3" rule. In that case, we check if the next delimiter can match.
@@ -980,7 +980,7 @@ module Pre = struct
                 | Some (_, _, _, n3) when is_emph_match n3 n2 ->
                     let xs' = parse_emph xs in
                     loop acc xs'
-                | _ -> loop (x :: acc) xs1
+                | _ -> loop (x2 :: acc) xs1
               else
                 let xs =
                   if n1 >= 2 && n2 >= 2 then
@@ -1001,7 +1001,7 @@ module Pre = struct
                   else r
                 in
                 parse_emph r
-          | (Emph (_, _, q2, _) as x) :: xs1 as xs when is_opener x ->
+          | (Emph (_, _, q2, _) as x2) :: xs1 as xs when is_opener x2 ->
               (*
                This case happens when we encounter a second opener delimiter. We look ahead for the next closer,
                and if the next closer is of the same style, we can match them together.
@@ -1020,12 +1020,12 @@ module Pre = struct
                 | None -> false
                 | Some (_, _, q3, _) -> q2 = q3
               in
-              if not is_next_closer_same then loop (x :: acc) xs1
+              if not is_next_closer_same then loop (x2 :: acc) xs1
               else
                 let xs' = parse_emph xs in
-                if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
+                if xs' = xs then loop (x2 :: acc) xs1 else loop acc xs'
           | x :: xs -> loop (x :: acc) xs
-          | [] -> x :: List.rev acc
+          | [] -> x1 :: List.rev acc
         in
         loop [] xs
     | x :: xs -> x :: parse_emph xs
