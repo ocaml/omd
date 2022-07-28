@@ -1,0 +1,3 @@
+pin-depends: [
+  ["camlp-streams.dev" "git+https://github.com/dra27/camlp-streams#c9acc86161c800ee17d206058b3490d9da499fab"]
+]
