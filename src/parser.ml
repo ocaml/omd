@@ -1308,7 +1308,10 @@ let link_destination st =
         | Some '&' ->
             entity buf st;
             loop n
-        | Some (' ' | '\t' | '\x00' .. '\x1F' | '\x7F' | '\x80' .. '\x9F')
+        | Some
+            ( ' ' | '\t'
+            | '\x00' .. '\x1F' (* control chars *)
+            | '\x7F' (* control char *) )
         | None ->
             if n > 0 || Buffer.length buf = 0 then raise Fail;
             Buffer.contents buf
