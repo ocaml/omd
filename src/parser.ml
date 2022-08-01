@@ -904,33 +904,129 @@ module Pre = struct
     | Emph (_, _, Underscore, n) -> Text ([], String.make n '_')
     | R x -> x
 
+  let rec find_next_emph = function
+    | Emph (pre, post, style, n) :: _ -> Some (pre, post, style, n)
+    | _ :: xs -> find_next_emph xs
+    | [] -> None
+
+  let rec find_next_closer_emph = function
+    | (Emph (pre, post, style, n) as e) :: _ when is_closer e ->
+        Some (pre, post, style, n)
+    | _ :: xs -> find_next_closer_emph xs
+    | [] -> None
+
+  (* Checks the lengths of two different emphasis delimiters to see if there can be a match.
+
+     From the spec: "If one of the delimiters can both open and close emphasis, then the sum of the lengths
+       of the delimiter runs containing the opening and closing delimiters must not be
+       a multiple of 3 unless both lengths are multiples of 3" *)
+  let is_emph_match n1 n2 =
+    (*
+      - *foo**bar**baz*
+    
+            *foo** -> the second delimiter ** is both an opening and closing delimiter. 
+                      The sum of the length of both delimiters is 3, so they can't be matched.
+            
+            **bar** -> they are both opening and closing delemiters. 
+                       Their sum is 4 which is not a multiple of 3 so they can be matched to produce <strong>bar</strong>
+    
+            The end result is: <em>foo<strong>bar</strong>baz</em>
+    
+      - *foo***bar**baz*
+    
+            *foo*** -> *** is both an opening and closing delimiter. 
+                       Their sum is 4 so they can be matched to produce: <em>foo</em>**
+            
+            **bar** -> they are both opening and closing delemiters. 
+                       Their sum is 4 which is not a multiple of 3 so they can be matched to produce <strong>bar</strong>
+    
+            The end result is: <em>foo</em><strong>bar</strong>baz*
+    
+      - ***foo***bar**baz*
+    
+            ***foo*** -> the second delimiter *** is both an opening and closing delimiter. 
+                         Their sum is 6 which is a multiple of 3. However, both lengths are multiples of 3
+                         so they can be matched to produce: <em><strong>foo</strong></em>
+            
+            bar**baz* -> ** is both an opening and closing delimiter.
+                         Their sum is 3 so they can't be matched
+    
+            The end result is: <em><strong>foo</strong></em>bar**baz*
+      *)
+    if (n1 + n2) mod 3 = 0 && n1 mod 3 != 0 && n2 mod 3 != 0 then false
+    else true
+
   let rec parse_emph = function
-    | (Emph (pre, _, q1, n1) as x) :: xs when is_opener x ->
+    | (Emph (pre, _, q1, n1) as x1) :: xs when is_opener x1 ->
         let rec loop acc = function
-          | (Emph (_, post, q2, n2) as x) :: xs when is_closer x && q1 = q2 ->
-              let xs =
-                if n1 >= 2 && n2 >= 2 then
-                  if n2 > 2 then Emph (Punct, post, q2, n2 - 2) :: xs else xs
-                else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs
-                else xs
+          | (Emph (_, post, q2, n2) as x2) :: xs1 as xs
+            when is_closer x2 && q1 = q2 ->
+              (* At this point we have an openener followed by a closer. Both are of the same style (either * or _) *)
+              if (is_opener x2 || is_closer x1) && not (is_emph_match n1 n2)
+              then
+                (*
+                 The second delimiter (the closer) is also an opener, and both delimiters don't match together,
+                 according to the "mod 3" rule. In that case, we check if the next delimiter can match.
+                
+                   *foo**bar**baz*  The second delimiter that's both an opener/closer ( ** before bar)
+                                    matches with the next delimiter ( ** after bar). They'll become
+                                    <strong>bar</strong>. The end result will be: <em>foo<strong>bar</strong>baz</em>
+                
+                
+                   *foo**bar*baz*  The second delimiter that's both an opener/closer ( ** before bar)
+                                   doesn't match with the next delimiter ( * after bar). **bar will be
+                                   considered as regular text. The end result will be: <em>foo**bar</em>baz*
+                 *)
+                match find_next_emph xs1 with
+                | Some (_, _, _, n3) when is_emph_match n3 n2 ->
+                    let xs' = parse_emph xs in
+                    loop acc xs'
+                | _ -> loop (x2 :: acc) xs1
+              else
+                let xs =
+                  if n1 >= 2 && n2 >= 2 then
+                    if n2 > 2 then Emph (Other, post, q2, n2 - 2) :: xs1
+                    else xs1
+                  else if n2 > 1 then Emph (Punct, post, q2, n2 - 1) :: xs1
+                  else xs1
+                in
+                let r =
+                  let il = concat (List.map to_r (parse_emph (List.rev acc))) in
+                  if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
+                  else R (Emph ([], il)) :: xs
+                in
+                let r =
+                  if n1 >= 2 && n2 >= 2 then
+                    if n1 > 2 then Emph (pre, Other, q1, n1 - 2) :: r else r
+                  else if n1 > 1 then Emph (pre, Punct, q1, n1 - 1) :: r
+                  else r
+                in
+                parse_emph r
+          | (Emph (_, _, q2, _) as x2) :: xs1 as xs when is_opener x2 ->
+              (*
+               This case happens when we encounter a second opener delimiter. We look ahead for the next closer,
+               and if the next closer is of the same style, we can match them together.
+            
+                 *foo _bar_ baz_  The second opener (_ before `bar`) is of the same style as the next closer
+                                  (_ after `bar`). We can match them to produce <em>bar</em>
+                                  The end result will be: *foo <em>bar</em> baz_
+            
+              
+                 *foo _bar* baz_  The second opener (_ before `bar`) is not of the same style as the next closer
+                                  ( * after `bar`). They can't be matched so we'll consider _bar as regular text.
+                                  The end result will be: <em>foo _bar</em> baz_
+               *)
+              let is_next_closer_same =
+                match find_next_closer_emph xs1 with
+                | None -> false
+                | Some (_, _, q3, _) -> q2 = q3
               in
-              let r =
-                let il = concat (List.map to_r (parse_emph (List.rev acc))) in
-                if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
-                else R (Emph ([], il)) :: xs
-              in
-              let r =
-                if n1 >= 2 && n2 >= 2 then
-                  if n1 > 2 then Emph (pre, Punct, q1, n1 - 2) :: r else r
-                else if n1 > 1 then Emph (pre, Punct, q1, n1 - 1) :: r
-                else r
-              in
-              parse_emph r
-          | (Emph _ as x) :: xs1 as xs when is_opener x ->
-              let xs' = parse_emph xs in
-              if xs' = xs then loop (x :: acc) xs1 else loop acc xs'
+              if not is_next_closer_same then loop (x2 :: acc) xs1
+              else
+                let xs' = parse_emph xs in
+                if xs' = xs then loop (x2 :: acc) xs1 else loop acc xs'
           | x :: xs -> loop (x :: acc) xs
-          | [] -> x :: List.rev acc
+          | [] -> x1 :: List.rev acc
         in
         loop [] xs
     | x :: xs -> x :: parse_emph xs
