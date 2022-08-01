@@ -15,7 +15,7 @@ jobs:
           - windows-latest
         ocaml-compiler:
           # Decision on version matrix informed by https://discuss.ocaml.org/t/which-ocaml-compiler-versions-should-we-run-against-in-ci/7933/2
-          - 4.04.2
+          - 4.05.0
           - 4.13.x
     runs-on: ${{ matrix.os }}
     steps:
