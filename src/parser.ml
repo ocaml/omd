@@ -1087,17 +1087,17 @@ let link_label allow_balanced_brackets st =
 
 let normalize s =
   let buf = Buffer.create (String.length s) in
-  let rec loop start seen_ws i =
+  let rec loop ~start ~seen_ws i =
     if i >= String.length s then Buffer.contents buf
     else
       match s.[i] with
-      | ' ' | '\t' | '\010' .. '\013' -> loop start true (succ i)
+      | ' ' | '\t' | '\010' .. '\013' -> loop ~start ~seen_ws:true (succ i)
       | _ as c ->
           if (not start) && seen_ws then Buffer.add_char buf ' ';
           Buffer.add_char buf (Char.lowercase_ascii c);
-          loop false false (succ i)
+          loop ~start:false ~seen_ws:false (succ i)
   in
-  loop true false 0
+  loop ~start:true ~seen_ws:false 0
 
 let tag_name st =
   match peek_exn st with
