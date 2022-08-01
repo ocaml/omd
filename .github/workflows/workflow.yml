@@ -1,8 +1,10 @@
 name: Main workflow
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   build:
@@ -15,8 +17,8 @@ jobs:
           - windows-latest
         ocaml-compiler:
           # Decision on version matrix informed by https://discuss.ocaml.org/t/which-ocaml-compiler-versions-should-we-run-against-in-ci/7933/2
-          - 4.04.2
-          - 4.13.x
+          - 4.05.0
+          - 4.14.x
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -42,10 +44,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use OCaml 4.13.x
+      - name: Use OCaml 4.14.x
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: 4.13.x
+          ocaml-compiler: 4.14.x
           dune-cache: true
 
       - name: Lint doc
@@ -57,10 +59,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use OCaml 4.13.x
+      - name: Use OCaml 4.14.x
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: 4.13.x
+          ocaml-compiler: 4.14.x
           dune-cache: true
 
       - name: Lint fmt
@@ -72,10 +74,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use OCaml 4.13.x
+      - name: Use OCaml 4.14.x
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: 4.13.x
+          ocaml-compiler: 4.14.x
           dune-cache: true
 
       - name: Lint opam
