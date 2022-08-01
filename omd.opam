@@ -22,7 +22,7 @@ homepage: "https://github.com/ocaml/omd"
 bug-reports: "https://github.com/ocaml/omd/issues"
 depends: [
   "dune" {>= "2.7"}
-  "ocaml" {>= "4.04"}
+  "ocaml" {>= "4.05"}
   "dune-build-info" {>= "2.7"}
   "odoc" {with-doc}
 ]
