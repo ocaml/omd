@@ -1085,11 +1085,6 @@ let link_label allow_balanced_brackets st =
   in
   loop 0 false
 
-type add_uchar_result =
-  { start : bool
-  ; seen_ws : bool
-  }
-
 (* based on https://erratique.ch/software/uucp/doc/Uucp/Case/index.html#caselesseq *)
 let normalize s =
   let canonical_caseless_key s =
@@ -1119,20 +1114,21 @@ let normalize s =
       add
     in
     let uspace = `Uchar (Uchar.of_char ' ') in
-    let add_uchar { start; seen_ws } _ = function
+    let add_uchar seen_ws _ = function
       | `Malformed _ ->
           add_nfd (`Uchar Uutf.u_rep);
-          { start = false; seen_ws = false }
+          false
       | `Uchar u as uchar ->
-          if Uucp.White.is_white_space u then { start; seen_ws = true }
+          if Uucp.White.is_white_space u then
+            (if not seen_ws then add_nfd uspace; true)
           else (
-            if (not start) && seen_ws then add_nfd uspace;
             add_nfd uchar;
-            { start = false; seen_ws = false })
+            seen_ws
+          )
     in
-    let (_ : add_uchar_result) =
-      Uutf.String.fold_utf_8 add_uchar { start = true; seen_ws = false } s
-    in
+    (* flag used to eliminate repeated white space *)
+    let seen_ws = false in
+    ignore(Uutf.String.fold_utf_8 add_uchar seen_ws s);
     add_nfd `End;
     to_nfd_and_utf_8 `End;
     Buffer.contents b
