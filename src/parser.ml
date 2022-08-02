@@ -1100,7 +1100,7 @@ let normalize s =
       in
       add
     in
-    let add =
+    let add_nfd =
       let n = Uunf.create `NFD in
       let rec add v =
         match Uunf.add n v with
@@ -1113,26 +1113,20 @@ let normalize s =
       in
       add
     in
-    let fold () =
-      let start = ref true in
-      let seen_ws = ref false in
-      let add_uchar () _ = function
-        | `Malformed _ ->
-            start := false;
-            seen_ws := false;
-            add (`Uchar Uutf.u_rep)
-        | `Uchar u as uchar ->
-            if Uucp.White.is_white_space u then seen_ws := true
-            else (
-              if (not !start) && !seen_ws then add (`Uchar (Uchar.of_char ' '));
-              add uchar;
-              start := false;
-              seen_ws := false)
-      in
-      add_uchar
+    let uspace = `Uchar (Uchar.of_char ' ') in
+    let add_uchar (start, seen_ws) _ = function
+      | `Malformed _ ->
+          add_nfd (`Uchar Uutf.u_rep);
+          (false, false)
+      | `Uchar u as uchar ->
+          if Uucp.White.is_white_space u then (start, true)
+          else (
+            if (not start) && seen_ws then add_nfd uspace;
+            add_nfd uchar;
+            (false, false))
     in
-    Uutf.String.fold_utf_8 (fold ()) () s;
-    add `End;
+    let (_ : bool * bool) = Uutf.String.fold_utf_8 add_uchar (true, false) s in
+    add_nfd `End;
     to_nfd_and_utf_8 `End;
     Buffer.contents b
   in
