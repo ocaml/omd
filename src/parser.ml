@@ -991,7 +991,7 @@ module Pre = struct
                   else xs1
                 in
                 let r =
-                  let il = concat (List.map to_r (parse_emph (List.rev acc))) in
+                  let il = concat (List.map to_r (List.rev acc)) in
                   if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
                   else R (Emph ([], il)) :: xs
                 in
