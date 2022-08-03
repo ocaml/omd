@@ -1119,16 +1119,16 @@ let normalize s =
           add_nfd (`Uchar Uutf.u_rep);
           false
       | `Uchar u as uchar ->
-          if Uucp.White.is_white_space u then
-            (if not seen_ws then add_nfd uspace; true)
+          if Uucp.White.is_white_space u then (
+            if not seen_ws then add_nfd uspace;
+            true)
           else (
             add_nfd uchar;
-            seen_ws
-          )
+            seen_ws)
     in
     (* flag used to eliminate repeated white space *)
     let seen_ws = false in
-    ignore(Uutf.String.fold_utf_8 add_uchar seen_ws s);
+    ignore (Uutf.String.fold_utf_8 add_uchar seen_ws s);
     add_nfd `End;
     to_nfd_and_utf_8 `End;
     Buffer.contents b
