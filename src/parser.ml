@@ -1085,19 +1085,59 @@ let link_label allow_balanced_brackets st =
   in
   loop 0 false
 
+type add_uchar_result =
+  { start : bool
+  ; seen_ws : bool
+  }
+
+(* based on https://erratique.ch/software/uucp/doc/Uucp/Case/index.html#caselesseq *)
 let normalize s =
-  let buf = Buffer.create (String.length s) in
-  let rec loop ~start ~seen_ws i =
-    if i >= String.length s then Buffer.contents buf
-    else
-      match s.[i] with
-      | ' ' | '\t' | '\010' .. '\013' -> loop ~start ~seen_ws:true (succ i)
-      | _ as c ->
-          if (not start) && seen_ws then Buffer.add_char buf ' ';
-          Buffer.add_char buf (Char.lowercase_ascii c);
-          loop ~start:false ~seen_ws:false (succ i)
+  let canonical_caseless_key s =
+    let b = Buffer.create (String.length s * 2) in
+    let to_nfd_and_utf_8 =
+      let n = Uunf.create `NFD in
+      let rec add v =
+        match Uunf.add n v with
+        | `Await | `End -> ()
+        | `Uchar u ->
+            Uutf.Buffer.add_utf_8 b u;
+            add `Await
+      in
+      add
+    in
+    let add_nfd =
+      let n = Uunf.create `NFD in
+      let rec add v =
+        match Uunf.add n v with
+        | `Await | `End -> ()
+        | `Uchar u ->
+            (match Uucp.Case.Fold.fold u with
+            | `Self -> to_nfd_and_utf_8 (`Uchar u)
+            | `Uchars us -> List.iter (fun u -> to_nfd_and_utf_8 (`Uchar u)) us);
+            add `Await
+      in
+      add
+    in
+    let uspace = `Uchar (Uchar.of_char ' ') in
+    let add_uchar { start; seen_ws } _ = function
+      | `Malformed _ ->
+          add_nfd (`Uchar Uutf.u_rep);
+          { start = false; seen_ws = false }
+      | `Uchar u as uchar ->
+          if Uucp.White.is_white_space u then { start; seen_ws = true }
+          else (
+            if (not start) && seen_ws then add_nfd uspace;
+            add_nfd uchar;
+            { start = false; seen_ws = false })
+    in
+    let (_ : add_uchar_result) =
+      Uutf.String.fold_utf_8 add_uchar { start = true; seen_ws = false } s
+    in
+    add_nfd `End;
+    to_nfd_and_utf_8 `End;
+    Buffer.contents b
   in
-  loop ~start:true ~seen_ws:false 0
+  canonical_caseless_key s
 
 let tag_name st =
   match peek_exn st with
