@@ -8,7 +8,7 @@ let protect ~finally f =
       finally ();
       r
 
-let disabled = [ 215; 216; 519 ]
+let disabled = [ 519 ]
 
 let with_open_in fn f =
   let ic = open_in fn in
