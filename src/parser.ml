@@ -858,7 +858,9 @@ module Pre = struct
 
   type link_kind =
     | Img
-    | Url
+    (* Is the delimiter active.
+       See https://spec.commonmark.org/0.30/#delimiter-stack *)
+    | Url of bool
 
   type t =
     | Bang_left_bracket
@@ -899,7 +901,7 @@ module Pre = struct
   let to_r = function
     | Bang_left_bracket -> Text ([], "![")
     | Left_bracket Img -> Text ([], "![")
-    | Left_bracket Url -> Text ([], "[")
+    | Left_bracket (Url _) -> Text ([], "[")
     | Emph (_, _, Star, n) -> Text ([], String.make n '*')
     | Emph (_, _, Underscore, n) -> Text ([], String.make n '_')
     | R x -> x
@@ -1685,7 +1687,7 @@ let rec inline defs st =
                 let def = { label = lab1; destination; title } in
                 match kind with
                 | Pre.Img -> Image (attr, def)
-                | Url -> Link (attr, def)
+                | Url _ -> Link (attr, def)
               in
               loop (Pre.R r :: text acc) st
           | None ->
@@ -1787,10 +1789,11 @@ let rec inline defs st =
     | ']' ->
         junk st;
         let acc = text acc in
-        let rec aux seen_link xs = function
-          | Pre.Left_bracket Url :: _ when seen_link ->
+        let rec aux xs = function
+          | Pre.Left_bracket (Url false) :: acc' ->
               Buffer.add_char buf ']';
-              loop acc st
+              let acc' = List.rev_append (Pre.R (Text ([], "[")) :: xs) acc' in
+              loop acc' st
           | Left_bracket k :: acc' -> (
               match peek st with
               | Some '(' -> (
@@ -1802,7 +1805,7 @@ let rec inline defs st =
                         let def = { label; destination; title } in
                         match k with
                         | Img -> Image (attr, def)
-                        | Url -> Link (attr, def)
+                        | Url _ -> Link (attr, def)
                       in
                       loop (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1827,7 +1830,7 @@ let rec inline defs st =
                           let r =
                             match k with
                             | Img -> Image (attr, def)
-                            | Url -> Link (attr, def)
+                            | Url _ -> Link (attr, def)
                           in
                           loop (Pre.R r :: acc') st
                       | None ->
@@ -1847,14 +1850,24 @@ let rec inline defs st =
               | Some _ | None ->
                   Buffer.add_char buf ']';
                   loop acc st)
-          | (Pre.R (Link _) as x) :: acc' -> aux true (x :: xs) acc'
-          | x :: acc' -> aux seen_link (x :: xs) acc'
+          | (Pre.R (Link _) as x) :: acc' ->
+              let acc' =
+                List.map
+                  (fun p ->
+                    match p with
+                    | Pre.Left_bracket (Url true) ->
+                        Pre.Left_bracket (Url false)
+                    | x -> x)
+                  acc'
+              in
+              aux (x :: xs) acc'
+          | x :: acc' -> aux (x :: xs) acc'
           | [] ->
               Buffer.add_char buf ']';
               loop acc st
         in
-        aux false [] acc
-    | '[' -> reference_link Url acc st
+        aux [] acc
+    | '[' -> reference_link (Url true) acc st
     | ('*' | '_') as c ->
         let pre = peek_before ' ' st in
         let f post n st =
