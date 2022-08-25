@@ -1719,13 +1719,13 @@ let rec inline defs st =
     | exception Fail ->
         junk st;
         loop (Left_bracket kind :: text acc) st
-  and loop acc st =
+  and loop ~seen_link acc st =
     match peek_exn st with
     | '<' as c -> (
         match protect autolink st with
         | def ->
             let attr = inline_attribute_string st in
-            loop (Pre.R (Link (attr, def)) :: text acc) st
+            loop ~seen_link (Pre.R (Link (attr, def)) :: text acc) st
         | exception Fail -> (
             match
               protect
@@ -1737,60 +1737,61 @@ let rec inline defs st =
                 ||| processing_instruction)
                 st
             with
-            | tag -> loop (Pre.R (Html ([], tag)) :: text acc) st
+            | tag -> loop ~seen_link (Pre.R (Html ([], tag)) :: text acc) st
             | exception Fail ->
                 junk st;
                 Buffer.add_char buf c;
-                loop acc st))
+                loop ~seen_link acc st))
     | '\n' ->
         junk st;
         sp st;
-        loop (Pre.R (Soft_break []) :: text acc) st
+        loop ~seen_link (Pre.R (Soft_break []) :: text acc) st
     | ' ' as c -> (
         junk st;
         match peek st with
         | Some ' ' -> (
             match protect (many space >>> char '\n' >>> many space) st with
-            | () -> loop (Pre.R (Hard_break []) :: text acc) st
+            | () -> loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
             | exception Fail ->
                 junk st;
                 Buffer.add_string buf "  ";
-                loop acc st)
-        | Some '\n' -> loop acc st
+                loop ~seen_link acc st)
+        | Some '\n' -> loop ~seen_link acc st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
-    | '`' -> loop (inline_pre buf acc st) st
+            loop ~seen_link acc st)
+    | '`' -> loop ~seen_link (inline_pre buf acc st) st
     | '\\' as c -> (
         junk st;
         match peek st with
         | Some '\n' ->
             junk st;
-            loop (Pre.R (Hard_break []) :: text acc) st
+            loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
         | Some c when is_punct c ->
             junk st;
             Buffer.add_char buf c;
-            loop acc st
+            loop ~seen_link acc st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
+            loop ~seen_link acc st)
     | '!' as c -> (
         junk st;
         match peek st with
-        | Some '[' -> reference_link Img (text acc) st
+        | Some '[' -> reference_link ~seen_link Img (text acc) st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
+            loop ~seen_link acc st)
     | '&' ->
         entity buf st;
-        loop acc st
+        loop ~seen_link acc st
     | ']' ->
         junk st;
         let acc = text acc in
-        let rec aux seen_link xs = function
-          | Pre.Left_bracket Url :: _ when seen_link ->
+        let rec aux ~seen_link xs = function
+          | Pre.Left_bracket Url :: acc' when seen_link ->
               Buffer.add_char buf ']';
-              loop acc st
+              let acc' = List.rev_append (Pre.R (Text ([], "[")) :: xs) acc' in
+              loop ~seen_link acc' st
           | Left_bracket k :: acc' -> (
               match peek st with
               | Some '(' -> (
@@ -1804,10 +1805,10 @@ let rec inline defs st =
                         | Img -> Image (attr, def)
                         | Url -> Link (attr, def)
                       in
-                      loop (Pre.R r :: acc') st
+                      loop ~seen_link (Pre.R r :: acc') st
                   | exception Fail ->
                       Buffer.add_char buf ']';
-                      loop acc st)
+                      loop ~seen_link acc st)
               | Some '[' -> (
                   let label = Pre.parse_emph xs in
                   let off1 = pos st in
@@ -1829,39 +1830,39 @@ let rec inline defs st =
                             | Img -> Image (attr, def)
                             | Url -> Link (attr, def)
                           in
-                          loop (Pre.R r :: acc') st
+                          loop ~seen_link (Pre.R r :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
                           let acc = Pre.R label :: text acc' in
                           Buffer.add_char buf ']';
                           set_pos st off1;
-                          loop acc st)
+                          loop ~seen_link acc st)
                   | exception Fail ->
                       if k = Img then Buffer.add_char buf '!';
                       Buffer.add_char buf '[';
                       let acc = Pre.R label :: text acc in
                       Buffer.add_char buf ']';
                       set_pos st off1;
-                      loop acc st)
+                      loop ~seen_link acc st)
               | Some _ | None ->
                   Buffer.add_char buf ']';
-                  loop acc st)
-          | (Pre.R (Link _) as x) :: acc' -> aux true (x :: xs) acc'
-          | x :: acc' -> aux seen_link (x :: xs) acc'
+                  loop ~seen_link acc st)
+          | (Pre.R (Link _) as x) :: acc' -> aux ~seen_link:true (x :: xs) acc'
+          | x :: acc' -> aux ~seen_link (x :: xs) acc'
           | [] ->
               Buffer.add_char buf ']';
-              loop acc st
+              loop ~seen_link acc st
         in
-        aux false [] acc
-    | '[' -> reference_link Url acc st
+        aux ~seen_link [] acc
+    | '[' -> reference_link ~seen_link Url acc st
     | ('*' | '_') as c ->
         let pre = peek_before ' ' st in
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
           let e = if c = '*' then Pre.Star else Pre.Underscore in
-          loop (Pre.Emph (pre, post, e, n) :: text acc) st
+          loop ~seen_link (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =
           match peek st with
@@ -1875,10 +1876,10 @@ let rec inline defs st =
     | _ as c ->
         junk st;
         Buffer.add_char buf c;
-        loop acc st
+        loop ~seen_link acc st
     | exception Fail -> Pre.parse_emph (List.rev (text acc))
   in
-  loop [] st
+  loop ~seen_link:false [] st
 
 let sp3 st =
   match peek_exn st with
