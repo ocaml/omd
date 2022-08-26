@@ -1022,9 +1022,7 @@ module Pre = struct
                 | Some (_, _, q3, _) -> q2 = q3
               in
               if not is_next_closer_same then loop (x2 :: acc) xs1
-              else
-                let xs' = parse_emph xs in
-                if xs' = xs then loop (x2 :: acc) xs1 else loop acc xs'
+              else loop acc (parse_emph xs)
           | x :: xs -> loop (x :: acc) xs
           | [] -> x1 :: List.rev acc
         in
