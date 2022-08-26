@@ -39,6 +39,11 @@ module Pre = struct
     let i = loop 0 in
     if i > 0 then String.sub s i (String.length s - i) else s
 
+  let link_reference_definitions s =
+    let defs, off = Parser.link_reference_definitions (Parser.P.of_string s) in
+    let s = String.sub s off (String.length s - off) |> String.trim in
+    (defs, s)
+
   let rec close link_defs { blocks; next } =
     let finish = finish link_defs in
     match next with
@@ -113,8 +118,20 @@ module Pre = struct
         | Lhtml (true, _) ) ) ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
-        let text = String.trim (String.concat "\n" (List.rev lines)) in
-        { blocks = Heading ([], level, text) :: blocks; next = Rempty }
+        let text = concat (List.map trim_left lines) in
+        let defs, text = link_reference_definitions text in
+        link_defs := defs @ !link_defs;
+        if text = "" then
+          (* Happens when there's nothing between the [link reference definition] and the [setext heading].
+
+               [foo]: /foo-url
+               ===
+               [foo]
+
+             In that case, there's nothing to make as Heading. We can simply add `===` as Rparagraph
+          *)
+          { blocks; next = Rparagraph [ Sub.to_string s ] }
+        else { blocks = Heading ([], level, text) :: blocks; next = Rempty }
     | Rparagraph lines, _ ->
         { blocks; next = Rparagraph (Sub.to_string s :: lines) }
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _)

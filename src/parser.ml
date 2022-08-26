@@ -1085,19 +1085,59 @@ let link_label allow_balanced_brackets st =
   in
   loop 0 false
 
+type add_uchar_result =
+  { start : bool
+  ; seen_ws : bool
+  }
+
+(* based on https://erratique.ch/software/uucp/doc/Uucp/Case/index.html#caselesseq *)
 let normalize s =
-  let buf = Buffer.create (String.length s) in
-  let rec loop ~start ~seen_ws i =
-    if i >= String.length s then Buffer.contents buf
-    else
-      match s.[i] with
-      | ' ' | '\t' | '\010' .. '\013' -> loop ~start ~seen_ws:true (succ i)
-      | _ as c ->
-          if (not start) && seen_ws then Buffer.add_char buf ' ';
-          Buffer.add_char buf (Char.lowercase_ascii c);
-          loop ~start:false ~seen_ws:false (succ i)
+  let canonical_caseless_key s =
+    let b = Buffer.create (String.length s * 2) in
+    let to_nfd_and_utf_8 =
+      let n = Uunf.create `NFD in
+      let rec add v =
+        match Uunf.add n v with
+        | `Await | `End -> ()
+        | `Uchar u ->
+            Uutf.Buffer.add_utf_8 b u;
+            add `Await
+      in
+      add
+    in
+    let add_nfd =
+      let n = Uunf.create `NFD in
+      let rec add v =
+        match Uunf.add n v with
+        | `Await | `End -> ()
+        | `Uchar u ->
+            (match Uucp.Case.Fold.fold u with
+            | `Self -> to_nfd_and_utf_8 (`Uchar u)
+            | `Uchars us -> List.iter (fun u -> to_nfd_and_utf_8 (`Uchar u)) us);
+            add `Await
+      in
+      add
+    in
+    let uspace = `Uchar (Uchar.of_char ' ') in
+    let add_uchar { start; seen_ws } _ = function
+      | `Malformed _ ->
+          add_nfd (`Uchar Uutf.u_rep);
+          { start = false; seen_ws = false }
+      | `Uchar u as uchar ->
+          if Uucp.White.is_white_space u then { start; seen_ws = true }
+          else (
+            if (not start) && seen_ws then add_nfd uspace;
+            add_nfd uchar;
+            { start = false; seen_ws = false })
+    in
+    let (_ : add_uchar_result) =
+      Uutf.String.fold_utf_8 add_uchar { start = true; seen_ws = false } s
+    in
+    add_nfd `End;
+    to_nfd_and_utf_8 `End;
+    Buffer.contents b
   in
-  loop ~start:true ~seen_ws:false 0
+  canonical_caseless_key s
 
 let tag_name st =
   match peek_exn st with
@@ -1404,8 +1444,7 @@ let link_destination st =
         | Some '&' ->
             entity buf st;
             loop n
-        | Some (' ' | '\t' | '\x00' .. '\x1F' | '\x7F' | '\x80' .. '\x9F')
-        | None ->
+        | Some (' ' | '\t' | '\x00' .. '\x1F' | '\x7F') | None ->
             if n > 0 || Buffer.length buf = 0 then raise Fail;
             Buffer.contents buf
         | Some c ->
@@ -1680,13 +1719,13 @@ let rec inline defs st =
     | exception Fail ->
         junk st;
         loop (Left_bracket kind :: text acc) st
-  and loop acc st =
+  and loop ~seen_link acc st =
     match peek_exn st with
     | '<' as c -> (
         match protect autolink st with
         | def ->
             let attr = inline_attribute_string st in
-            loop (Pre.R (Link (attr, def)) :: text acc) st
+            loop ~seen_link (Pre.R (Link (attr, def)) :: text acc) st
         | exception Fail -> (
             match
               protect
@@ -1698,60 +1737,61 @@ let rec inline defs st =
                 ||| processing_instruction)
                 st
             with
-            | tag -> loop (Pre.R (Html ([], tag)) :: text acc) st
+            | tag -> loop ~seen_link (Pre.R (Html ([], tag)) :: text acc) st
             | exception Fail ->
                 junk st;
                 Buffer.add_char buf c;
-                loop acc st))
+                loop ~seen_link acc st))
     | '\n' ->
         junk st;
         sp st;
-        loop (Pre.R (Soft_break []) :: text acc) st
+        loop ~seen_link (Pre.R (Soft_break []) :: text acc) st
     | ' ' as c -> (
         junk st;
         match peek st with
         | Some ' ' -> (
             match protect (many space >>> char '\n' >>> many space) st with
-            | () -> loop (Pre.R (Hard_break []) :: text acc) st
+            | () -> loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
             | exception Fail ->
                 junk st;
                 Buffer.add_string buf "  ";
-                loop acc st)
-        | Some '\n' -> loop acc st
+                loop ~seen_link acc st)
+        | Some '\n' -> loop ~seen_link acc st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
-    | '`' -> loop (inline_pre buf acc st) st
+            loop ~seen_link acc st)
+    | '`' -> loop ~seen_link (inline_pre buf acc st) st
     | '\\' as c -> (
         junk st;
         match peek st with
         | Some '\n' ->
             junk st;
-            loop (Pre.R (Hard_break []) :: text acc) st
+            loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
         | Some c when is_punct c ->
             junk st;
             Buffer.add_char buf c;
-            loop acc st
+            loop ~seen_link acc st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
+            loop ~seen_link acc st)
     | '!' as c -> (
         junk st;
         match peek st with
-        | Some '[' -> reference_link Img (text acc) st
+        | Some '[' -> reference_link ~seen_link Img (text acc) st
         | Some _ | None ->
             Buffer.add_char buf c;
-            loop acc st)
+            loop ~seen_link acc st)
     | '&' ->
         entity buf st;
-        loop acc st
+        loop ~seen_link acc st
     | ']' ->
         junk st;
         let acc = text acc in
-        let rec aux seen_link xs = function
-          | Pre.Left_bracket Url :: _ when seen_link ->
+        let rec aux ~seen_link xs = function
+          | Pre.Left_bracket Url :: acc' when seen_link ->
               Buffer.add_char buf ']';
-              loop acc st
+              let acc' = List.rev_append (Pre.R (Text ([], "[")) :: xs) acc' in
+              loop ~seen_link acc' st
           | Left_bracket k :: acc' -> (
               match peek st with
               | Some '(' -> (
@@ -1765,10 +1805,10 @@ let rec inline defs st =
                         | Img -> Image (attr, def)
                         | Url -> Link (attr, def)
                       in
-                      loop (Pre.R r :: acc') st
+                      loop ~seen_link (Pre.R r :: acc') st
                   | exception Fail ->
                       Buffer.add_char buf ']';
-                      loop acc st)
+                      loop ~seen_link acc st)
               | Some '[' -> (
                   let label = Pre.parse_emph xs in
                   let off1 = pos st in
@@ -1790,39 +1830,39 @@ let rec inline defs st =
                             | Img -> Image (attr, def)
                             | Url -> Link (attr, def)
                           in
-                          loop (Pre.R r :: acc') st
+                          loop ~seen_link (Pre.R r :: acc') st
                       | None ->
                           if k = Img then Buffer.add_char buf '!';
                           Buffer.add_char buf '[';
                           let acc = Pre.R label :: text acc' in
                           Buffer.add_char buf ']';
                           set_pos st off1;
-                          loop acc st)
+                          loop ~seen_link acc st)
                   | exception Fail ->
                       if k = Img then Buffer.add_char buf '!';
                       Buffer.add_char buf '[';
                       let acc = Pre.R label :: text acc in
                       Buffer.add_char buf ']';
                       set_pos st off1;
-                      loop acc st)
+                      loop ~seen_link acc st)
               | Some _ | None ->
                   Buffer.add_char buf ']';
-                  loop acc st)
-          | (Pre.R (Link _) as x) :: acc' -> aux true (x :: xs) acc'
-          | x :: acc' -> aux seen_link (x :: xs) acc'
+                  loop ~seen_link acc st)
+          | (Pre.R (Link _) as x) :: acc' -> aux ~seen_link:true (x :: xs) acc'
+          | x :: acc' -> aux ~seen_link (x :: xs) acc'
           | [] ->
               Buffer.add_char buf ']';
-              loop acc st
+              loop ~seen_link acc st
         in
-        aux false [] acc
-    | '[' -> reference_link Url acc st
+        aux ~seen_link [] acc
+    | '[' -> reference_link ~seen_link Url acc st
     | ('*' | '_') as c ->
         let pre = peek_before ' ' st in
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
           let e = if c = '*' then Pre.Star else Pre.Underscore in
-          loop (Pre.Emph (pre, post, e, n) :: text acc) st
+          loop ~seen_link (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =
           match peek st with
@@ -1836,10 +1876,10 @@ let rec inline defs st =
     | _ as c ->
         junk st;
         Buffer.add_char buf c;
-        loop acc st
+        loop ~seen_link acc st
     | exception Fail -> Pre.parse_emph (List.rev (text acc))
   in
-  loop [] st
+  loop ~seen_link:false [] st
 
 let sp3 st =
   match peek_exn st with
