@@ -2,7 +2,12 @@ open Ast
 module Sub = Parser.Sub
 
 module Pre = struct
-  type container =
+  type t =
+    { blocks : attributes Raw.block list
+    ; next : container
+    }
+
+  and container =
     | Rblockquote of t
     | Rlist of
         list_type
@@ -21,12 +26,15 @@ module Pre = struct
         * attributes
     | Rindented_code of string list
     | Rhtml of Parser.html_kind * string list
-    | Rdef_list of string * string list
+    | Rdef_list of def_list_container
     | Rempty
 
-  and t =
-    { blocks : attributes Raw.block list
-    ; next : container
+  and def_list_container =
+    { term : string
+    ; defs : attributes Raw.block list list
+    ; indent : int
+    ; empty_line_seen : bool
+    ; state : t
     }
 
   let concat l = String.concat "\n" (List.rev l) ^ "\n"
@@ -62,13 +70,30 @@ module Pre = struct
         Code_block (attr, label, "") :: blocks
     | Rfenced_code (_, _, _kind, (label, _other), l, attr) ->
         Code_block (attr, label, concat l) :: blocks
-    | Rdef_list (term, defs) ->
-        let l, blocks =
-          match blocks with
-          | Definition_list (_, l) :: b -> (l, b)
-          | b -> ([], b)
+    | Rdef_list deflist ->
+        let def = finish deflist.state in
+        let defs = def :: deflist.defs in
+        let this_sp =
+          match def with
+          | [ Paragraph _ ] -> Tight
+          | _ -> Loose
         in
-        Definition_list ([], l @ [ { term; defs = List.rev defs } ]) :: blocks
+        let l, sp, blocks =
+          match blocks with
+          | Definition_list (_, sp, l) :: b ->
+              let sp =
+                match (sp, this_sp) with
+                | Tight, Tight -> Tight
+                | Loose, _
+                | _, Loose ->
+                    Loose
+              in
+              (l, sp, b)
+          | b -> ([], this_sp, b)
+        in
+        Definition_list
+          ([], sp, l @ [ { term = deflist.term; defs = List.rev defs } ])
+        :: blocks
     | Rindented_code l ->
         (* TODO: trim from the right *)
         let rec loop = function "" :: l -> loop l | _ as l -> l in
@@ -105,10 +130,19 @@ module Pre = struct
         }
     | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _) ->
         { blocks; next = Rparagraph [ Sub.to_string s ] }
-    | Rparagraph [ h ], Ldef_list def ->
-        { blocks; next = Rdef_list (h, [ def ]) }
-    | Rdef_list (term, defs), Ldef_list def ->
-        { blocks; next = Rdef_list (term, def :: defs) }
+    (* | Rparagraph [ h ], Ldef_list (indent, def) -> *)
+    | Rparagraph [ h ], Ldef_list (indent, def) ->
+        { blocks
+        ; next =
+            (* Rdef_list (h, indent, false, [], process empty (Sub.of_string def)) *)
+            Rdef_list
+              { term = h
+              ; indent
+              ; empty_line_seen = false
+              ; defs = []
+              ; state = process empty (Sub.of_string def)
+              }
+        }
     | Rparagraph _, Llist_item ((Ordered (1, _) | Bullet _), _, s1)
       when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
         process { blocks = close { blocks; next }; next = Rempty } s
@@ -145,10 +179,34 @@ module Pre = struct
         { blocks
         ; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)
         }
-    | Rdef_list (term, d :: defs), Lparagraph ->
+    | ( Rdef_list ({ empty_line_seen = false; _ } as deflist)
+      , Ldef_list (indent, def) ) ->
         { blocks
-        ; next = Rdef_list (term, (d ^ "\n" ^ Sub.to_string s) :: defs)
+        ; next =
+            Rdef_list
+              { deflist with
+                indent
+              ; defs = finish deflist.state :: deflist.defs
+              ; state = process empty (Sub.of_string def)
+              }
         }
+    | Rdef_list deflist, Lempty ->
+        { blocks
+        ; next =
+            Rdef_list
+              { deflist with
+                empty_line_seen = true
+              ; state = process deflist.state s
+              }
+        }
+    | Rdef_list deflist, _ when Parser.indent s >= deflist.indent ->
+        let s = Sub.offset deflist.indent s in
+        let state = process deflist.state s in
+        { blocks; next = Rdef_list { deflist with state } }
+    | Rdef_list ({ empty_line_seen = false; _ } as deflist), Lparagraph ->
+        (* Lazy wrapping *)
+        let state = process deflist.state s in
+        { blocks; next = Rdef_list { deflist with state } }
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rindented_code lines, Lindented_code s ->

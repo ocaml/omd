@@ -28,20 +28,20 @@ and 'attr inline =
   | Image of 'attr * 'attr link
   | Html of 'attr * string
 
-type 'attr def_elt =
-  { term : 'attr inline
-  ; defs : 'attr inline list
-  }
-
 type 'attr block =
   | Paragraph of 'attr * 'attr inline
   | List of 'attr * list_type * list_spacing * 'attr block list list
+  | Definition_list of 'attr * list_spacing * 'attr def_elt list
   | Blockquote of 'attr * 'attr block list
   | Thematic_break of 'attr
   | Heading of 'attr * int * 'attr inline
   | Code_block of 'attr * string * string
   | Html_block of 'attr * string
-  | Definition_list of 'attr * 'attr def_elt list
+
+and 'attr def_elt =
+  { term : 'attr inline
+  ; defs : 'attr block list list
+  }
 
 type doc = attributes block list
 (** A markdown document *)
