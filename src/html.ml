@@ -200,25 +200,14 @@ and inline = function
   | Image (attr, { label; destination; title }) ->
       img label destination title attr
 
-let concat_map_with_ids f identifiers l =
-  List.fold_left
-    (fun (accu, ids) x ->
-      let el, ids = f ids x in
-      let el = concat accu el in
-      (el, ids))
-    (Null, identifiers)
-    l
-
-let rec block ~auto_identifiers identifiers = function
+let rec block ~auto_identifiers = function
   | Blockquote (attr, q) ->
-      let el, identifiers =
-        concat_map_with_ids (block ~auto_identifiers) identifiers q
-      in
-      let el = elt Block "blockquote" attr (Some (concat nl el)) in
-      (el, identifiers)
-  | Paragraph (attr, md) ->
-      let el = elt Block "p" attr (Some (inline md)) in
-      (el, identifiers)
+      elt
+        Block
+        "blockquote"
+        attr
+        (Some (concat nl (concat_map (block ~auto_identifiers) q)))
+  | Paragraph (attr, md) -> elt Block "p" attr (Some (inline md))
   | List (attr, ty, sp, bl) ->
       let name = match ty with Ordered _ -> "ol" | Bullet _ -> "ul" in
       let attr =
@@ -226,36 +215,25 @@ let rec block ~auto_identifiers identifiers = function
         | Ordered (n, _) when n <> 1 -> ("start", string_of_int n) :: attr
         | _ -> attr
       in
-      let li identifiers t =
-        let block' identifiers t =
+      let li t =
+        let block' t =
           match (t, sp) with
-          | Paragraph (_, t), Tight -> (concat (inline t) nl, identifiers)
-          | _ -> block ~auto_identifiers identifiers t
+          | Paragraph (_, t), Tight -> concat (inline t) nl
+          | _ -> block ~auto_identifiers t
         in
         let nl = if sp = Tight then Null else nl in
-        let el, identifiers = concat_map_with_ids block' identifiers t in
-        let el = elt Block "li" [] (Some (concat nl el)) in
-        (el, identifiers)
+        elt Block "li" [] (Some (concat nl (concat_map block' t)))
       in
-      let el, identifiers = concat_map_with_ids li identifiers bl in
-      let el = elt Block name attr (Some (concat nl el)) in
-      (el, identifiers)
+      elt Block name attr (Some (concat nl (concat_map li bl)))
   | Code_block (attr, label, code) ->
       let code_attr =
         if String.trim label = "" then []
         else [ ("class", "language-" ^ label) ]
       in
       let c = text code in
-      let el =
-        elt Block "pre" attr (Some (elt Inline "code" code_attr (Some c)))
-      in
-      (el, identifiers)
-  | Thematic_break attr ->
-      let el = elt Block "hr" attr None in
-      (el, identifiers)
-  | Html_block (_, body) ->
-      let el = raw body in
-      (el, identifiers)
+      elt Block "pre" attr (Some (elt Inline "code" code_attr (Some c)))
+  | Thematic_break attr -> elt Block "hr" attr None
+  | Html_block (_, body) -> raw body
   | Heading (attr, level, text) ->
       let name =
         match level with
@@ -267,30 +245,44 @@ let rec block ~auto_identifiers identifiers = function
         | 6 -> "h6"
         | _ -> "p"
       in
-      let attr, identifiers =
-        if (not auto_identifiers) || List.mem_assoc "id" attr then
-          (attr, identifiers)
-        else
-          let id = slugify (to_plain_text text) in
-          let id = if id = "" then "section" else id in
-          let count, identifiers = Identifiers.touch id identifiers in
-          let id = if count = 0 then id else Printf.sprintf "%s-%i" id count in
-          (("id", id) :: attr, identifiers)
-      in
-      let el = elt Block name attr (Some (inline text)) in
-      (el, identifiers)
+      elt Block name attr (Some (inline text))
   | Definition_list (attr, l) ->
       let f { term; defs } =
         concat
           (elt Block "dt" [] (Some (inline term)))
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
-      let el = elt Block "dl" attr (Some (concat_map f l)) in
-      (el, identifiers)
+      elt Block "dl" attr (Some (concat_map f l))
 
 let of_doc ?(auto_identifiers = true) doc =
   let identifiers = Identifiers.empty in
-  let html, _ = concat_map_with_ids (block ~auto_identifiers) identifiers doc in
+  let f identifiers = function
+    | Heading (attr, level, text) ->
+        let attr, identifiers =
+          if (not auto_identifiers) || List.mem_assoc "id" attr then
+            (attr, identifiers)
+          else
+            let id = slugify (to_plain_text text) in
+            (* Default identifier if empty. It matches what pandoc does. *)
+            let id = if id = "" then "section" else id in
+            let count, identifiers = Identifiers.touch id identifiers in
+            let id =
+              if count = 0 then id else Printf.sprintf "%s-%i" id count
+            in
+            (("id", id) :: attr, identifiers)
+        in
+        (Heading (attr, level, text), identifiers)
+    | _ as c -> (c, identifiers)
+  in
+  let html, _ =
+    List.fold_left
+      (fun (accu, ids) x ->
+        let x', ids = f ids x in
+        let el = concat accu (block ~auto_identifiers x') in
+        (el, ids))
+      (Null, identifiers)
+      doc
+  in
   html
 
 let to_string t =
