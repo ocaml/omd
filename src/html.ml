@@ -102,7 +102,27 @@ let is_white_space = Uucp.White.is_white_space
 let is_alphabetic = Uucp.Alpha.is_alphabetic
 let is_hex_digit = Uucp.Num.is_hex_digit
 
-module IdentifiersMap = Map.Make (String)
+module Identifiers : sig
+  type t
+
+  val empty : t
+
+  val touch : string -> t -> int * t
+  (** Bump the frequency count for the given string. 
+      It returns the previous count (before bumping) *)
+end = struct
+  module SMap = Map.Make (String)
+
+  type t = int SMap.t
+
+  let empty = SMap.empty
+  let count s t = match SMap.find_opt s t with None -> 0 | Some x -> x
+  let incr s t = SMap.add s (count s t + 1) t
+
+  let touch s t =
+    let count = count s t in
+    (count, incr s t)
+end
 
 (* Based on pandoc algorithm to derive id's.
    See: https://pandoc.org/MANUAL.html#extension-auto_identifiers *)
@@ -253,10 +273,8 @@ let rec block ~auto_identifiers identifiers = function
         else
           let id = slugify (to_plain_text text) in
           let id = if id = "" then "section" else id in
-          let maybe_count = IdentifiersMap.find_opt id identifiers in
-          let count = match maybe_count with None -> 0 | Some x -> succ x in
+          let count, identifiers = Identifiers.touch id identifiers in
           let id = if count = 0 then id else Printf.sprintf "%s-%i" id count in
-          let identifiers = IdentifiersMap.add id count identifiers in
           (("id", id) :: attr, identifiers)
       in
       let el = elt Block name attr (Some (inline text)) in
@@ -271,7 +289,7 @@ let rec block ~auto_identifiers identifiers = function
       (el, identifiers)
 
 let of_doc ?(auto_identifiers = true) doc =
-  let identifiers = IdentifiersMap.empty in
+  let identifiers = Identifiers.empty in
   let html, _ = concat_map_with_ids (block ~auto_identifiers) identifiers doc in
   html
 
