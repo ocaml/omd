@@ -1,6 +1,7 @@
 open Ast
 open Compat
 
+(* Implementation of string slices over a base string via an offset *)
 module Sub : sig
   type t
 
@@ -12,8 +13,12 @@ module Sub : sig
   val print : Format.formatter -> t -> unit
   val head : ?rev:unit -> t -> char option
   val tail : ?rev:unit -> t -> t
+  (** [head n s] is a list of the first [n] characters of [s] *)
   val heads : int -> t -> char list
+
+  (** [tails n s] is [s] with the first [n] characters dropped *)
   val tails : int -> t -> t
+
   val for_all : (char -> bool) -> t -> bool
   val exists : (char -> bool) -> t -> bool
   val is_empty : t -> bool
