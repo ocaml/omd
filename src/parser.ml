@@ -23,8 +23,8 @@ module Sub : sig
   val heads : int -> t -> char list
   (** [head n s] is a list of the first [n] characters of [s] *)
 
-  val tails : int -> t -> t
-  (** [tails n s] is [s] with the first [n] characters dropped *)
+  val drop : int -> t -> t
+  (** [drop n s] is [s] with the first [n] characters dropped *)
 
   val for_all : (char -> bool) -> t -> bool
   val exists : (char -> bool) -> t -> bool
@@ -98,11 +98,13 @@ end = struct
     in
     loop n s
 
-  (* TODO Length can become negative *)
-  (* TODO Should be named "drop" can become negative *)
-  let tails n { base; off; len } =
+  let drop n s =
     if n < 0 then invalid_arg "tails";
-    { base; off = off + n; len = len - n }
+    (* len should not be reduced below 0, as strings cannot have a negative length *)
+    let len = max (s.len - n) 0 in
+    (* off should not exceed the length of the base string *)
+    let off = min (s.off + n) (String.length s.base) in
+    { s with off; len }
 
   let is_empty s = length s = 0
 
@@ -448,7 +450,7 @@ let entity s =
             ([ u ], Sub.tail s)
         | Some _ | None -> raise Fail
       in
-      loop 0 0 (Sub.tails 2 s)
+      loop 0 0 (Sub.drop 2 s)
   | '#' :: _ ->
       let rec loop m n s =
         if m > 7 then raise Fail;
@@ -743,7 +745,7 @@ let open_tag s =
     | '>' :: _ -> 1
     | _ -> raise Fail
   in
-  if not (is_empty (Sub.tails n s)) then raise Fail;
+  if not (is_empty (Sub.drop n s)) then raise Fail;
   Lhtml (false, Hblank)
 
 let raw_html s =
@@ -754,10 +756,10 @@ let raw_html s =
       Lhtml (true, Hcontains [ "]]>" ])
   | '<' :: '!' :: _ -> Lhtml (true, Hcontains [ ">" ])
   | '<' :: '/' :: _ ->
-      let tag, s = tag_name (Sub.tails 2 s) in
+      let tag, s = tag_name (Sub.drop 2 s) in
       (known_tag tag ||| closing_tag) s
   | '<' :: _ ->
-      let tag, s = tag_name (Sub.tails 1 s) in
+      let tag, s = tag_name (Sub.drop 1 s) in
       (special_tag tag ||| known_tag tag ||| open_tag) s
   | _ -> raise Fail
 
