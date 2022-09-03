@@ -11,13 +11,20 @@ module Sub : sig
   val lexbuf : t -> Lexing.lexbuf
   val contains : string -> t -> bool
   val print : Format.formatter -> t -> unit
-  val head : ?rev:unit -> t -> char option
-  val tail : ?rev:unit -> t -> t
-  (** [head n s] is a list of the first [n] characters of [s] *)
-  val heads : int -> t -> char list
+  val head : t -> char option
+  val tail : t -> t
 
-  (** [tails n s] is [s] with the first [n] characters dropped *)
+  val last : t -> char option
+  (** [last s] is the [Some c] if [c] is the last character of [s], or else [None] if [s] is empty *)
+
+  val drop_last : t -> t
+  (** [drop_last s] is the [s] without its last character *)
+
+  val heads : int -> t -> char list
+  (** [head n s] is a list of the first [n] characters of [s] *)
+
   val tails : int -> t -> t
+  (** [tails n s] is [s] with the first [n] characters dropped *)
 
   val for_all : (char -> bool) -> t -> bool
   val exists : (char -> bool) -> t -> bool
@@ -66,17 +73,21 @@ end = struct
     in
     loop off
 
-  let head ?rev s =
-    match (rev, s) with
-    | _, { len = 0; _ } -> None
-    | None, { base; off; _ } -> Some base.[off]
-    | Some (), { base; off; len } -> Some base.[off + len - 1]
+  let head = function
+    | { len = 0; _ } -> None
+    | { base; off; _ } -> Some base.[off]
 
-  let tail ?rev s =
-    match (rev, s) with
-    | _, { len = 0; _ } -> s
-    | None, { base; off; len } -> { base; off = succ off; len = pred len }
-    | Some (), { base; off; len } -> { base; off; len = pred len }
+  let last = function
+    | { len = 0; _ } -> None
+    | { base; off; len } -> Some base.[off + len - 1]
+
+  let tail = function
+    | { len = 0; _ } as s -> s
+    | { base; off; len } -> { base; off = succ off; len = pred len }
+
+  let drop_last = function
+    | { len = 0; _ } as s -> s
+    | { base; off; len } -> { base; off; len = pred len }
 
   let heads n s =
     if n < 0 then invalid_arg "heads";
@@ -87,6 +98,8 @@ end = struct
     in
     loop n s
 
+  (* TODO Length can become negative *)
+  (* TODO Should be named "drop" can become negative *)
   let tails n { base; off; len } =
     if n < 0 then invalid_arg "tails";
     { base; off = off + n; len = len - n }
@@ -264,12 +277,15 @@ let sp3 s =
 
 let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 
-let rec ws ?rev s =
-  match Sub.head ?rev s with
-  | Some (' ' | '\t' | '\010' .. '\013') -> ws ?rev (Sub.tail ?rev s)
+let rec trim_ws ?(rev = false) s =
+  let inspect, drop =
+    if rev then (Sub.last, Sub.drop_last) else (Sub.head, Sub.tail)
+  in
+  match inspect s with
+  | Some (' ' | '\t' | '\010' .. '\013') -> trim_ws ~rev (drop s)
   | None | Some _ -> s
 
-let is_empty s = Sub.is_empty (ws s)
+let is_empty s = Sub.is_empty (trim_ws s)
 
 let thematic_break s =
   match Sub.head s with
@@ -293,7 +309,7 @@ let setext_heading s =
         match Sub.head s with
         | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
         | Some _ | None ->
-            if not (Sub.is_empty (ws s)) then raise Fail;
+            if not (Sub.is_empty (trim_ws s)) then raise Fail;
             if c = '-' && n = 1 then raise Fail;
             (* can be interpreted as an empty list item *)
             Lsetext_heading ((if c = '-' then 2 else 1), n)
@@ -380,7 +396,7 @@ let attribute_string s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  let s', a = loop (ws s) in
+  let s', a = loop (trim_ws s) in
   (s', parse_attributes a)
 
 let atx_heading s =
@@ -390,18 +406,16 @@ let atx_heading s =
     | Some '#' -> loop (succ n) (Sub.tail s)
     | Some (' ' | '\t' | '\010' .. '\013') ->
         let s, a =
-          match Sub.head ~rev:() s with
-          | Some '}' -> attribute_string s
-          | _ -> (s, [])
+          match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
         in
-        let s = ws ~rev:() (ws s) in
+        let s = trim_ws ~rev:true (trim_ws s) in
         let rec loop t =
-          match Sub.head ~rev:() t with
-          | Some '#' -> loop (Sub.tail ~rev:() t)
-          | Some (' ' | '\t' | '\010' .. '\013') | None -> ws ~rev:() t
+          match Sub.last t with
+          | Some '#' -> loop (Sub.drop_last t)
+          | Some (' ' | '\t' | '\010' .. '\013') | None -> trim_ws ~rev:true t
           | Some _ -> s
         in
-        Latx_heading (n, Sub.to_string (ws (loop s)), a)
+        Latx_heading (n, Sub.to_string (trim_ws (loop s)), a)
     | Some _ -> raise Fail
     | None -> Latx_heading (n, Sub.to_string s, [])
   in
@@ -469,15 +483,15 @@ let entity s =
 let info_string c s =
   let buf = Buffer.create 17 in
   let s, a =
-    match Sub.head ~rev:() s with Some '}' -> attribute_string s | _ -> (s, [])
+    match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = ws ~rev:() (ws s) in
+  let s = trim_ws ~rev:true (trim_ws s) in
   let rec loop s =
     match Sub.head s with
     | Some (' ' | '\t' | '\010' .. '\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then
           raise Fail;
-        ((Buffer.contents buf, Sub.to_string (ws s)), a)
+        ((Buffer.contents buf, Sub.to_string (trim_ws s)), a)
     | Some '`' when c = '`' -> raise Fail
     | Some ('\\' as c) -> (
         let s = Sub.tail s in
@@ -501,7 +515,7 @@ let info_string c s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  loop (ws s)
+  loop (trim_ws s)
 
 let fenced_code ind s =
   match Sub.head s with
@@ -645,7 +659,7 @@ let special_tag s =
   List.mem s special_tags
 
 let closing_tag s =
-  let s = ws s in
+  let s = trim_ws s in
   match Sub.head s with
   | Some '>' ->
       if not (is_empty (Sub.tail s)) then raise Fail;
@@ -668,7 +682,7 @@ let known_tag tag s =
 
 let ws1 s =
   match Sub.head s with
-  | Some (' ' | '\t' | '\010' .. '\013') -> ws s
+  | Some (' ' | '\t' | '\010' .. '\013') -> trim_ws s
   | Some _ | None -> raise Fail
 
 let attribute_name s =
@@ -709,10 +723,10 @@ let attribute_value s =
 let attribute s =
   let s = ws1 s in
   let s = attribute_name s in
-  let s = ws s in
+  let s = trim_ws s in
   match Sub.head s with
   | Some '=' ->
-      let s = ws (Sub.tail s) in
+      let s = trim_ws (Sub.tail s) in
       attribute_value s
   | Some _ | None -> s
 
@@ -722,7 +736,7 @@ let attributes s =
 
 let open_tag s =
   let s = attributes s in
-  let s = ws s in
+  let s = trim_ws s in
   let n =
     match Sub.heads 2 s with
     | '/' :: '>' :: _ -> 2
@@ -754,9 +768,9 @@ let blank s =
 let tag_string s =
   let buf = Buffer.create 17 in
   let s, a =
-    match Sub.head ~rev:() s with Some '}' -> attribute_string s | _ -> (s, [])
+    match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = ws ~rev:() (ws s) in
+  let s = trim_ws ~rev:true (trim_ws s) in
   let rec loop s =
     match Sub.head s with
     | Some (' ' | '\t' | '\010' .. '\013') | None -> (Buffer.contents buf, a)
@@ -764,7 +778,7 @@ let tag_string s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  loop (ws s)
+  loop (trim_ws s)
 
 let def_list s =
   let s = Sub.tail s in
@@ -928,34 +942,34 @@ module Pre = struct
   let is_emph_match n1 n2 =
     (*
       - *foo**bar**baz*
-    
-            *foo** -> the second delimiter ** is both an opening and closing delimiter. 
+
+            *foo** -> the second delimiter ** is both an opening and closing delimiter.
                       The sum of the length of both delimiters is 3, so they can't be matched.
-            
-            **bar** -> they are both opening and closing delemiters. 
+
+            **bar** -> they are both opening and closing delemiters.
                        Their sum is 4 which is not a multiple of 3 so they can be matched to produce <strong>bar</strong>
-    
+
             The end result is: <em>foo<strong>bar</strong>baz</em>
-    
+
       - *foo***bar**baz*
-    
-            *foo*** -> *** is both an opening and closing delimiter. 
+
+            *foo*** -> *** is both an opening and closing delimiter.
                        Their sum is 4 so they can be matched to produce: <em>foo</em>**
-            
-            **bar** -> they are both opening and closing delemiters. 
+
+            **bar** -> they are both opening and closing delemiters.
                        Their sum is 4 which is not a multiple of 3 so they can be matched to produce <strong>bar</strong>
-    
+
             The end result is: <em>foo</em><strong>bar</strong>baz*
-    
+
       - ***foo***bar**baz*
-    
-            ***foo*** -> the second delimiter *** is both an opening and closing delimiter. 
+
+            ***foo*** -> the second delimiter *** is both an opening and closing delimiter.
                          Their sum is 6 which is a multiple of 3. However, both lengths are multiples of 3
                          so they can be matched to produce: <em><strong>foo</strong></em>
-            
+
             bar**baz* -> ** is both an opening and closing delimiter.
                          Their sum is 3 so they can't be matched
-    
+
             The end result is: <em><strong>foo</strong></em>bar**baz*
       *)
     if (n1 + n2) mod 3 = 0 && n1 mod 3 != 0 && n2 mod 3 != 0 then false
@@ -972,12 +986,12 @@ module Pre = struct
                 (*
                  The second delimiter (the closer) is also an opener, and both delimiters don't match together,
                  according to the "mod 3" rule. In that case, we check if the next delimiter can match.
-                
+
                    *foo**bar**baz*  The second delimiter that's both an opener/closer ( ** before bar)
                                     matches with the next delimiter ( ** after bar). They'll become
                                     <strong>bar</strong>. The end result will be: <em>foo<strong>bar</strong>baz</em>
-                
-                
+
+
                    *foo**bar*baz*  The second delimiter that's both an opener/closer ( ** before bar)
                                    doesn't match with the next delimiter ( * after bar). **bar will be
                                    considered as regular text. The end result will be: <em>foo**bar</em>baz*
@@ -1011,12 +1025,12 @@ module Pre = struct
               (*
                This case happens when we encounter a second opener delimiter. We look ahead for the next closer,
                and if the next closer is of the same style, we can match them together.
-            
+
                  *foo _bar_ baz_  The second opener (_ before `bar`) is of the same style as the next closer
                                   (_ after `bar`). We can match them to produce <em>bar</em>
                                   The end result will be: *foo <em>bar</em> baz_
-            
-              
+
+
                  *foo _bar* baz_  The second opener (_ before `bar`) is not of the same style as the next closer
                                   ( * after `bar`). They can't be matched so we'll consider _bar as regular text.
                                   The end result will be: <em>foo _bar</em> baz_
