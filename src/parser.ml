@@ -1,10 +1,10 @@
 open Ast
 open Compat
-
 module Sub = StrSlice
 
 exception Fail
 
+(** Stateful parser combinators *)
 module P : sig
   type state
   type 'a t = state -> 'a
@@ -12,11 +12,16 @@ module P : sig
   val of_string : string -> state
   val peek : char option t
   val peek_exn : char t
+  val peek_before : char -> state -> char
+  val peek_after : char -> state -> char
   val pos : state -> int
   val range : state -> int -> int -> string
   val set_pos : state -> int -> unit
   val junk : unit t
+
   val char : char -> unit t
+  (** [char c] accepts a [c] *)
+
   val next : char t
   val ( ||| ) : 'a t -> 'a t -> 'a t
   val ws : unit t
@@ -25,8 +30,6 @@ module P : sig
   val ( >>> ) : unit t -> 'a t -> 'a t
   val ( <<< ) : 'a t -> unit t -> 'a t
   val protect : 'a t -> 'a t
-  val peek_before : char -> state -> char
-  val peek_after : char -> state -> char
   val pair : 'a t -> 'b t -> ('a * 'b) t
   val on_sub : (Sub.t -> 'a * Sub.t) -> 'a t
 end = struct
