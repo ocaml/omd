@@ -1,5 +1,5 @@
 open Ast
-module Sub = Parser.Sub
+module Sub = StrSlice
 
 module Pre = struct
   type container =
