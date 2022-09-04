@@ -55,13 +55,10 @@ end = struct
     st.pos <- st.pos + 1;
     c
 
-  let peek_exn st =
-    ensure_chars_remain st;
-    st.str.[st.pos]
-
   let peek st =
     if st.pos >= String.length st.str then None else Some st.str.[st.pos]
 
+  let peek_exn st = match peek st with Some c -> c | None -> raise Fail
   let peek_before c st = if st.pos = 0 then c else st.str.[st.pos - 1]
 
   let peek_after c st =
