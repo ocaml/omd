@@ -20,8 +20,8 @@ module Sub : sig
   val drop_last : t -> t
   (** [drop_last s] is the [s] without its last character *)
 
-  val heads : int -> t -> char list
-  (** [head n s] is a list of the first [n] characters of [s] *)
+  val take : int -> t -> char list
+  (** [take n s] is a list of the first [n] characters of [s] *)
 
   val drop : int -> t -> t
   (** [drop n s] is [s] with the first [n] characters dropped *)
@@ -89,8 +89,8 @@ end = struct
     | { len = 0; _ } as s -> s
     | { base; off; len } -> { base; off; len = pred len }
 
-  let heads n s =
-    if n < 0 then invalid_arg "heads";
+  let take n s =
+    if n < 0 then invalid_arg "take";
     let rec loop n s =
       if n = 0 || length s = 0 then []
       else
@@ -424,7 +424,7 @@ let atx_heading s =
   loop 0 s
 
 let entity s =
-  match Sub.heads 2 s with
+  match Sub.take 2 s with
   | '#' :: ('x' | 'X') :: _ ->
       let rec loop m n s =
         if m > 6 then raise Fail;
@@ -677,7 +677,7 @@ let special_tag tag s =
 
 let known_tag tag s =
   if not (known_tag tag) then raise Fail;
-  match Sub.heads 2 s with
+  match Sub.take 2 s with
   | (' ' | '\t' | '\010' .. '\013') :: _ | [] | '>' :: _ | '/' :: '>' :: _ ->
       Lhtml (true, Hblank)
   | _ -> raise Fail
@@ -740,7 +740,7 @@ let open_tag s =
   let s = attributes s in
   let s = trim_ws s in
   let n =
-    match Sub.heads 2 s with
+    match Sub.take 2 s with
     | '/' :: '>' :: _ -> 2
     | '>' :: _ -> 1
     | _ -> raise Fail
@@ -749,7 +749,7 @@ let open_tag s =
   Lhtml (false, Hblank)
 
 let raw_html s =
-  match Sub.heads 10 s with
+  match Sub.take 10 s with
   | '<' :: '?' :: _ -> Lhtml (true, Hcontains [ "?>" ])
   | '<' :: '!' :: '-' :: '-' :: _ -> Lhtml (true, Hcontains [ "-->" ])
   | '<' :: '!' :: '[' :: 'C' :: 'D' :: 'A' :: 'T' :: 'A' :: '[' :: _ ->
