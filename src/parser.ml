@@ -6,6 +6,13 @@ let is_whitespace = function
   | ' ' | '\t' | '\010' .. '\013' -> true
   | _ -> false
 
+let is_punct = function
+  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' | '-'
+  | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^'
+  | '_' | '`' | '{' | '|' | '}' | '~' ->
+      true
+  | _ -> false
+
 exception Fail
 (** Raised when a parser fails, used for control flow rather than error
     handling *)
@@ -244,13 +251,6 @@ let setext_heading s =
       in
       loop 1 (Sub.tail s)
   | Some _ | None -> raise Fail
-
-let is_punct = function
-  | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' | '-'
-  | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | '\\' | ']' | '^'
-  | '_' | '`' | '{' | '|' | '}' | '~' ->
-      true
-  | _ -> false
 
 let parse_attributes = function
   | None -> []
