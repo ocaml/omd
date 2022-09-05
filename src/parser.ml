@@ -212,15 +212,11 @@ let sp3 s =
 (** TODO Why is this here? Doesn't it exactly repeat the one in [P]? *)
 let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 
-let rec trim_ws ?(rev = false) s =
-  let inspect, drop =
-    if rev then (Sub.last, Sub.drop_last) else (Sub.head, Sub.tail)
-  in
-  match inspect s with
-  | Some w when is_whitespace w -> trim_ws ~rev (drop s)
-  | None | Some _ -> s
+let trim_leading_ws s = Sub.drop_while is_whitespace s
+let trim_trailing_ws s = Sub.drop_last_while is_whitespace s
+let trim_ws s = trim_leading_ws s |> trim_trailing_ws
 
-let is_empty s = Sub.is_empty (trim_ws s)
+let is_empty s = Sub.is_empty (trim_leading_ws s)
 
 let thematic_break s =
   match Sub.head s with
@@ -244,7 +240,7 @@ let setext_heading s =
         match Sub.head s with
         | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
         | Some _ | None ->
-            if not (Sub.is_empty (trim_ws s)) then raise Fail;
+            if not (Sub.is_empty (trim_leading_ws s)) then raise Fail;
             if c = '-' && n = 1 then raise Fail;
             (* can be interpreted as an empty list item *)
             Lsetext_heading ((if c = '-' then 2 else 1), n)
@@ -324,7 +320,7 @@ let attribute_string s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  let s', a = loop (trim_ws s) in
+  let s', a = loop (trim_leading_ws s) in
   (s', parse_attributes a)
 
 let atx_heading s =
@@ -336,15 +332,15 @@ let atx_heading s =
         let s, a =
           match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
         in
-        let s = trim_ws ~rev:true (trim_ws s) in
+        let s = (trim_ws s) in
         let rec loop t =
           match Sub.last t with
           | Some '#' -> loop (Sub.drop_last t)
-          | Some w when is_whitespace w -> trim_ws ~rev:true t
-          | None -> trim_ws ~rev:true t
+          | Some w when is_whitespace w -> trim_trailing_ws t
+          | None -> trim_trailing_ws t
           | Some _ -> s
         in
-        Latx_heading (n, Sub.to_string (trim_ws (loop s)), a)
+        Latx_heading (n, Sub.to_string (trim_leading_ws (loop s)), a)
     | Some _ -> raise Fail
     | None -> Latx_heading (n, Sub.to_string s, [])
   in
@@ -414,14 +410,14 @@ let info_string c s =
   let s, a =
     match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = trim_ws ~rev:true (trim_ws s) in
+  let s = (trim_ws s) in
   let rec loop s =
     match Sub.head s with
     (* TODO use is_whitespace *)
     | Some (' ' | '\t' | '\010' .. '\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then
           raise Fail;
-        ((Buffer.contents buf, Sub.to_string (trim_ws s)), a)
+        ((Buffer.contents buf, Sub.to_string (trim_leading_ws s)), a)
     | Some '`' when c = '`' -> raise Fail
     | Some ('\\' as c) -> (
         let s = Sub.tail s in
@@ -445,7 +441,7 @@ let info_string c s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  loop (trim_ws s)
+  loop (trim_leading_ws s)
 
 let fenced_code ind s =
   match Sub.head s with
@@ -589,7 +585,7 @@ let special_tag s =
   List.mem s special_tags
 
 let closing_tag s =
-  let s = trim_ws s in
+  let s = trim_leading_ws s in
   match Sub.head s with
   | Some '>' ->
       if not (is_empty (Sub.tail s)) then raise Fail;
@@ -613,7 +609,7 @@ let known_tag tag s =
 (** TODO Why these repeated functions that look just like thos in [P]? *)
 let ws1 s =
   match Sub.head s with
-  | Some w when is_whitespace w -> trim_ws s
+  | Some w when is_whitespace w -> trim_leading_ws s
   | Some _ | None -> raise Fail
 
 let attribute_name s =
@@ -654,10 +650,10 @@ let attribute_value s =
 let attribute s =
   let s = ws1 s in
   let s = attribute_name s in
-  let s = trim_ws s in
+  let s = trim_leading_ws s in
   match Sub.head s with
   | Some '=' ->
-      let s = trim_ws (Sub.tail s) in
+      let s = trim_leading_ws (Sub.tail s) in
       attribute_value s
   | Some _ | None -> s
 
@@ -667,7 +663,7 @@ let attributes s =
 
 let open_tag s =
   let s = attributes s in
-  let s = trim_ws s in
+  let s = trim_leading_ws s in
   let n =
     match Sub.take 2 s with
     | '/' :: '>' :: _ -> 2
@@ -701,7 +697,7 @@ let tag_string s =
   let s, a =
     match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = trim_ws ~rev:true (trim_ws s) in
+  let s = (trim_ws s) in
   let rec loop s =
     match Sub.head s with
     (* TODO use is_whitespace *)
@@ -710,7 +706,7 @@ let tag_string s =
         Buffer.add_char buf c;
         loop (Sub.tail s)
   in
-  loop (trim_ws s)
+  loop (trim_leading_ws s)
 
 let def_list s =
   let s = Sub.tail s in
