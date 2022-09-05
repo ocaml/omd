@@ -209,7 +209,8 @@ let sp3 s =
   | ' ' :: _ -> (1, Sub.drop 1 s)
   | _ -> (0, s)
 
-(** TODO Why is this here? Doesn't it exactly repeat the one in [P]? *)
+(** TODO Why is this here? Doesn't it almost exactly repeat the one in [P], only with slices?
+    Why is this kind of repetition needed? *)
 let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 
 let trim_leading_ws s = Sub.drop_while is_whitespace s
