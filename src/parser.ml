@@ -3,6 +3,8 @@ open Compat
 module Sub = StrSlice
 
 exception Fail
+(** Raised when a parser fails, used for control flow rather than error
+    handling *)
 
 (** Stateful parser combinators *)
 module P : sig
@@ -10,28 +12,73 @@ module P : sig
   type 'a t = state -> 'a
 
   val of_string : string -> state
+
   val peek : char option t
+  (** [Some c] if [c] is the next character in the input, or [None]
+      if the input is exhausted.
+
+      NOTE: Does not advance the state. *)
+
   val peek_exn : char t
+  (** the next character in the input, or raises [Fail] if the
+      input is exhausted.
+
+      NOTE: Does not advance the state. *)
+
   val peek_before : char -> state -> char
+  (** the previous character in the input, or the next
+      character, if we are at the start of the input.
+
+      NOTE: Does not advance the state. *)
+
   val peek_after : char -> state -> char
+  (** the character after the next in the input, or the next
+      character, if we are at the end of the input.
+
+      NOTE: Does not advance the state. *)
+
   val pos : state -> int
   val range : state -> int -> int -> string
   val set_pos : state -> int -> unit
+
   val junk : unit t
+  (** ignores the next character in the input *)
 
   val char : char -> unit t
-  (** [char c] accepts a [c] *)
+  (** accepts a [c] *)
 
   val next : char t
-  val ( ||| ) : 'a t -> 'a t -> 'a t
+
   val ws : unit t
+  (** accepts 0 or more white space characters *)
+
   val sp : unit t
+  (** accepts 0 or more spaces or tabs *)
+
   val ws1 : unit t
+  (** accepts 1 or more spaces or tabs, fails if none is found *)
+
+  val ( ||| ) : 'a t -> 'a t -> 'a t
+  (** [p ||| q] tries to accept [p], but in case [p] fails, it accepts [q]
+      (which can fail). *)
+
   val ( >>> ) : unit t -> 'a t -> 'a t
+  (** [p >>> q] accepts [p] followed by [q], returning whatever [q] does *)
+
   val ( <<< ) : 'a t -> unit t -> 'a t
+  (** [p >>> q] accepts [p] followed by [q], returning whatever [q] does *)
+
   val protect : 'a t -> 'a t
+  (** run the given parser, resetting the state back to it's initial condition
+      if the parser fails *)
+
   val pair : 'a t -> 'b t -> ('a * 'b) t
+
   val on_sub : (Sub.t -> 'a * Sub.t) -> 'a t
+  (** Given a function [f] that takes a prefix of a string slice to a value [x]
+      of type ['a] and some remainder of the slice, [on_sub f] produces [x] from
+      the state, and advances the input the length of the slice that was
+      consumed by [f]. *)
 end = struct
   type state =
     { str : string
