@@ -1,7 +1,7 @@
 (library
  (name omd)
  (public_name omd)
- (libraries uutf uucp uunf)
+ (libraries uutf uucp uunf stdcompat)
  (flags :standard -w -30))
 
 (rule

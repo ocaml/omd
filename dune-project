@@ -25,6 +25,7 @@ extension mechanism, and some other features. Note that the opam
 package installs both the OMD library and the command line tool `omd`.")
  (tags (org:ocamllabs org:mirage))
  (depends (ocaml (>= 4.05))
+          stdcompat
           uutf
           uucp
           uunf

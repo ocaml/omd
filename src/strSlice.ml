@@ -1,3 +1,5 @@
+module Option = Stdcompat.Option
+
 type t =
   { base : string
   ; off : int
