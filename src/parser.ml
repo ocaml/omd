@@ -193,19 +193,15 @@ type t =
   | Lparagraph
   | Ldef_list of string
 
+(* drop up to 3 spaces, returning the number of spaces dropped and the remainder of the string *)
 let sp3 s =
-  match Sub.head s with
-  | Some ' ' -> (
-      let s = Sub.tail s in
-      match Sub.head s with
-      | Some ' ' -> (
-          let s = Sub.tail s in
-          match Sub.head s with
-          | Some ' ' -> (3, Sub.tail s)
-          | Some _ | None -> (2, s))
-      | Some _ | None -> (1, s))
-  | Some _ | None -> (0, s)
+  match Sub.take 3 s with
+  | [ ' '; ' '; ' ' ] -> (3, Sub.drop 3 s)
+  | ' ' :: ' ' :: _ -> (2, Sub.drop 2 s)
+  | ' ' :: _ -> (1, Sub.drop 1 s)
+  | _ -> (0, s)
 
+(** TODO Why is this here? Doesn't it exactly repeat the one in [P]? *)
 let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 
 let rec trim_ws ?(rev = false) s =
