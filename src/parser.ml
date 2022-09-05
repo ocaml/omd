@@ -216,23 +216,26 @@ let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 let trim_leading_ws s = Sub.drop_while is_whitespace s
 let trim_trailing_ws s = Sub.drop_last_while is_whitespace s
 let trim_ws s = trim_leading_ws s |> trim_trailing_ws
-
 let is_empty s = Sub.is_empty (trim_leading_ws s)
 
-let thematic_break s =
-  match Sub.head s with
-  | Some (('*' | '_' | '-') as c) ->
-      let rec loop n s =
-        match Sub.head s with
-        | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
-        | Some w when is_whitespace w -> loop n (Sub.tail s)
-        | Some _ -> raise Fail
-        | None ->
-            if n < 3 then raise Fail;
-            Lthematic_break
-      in
-      loop 1 (Sub.tail s)
-  | Some _ | None -> raise Fail
+(* See https://spec.commonmark.org/0.30/#thematic-breaks *)
+let thematic_break =
+  let accept symb chars =
+    let rec loop n s =
+      match Sub.uncons s with
+      | Some (c, tl) when symb = c -> loop (succ n) tl
+      (* Themtic break chars can be separated by spaces *)
+      | Some (w, tl) when is_whitespace w -> loop n tl
+      (* Three or more of the same thematic break chars found *)
+      | None when n >= 3 -> Lthematic_break
+      | _ -> raise Fail
+    in
+    loop 1 chars
+  in
+  fun s ->
+    match Sub.uncons s with
+    | Some ((('*' | '_' | '-') as symb), rest) -> accept symb rest
+    | Some _ | None -> raise Fail
 
 let setext_heading s =
   match Sub.head s with
@@ -333,7 +336,7 @@ let atx_heading s =
         let s, a =
           match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
         in
-        let s = (trim_ws s) in
+        let s = trim_ws s in
         let rec loop t =
           match Sub.last t with
           | Some '#' -> loop (Sub.drop_last t)
@@ -411,7 +414,7 @@ let info_string c s =
   let s, a =
     match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = (trim_ws s) in
+  let s = trim_ws s in
   let rec loop s =
     match Sub.head s with
     (* TODO use is_whitespace *)
@@ -698,7 +701,7 @@ let tag_string s =
   let s, a =
     match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
-  let s = (trim_ws s) in
+  let s = trim_ws s in
   let rec loop s =
     match Sub.head s with
     (* TODO use is_whitespace *)
@@ -712,8 +715,7 @@ let tag_string s =
 let def_list s =
   let s = Sub.tail s in
   match Sub.head s with
-  | Some w when is_whitespace w->
-      Ldef_list (String.trim (Sub.to_string s))
+  | Some w when is_whitespace w -> Ldef_list (String.trim (Sub.to_string s))
   | _ -> raise Fail
 
 let indented_code ind s =
@@ -1861,9 +1863,7 @@ let link_reference_definition st : attributes Ast.link_def =
     loop false
   in
   let ws1 st =
-    match next st with
-    | w when is_whitespace w -> ws st
-    | _ -> raise Fail
+    match next st with w when is_whitespace w -> ws st | _ -> raise Fail
   in
   ignore (sp3 st);
   let label = link_label false st in
