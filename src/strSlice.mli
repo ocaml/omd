@@ -11,6 +11,10 @@ val print : Format.formatter -> t -> unit
 val head : t -> char option
 val tail : t -> t
 
+val uncons : t -> (char * t) option
+(** [uncons s] is [Some (h, t)] where [h] is [head s] and [t] is [tail s],
+    or [None] if [is_empty s] *)
+
 val last : t -> char option
 (** [last s] is the [Some c] if [c] is the last character of [s], or else [None] if [s] is empty *)
 
@@ -22,6 +26,14 @@ val take : int -> t -> char list
 
 val drop : int -> t -> t
 (** [drop n s] is [s] with the first [n] characters dropped *)
+
+val drop_while : (char -> bool) -> t -> t
+(** [drop_while f s] is [s] with the longest prefix for which [f] is true for
+    every character dropped *)
+
+val drop_last_while : (char -> bool) -> t -> t
+(** [drop_last_while f s] is [s] with the longest suffix for which [f] is true for
+    every character dropped *)
 
 val for_all : (char -> bool) -> t -> bool
 val exists : (char -> bool) -> t -> bool

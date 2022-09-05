@@ -9,6 +9,7 @@ let to_string { base; off; len } = String.sub base off len
 let print ppf s = Format.fprintf ppf "%S" (to_string s)
 let get_offset { off; _ } = off
 let length { len; _ } = len
+let is_empty s = length s = 0
 
 let offset n { base; off; len } =
   if n < 0 then invalid_arg "offset";
@@ -50,9 +51,7 @@ let tail = function
   | { len = 0; _ } as s -> s
   | { base; off; len } -> { base; off = succ off; len = pred len }
 
-let drop_last = function
-  | { len = 0; _ } as s -> s
-  | { base; off; len } -> { base; off; len = pred len }
+let uncons s = head s |> Option.map (fun hd -> (hd, tail s))
 
 let take n s =
   if n < 0 then invalid_arg "take";
@@ -70,7 +69,17 @@ let drop n s =
   let off = min (s.off + n) (String.length s.base) in
   { s with off; len }
 
-let is_empty s = length s = 0
+let drop_last = function
+  | { len = 0; _ } as s -> s
+  | { base; off; len } -> { base; off; len = pred len }
+
+let rec drop_while f s =
+  match uncons s with Some (x, s') when f x -> drop_while f s' | _ -> s
+
+let rec drop_last_while f s =
+  match last s with
+  | Some l when f l -> drop_last_while f (drop_last s)
+  | _ -> s
 
 let exists f s =
   let rec loop s i =
