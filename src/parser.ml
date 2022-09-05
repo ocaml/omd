@@ -2,6 +2,10 @@ open Ast
 open Compat
 module Sub = StrSlice
 
+let is_whitespace = function
+  | ' ' | '\t' | '\010' .. '\013' -> true
+  | _ -> false
+
 exception Fail
 (** Raised when a parser fails, used for control flow rather than error
     handling *)
@@ -127,11 +131,9 @@ end = struct
 
   let ws st =
     let rec loop () =
-      match peek_exn st with
-      | ' ' | '\t' | '\010' .. '\013' ->
-          junk st;
-          loop ()
-      | _ -> ()
+      if is_whitespace (peek_exn st) then (
+        junk st;
+        loop ())
     in
     try loop () with Fail -> ()
 
@@ -146,11 +148,10 @@ end = struct
     try loop () with Fail -> ()
 
   let ws1 st =
-    match peek_exn st with
-    | ' ' | '\t' | '\010' .. '\013' ->
-        junk st;
-        ws st
-    | _ -> raise Fail
+    if is_whitespace (peek_exn st) then (
+      junk st;
+      ws st)
+    else raise Fail
 
   let ( >>> ) p q st =
     p st;
@@ -209,7 +210,7 @@ let rec trim_ws ?(rev = false) s =
     if rev then (Sub.last, Sub.drop_last) else (Sub.head, Sub.tail)
   in
   match inspect s with
-  | Some (' ' | '\t' | '\010' .. '\013') -> trim_ws ~rev (drop s)
+  | Some w when is_whitespace w -> trim_ws ~rev (drop s)
   | None | Some _ -> s
 
 let is_empty s = Sub.is_empty (trim_ws s)
@@ -220,7 +221,7 @@ let thematic_break s =
       let rec loop n s =
         match Sub.head s with
         | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
-        | Some (' ' | '\t' | '\010' .. '\013') -> loop n (Sub.tail s)
+        | Some w when is_whitespace w -> loop n (Sub.tail s)
         | Some _ -> raise Fail
         | None ->
             if n < 3 then raise Fail;
@@ -331,7 +332,7 @@ let atx_heading s =
     if n > 6 then raise Fail;
     match Sub.head s with
     | Some '#' -> loop (succ n) (Sub.tail s)
-    | Some (' ' | '\t' | '\010' .. '\013') ->
+    | Some w when is_whitespace w ->
         let s, a =
           match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
         in
@@ -339,7 +340,8 @@ let atx_heading s =
         let rec loop t =
           match Sub.last t with
           | Some '#' -> loop (Sub.drop_last t)
-          | Some (' ' | '\t' | '\010' .. '\013') | None -> trim_ws ~rev:true t
+          | Some w when is_whitespace w -> trim_ws ~rev:true t
+          | None -> trim_ws ~rev:true t
           | Some _ -> s
         in
         Latx_heading (n, Sub.to_string (trim_ws (loop s)), a)
@@ -415,6 +417,7 @@ let info_string c s =
   let s = trim_ws ~rev:true (trim_ws s) in
   let rec loop s =
     match Sub.head s with
+    (* TODO use is_whitespace *)
     | Some (' ' | '\t' | '\010' .. '\013') | None ->
         if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then
           raise Fail;
@@ -607,9 +610,10 @@ let known_tag tag s =
       Lhtml (true, Hblank)
   | _ -> raise Fail
 
+(** TODO Why these repeated functions that look just like thos in [P]? *)
 let ws1 s =
   match Sub.head s with
-  | Some (' ' | '\t' | '\010' .. '\013') -> trim_ws s
+  | Some w when is_whitespace w -> trim_ws s
   | Some _ | None -> raise Fail
 
 let attribute_name s =
@@ -700,6 +704,7 @@ let tag_string s =
   let s = trim_ws ~rev:true (trim_ws s) in
   let rec loop s =
     match Sub.head s with
+    (* TODO use is_whitespace *)
     | Some (' ' | '\t' | '\010' .. '\013') | None -> (Buffer.contents buf, a)
     | Some c ->
         Buffer.add_char buf c;
@@ -710,7 +715,7 @@ let tag_string s =
 let def_list s =
   let s = Sub.tail s in
   match Sub.head s with
-  | Some (' ' | '\t' | '\010' .. '\013') ->
+  | Some w when is_whitespace w->
       Ldef_list (String.trim (Sub.to_string s))
   | _ -> raise Fail
 
@@ -748,7 +753,7 @@ let is_empty st =
   try
     let rec loop () =
       match next st with
-      | ' ' | '\t' | '\010' .. '\013' -> loop ()
+      | c when is_whitespace c -> loop ()
       | _ ->
           set_pos st off;
           false
@@ -1018,11 +1023,11 @@ let link_label allow_balanced_brackets st =
         junk st;
         Buffer.add_char buf c;
         loop (succ n) true
-    | (' ' | '\t' | '\010' .. '\013') as c ->
+    | w when is_whitespace w ->
         junk st;
-        Buffer.add_char buf c;
+        Buffer.add_char buf w;
         loop n nonempty
-    | _ as c ->
+    | c ->
         junk st;
         Buffer.add_char buf c;
         loop n true
@@ -1100,8 +1105,8 @@ let tag_name st =
 let ws_buf buf st =
   let rec loop () =
     match peek st with
-    | Some ((' ' | '\t' | '\010' .. '\013') as c) ->
-        Buffer.add_char buf c;
+    | Some w when is_whitespace w ->
+        Buffer.add_char buf w;
         junk st;
         loop ()
     | Some _ | None -> ()
@@ -1188,7 +1193,7 @@ let attribute_value_specification = ws >>> char '=' >>> ws >>> attribute_value
 
 let ws1_buf buf st =
   match peek st with
-  | Some (' ' | '\t' | '\010' .. '\013') -> ws_buf buf st
+  | Some w when is_whitespace w -> ws_buf buf st
   | Some _ | None -> raise Fail
 
 let attribute st =
@@ -1323,7 +1328,7 @@ let declaration st =
             junk st;
             Buffer.add_char buf c;
             loop ()
-        | ' ' | '\t' | '\010' .. '\013' ->
+        | w when is_whitespace w ->
             ws1_buf buf st;
             let rec loop () =
               match peek_exn st with
@@ -1586,7 +1591,7 @@ let inline_pre buf acc st =
               junk st;
               gobble_body start (succ m)
           | _ when m = n -> finish ()
-          | Some ((' ' | '\t' | '\010' .. '\013') as c) ->
+          | Some c when is_whitespace c ->
               if m > 0 then Buffer.add_string bufcode (String.make m '`');
               Buffer.add_char bufcode (if c = '\010' then ' ' else c);
               junk st;
@@ -1844,10 +1849,11 @@ let sp3 st =
   | exception Fail -> 0
 
 let link_reference_definition st : attributes Ast.link_def =
+  (* TODO remove duplicated ws/ws1 functions? *)
   let ws st =
     let rec loop seen_nl =
       match peek st with
-      | Some (' ' | '\t' | '\011' .. '\013') ->
+      | Some w when is_whitespace w ->
           junk st;
           loop seen_nl
       | Some '\n' when not seen_nl ->
@@ -1859,7 +1865,7 @@ let link_reference_definition st : attributes Ast.link_def =
   in
   let ws1 st =
     match next st with
-    | ' ' | '\t' | '\010' .. '\013' -> ws st
+    | w when is_whitespace w -> ws st
     | _ -> raise Fail
   in
   ignore (sp3 st);
