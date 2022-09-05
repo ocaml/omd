@@ -194,6 +194,7 @@ type t =
   | Lthematic_break
   | Latx_heading of int * string * attributes
   | Lsetext_heading of int * int
+      (** the level of the heading and how long the underline marker is *)
   | Lfenced_code of int * int * code_block_kind * (string * string) * attributes
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
@@ -237,20 +238,28 @@ let thematic_break =
     | Some ((('*' | '_' | '-') as symb), rest) -> accept symb rest
     | Some _ | None -> raise Fail
 
+(* See https://spec.commonmark.org/0.30/#setext-heading *)
 let setext_heading s =
-  match Sub.head s with
-  | Some (('-' | '=') as c) ->
-      let rec loop n s =
-        match Sub.head s with
-        | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
-        | Some _ | None ->
-            if not (Sub.is_empty (trim_leading_ws s)) then raise Fail;
-            if c = '-' && n = 1 then raise Fail;
-            (* can be interpreted as an empty list item *)
-            Lsetext_heading ((if c = '-' then 2 else 1), n)
-      in
-      loop 1 (Sub.tail s)
-  | Some _ | None -> raise Fail
+  (* The first char determines if possible setext heading and what level heading *)
+  let level, symb =
+    match Sub.head s with
+    | Some '=' -> (1, '=')
+    | Some '-' -> (2, '-')
+    | _ -> raise Fail
+  in
+  (* Trailing whitespace is ignored *)
+  let trimmed = trim_trailing_ws s in
+  let heading_length = Sub.length trimmed in
+  if heading_length = 1 && symb = '-' then
+    (* can be interpreted as an empty list item *)
+    raise Fail
+  else
+    (* setext headings consist of an unbroken sequence of consecutive header chars *)
+    let remaining = Sub.drop_while (Char.equal symb) trimmed in
+    if not (Sub.is_empty remaining) then
+      (* If other characters remain, it cannot be a setext heading *)
+      raise Fail
+    else Lsetext_heading (level, heading_length)
 
 let parse_attributes = function
   | None -> []
