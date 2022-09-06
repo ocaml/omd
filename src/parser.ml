@@ -1,5 +1,5 @@
 open Ast
-open Compat
+open Stdcompat
 module Sub = StrSlice
 
 let is_whitespace = function

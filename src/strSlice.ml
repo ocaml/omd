@@ -1,4 +1,4 @@
-module Option = Stdcompat.Option
+open Stdcompat
 
 type t =
   { base : string
