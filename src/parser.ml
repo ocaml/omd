@@ -247,15 +247,14 @@ let setext_heading s =
     | Some '-' -> (2, '-')
     | _ -> raise Fail
   in
-  let (heading_chars, rest) = Sub.split_at (fun c -> not (Char.equal c symb)) s in
+  let heading_chars, rest = Sub.split_at (fun c -> not (Char.equal c symb)) s in
   if Char.equal symb '-' && Sub.length heading_chars = 1 then
     (* can be interpreted as an empty list item *)
     raise Fail
   else if not (Sub.for_all is_whitespace rest) then
     (* if anything except whitespace is left, it can't be a setext heading underline *)
     raise Fail
-  else
-    Lsetext_heading (level, Sub.length heading_chars)
+  else Lsetext_heading (level, Sub.length heading_chars)
 
 (* Parses a string slice in pandoc-style into an association list
 

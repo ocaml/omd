@@ -87,10 +87,7 @@ let index f s =
   let len = length s in
   let rest = drop_while (fun c -> not (f c)) s in
   let idx = len - length rest in
-  if idx = len then
-    None
-  else
-    Some idx
+  if idx = len then None else Some idx
 
 (* Uncomment to test *)
 (* TODO: rig up method to unit test our utilities *)
@@ -105,7 +102,7 @@ let index f s =
 let split_at f s =
   match index f s with
   | None -> (s, offset (length s) s)
-  | Some idx -> ({s with len = idx} , offset idx s)
+  | Some idx -> ({ s with len = idx }, offset idx s)
 
 (* Uncomment to test *)
 (* TODO: rig up method to unit test our utilities *)
@@ -137,9 +134,7 @@ let sub ~len s =
 
 let fold_left f init s =
   let rec aux acc rest =
-  match uncons rest with
-  | None -> acc
-  | Some (x, xs) -> aux (f x acc) xs
+    match uncons rest with None -> acc | Some (x, xs) -> aux (f x acc) xs
   in
   aux init s
 
