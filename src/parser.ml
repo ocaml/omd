@@ -240,52 +240,54 @@ let thematic_break =
 
 (* See https://spec.commonmark.org/0.30/#setext-heading *)
 let setext_heading s =
-  (* The first char determines if possible setext heading and what level heading *)
+  (* The first char determines if possible setext and the level of the heading *)
   let level, symb =
     match Sub.head s with
     | Some '=' -> (1, '=')
     | Some '-' -> (2, '-')
     | _ -> raise Fail
   in
-  (* Trailing whitespace is ignored *)
-  let trimmed = trim_trailing_ws s in
-  let heading_length = Sub.length trimmed in
-  if heading_length = 1 && symb = '-' then
+  let (heading_chars, rest) = Sub.split_at (fun c -> not (Char.equal c symb)) s in
+  if Char.equal symb '-' && Sub.length heading_chars = 1 then
     (* can be interpreted as an empty list item *)
     raise Fail
+  else if not (Sub.for_all is_whitespace rest) then
+    (* if anything except whitespace is left, it can't be a setext heading underline *)
+    raise Fail
   else
-    (* setext headings consist of an unbroken sequence of consecutive header chars *)
-    let remaining = Sub.drop_while (Char.equal symb) trimmed in
-    if not (Sub.is_empty remaining) then
-      (* If other characters remain, it cannot be a setext heading *)
-      raise Fail
-    else Lsetext_heading (level, heading_length)
+    Lsetext_heading (level, Sub.length heading_chars)
 
-let parse_attributes = function
-  | None -> []
-  | Some s -> (
-      let attributes = String.split_on_char ' ' s in
-      let f (id, classes, acc) s =
-        if s = "" then (id, classes, acc)
-        else
-          match s.[0] with
-          | '#' -> (Some (String.sub s 1 (String.length s - 1)), classes, acc)
-          | '.' -> (id, String.sub s 1 (String.length s - 1) :: classes, acc)
-          | _ -> (
-              let attr = String.split_on_char '=' s in
-              match attr with
-              | [] -> (id, classes, acc)
-              | h :: t -> (id, classes, (h, String.concat "=" t) :: acc))
-      in
-      let id, classes, acc = List.fold_left f (None, [], []) attributes in
-      let acc = List.rev acc in
-      let acc =
-        if classes <> [] then
-          ("class", String.concat " " (List.rev classes)) :: acc
-        else acc
-      in
-      match id with Some id -> ("id", id) :: acc | None -> acc)
+(* Parses a string slice in pandoc-style into an association list
 
+   See https://pandoc.org/MANUAL.html#extension-header_attributes *)
+let parse_attributes s =
+  let attributes = String.split_on_char ' ' s in
+  let f (id, classes, acc) s =
+    if s = "" then (id, classes, acc)
+    else
+      match s.[0] with
+      | '#' -> (Some (String.sub s 1 (String.length s - 1)), classes, acc)
+      | '.' -> (id, String.sub s 1 (String.length s - 1) :: classes, acc)
+      | _ -> (
+          let attr = String.split_on_char '=' s in
+          match attr with
+          | [] -> (id, classes, acc)
+          | h :: t -> (id, classes, (h, String.concat "=" t) :: acc))
+  in
+  let id, classes, acc = List.fold_left f (None, [], []) attributes in
+  let acc = List.rev acc in
+  let acc =
+    match classes with
+    | [] -> acc
+    | _ :: _ ->
+        let classes = String.concat " " (List.rev classes) in
+        ("class", classes) :: acc
+  in
+  match id with Some id -> ("id", id) :: acc | None -> acc
+
+(* Parses a string slice into an attribute list (possibly empty) and the non-attribute part of the string
+
+   These are pandoc style attributes https://pandoc.org/MANUAL.html#extension-attributes *)
 let attribute_string s =
   let buf = Buffer.create 64 in
   let rec loop s =
@@ -305,16 +307,19 @@ let attribute_string s =
         let rec loop' s =
           match Sub.head s with
           | Some '}' -> (
+              (* Found a closing bracket not at the end of the line *)
               let s = Sub.tail s in
               match Sub.head s with
+              | None ->
+                  (* At end of line, so we've finished parsing the attributes *)
+                  ( Sub.of_string (Buffer.contents buf)
+                  , Some (Buffer.contents buf') )
               | Some _ ->
+                  (* Not at end of line, so this can't be a set of attributes *)
                   Buffer.add_char buf '{';
                   Buffer.add_buffer buf buf';
                   Buffer.add_char buf '}';
-                  loop s
-              | None ->
-                  ( Sub.of_string (Buffer.contents buf)
-                  , Some (Buffer.contents buf') ))
+                  loop s)
           | None ->
               Buffer.add_char buf '{';
               Buffer.add_buffer buf buf';
@@ -334,7 +339,8 @@ let attribute_string s =
         loop (Sub.tail s)
   in
   let s', a = loop (trim_leading_ws s) in
-  (s', parse_attributes a)
+  let attrs = Option.map parse_attributes a |> Option.value ~default:[] in
+  (s', attrs)
 
 let atx_heading s =
   let rec loop n s =
@@ -795,7 +801,7 @@ let inline_attribute_string s =
         loop s (pos s)
     | _ -> None
   in
-  let attr = parse_attributes a in
+  let attr = Option.map parse_attributes a |> Option.value ~default:[] in
   if attr = [] then set_pos s ppos;
   attr
 
