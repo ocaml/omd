@@ -221,21 +221,21 @@ let is_empty s = Sub.is_empty (trim_leading_ws s)
 
 (* See https://spec.commonmark.org/0.30/#thematic-breaks *)
 let thematic_break =
-  let accept symb chars =
-    let rec loop n s =
-      match Sub.uncons s with
-      | Some (c, tl) when symb = c -> loop (succ n) tl
-      (* Themtic break chars can be separated by spaces *)
-      | Some (w, tl) when is_whitespace w -> loop n tl
-      (* Three or more of the same thematic break chars found *)
-      | None when n >= 3 -> Lthematic_break
-      | _ -> raise Fail
-    in
-    loop 1 chars
+  (* Accepts thematic break chars or fail, counting how many chars we find *)
+  let f symb c count =
+    if Char.equal symb c then succ count
+    else if is_whitespace c then
+      (* Thematic break chars can be separated by spaces *)
+      count
+    else raise Fail
   in
   fun s ->
-    match Sub.uncons s with
-    | Some ((('*' | '_' | '-') as symb), rest) -> accept symb rest
+    match Sub.head s with
+    | Some (('*' | '_' | '-') as symb) ->
+        if Sub.fold_left (f symb) 0 s >= 3 then
+          (* Three or more of the same thematic break chars found *)
+          Lthematic_break
+        else raise Fail
     | Some _ | None -> raise Fail
 
 (* See https://spec.commonmark.org/0.30/#setext-heading *)
