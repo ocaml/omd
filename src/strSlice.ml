@@ -83,6 +83,44 @@ let rec drop_last_while f s =
   | Some l when f l -> drop_last_while f (drop_last s)
   | _ -> s
 
+let index f s =
+  let len = length s in
+  let rest = drop_while (fun c -> not (f c)) s in
+  let idx = len - length rest in
+  if idx = len then
+    None
+  else
+    Some idx
+
+(* Uncomment to test *)
+(* TODO: rig up method to unit test our utilities *)
+(* let () = *)
+(*   let index c = index (Char.equal c) in *)
+(*   let s = of_string "abcd" in *)
+(*   assert (index 'a' s = Some 0); *)
+(*   assert (index 'b' s = Some 1); *)
+(*   assert (index 'c' s = Some 2); *)
+(*   assert (index 'z' s = None) *)
+
+let split_at f s =
+  match index f s with
+  | None -> (s, offset (length s) s)
+  | Some idx -> ({s with len = idx} , offset idx s)
+
+(* Uncomment to test *)
+(* TODO: rig up method to unit test our utilities *)
+(* let () = *)
+(*   let f x = x = 'c' in *)
+(*   let before, rest = split_at f (of_string "abcdef") in *)
+(*   assert ("ab" = to_string before); *)
+(*   assert ("cdef" = to_string rest); *)
+(*   let before, rest = split_at f (of_string "cab") in *)
+(*   assert ("" = to_string before); *)
+(*   assert ("cab" = to_string rest); *)
+(*   let before, rest = split_at f (of_string "aaa") in *)
+(*   assert ("aaa" = to_string before); *)
+(*   assert ("" = to_string rest) *)
+
 let exists f s =
   let rec loop s i =
     if i >= s.len then false
@@ -96,3 +134,16 @@ let for_all f s = not (exists (fun c -> not (f c)) s)
 let sub ~len s =
   if len > s.len then invalid_arg "sub";
   { s with len }
+
+let fold_left f init s =
+  let rec aux acc rest =
+  match uncons rest with
+  | None -> acc
+  | Some (x, xs) -> aux (f x acc) xs
+  in
+  aux init s
+
+(* let () = *)
+(*   let s = of_string "abcde" in *)
+(*   assert (fold_left (fun _ n -> n + 1) 0 s = 5); *)
+(*   assert (fold_left (fun c s -> String.make 2 c ^ s) "" s = "eeddccbbaa") *)
