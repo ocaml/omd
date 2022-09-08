@@ -1,9 +1,9 @@
 (** Overlay on Stdcompat to refine/adjust some compatibility modules *)
 
-include Stdcompat
+include (Stdcompat : module type of Stdcompat with module Buffer := Buffer)
 
 module Buffer = struct
-  include Buffer
+  include Stdcompat.Buffer
 
   let add_utf_8_uchar b u =
     match Uchar.to_int u with
