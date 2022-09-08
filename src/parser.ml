@@ -1,5 +1,5 @@
 open Ast
-open Stdcompat
+open Compat
 
 let is_whitespace = function
   | ' ' | '\t' | '\010' .. '\013' -> true

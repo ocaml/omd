@@ -1,4 +1,4 @@
-open Stdcompat
+open Compat
 
 type t =
   { base : string
