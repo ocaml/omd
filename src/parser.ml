@@ -100,18 +100,17 @@ end = struct
 
   type 'a t = state -> 'a
 
-  let ensure_chars_remain st = if st.pos >= String.length st.str then raise Fail
-
   let char c st =
-    ensure_chars_remain st;
-    if st.str.[st.pos] <> c then raise Fail;
-    st.pos <- st.pos + 1
+    if st.pos >= String.length st.str then raise Fail
+    else if st.str.[st.pos] <> c then raise Fail
+    else st.pos <- st.pos + 1
 
   let next st =
-    ensure_chars_remain st;
-    let c = st.str.[st.pos] in
-    st.pos <- st.pos + 1;
-    c
+    if st.pos >= String.length st.str then raise Fail
+    else
+      let c = st.str.[st.pos] in
+      st.pos <- st.pos + 1;
+      c
 
   let peek st =
     if st.pos >= String.length st.str then None else Some st.str.[st.pos]
