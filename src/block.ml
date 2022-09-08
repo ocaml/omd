@@ -90,7 +90,7 @@ module Pre = struct
     | Rempty, Lblockquote s -> { blocks; next = Rblockquote (process empty s) }
     | Rempty, Lthematic_break ->
         { blocks = Thematic_break [] :: blocks; next = Rempty }
-    | Rempty, Lsetext_heading (2, n) when n >= 3 ->
+    | Rempty, Lsetext_heading { level = 2; len } when len >= 3 ->
         { blocks = Thematic_break [] :: blocks; next = Rempty }
     | Rempty, Latx_heading (level, text, attr) ->
         { blocks = Heading (attr, level, text) :: blocks; next = Rempty }
@@ -117,7 +117,7 @@ module Pre = struct
         | Lfenced_code _
         | Lhtml (true, _) ) ) ->
         process { blocks = close { blocks; next }; next = Rempty } s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
+    | Rparagraph (_ :: _ as lines), Lsetext_heading { level; _ } ->
         let text = concat (List.map trim_left lines) in
         let defs, text = link_reference_definitions text in
         link_defs := defs @ !link_defs;
@@ -221,7 +221,7 @@ module Pre = struct
           | Rparagraph (_ :: _ as lines) -> (
               match classify_line s with
               | Parser.Lparagraph | Lindented_code _
-              | Lsetext_heading (1, _)
+              | Lsetext_heading { level = 1; _ }
               | Lhtml (false, _) ->
                   Some (Rparagraph (Sub.to_string s :: lines))
               | _ -> None)

@@ -193,8 +193,10 @@ type t =
   | Lblockquote of Sub.t
   | Lthematic_break
   | Latx_heading of int * string * attributes
-  | Lsetext_heading of int * int
-      (** the level of the heading and how long the underline marker is *)
+  | Lsetext_heading of
+      { level : int
+      ; len : int
+      }  (** the level of the heading and how long the underline marker is *)
   | Lfenced_code of int * int * code_block_kind * (string * string) * attributes
   | Lindented_code of Sub.t
   | Lhtml of bool * html_kind
@@ -248,13 +250,14 @@ let setext_heading s =
     | _ -> raise Fail
   in
   let heading_chars, rest = Sub.split_at (fun c -> not (Char.equal c symb)) s in
-  if Char.equal symb '-' && Sub.length heading_chars = 1 then
+  let len = Sub.length heading_chars in
+  if Char.equal symb '-' && len = 1 then
     (* can be interpreted as an empty list item *)
     raise Fail
   else if not (Sub.for_all is_whitespace rest) then
     (* if anything except whitespace is left, it can't be a setext heading underline *)
     raise Fail
-  else Lsetext_heading (level, Sub.length heading_chars)
+  else Lsetext_heading { level; len }
 
 (* Parses a string slice in pandoc-style into an association list
 
