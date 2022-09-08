@@ -1,6 +1,5 @@
 open Ast
 open Stdcompat
-module Sub = StrSlice
 
 let is_whitespace = function
   | ' ' | '\t' | '\010' .. '\013' -> true
@@ -85,7 +84,7 @@ module P : sig
 
   val pair : 'a t -> 'b t -> ('a * 'b) t
 
-  val on_sub : (Sub.t -> 'a * Sub.t) -> 'a t
+  val on_sub : (StrSlice.t -> 'a * StrSlice.t) -> 'a t
   (** Given a function [f] that takes a prefix of a string slice to a value [x]
       of type ['a] and some remainder of the slice, [on_sub f] produces [x] from
       the state, and advances the input the length of the slice that was
@@ -174,8 +173,8 @@ end = struct
     (x, y)
 
   let on_sub fn st =
-    let result, s = fn (Sub.of_string ~off:st.pos st.str) in
-    st.pos <- Sub.get_offset s;
+    let result, s = fn (StrSlice.of_string ~off:st.pos st.str) in
+    st.pos <- StrSlice.get_offset s;
     result
 end
 
@@ -189,7 +188,7 @@ type code_block_kind =
 
 type t =
   | Lempty
-  | Lblockquote of Sub.t
+  | Lblockquote of StrSlice.t
   | Lthematic_break
   | Latx_heading of int * string * attributes
   | Lsetext_heading of
@@ -197,28 +196,28 @@ type t =
       ; len : int
       }  (** the level of the heading and how long the underline marker is *)
   | Lfenced_code of int * int * code_block_kind * (string * string) * attributes
-  | Lindented_code of Sub.t
+  | Lindented_code of StrSlice.t
   | Lhtml of bool * html_kind
-  | Llist_item of list_type * int * Sub.t
+  | Llist_item of list_type * int * StrSlice.t
   | Lparagraph
   | Ldef_list of string
 
 (* drop up to 3 spaces, returning the number of spaces dropped and the remainder of the string *)
 let sp3 s =
-  match Sub.take 3 s with
-  | [ ' '; ' '; ' ' ] -> (3, Sub.drop 3 s)
-  | ' ' :: ' ' :: _ -> (2, Sub.drop 2 s)
-  | ' ' :: _ -> (1, Sub.drop 1 s)
+  match StrSlice.take 3 s with
+  | [ ' '; ' '; ' ' ] -> (3, StrSlice.drop 3 s)
+  | ' ' :: ' ' :: _ -> (2, StrSlice.drop 2 s)
+  | ' ' :: _ -> (1, StrSlice.drop 1 s)
   | _ -> (0, s)
 
 (** TODO Why is this here? Doesn't it almost exactly repeat the one in [P], only with slices?
     Why is this kind of repetition needed? *)
 let ( ||| ) p1 p2 s = try p1 s with Fail -> p2 s
 
-let trim_leading_ws s = Sub.drop_while is_whitespace s
-let trim_trailing_ws s = Sub.drop_last_while is_whitespace s
+let trim_leading_ws s = StrSlice.drop_while is_whitespace s
+let trim_trailing_ws s = StrSlice.drop_last_while is_whitespace s
 let trim_ws s = trim_leading_ws s |> trim_trailing_ws
-let is_empty s = Sub.is_empty (trim_leading_ws s)
+let is_empty s = StrSlice.is_empty (trim_leading_ws s)
 
 (* See https://spec.commonmark.org/0.30/#thematic-breaks *)
 let thematic_break =
@@ -231,9 +230,9 @@ let thematic_break =
     else raise Fail
   in
   fun s ->
-    match Sub.head s with
+    match StrSlice.head s with
     | Some (('*' | '_' | '-') as symb) ->
-        if Sub.fold_left (f symb) 0 s >= 3 then
+        if StrSlice.fold_left (f symb) 0 s >= 3 then
           (* Three or more of the same thematic break chars found *)
           Lthematic_break
         else raise Fail
@@ -243,17 +242,19 @@ let thematic_break =
 let setext_heading s =
   (* The first char determines if possible setext and the level of the heading *)
   let level, symb =
-    match Sub.head s with
+    match StrSlice.head s with
     | Some '=' -> (1, '=')
     | Some '-' -> (2, '-')
     | _ -> raise Fail
   in
-  let heading_chars, rest = Sub.split_at (fun c -> not (Char.equal c symb)) s in
-  let len = Sub.length heading_chars in
+  let heading_chars, rest =
+    StrSlice.split_at (fun c -> not (Char.equal c symb)) s
+  in
+  let len = StrSlice.length heading_chars in
   if Char.equal symb '-' && len = 1 then
     (* can be interpreted as an empty list item *)
     raise Fail
-  else if not (Sub.for_all is_whitespace rest) then
+  else if not (StrSlice.for_all is_whitespace rest) then
     (* if anything except whitespace is left, it can't be a setext heading underline *)
     raise Fail
   else Lsetext_heading { level; len }
@@ -292,28 +293,28 @@ let parse_attributes s =
 let attribute_string s =
   let buf = Buffer.create 64 in
   let rec loop s =
-    match Sub.head s with
-    | None -> (Sub.of_string (Buffer.contents buf), None)
+    match StrSlice.head s with
+    | None -> (StrSlice.of_string (Buffer.contents buf), None)
     | Some ('\\' as c) -> (
-        let s = Sub.tail s in
-        match Sub.head s with
+        let s = StrSlice.tail s in
+        match StrSlice.head s with
         | Some c when is_punct c ->
             Buffer.add_char buf c;
-            loop (Sub.tail s)
+            loop (StrSlice.tail s)
         | Some _ | None ->
             Buffer.add_char buf c;
             loop s)
     | Some '{' ->
         let buf' = Buffer.create 64 in
         let rec loop' s =
-          match Sub.head s with
+          match StrSlice.head s with
           | Some '}' -> (
               (* Found a closing bracket not at the end of the line *)
-              let s = Sub.tail s in
-              match Sub.head s with
+              let s = StrSlice.tail s in
+              match StrSlice.head s with
               | None ->
                   (* At end of line, so we've finished parsing the attributes *)
-                  ( Sub.of_string (Buffer.contents buf)
+                  ( StrSlice.of_string (Buffer.contents buf)
                   , Some (Buffer.contents buf') )
               | Some _ ->
                   (* Not at end of line, so this can't be a set of attributes *)
@@ -324,20 +325,20 @@ let attribute_string s =
           | None ->
               Buffer.add_char buf '{';
               Buffer.add_buffer buf buf';
-              (Sub.of_string (Buffer.contents buf), None)
+              (StrSlice.of_string (Buffer.contents buf), None)
           | Some '{' ->
               Buffer.add_char buf '{';
               Buffer.add_buffer buf buf';
               Buffer.reset buf';
-              loop' (Sub.tail s)
+              loop' (StrSlice.tail s)
           | Some c ->
               Buffer.add_char buf' c;
-              loop' (Sub.tail s)
+              loop' (StrSlice.tail s)
         in
-        loop' (Sub.tail s)
+        loop' (StrSlice.tail s)
     | Some c ->
         Buffer.add_char buf c;
-        loop (Sub.tail s)
+        loop (StrSlice.tail s)
   in
   let s', a = loop (trim_leading_ws s) in
   let attrs = Option.map parse_attributes a |> Option.value ~default:[] in
@@ -346,110 +347,118 @@ let attribute_string s =
 let atx_heading s =
   let rec loop n s =
     if n > 6 then raise Fail;
-    match Sub.head s with
-    | Some '#' -> loop (succ n) (Sub.tail s)
+    match StrSlice.head s with
+    | Some '#' -> loop (succ n) (StrSlice.tail s)
     | Some w when is_whitespace w ->
         let s, a =
-          match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
+          match StrSlice.last s with
+          | Some '}' -> attribute_string s
+          | _ -> (s, [])
         in
         let s = trim_ws s in
         let rec loop t =
-          match Sub.last t with
-          | Some '#' -> loop (Sub.drop_last t)
+          match StrSlice.last t with
+          | Some '#' -> loop (StrSlice.drop_last t)
           | Some w when is_whitespace w -> trim_trailing_ws t
           | None -> trim_trailing_ws t
           | Some _ -> s
         in
-        Latx_heading (n, Sub.to_string (trim_leading_ws (loop s)), a)
+        Latx_heading (n, StrSlice.to_string (trim_leading_ws (loop s)), a)
     | Some _ -> raise Fail
-    | None -> Latx_heading (n, Sub.to_string s, [])
+    | None -> Latx_heading (n, StrSlice.to_string s, [])
   in
   loop 0 s
 
 let entity s =
-  match Sub.take 2 s with
+  match StrSlice.take 2 s with
   | '#' :: ('x' | 'X') :: _ ->
       let rec loop m n s =
         if m > 6 then raise Fail;
-        match Sub.head s with
+        match StrSlice.head s with
         | Some ('a' .. 'f' as c) ->
             loop
               (succ m)
               ((n * 16) + Char.code c - Char.code 'a' + 10)
-              (Sub.tail s)
+              (StrSlice.tail s)
         | Some ('A' .. 'F' as c) ->
             loop
               (succ m)
               ((n * 16) + Char.code c - Char.code 'A' + 10)
-              (Sub.tail s)
+              (StrSlice.tail s)
         | Some ('0' .. '9' as c) ->
-            loop (succ m) ((n * 16) + Char.code c - Char.code '0') (Sub.tail s)
+            loop
+              (succ m)
+              ((n * 16) + Char.code c - Char.code '0')
+              (StrSlice.tail s)
         | Some ';' ->
             if m = 0 then raise Fail;
             let u =
               if n = 0 || not (Uchar.is_valid n) then Uchar.rep
               else Uchar.of_int n
             in
-            ([ u ], Sub.tail s)
+            ([ u ], StrSlice.tail s)
         | Some _ | None -> raise Fail
       in
-      loop 0 0 (Sub.drop 2 s)
+      loop 0 0 (StrSlice.drop 2 s)
   | '#' :: _ ->
       let rec loop m n s =
         if m > 7 then raise Fail;
-        match Sub.head s with
+        match StrSlice.head s with
         | Some ('0' .. '9' as c) ->
-            loop (succ m) ((n * 10) + Char.code c - Char.code '0') (Sub.tail s)
+            loop
+              (succ m)
+              ((n * 10) + Char.code c - Char.code '0')
+              (StrSlice.tail s)
         | Some ';' ->
             if m = 0 then raise Fail;
             let u =
               if n = 0 || not (Uchar.is_valid n) then Uchar.rep
               else Uchar.of_int n
             in
-            ([ u ], Sub.tail s)
+            ([ u ], StrSlice.tail s)
         | Some _ | None -> raise Fail
       in
-      loop 0 0 (Sub.tail s)
+      loop 0 0 (StrSlice.tail s)
   | ('a' .. 'z' | 'A' .. 'Z') :: _ ->
       let rec loop len t =
-        match Sub.head t with
+        match StrSlice.head t with
         | Some ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') ->
-            loop (succ len) (Sub.tail t)
+            loop (succ len) (StrSlice.tail t)
         | Some ';' -> (
-            let name = Sub.to_string (Sub.sub ~len s) in
+            let name = StrSlice.to_string (StrSlice.sub ~len s) in
             match Entities.f name with
             | [] -> raise Fail
-            | cps -> (cps, Sub.tail t))
+            | cps -> (cps, StrSlice.tail t))
         | Some _ | None -> raise Fail
       in
-      loop 1 (Sub.tail s)
+      loop 1 (StrSlice.tail s)
   | _ -> raise Fail
 
 let info_string c s =
   let buf = Buffer.create 17 in
   let s, a =
-    match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
+    match StrSlice.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
   let s = trim_ws s in
   let rec loop s =
-    match Sub.head s with
+    match StrSlice.head s with
     (* TODO use is_whitespace *)
     | Some (' ' | '\t' | '\010' .. '\013') | None ->
-        if c = '`' && Sub.exists (function '`' -> true | _ -> false) s then
-          raise Fail;
-        ((Buffer.contents buf, Sub.to_string (trim_leading_ws s)), a)
+        if c = '`' && StrSlice.exists (function '`' -> true | _ -> false) s
+        then raise Fail;
+        ((Buffer.contents buf, StrSlice.to_string (trim_leading_ws s)), a)
     | Some '`' when c = '`' -> raise Fail
     | Some ('\\' as c) -> (
-        let s = Sub.tail s in
-        match Sub.head s with
+        let s = StrSlice.tail s in
+        match StrSlice.head s with
         | Some c when is_punct c ->
             Buffer.add_char buf c;
-            loop (Sub.tail s)
+            loop (StrSlice.tail s)
         | Some _ | None ->
             Buffer.add_char buf c;
             loop s)
     | Some ('&' as c) -> (
-        let s = Sub.tail s in
+        let s = StrSlice.tail s in
         match entity s with
         | ul, s ->
             List.iter (Buffer.add_utf_8_uchar buf) ul;
@@ -459,74 +468,74 @@ let info_string c s =
             loop s)
     | Some c ->
         Buffer.add_char buf c;
-        loop (Sub.tail s)
+        loop (StrSlice.tail s)
   in
   loop (trim_leading_ws s)
 
 let fenced_code ind s =
-  match Sub.head s with
+  match StrSlice.head s with
   | Some (('`' | '~') as c) ->
       let rec loop n s =
-        match Sub.head s with
-        | Some c1 when c = c1 -> loop (succ n) (Sub.tail s)
+        match StrSlice.head s with
+        | Some c1 when c = c1 -> loop (succ n) (StrSlice.tail s)
         | Some _ | None ->
             if n < 3 then raise Fail;
             let s, a = info_string c s in
             let c = if c = '`' then Backtick else Tilde in
             Lfenced_code (ind, n, c, s, a)
       in
-      loop 1 (Sub.tail s)
+      loop 1 (StrSlice.tail s)
   | Some _ | None -> raise Fail
 
 let indent s =
   let rec loop n s =
-    match Sub.head s with
-    | Some ' ' -> loop (n + 1) (Sub.tail s)
-    | Some '\t' -> loop (n + 4) (Sub.tail s)
+    match StrSlice.head s with
+    | Some ' ' -> loop (n + 1) (StrSlice.tail s)
+    | Some '\t' -> loop (n + 4) (StrSlice.tail s)
     | Some _ | None -> n
   in
   loop 0 s
 
 let unordered_list_item ind s =
-  match Sub.head s with
+  match StrSlice.head s with
   | Some (('+' | '-' | '*') as c) ->
-      let s = Sub.tail s in
+      let s = StrSlice.tail s in
       if is_empty s then Llist_item (Bullet c, 2 + ind, s)
       else
         let n = indent s in
         if n = 0 then raise Fail;
         let n = if n <= 4 then n else 1 in
-        Llist_item (Bullet c, n + 1 + ind, Sub.offset n s)
+        Llist_item (Bullet c, n + 1 + ind, StrSlice.offset n s)
   | Some _ | None -> raise Fail
 
 let ordered_list_item ind s =
   let rec loop n m s =
-    match Sub.head s with
+    match StrSlice.head s with
     | Some ('0' .. '9' as c) ->
         if n >= 9 then raise Fail;
-        loop (succ n) ((m * 10) + Char.code c - Char.code '0') (Sub.tail s)
+        loop (succ n) ((m * 10) + Char.code c - Char.code '0') (StrSlice.tail s)
     | Some (('.' | ')') as c) ->
-        let s = Sub.tail s in
+        let s = StrSlice.tail s in
         if is_empty s then Llist_item (Ordered (m, c), n + 1 + ind, s)
         else
           let ind' = indent s in
           if ind' = 0 then raise Fail;
           let ind' = if ind' <= 4 then ind' else 1 in
-          Llist_item (Ordered (m, c), n + ind + ind' + 1, Sub.offset ind' s)
+          Llist_item (Ordered (m, c), n + ind + ind' + 1, StrSlice.offset ind' s)
     | Some _ | None -> raise Fail
   in
   loop 0 0 s
 
 let tag_name s0 =
-  match Sub.head s0 with
+  match StrSlice.head s0 with
   | Some ('a' .. 'z' | 'A' .. 'Z') ->
       let rec loop len s =
-        match Sub.head s with
+        match StrSlice.head s with
         | Some ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-') ->
-            loop (succ len) (Sub.tail s)
-        | Some _ | None -> (Sub.to_string (Sub.sub s0 ~len), s)
+            loop (succ len) (StrSlice.tail s)
+        | Some _ | None -> (StrSlice.to_string (StrSlice.sub s0 ~len), s)
       in
-      loop 1 (Sub.tail s0)
+      loop 1 (StrSlice.tail s0)
   | Some _ | None -> raise Fail
 
 let known_tags =
@@ -606,63 +615,63 @@ let special_tag s =
 
 let closing_tag s =
   let s = trim_leading_ws s in
-  match Sub.head s with
+  match StrSlice.head s with
   | Some '>' ->
-      if not (is_empty (Sub.tail s)) then raise Fail;
+      if not (is_empty (StrSlice.tail s)) then raise Fail;
       Lhtml (false, Hblank)
   | Some _ | None -> raise Fail
 
 let special_tag tag s =
   if not (special_tag tag) then raise Fail;
-  match Sub.head s with
+  match StrSlice.head s with
   | Some (' ' | '\t' | '\010' .. '\013' | '>') | None ->
       Lhtml (true, Hcontains [ "</script>"; "</pre>"; "</style>" ])
   | Some _ -> raise Fail
 
 let known_tag tag s =
   if not (known_tag tag) then raise Fail;
-  match Sub.take 2 s with
+  match StrSlice.take 2 s with
   | (' ' | '\t' | '\010' .. '\013') :: _ | [] | '>' :: _ | '/' :: '>' :: _ ->
       Lhtml (true, Hblank)
   | _ -> raise Fail
 
 (** TODO Why these repeated functions that look just like thos in [P]? *)
 let ws1 s =
-  match Sub.head s with
+  match StrSlice.head s with
   | Some w when is_whitespace w -> trim_leading_ws s
   | Some _ | None -> raise Fail
 
 let attribute_name s =
-  match Sub.head s with
+  match StrSlice.head s with
   | Some ('a' .. 'z' | 'A' .. 'Z' | '_' | ':') ->
       let rec loop s =
-        match Sub.head s with
+        match StrSlice.head s with
         | Some ('a' .. 'z' | 'A' .. 'Z' | '_' | '.' | ':' | '0' .. '9') ->
-            loop (Sub.tail s)
+            loop (StrSlice.tail s)
         | Some _ | None -> s
       in
       loop s
   | Some _ | None -> raise Fail
 
 let attribute_value s =
-  match Sub.head s with
+  match StrSlice.head s with
   | Some (('\'' | '"') as c) ->
       let rec loop s =
-        match Sub.head s with
-        | Some c1 when c = c1 -> Sub.tail s
-        | Some _ -> loop (Sub.tail s)
+        match StrSlice.head s with
+        | Some c1 when c = c1 -> StrSlice.tail s
+        | Some _ -> loop (StrSlice.tail s)
         | None -> raise Fail
       in
-      loop (Sub.tail s)
+      loop (StrSlice.tail s)
   | Some _ ->
       let rec loop first s =
-        match Sub.head s with
+        match StrSlice.head s with
         | Some
             (' ' | '\t' | '\010' .. '\013' | '"' | '\'' | '=' | '<' | '>' | '`')
         | None ->
             if first then raise Fail;
             s
-        | Some _ -> loop false (Sub.tail s)
+        | Some _ -> loop false (StrSlice.tail s)
       in
       loop true s
   | None -> raise Fail
@@ -671,9 +680,9 @@ let attribute s =
   let s = ws1 s in
   let s = attribute_name s in
   let s = trim_leading_ws s in
-  match Sub.head s with
+  match StrSlice.head s with
   | Some '=' ->
-      let s = trim_leading_ws (Sub.tail s) in
+      let s = trim_leading_ws (StrSlice.tail s) in
       attribute_value s
   | Some _ | None -> s
 
@@ -685,26 +694,26 @@ let open_tag s =
   let s = attributes s in
   let s = trim_leading_ws s in
   let n =
-    match Sub.take 2 s with
+    match StrSlice.take 2 s with
     | '/' :: '>' :: _ -> 2
     | '>' :: _ -> 1
     | _ -> raise Fail
   in
-  if not (is_empty (Sub.drop n s)) then raise Fail;
+  if not (is_empty (StrSlice.drop n s)) then raise Fail;
   Lhtml (false, Hblank)
 
 let raw_html s =
-  match Sub.take 10 s with
+  match StrSlice.take 10 s with
   | '<' :: '?' :: _ -> Lhtml (true, Hcontains [ "?>" ])
   | '<' :: '!' :: '-' :: '-' :: _ -> Lhtml (true, Hcontains [ "-->" ])
   | '<' :: '!' :: '[' :: 'C' :: 'D' :: 'A' :: 'T' :: 'A' :: '[' :: _ ->
       Lhtml (true, Hcontains [ "]]>" ])
   | '<' :: '!' :: _ -> Lhtml (true, Hcontains [ ">" ])
   | '<' :: '/' :: _ ->
-      let tag, s = tag_name (Sub.drop 2 s) in
+      let tag, s = tag_name (StrSlice.drop 2 s) in
       (known_tag tag ||| closing_tag) s
   | '<' :: _ ->
-      let tag, s = tag_name (Sub.drop 1 s) in
+      let tag, s = tag_name (StrSlice.drop 1 s) in
       (special_tag tag ||| known_tag tag ||| open_tag) s
   | _ -> raise Fail
 
@@ -715,35 +724,36 @@ let blank s =
 let tag_string s =
   let buf = Buffer.create 17 in
   let s, a =
-    match Sub.last s with Some '}' -> attribute_string s | _ -> (s, [])
+    match StrSlice.last s with Some '}' -> attribute_string s | _ -> (s, [])
   in
   let s = trim_ws s in
   let rec loop s =
-    match Sub.head s with
+    match StrSlice.head s with
     (* TODO use is_whitespace *)
     | Some (' ' | '\t' | '\010' .. '\013') | None -> (Buffer.contents buf, a)
     | Some c ->
         Buffer.add_char buf c;
-        loop (Sub.tail s)
+        loop (StrSlice.tail s)
   in
   loop (trim_leading_ws s)
 
 let def_list s =
-  let s = Sub.tail s in
-  match Sub.head s with
-  | Some w when is_whitespace w -> Ldef_list (String.trim (Sub.to_string s))
+  let s = StrSlice.tail s in
+  match StrSlice.head s with
+  | Some w when is_whitespace w ->
+      Ldef_list (String.trim (StrSlice.to_string s))
   | _ -> raise Fail
 
 let indented_code ind s =
   if indent s + ind < 4 then raise Fail;
-  Lindented_code (Sub.offset (4 - ind) s)
+  Lindented_code (StrSlice.offset (4 - ind) s)
 
 let parse s0 =
   let ind, s = sp3 s0 in
-  match Sub.head s with
+  match StrSlice.head s with
   | Some '>' ->
-      let s = Sub.offset 1 s in
-      let s = if indent s > 0 then Sub.offset 1 s else s in
+      let s = StrSlice.offset 1 s in
+      let s = if indent s > 0 then StrSlice.offset 1 s else s in
       Lblockquote s
   | Some '=' -> setext_heading s
   | Some '-' ->
