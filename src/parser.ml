@@ -1,5 +1,5 @@
 open Ast
-open Compat
+open Stdcompat
 
 let is_whitespace = function
   | ' ' | '\t' | '\010' .. '\013' -> true
@@ -461,7 +461,7 @@ let info_string c s =
         let s = StrSlice.tail s in
         match entity s with
         | ul, s ->
-            List.iter (Buffer.add_utf_8_uchar buf) ul;
+            List.iter (Uutf.Buffer.add_utf_8 buf) ul;
             loop s
         | exception Fail ->
             Buffer.add_char buf c;
@@ -819,7 +819,7 @@ let inline_attribute_string s =
 let entity buf st =
   junk st;
   match on_sub entity st with
-  | cs -> List.iter (Buffer.add_utf_8_uchar buf) cs
+  | cs -> List.iter (Uutf.Buffer.add_utf_8 buf) cs
   | exception Fail -> Buffer.add_char buf '&'
 
 module Pre = struct
