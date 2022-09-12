@@ -1,4 +1,10 @@
+(* The document model *)
+
 include Ast.Impl
+
+(* Helper functions for construction document AST *)
+
+module Ctor = Ast_constructors.Impl
 
 (* Table of contents *)
 

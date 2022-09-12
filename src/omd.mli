@@ -6,6 +6,10 @@
 
 include Ast.Intf
 
+(** {2 Helper functions for constructing the document AST } *)
+
+module Ctor : Ast_constructors.Intf
+
 (** {2 Generating and constructing tables of contents} *)
 
 val headers :
