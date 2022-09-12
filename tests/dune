@@ -1,3 +1,11 @@
+(library
+ (name expect_tests)
+ (modules expect_tests)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect))
+ (libraries omd))
+
 (executable
  (name extract_tests)
  (libraries str)
