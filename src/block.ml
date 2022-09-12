@@ -1,5 +1,4 @@
 open Ast
-module Sub = Parser.Sub
 
 module Pre = struct
   type container =
@@ -90,7 +89,7 @@ module Pre = struct
     | Rempty, Lblockquote s -> { blocks; next = Rblockquote (process empty s) }
     | Rempty, Lthematic_break ->
         { blocks = Thematic_break [] :: blocks; next = Rempty }
-    | Rempty, Lsetext_heading (2, n) when n >= 3 ->
+    | Rempty, Lsetext_heading { level = 2; len } when len >= 3 ->
         { blocks = Thematic_break [] :: blocks; next = Rempty }
     | Rempty, Latx_heading (level, text, attr) ->
         { blocks = Heading (attr, level, text) :: blocks; next = Rempty }
@@ -98,26 +97,26 @@ module Pre = struct
         { blocks; next = Rfenced_code (ind, num, q, info, [], a) }
     | Rempty, Lhtml (_, kind) -> process { blocks; next = Rhtml (kind, []) } s
     | Rempty, Lindented_code s ->
-        { blocks; next = Rindented_code [ Sub.to_string s ] }
+        { blocks; next = Rindented_code [ StrSlice.to_string s ] }
     | Rempty, Llist_item (kind, indent, s) ->
         { blocks
         ; next = Rlist (kind, Tight, false, indent, [], process empty s)
         }
     | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _) ->
-        { blocks; next = Rparagraph [ Sub.to_string s ] }
+        { blocks; next = Rparagraph [ StrSlice.to_string s ] }
     | Rparagraph [ h ], Ldef_list def ->
         { blocks; next = Rdef_list (h, [ def ]) }
     | Rdef_list (term, defs), Ldef_list def ->
         { blocks; next = Rdef_list (term, def :: defs) }
     | Rparagraph _, Llist_item ((Ordered (1, _) | Bullet _), _, s1)
-      when not (Parser.is_empty (Parser.P.of_string (Sub.to_string s1))) ->
+      when not (Parser.is_empty (Parser.P.of_string (StrSlice.to_string s1))) ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | ( Rparagraph _
       , ( Lempty | Lblockquote _ | Lthematic_break | Latx_heading _
         | Lfenced_code _
         | Lhtml (true, _) ) ) ->
         process { blocks = close { blocks; next }; next = Rempty } s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading (level, _) ->
+    | Rparagraph (_ :: _ as lines), Lsetext_heading { level; _ } ->
         let text = concat (List.map trim_left lines) in
         let defs, text = link_reference_definitions text in
         link_defs := defs @ !link_defs;
@@ -130,44 +129,46 @@ module Pre = struct
 
              In that case, there's nothing to make as Heading. We can simply add `===` as Rparagraph
           *)
-          { blocks; next = Rparagraph [ Sub.to_string s ] }
+          { blocks; next = Rparagraph [ StrSlice.to_string s ] }
         else { blocks = Heading ([], level, text) :: blocks; next = Rempty }
     | Rparagraph lines, _ ->
-        { blocks; next = Rparagraph (Sub.to_string s :: lines) }
+        { blocks; next = Rparagraph (StrSlice.to_string s :: lines) }
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _)
       when num' >= num && q = q1 ->
         { blocks = close { blocks; next }; next = Rempty }
     | Rfenced_code (ind, num, q, info, lines, a), _ ->
         let s =
           let ind = min (Parser.indent s) ind in
-          if ind > 0 then Sub.offset ind s else s
+          if ind > 0 then StrSlice.offset ind s else s
         in
         { blocks
-        ; next = Rfenced_code (ind, num, q, info, Sub.to_string s :: lines, a)
+        ; next =
+            Rfenced_code (ind, num, q, info, StrSlice.to_string s :: lines, a)
         }
     | Rdef_list (term, d :: defs), Lparagraph ->
         { blocks
-        ; next = Rdef_list (term, (d ^ "\n" ^ Sub.to_string s) :: defs)
+        ; next = Rdef_list (term, (d ^ "\n" ^ StrSlice.to_string s) :: defs)
         }
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rindented_code lines, Lindented_code s ->
-        { blocks; next = Rindented_code (Sub.to_string s :: lines) }
+        { blocks; next = Rindented_code (StrSlice.to_string s :: lines) }
     | Rindented_code lines, Lempty ->
         let n = min (Parser.indent s) 4 in
-        let s = Sub.offset n s in
-        { blocks; next = Rindented_code (Sub.to_string s :: lines) }
+        let s = StrSlice.offset n s in
+        { blocks; next = Rindented_code (StrSlice.to_string s :: lines) }
     | Rindented_code _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rhtml ((Hcontains l as k), lines), _
-      when List.exists (fun t -> Sub.contains t s) l ->
-        { blocks = close { blocks; next = Rhtml (k, Sub.to_string s :: lines) }
+      when List.exists (fun t -> StrSlice.contains t s) l ->
+        { blocks =
+            close { blocks; next = Rhtml (k, StrSlice.to_string s :: lines) }
         ; next = Rempty
         }
     | Rhtml (Hblank, _), Lempty ->
         { blocks = close { blocks; next }; next = Rempty }
     | Rhtml (k, lines), _ ->
-        { blocks; next = Rhtml (k, Sub.to_string s :: lines) }
+        { blocks; next = Rhtml (k, StrSlice.to_string s :: lines) }
     | Rblockquote state, Lblockquote s ->
         { blocks; next = Rblockquote (process state s) }
     | Rlist (kind, style, _, ind, items, state), Lempty ->
@@ -179,7 +180,7 @@ module Pre = struct
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rlist (kind, style, prev_empty, ind, items, state), _
       when Parser.indent s >= ind ->
-        let s = Sub.offset ind s in
+        let s = StrSlice.offset ind s in
         let state = process state s in
         let style =
           let rec new_block = function
@@ -221,9 +222,9 @@ module Pre = struct
           | Rparagraph (_ :: _ as lines) -> (
               match classify_line s with
               | Parser.Lparagraph | Lindented_code _
-              | Lsetext_heading (1, _)
+              | Lsetext_heading { level = 1; _ }
               | Lhtml (false, _) ->
-                  Some (Rparagraph (Sub.to_string s :: lines))
+                  Some (Rparagraph (StrSlice.to_string s :: lines))
               | _ -> None)
           | _ -> None
         in
@@ -231,7 +232,7 @@ module Pre = struct
         | Some next -> { blocks; next }
         | None -> process { blocks = close { blocks; next }; next = Rempty } s)
 
-  let process link_defs state s = process link_defs state (Sub.of_string s)
+  let process link_defs state s = process link_defs state (StrSlice.of_string s)
 
   let of_channel ic =
     let link_defs = ref [] in
