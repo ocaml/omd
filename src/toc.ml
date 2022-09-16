@@ -1,4 +1,4 @@
-open Ast
+open Ast.Util
 open Stdcompat
 
 let rec remove_links inline =

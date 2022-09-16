@@ -1,4 +1,5 @@
-open Ast
+open Ast.Util
+module Raw = Ast_block.Raw
 
 module Pre = struct
   type container =

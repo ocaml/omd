@@ -1,5 +1,12 @@
-open Ast
+open Ast.Impl
 open Stdcompat
+
+type 'attr link_def =
+  { label : string
+  ; destination : string
+  ; title : string option
+  ; attributes : 'attr
+  }
 
 let is_whitespace = function
   | ' ' | '\t' | '\010' .. '\013' -> true
@@ -1566,7 +1573,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      { Ast.label = Text ([], label); destination; title = None }
+      { Ast.Impl.label = Text ([], label); destination; title = None }
   | _ -> raise Fail
 
 let inline_link =
@@ -1873,7 +1880,7 @@ let sp3 st =
   | _ -> 0
   | exception Fail -> 0
 
-let link_reference_definition st : attributes Ast.link_def =
+let link_reference_definition st : attributes link_def =
   (* TODO remove duplicated ws/ws1 functions? *)
   let ws st =
     let rec loop seen_nl =
