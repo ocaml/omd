@@ -131,28 +131,26 @@ end
    See: https://pandoc.org/MANUAL.html#extension-auto_identifiers *)
 let slugify s =
   let s = drop_while (fun c -> not (is_alphabetic c)) s in
-  let length = String.length s in
-  let b = Buffer.create length in
-  let last_is_ws = ref false in
-  let add_to_buffer u =
-    if !last_is_ws = true then begin
-      Uutf.Buffer.add_utf_8 b (Uchar.of_char '-');
-      last_is_ws := false
-    end;
-    Uutf.Buffer.add_utf_8 b u
-  in
-  let fold () _ = function
+  let b = Buffer.create (String.length s) in
+  let fold last_is_ws _ =
+    let add_to_buffer u =
+      if last_is_ws then Uutf.Buffer.add_utf_8 b hyphen;
+      Uutf.Buffer.add_utf_8 b u;
+      (* If we add to the buffer, we've finished escaping any white space,
+         so set the whitespace flag to false *)
+      false
+    in
+    function
     | `Malformed _ -> add_to_buffer Uutf.u_rep
-    | `Uchar u when is_white_space u && not !last_is_ws -> last_is_ws := true
-    | `Uchar u when is_white_space u && !last_is_ws -> ()
     | `Uchar u ->
-        (if is_alphabetic u || is_hex_digit u then
-         match Uucp.Case.Map.to_lower u with
-         | `Self -> add_to_buffer u
-         | `Uchars us -> List.iter add_to_buffer us);
-        if u = underscore || u = hyphen || u = period then add_to_buffer u
+        if is_alphabetic u || is_hex_digit u then
+          match Uucp.Case.Map.to_lower u with
+          | `Self -> add_to_buffer u
+          | `Uchars us -> List.fold_left (fun _ c -> add_to_buffer c) false us
+        else if u = underscore || u = hyphen || u = period then add_to_buffer u
+        else is_white_space u || last_is_ws
   in
-  Uutf.String.fold_utf_8 fold () s;
+  ignore (Uutf.String.fold_utf_8 fold false s);
   Buffer.contents b
 
 let to_plain_text t =
