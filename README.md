@@ -22,8 +22,6 @@ installed by running:
 
 ```sh
 $ opam install . --deps-only
-# or
-$ make deps
 ```
 
 Installation
