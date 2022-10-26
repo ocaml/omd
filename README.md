@@ -12,20 +12,6 @@ spec](https://spec.commonmark.org/0.30/).
 Omd is developed on GitHub. If you need to report an issue, please do so at
 https://github.com/ocaml/omd/issues.
 
-Dependencies
-------------
-
-The minimum version of OCaml required is 4.05.
-
-Dependencies are tracked in the [dune-project](./dune-project) and can be
-installed by running:
-
-```sh
-$ opam install . --deps-only
-# or
-$ make deps
-```
-
 Installation
 ------------
 
@@ -43,6 +29,15 @@ You can install the current development version from the GitHub repository with
 $ opam pin git@github.com:ocaml/omd.git
 ```
 
+Documentation
+-------------
+
+- View API docs online: https://ocaml.github.io/omd
+- View the API docs locally: `odig doc omd`
+
+Building from source
+--------------------
+
 You can also build it manually from source with:
 
 ```sh
@@ -55,6 +50,20 @@ You can run the test suite with
 
 ```sh
 $ make test
+```
+
+Dependencies
+------------
+
+The minimum version of OCaml required is 4.08.
+
+Dependencies are tracked in the [dune-project](./dune-project) and can be
+installed by running:
+
+```sh
+$ opam install . --deps-only
+# or
+$ make deps
 ```
 
 History
