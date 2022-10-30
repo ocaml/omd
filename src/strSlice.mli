@@ -13,6 +13,12 @@ val index : (char -> bool) -> t -> int option
 (** [index c s] is [Some i] where [i] is the index of the character in [s] for
     which [f] is first true, or [None] if [f] holds for no characters in [s]. *)
 
+val index_unescaped : char -> t -> int option
+(** [index_unescaped c s] is [Some i] where [i] index of the first
+    occurrence of the character [c] in [s] that is not preceeded by a
+    backslash ['\\'], or [None] if [c] does not occur in [s] or all
+    occurrences are preceeded by backslashes. *)
+
 val print : Format.formatter -> t -> unit
 val head : t -> char option
 val tail : t -> t
@@ -29,6 +35,10 @@ val drop_last : t -> t
 
 val take : int -> t -> char list
 (** [take n s] is a list of the first [n] characters of [s] *)
+
+val take_n : int -> t -> t
+(** [take_n n s] returns the slice consisting of the first [n]
+    characters of [s]. *)
 
 val drop : int -> t -> t
 (** [drop n s] is [s] with the first [n] characters dropped *)
@@ -69,3 +79,7 @@ val exists : (char -> bool) -> t -> bool
 val is_empty : t -> bool
 val get_offset : t -> int
 val sub : len:int -> t -> t
+
+val trim : t -> t
+(** [trim s] returns the slice that skips any whitespace at the start
+    or the end of [s]. *)

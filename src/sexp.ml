@@ -15,12 +15,20 @@ and inline = function
   | Text (_, s) -> Atom s
   | Emph (_, il) -> List [ Atom "emph"; inline il ]
   | Strong (_, il) -> List [ Atom "strong"; inline il ]
-  | Code _ -> Atom "code"
+  | Code _ -> Atom "code" (* FIXME: this seems broken? *)
   | Hard_break _ -> Atom "hard-break"
   | Soft_break _ -> Atom "soft-break"
   | Link (_, def) -> List [ Atom "url"; link def ]
   | Html (_, s) -> List [ Atom "html"; Atom s ]
   | Image _ -> Atom "img"
+
+let table_header (header, alignment) =
+  List [ inline header
+       ; (match alignment with
+          | Default -> Atom "default"
+          | Left    -> Atom "left"
+          | Centre  -> Atom "centre"
+          | Right   -> Atom "right") ]
 
 let rec block = function
   | Paragraph (_, x) -> List [ Atom "paragraph"; inline x ]
@@ -44,6 +52,11 @@ let rec block = function
                  List [ inline elt.term; List (List.map inline elt.defs) ])
                l)
         ]
+  | Table (_, headers, rows) ->
+     List [ Atom "table"
+          ; List (List.map table_header headers)
+          ; List (List.map (fun row -> List (List.map inline row)) rows)
+       ]
 
 let create ast = List (List.map block ast)
 

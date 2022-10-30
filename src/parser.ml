@@ -208,6 +208,7 @@ type t =
   | Llist_item of list_type * int * StrSlice.t
   | Lparagraph
   | Ldef_list of string
+  | Ltable_line of StrSlice.t list
 
 (* drop up to 3 spaces, returning the number of spaces dropped and the remainder of the string *)
 let sp3 s =
@@ -755,6 +756,26 @@ let indented_code ind s =
   if indent s + ind < 4 then raise Fail;
   Lindented_code (StrSlice.offset (4 - ind) s)
 
+(* A sequence of cell contents separated by unescaped '|'
+   characters. *)
+let table_row pipe_prefix s =
+  let rec loop items s =
+    match StrSlice.index_unescaped '|' s with
+    | None ->
+       if StrSlice.for_all is_whitespace s then
+         items
+       else
+         s::items
+    | Some i ->
+       let item = StrSlice.take_n i s in
+       loop (item::items) (StrSlice.drop (i+1) s)
+  in
+  let items = loop [] s in
+  if not pipe_prefix && List.length items <= 1 then
+    raise Fail
+  else
+     Ltable_line (List.rev_map StrSlice.trim items)
+
 let parse s0 =
   let ind, s = sp3 s0 in
   match StrSlice.head s with
@@ -764,16 +785,17 @@ let parse s0 =
       Lblockquote s
   | Some '=' -> setext_heading s
   | Some '-' ->
-      (setext_heading ||| thematic_break ||| unordered_list_item ind) s
+     (setext_heading ||| thematic_break ||| unordered_list_item ind ||| table_row false) s
   | Some '_' -> thematic_break s
   | Some '#' -> atx_heading s
   | Some ('~' | '`') -> fenced_code ind s
   | Some '<' -> raw_html s
   | Some '*' -> (thematic_break ||| unordered_list_item ind) s
   | Some '+' -> unordered_list_item ind s
-  | Some '0' .. '9' -> ordered_list_item ind s
-  | Some ':' -> def_list s
-  | Some _ -> (blank ||| indented_code ind) s
+  | Some '0' .. '9' -> (ordered_list_item ind ||| table_row false) s
+  | Some ':' -> (def_list ||| table_row false) s
+  | Some '|' -> table_row true (StrSlice.tail s)
+  | Some _ -> (blank ||| indented_code ind ||| table_row false) s
   | None -> Lempty
 
 let parse s = try parse s with Fail -> Lparagraph

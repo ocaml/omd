@@ -20,7 +20,17 @@ module List_types = struct
     | Tight
 end
 
+module Table_alignments = struct
+  type cell_alignment =
+    | Default
+    | Left
+    | Centre
+    | Right
+end
+
 open List_types
+
+open Table_alignments
 
 module Make (C : BlockContent) = struct
   type 'attr def_elt =
@@ -41,6 +51,7 @@ module Make (C : BlockContent) = struct
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
     | Definition_list of 'attr * 'attr def_elt list
+    | Table of 'attr * ('attr C.t * cell_alignment) list * 'attr C.t list list
 end
 
 module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
@@ -62,6 +73,10 @@ module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
         Definition_list (attr, List.map f l)
     | Code_block (attr, label, code) -> Code_block (attr, label, code)
     | Html_block (attr, x) -> Html_block (attr, x)
+    | Table (attr, headers, rows) ->
+       Table (attr,
+              List.map (fun (header, alignment) -> (f header, alignment)) headers,
+              List.map (List.map f) rows)
 end
 
 module Mapper = MakeMapper (StringContent) (InlineContent)
