@@ -20,6 +20,9 @@ let concat t1 t2 =
 
 let concat_map f l = List.fold_left (fun accu x -> concat accu (f x)) Null l
 
+let concat_map2 f l1 l2 =
+  List.fold_left2 (fun accu x y -> concat accu (f x y)) Null l1 l2
+
 (* only convert when "necessary" *)
 let htmlentities s =
   let b = Buffer.create (String.length s) in
@@ -128,6 +131,37 @@ and inline = function
   | Image (attr, { label; destination; title }) ->
       img label destination title attr
 
+let table_header headers =
+  elt Block "thead" []
+    (Some
+       (elt Block "tr" []
+          (Some
+             (concat_map
+                (fun (header, _alignment) ->
+                  elt Inline "th" [] (Some (inline header)))
+                headers))))
+
+let table_body headers rows =
+  elt Block "tbody" []
+    (Some
+       (concat_map
+          (fun row ->
+            elt Block "tr" []
+              (Some
+                 (concat_map2
+                    (fun (_, alignment) cell ->
+                      let attrs = match alignment with
+                        | Default -> []
+                        (* FIXME: or align="blah" ?? *)
+                        | Left -> ["style", "text-align: left;"]
+                        | Right -> ["style", "text-align: right;"]
+                        | Centre -> ["style", "text-align: centre;"]
+                      in
+                      elt Block "td" attrs (Some (inline cell)))
+                    headers
+                    row)))
+          rows))
+
 let rec block = function
   | Blockquote (attr, q) ->
       elt Block "blockquote" attr (Some (concat nl (concat_map block q)))
@@ -177,6 +211,16 @@ let rec block = function
           (concat_map (fun s -> elt Block "dd" [] (Some (inline s))) defs)
       in
       elt Block "dl" attr (Some (concat_map f l))
+  | Table (attr, headers, []) ->
+     elt Block "table" attr
+       (Some
+          (table_header headers))
+  | Table (attr, headers, rows) ->
+     elt Block "table" attr
+       (Some
+          (concat
+             (table_header headers)
+             (table_body headers rows)))
 
 let of_doc doc = concat_map block doc
 

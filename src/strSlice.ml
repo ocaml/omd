@@ -63,6 +63,11 @@ let take n s =
   in
   loop n s
 
+let take_n n s =
+  if n < 0 then invalid_arg "take_n";
+  let len = min n s.len in
+  { s with len }
+
 let drop n s =
   if n < 0 then invalid_arg "drop";
   (* len should not be reduced below 0, as strings cannot have a negative length *)
@@ -118,6 +123,16 @@ let split_at f s =
 (*   assert ("aaa" = to_string before); *)
 (*   assert ("" = to_string rest) *)
 
+let index_unescaped c s =
+  let rec loop idx =
+    if idx = s.off+s.len then None
+    else if s.base.[idx] = c && (idx = s.off || s.base.[idx] <> '\\') then
+      Some (idx-s.off)
+    else
+      loop (idx+1)
+  in
+  loop s.off
+
 let exists f s =
   let rec loop s i =
     if i >= s.len then false
@@ -142,3 +157,10 @@ let fold_left f init s =
 (*   let s = of_string "abcde" in *)
 (*   assert (fold_left (fun _ n -> n + 1) 0 s = 5); *)
 (*   assert (fold_left (fun c s -> String.make 2 c ^ s) "" s = "eeddccbbaa") *)
+
+let trim s =
+  let is_whitespace = function
+    | ' ' | '\t' | '\010' .. '\013' -> true
+    | _ -> false
+  in
+  drop_while is_whitespace (drop_last_while is_whitespace s)

@@ -1,6 +1,7 @@
 module Impl = struct
   include Ast_inline
   include Ast_block.List_types
+  include Ast_block.Table_alignments
   include Ast_block.WithInline
 
   type attributes = (string * string) list
