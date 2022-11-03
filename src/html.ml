@@ -129,7 +129,7 @@ end
 
 (* Based on pandoc algorithm to derive id's.
    See: https://pandoc.org/MANUAL.html#extension-auto_identifiers *)
-let slugify s =
+let slugify identifiers s =
   let s = drop_while (fun c -> not (is_alphabetic c)) s in
   let b = Buffer.create (String.length s) in
   let fold last_is_ws _ =
@@ -151,7 +151,12 @@ let slugify s =
         else is_white_space u || last_is_ws
   in
   ignore (Uutf.String.fold_utf_8 fold false s);
-  Buffer.contents b
+  let str = Buffer.contents b in
+  (* Default identifier if empty. It matches what pandoc does. *)
+  let str = if str = "" then "section" else str in
+  let count, identifiers = Identifiers.touch str identifiers in
+  let str = if count = 0 then str else Printf.sprintf "%s-%i" str count in
+  (identifiers, str)
 
 let to_plain_text t =
   let buf = Buffer.create 1024 in
@@ -263,13 +268,7 @@ let of_doc ?(auto_identifiers = true) doc =
           if (not auto_identifiers) || List.mem_assoc "id" attr then
             (attr, identifiers)
           else
-            let id = slugify (to_plain_text text) in
-            (* Default identifier if empty. It matches what pandoc does. *)
-            let id = if id = "" then "section" else id in
-            let count, identifiers = Identifiers.touch id identifiers in
-            let id =
-              if count = 0 then id else Printf.sprintf "%s-%i" id count
-            in
+            let identifiers, id = slugify identifiers (to_plain_text text) in
             (("id", id) :: attr, identifiers)
         in
         (Heading (attr, level, text), identifiers)
