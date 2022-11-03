@@ -30,3 +30,9 @@
   <h3 id="with-spaces">with   spaces</h3>
   <h3 id="section">33</h3>
   <h3 id="section-1"></h3>
+
+Auto identifiers option disabled
+  $ omd --auto-identifiers false << "MD"
+  > ### hello
+  > MD
+  <h3>hello</h3>
