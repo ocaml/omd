@@ -1,42 +1,42 @@
 `omd`: Markdown library and tool in OCaml
-=======================================
+=========================================
 
-Omd is an OCaml library designed to parse and print Markdown into different
-formats. In addition to the library, a command-line tool `omd` is included to
-easily convert markdown into HTML.
+Omd is an OCaml library designed to parse, manipulate, and print Markdown into
+different formats. In addition to the library, a command-line tool `omd` is
+included to easily convert markdown into HTML.
 
-Omd aims at implementing the [Commonmark](https://commonmark.org/) standard. The
-version currently targeted is [0.30](https://spec.commonmark.org/0.30/).
+Omd aims for compliance with the [CommonMark](https://commonmark.org/) standard.
+We are currently compliant with [0.30 of the ComonMark
+spec](https://spec.commonmark.org/0.30/).
 
 Omd is developed on GitHub. If you need to report an issue, please do so at
 https://github.com/ocaml/omd/issues.
 
-Dependencies
-------------
-
-The minimum version of OCaml required is 4.04.2. `omd` depends on the standard library
-and the following packages:
-
-```
-dune-build-info
-```
-
-Dependencies can be installed by running:
-
-```sh
-$ opam install . --deps-only
-# or
-$ make deps
-```
-
 Installation
 ------------
 
-The recommended way to install `omd` is via the [opam package manager][opam]:
+The recommended way to install `omd` is via the [opam package manager][opam].
+
+You can install versions published to opam with:
 
 ```sh
 $ opam install omd
 ```
+
+You can install the current development version from the GitHub repository with
+
+```sh
+$ opam pin git@github.com:ocaml/omd.git
+```
+
+Documentation
+-------------
+
+- View API docs online: https://ocaml.github.io/omd
+- View the API docs locally: `odig doc omd`
+
+Building from source
+--------------------
 
 You can also build it manually from source with:
 
@@ -52,10 +52,24 @@ You can run the test suite with
 $ make test
 ```
 
+Dependencies
+------------
+
+The minimum version of OCaml required is 4.08.
+
+Dependencies are tracked in the [dune-project](./dune-project) and can be
+installed by running:
+
+```sh
+$ opam install . --deps-only
+# or
+$ make deps
+```
+
 History
 -------
 
-OMD has been developed by [Philippe Wang](https://github.com/pw374/) at [OCaml
+Omd 1 was developed by [Philippe Wang](https://github.com/pw374/) at [OCaml
 Labs](http://ocaml.io/) in [Cambridge](http://www.cl.cam.ac.uk).
 
 Its development was motivated by at least these facts:
@@ -76,16 +90,25 @@ Its development was motivated by at least these facts:
   [COW](https://github.com/mirage/ocaml-cow), which has been developed as part
   of the Mirage project.
 
+Omd 2 started development in 2020, beginning [Nicolás Ojeda
+Bär](https://github.com/nojb)'s redesign and rewrite, and is currently ongoing.
+Omd 2 has yet to reach feature parity with Omd 1.
+
 Thanks
 ------
 
-Thank you to [Christophe Troestler](https://github.com/Chris00), [Ashish
-Argawal](https://github.com/agarwal), [Sebastien
-Mondet](https://github.com/smondet), [Thomas
-Gazagnaire](https://github.com/samoht), [Daniel
-Bünzli](https://github.com/dbuenzli), [Amir Chaudry](https://github.com/amirmc),
-[Anil Madhavapeddy](https://github.com/avsm/), [David
-Sheets](https://github.com/dsheets/), [Jeremy
-Yallop](https://github.com/yallop/), and \<please insert your name here if you
-believe you've been forgotten\> for their feedbacks and contributions to this
-project.
+Special thanks for feedback and contributions to this project goes out to:
+
+- [Christophe Troestler](https://github.com/Chris00)
+- [Ashish Argawal](https://github.com/agarwal)
+- [Sebastien Mondet](https://github.com/smondet)
+- [Thomas Gazagnaire](https://github.com/samoht)
+- [Daniel Bünzli](https://github.com/dbuenzli)
+- [Amir Chaudry](https://github.com/amirmc)
+- [Anil Madhavapeddy](https://github.com/avsm/)
+- [David Sheets](https://github.com/dsheets/)
+- [Jeremy Yallop](https://github.com/yallop/)
+- [Nicolás Ojeda Bär](https://github.com/nojb)
+- [Raphael Sousa Santos](https://sonologi.co/)
+- [Corentin Leruth](https://github.com/tatchi)
+- *please insert your name here if you believe you've been forgotten*

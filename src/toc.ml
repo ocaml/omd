@@ -1,5 +1,5 @@
-open Ast
-open Compat
+open Ast.Util
+open Stdcompat
 
 let rec remove_links inline =
   match inline with

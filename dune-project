@@ -24,7 +24,8 @@ Additionally, OMD implements a few Github markdown features, an
 extension mechanism, and some other features. Note that the opam
 package installs both the OMD library and the command line tool `omd`.")
  (tags (org:ocamllabs org:mirage))
- (depends (ocaml (>= 4.05))
+ (depends (ocaml (>= 4.08))
+          stdcompat
           uutf
           uucp
           uunf

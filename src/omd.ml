@@ -1,45 +1,27 @@
-module Pre = Block.Pre
-include Ast
+include Ast.Impl
 
-type doc = attributes block list
+(* Table of contents *)
+
+let headers = Toc.headers
+let toc = Toc.toc
+
+(* Conversion *)
 
 let parse_inline defs s = Parser.inline defs (Parser.P.of_string s)
 
-let parse_inlines (md, defs) =
+let parse_inlines (md, defs) : doc =
   let defs =
-    let f (def : attributes link_def) =
+    let f (def : attributes Parser.link_def) =
       { def with label = Parser.normalize def.label }
     in
     List.map f defs
   in
-  List.map (Mapper.map (parse_inline defs)) md
+  List.map (Ast_block.Mapper.map (parse_inline defs)) md
 
-let txt ?(attrs = []) s = Text (attrs, s)
-let em ?(attrs = []) il = Emph (attrs, il)
-let strong ?(attrs = []) il = Strong (attrs, il)
-let code ?(attrs = []) s = Code (attrs, s)
-let br = Hard_break []
-let nl = Soft_break []
-let a ?(attrs = []) li = Link (attrs, li)
-let img ?(attrs = []) li = Image (attrs, li)
-let html ?(attrs = []) s = Html (attrs, s)
-let p ?(attrs = []) il = Paragraph (attrs, il)
-let ul ?(attrs = []) ?(spacing = Loose) l = List (attrs, Bullet '-', spacing, l)
+let of_channel ic : doc = parse_inlines (Block_parser.Pre.of_channel ic)
+let of_string s = parse_inlines (Block_parser.Pre.of_string s)
 
-let ol ?(attrs = []) ?(spacing = Loose) l =
-  List (attrs, Ordered (1, '.'), spacing, l)
-
-let blockquote ?(attrs = []) blocks = Blockquote (attrs, blocks)
-let hr = Thematic_break []
-let code_bl ?(attrs = []) ~label s = Code_block (attrs, label, s)
-let html_bl ?(attrs = []) s = Html_block (attrs, s)
-let dl ?(attrs = []) l = Definition_list (attrs, l)
-let of_channel ic = parse_inlines (Pre.of_channel ic)
-let of_string s = parse_inlines (Pre.of_string s)
-
-let to_html ?auto_identifiers doc =
+let to_html ?auto_identifiers (doc : doc) =
   Html.to_string (Html.of_doc ?auto_identifiers doc)
 
 let to_sexp ast = Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
-let headers = Toc.headers
-let toc = Toc.toc

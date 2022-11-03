@@ -6,6 +6,9 @@ unreleased
 - Preserve the order of input files in the HTML output to stdout (#258,
   @patricoferris)
 
+- Fix all deviations from CommonMark Spec 0.30 (#284, #283, #278, #277, #269,
+  @tatchi)
+
 2.0.0~alpha2
 ------------
 

@@ -1,4 +1,4 @@
-open Ast
+open Ast.Impl
 
 type element_type =
   | Inline
@@ -187,7 +187,7 @@ and img label destination title attrs =
   elt Inline "img" attrs None
 
 and inline = function
-  | Ast.Concat (_, l) -> concat_map inline l
+  | Ast.Impl.Concat (_, l) -> concat_map inline l
   | Text (_, t) -> text t
   | Emph (attr, il) -> elt Inline "em" attr (Some (inline il))
   | Strong (attr, il) -> elt Inline "strong" attr (Some (inline il))
