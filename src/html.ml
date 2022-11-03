@@ -80,20 +80,23 @@ let escape_uri s =
     s;
   Buffer.contents b
 
-let trim_start_while p s =
-  let start = ref true in
-  let b = Buffer.create (String.length s) in
-  Uutf.String.fold_utf_8
-    (fun () _ -> function
-      | `Malformed _ -> Buffer.add_string b s
-      | `Uchar u when p u && !start -> ()
-      | `Uchar u when !start ->
-          start := false;
-          Uutf.Buffer.add_utf_8 b u
-      | `Uchar u -> Uutf.Buffer.add_utf_8 b u)
-    ()
-    s;
-  Buffer.contents b
+(* The suffix of s starting from the idx *)
+let suffix_from idx s = String.sub s idx (String.length s - idx)
+
+(* Unicode aware "drop_while" on strings *)
+let drop_while p s =
+  (* Find the index in s of the first character for which p is false *)
+  let find_suffix_start suffix_start idx c =
+    match suffix_start with
+    | Some _ -> suffix_start
+    | None -> (
+        match c with
+        | `Malformed _ -> None
+        | `Uchar u -> if not (p u) then Some idx else None)
+  in
+  match Uutf.String.fold_utf_8 find_suffix_start None s with
+  | None -> ""
+  | Some idx -> suffix_from idx s
 
 let underscore = Uchar.of_char '_'
 let hyphen = Uchar.of_char '-'
@@ -108,7 +111,7 @@ module Identifiers : sig
   val empty : t
 
   val touch : string -> t -> int * t
-  (** Bump the frequency count for the given string. 
+  (** Bump the frequency count for the given string.
       It returns the previous count (before bumping) *)
 end = struct
   module SMap = Map.Make (String)
@@ -127,7 +130,7 @@ end
 (* Based on pandoc algorithm to derive id's.
    See: https://pandoc.org/MANUAL.html#extension-auto_identifiers *)
 let slugify s =
-  let s = trim_start_while (fun c -> not (is_alphabetic c)) s in
+  let s = drop_while (fun c -> not (is_alphabetic c)) s in
   let length = String.length s in
   let b = Buffer.create length in
   let last_is_ws = ref false in
