@@ -153,7 +153,7 @@ module Pre = struct
         { blocks
         ; next = Rlist (kind, Tight, false, indent, [], process empty s)
         }
-    | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _) ->
+    | Rempty, (Lsetext_heading _ | Lparagraph | Ldef_list _ | Ltable_line []) ->
         { blocks; next = Rparagraph [ StrSlice.to_string s ] }
     | Rempty, Ltable_line items ->
         { blocks; next = Rtable_header (items, StrSlice.to_string s) }
@@ -205,29 +205,35 @@ module Pre = struct
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rtable_header (headers, line), Ltable_line items ->
-       (match match_table_headers headers items with
-        | Some headers ->
-           (* Makes sure that there are the same number of delimiters
-              as headers. See
-              https://github.github.com/gfm/#example-203 *)
-           { blocks; next = Rtable (headers, []) }
-        | None ->
-           (* Reinterpret the previous line as the start of a
-              paragraph. *)
-           process { blocks; next = Rparagraph [ line ] } s)
+        (match match_table_headers headers items with
+         | Some headers ->
+            (* Makes sure that there are the same number of delimiters
+               as headers. See
+               https://github.github.com/gfm/#example-203 *)
+            { blocks; next = Rtable (headers, []) }
+         | None ->
+            (* Reinterpret the previous line as the start of a
+               paragraph. *)
+            process { blocks; next = Rparagraph [ line ] } s)
     | Rtable_header (_, line), _ ->
-       (* If we only have a potential header, and the current line
-          doesn't look like a table delimiter, then reinterpret the
-          previous line as the start of a paragraph. *)
-       process { blocks; next = Rparagraph [ line ] } s
+        (* If we only have a potential header, and the current line
+           doesn't look like a table delimiter, then reinterpret the
+           previous line as the start of a paragraph. *)
+        process { blocks; next = Rparagraph [ line ] } s
     | Rtable (header, rows), Ltable_line row ->
-       (* Make sure the number of items in the row is consistent with
-          the headers and the rest of the rows. See
-          https://github.github.com/gfm/#example-204 *)
-       let row = match_row_length header row in
-       { blocks; next = Rtable (header, row::rows) }
+        (* Make sure the number of items in the row is consistent with
+           the headers and the rest of the rows. See
+           https://github.github.com/gfm/#example-204 *)
+        let row = match_row_length header row in
+        { blocks; next = Rtable (header, row::rows) }
+    | Rtable (header, rows), (Lparagraph | Lsetext_heading _) ->
+        (* Treat a contiguous line after a table as a row, even if it
+           doesn't contain any '|'
+           characters. https://github.github.com/gfm/#example-202 *)
+        let row = match_row_length header [s] in
+        { blocks; next = Rtable (header, row::rows) }
     | Rtable _, _ ->
-       process { blocks = close { blocks; next }; next = Rempty } s
+        process { blocks = close { blocks; next }; next = Rempty } s
     | Rindented_code lines, Lindented_code s ->
         { blocks; next = Rindented_code (StrSlice.to_string s :: lines) }
     | Rindented_code lines, Lempty ->

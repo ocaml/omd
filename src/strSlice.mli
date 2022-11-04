@@ -16,8 +16,8 @@ val index : (char -> bool) -> t -> int option
 val index_unescaped : char -> t -> int option
 (** [index_unescaped c s] is [Some i] where [i] index of the first
     occurrence of the character [c] in [s] that is not preceeded by a
-    backslash ['\\'], or [None] if [c] does not occur in [s] or all
-    occurrences are preceeded by backslashes. *)
+    backslash ['\\'] and not within a verbatim inline, or [None] if
+    there is no such [c] in [s]. *)
 
 val print : Format.formatter -> t -> unit
 val head : t -> char option

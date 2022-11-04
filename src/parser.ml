@@ -759,22 +759,23 @@ let indented_code ind s =
 (* A sequence of cell contents separated by unescaped '|'
    characters. *)
 let table_row pipe_prefix s =
-  let rec loop items s =
+  let rec loop items seen_pipe s =
     match StrSlice.index_unescaped '|' s with
     | None ->
        if StrSlice.for_all is_whitespace s then
-         items
+         items, seen_pipe
        else
-         s::items
+         s::items, false
     | Some i ->
        let item = StrSlice.take_n i s in
-       loop (item::items) (StrSlice.drop (i+1) s)
+       loop (item::items) true (StrSlice.drop (i+1) s)
   in
-  let items = loop [] s in
-  if not pipe_prefix && List.length items <= 1 then
-    raise Fail
-  else
+  let items, terminating_pipe = loop [] pipe_prefix s in
+  match pipe_prefix, items, terminating_pipe with
+  | true, _, _ | _, _::_, true | _, _::_::_, _ ->
      Ltable_line (List.rev_map StrSlice.trim items)
+  | _ ->
+     raise Fail
 
 let parse s0 =
   let ind, s = sp3 s0 in
@@ -783,7 +784,7 @@ let parse s0 =
       let s = StrSlice.offset 1 s in
       let s = if indent s > 0 then StrSlice.offset 1 s else s in
       Lblockquote s
-  | Some '=' -> setext_heading s
+  | Some '=' -> (setext_heading ||| table_row false) s
   | Some '-' ->
      (setext_heading ||| thematic_break ||| unordered_list_item ind ||| table_row false) s
   | Some '_' -> thematic_break s
