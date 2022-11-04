@@ -762,20 +762,17 @@ let table_row pipe_prefix s =
   let rec loop items seen_pipe s =
     match StrSlice.index_unescaped '|' s with
     | None ->
-       if StrSlice.for_all is_whitespace s then
-         items, seen_pipe
-       else
-         s::items, false
+        if StrSlice.for_all is_whitespace s then (items, seen_pipe)
+        else (s :: items, false)
     | Some i ->
-       let item = StrSlice.take_n i s in
-       loop (item::items) true (StrSlice.drop (i+1) s)
+        let item = StrSlice.take_n i s in
+        loop (item :: items) true (StrSlice.drop (i + 1) s)
   in
   let items, terminating_pipe = loop [] pipe_prefix s in
-  match pipe_prefix, items, terminating_pipe with
-  | true, _, _ | _, _::_, true | _, _::_::_, _ ->
-     Ltable_line (List.rev_map StrSlice.trim items)
-  | _ ->
-     raise Fail
+  match (pipe_prefix, items, terminating_pipe) with
+  | true, _, _ | _, _ :: _, true | _, _ :: _ :: _, _ ->
+      Ltable_line (List.rev_map StrSlice.trim items)
+  | _ -> raise Fail
 
 let parse s0 =
   let ind, s = sp3 s0 in
@@ -786,7 +783,11 @@ let parse s0 =
       Lblockquote s
   | Some '=' -> (setext_heading ||| table_row false) s
   | Some '-' ->
-     (setext_heading ||| thematic_break ||| unordered_list_item ind ||| table_row false) s
+      (setext_heading
+      ||| thematic_break
+      ||| unordered_list_item ind
+      ||| table_row false)
+        s
   | Some '_' -> thematic_break s
   | Some '#' -> atx_heading s
   | Some ('~' | '`') -> fenced_code ind s

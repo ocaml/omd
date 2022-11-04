@@ -125,21 +125,24 @@ let split_at f s =
 
 let index_unescaped sep s =
   let rec loop idx state =
-    if idx = s.off+s.len then None (* If we get here and we're inside a verbatim span, what to do? *)
-    else match state, s.base.[idx] with
-         | `normal, '\\' -> loop (idx+1) `escape
-         | `normal, '`'  -> loop (idx+1) (`verbatim_open 1)
-         | `normal, c when c = sep -> Some (idx-s.off)
-         | `normal, _ -> loop (idx+1) `normal
-         | `escape, _ -> loop (idx+1) `normal
-         | `verbatim_open n, '`'   -> loop (idx+1) (`verbatim_open (n+1))
-         | `verbatim_open n, _     -> loop (idx+1) (`within_verbatim n)
-         | `within_verbatim 1, '`' -> loop (idx+1) `normal
-         | `within_verbatim n, '`' -> loop (idx+1) (`verbatim_close (n,n-1))
-         | `within_verbatim n, _   -> loop (idx+1) (`within_verbatim n)
-         | `verbatim_close (_, 1), '`' -> loop (idx+1) `normal
-         | `verbatim_close (n, k), '`' -> loop (idx+1) (`verbatim_close (n,k-1))
-         | `verbatim_close (n, _), _   -> loop (idx+1) (`within_verbatim n)
+    if idx = s.off + s.len then None
+      (* If we get here and we're inside a verbatim span, what to do? *)
+    else
+      match (state, s.base.[idx]) with
+      | `normal, '\\' -> loop (idx + 1) `escape
+      | `normal, '`' -> loop (idx + 1) (`verbatim_open 1)
+      | `normal, c when c = sep -> Some (idx - s.off)
+      | `normal, _ -> loop (idx + 1) `normal
+      | `escape, _ -> loop (idx + 1) `normal
+      | `verbatim_open n, '`' -> loop (idx + 1) (`verbatim_open (n + 1))
+      | `verbatim_open n, _ -> loop (idx + 1) (`within_verbatim n)
+      | `within_verbatim 1, '`' -> loop (idx + 1) `normal
+      | `within_verbatim n, '`' -> loop (idx + 1) (`verbatim_close (n, n - 1))
+      | `within_verbatim n, _ -> loop (idx + 1) (`within_verbatim n)
+      | `verbatim_close (_, 1), '`' -> loop (idx + 1) `normal
+      | `verbatim_close (n, k), '`' ->
+          loop (idx + 1) (`verbatim_close (n, k - 1))
+      | `verbatim_close (n, _), _ -> loop (idx + 1) (`within_verbatim n)
   in
   loop s.off `normal
 

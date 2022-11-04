@@ -77,11 +77,10 @@ module Pre = struct
         Code_block ([], "", concat (loop l)) :: blocks
     | Rhtml (_, l) -> Html_block ([], concat l) :: blocks
     | Rtable_header (_header, line) ->
-       (* FIXME: this will only ever get called on the very last
-          line. Should it do the link definitions? *)
-       close link_defs { blocks; next = Rparagraph [ line ] }
-    | Rtable (header, rows) ->
-       Table ([], header, List.rev rows) :: blocks
+        (* FIXME: this will only ever get called on the very last
+           line. Should it do the link definitions? *)
+        close link_defs { blocks; next = Rparagraph [ line ] }
+    | Rtable (header, rows) -> Table ([], header, List.rev rows) :: blocks
     | Rempty -> blocks
 
   and finish link_defs state = List.rev (close link_defs state)
@@ -92,44 +91,41 @@ module Pre = struct
   let classify_delimiter s =
     let left, s =
       match StrSlice.head s with
-      | Some ':' -> true, StrSlice.drop 1 s
-      | _        -> false, s
+      | Some ':' -> (true, StrSlice.drop 1 s)
+      | _ -> (false, s)
     in
     let right, s =
       match StrSlice.last s with
-      | Some ':' -> true, StrSlice.drop_last s
-      | _        -> false, s
+      | Some ':' -> (true, StrSlice.drop_last s)
+      | _ -> (false, s)
     in
-    if StrSlice.exists (fun c -> c <> '-') s then
-      None
+    if StrSlice.exists (fun c -> c <> '-') s then None
     else
-      match left, right with
-      | true,  true  -> Some Centre
-      | true,  false -> Some Left
-      | false, true  -> Some Right
+      match (left, right) with
+      | true, true -> Some Centre
+      | true, false -> Some Left
+      | false, true -> Some Right
       | false, false -> Some Default
 
   let match_table_headers headers delimiters =
     let rec loop processed = function
-      | [], [] ->
-         Some (List.rev processed)
-      | header::headers, line::delimiters ->
-         (match classify_delimiter line with
+      | [], [] -> Some (List.rev processed)
+      | header :: headers, line :: delimiters -> (
+          match classify_delimiter line with
           | None -> None
           | Some alignment ->
-             loop ((StrSlice.to_string header, alignment)::processed) (headers, delimiters))
-      | [], _::_ | _::_, [] ->
-         None
+              loop
+                ((StrSlice.to_string header, alignment) :: processed)
+                (headers, delimiters))
+      | [], _ :: _ | _ :: _, [] -> None
     in
     loop [] (headers, delimiters)
 
-  let rec match_row_length l1 l2 = match l1, l2 with
-    | [], _ ->
-       []
-    | l1, [] ->
-       List.init (List.length l1) (fun _ -> "")
-    | _::l1, x::l2 ->
-       StrSlice.to_string x :: match_row_length l1 l2
+  let rec match_row_length l1 l2 =
+    match (l1, l2) with
+    | [], _ -> []
+    | l1, [] -> List.init (List.length l1) (fun _ -> "")
+    | _ :: l1, x :: l2 -> StrSlice.to_string x :: match_row_length l1 l2
 
   let rec process link_defs { blocks; next } s =
     let process = process link_defs in
@@ -204,14 +200,14 @@ module Pre = struct
         }
     | Rdef_list _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
-    | Rtable_header (headers, line), Ltable_line items ->
-        (match match_table_headers headers items with
-         | Some headers ->
+    | Rtable_header (headers, line), Ltable_line items -> (
+        match match_table_headers headers items with
+        | Some headers ->
             (* Makes sure that there are the same number of delimiters
                as headers. See
                https://github.github.com/gfm/#example-203 *)
             { blocks; next = Rtable (headers, []) }
-         | None ->
+        | None ->
             (* Reinterpret the previous line as the start of a
                paragraph. *)
             process { blocks; next = Rparagraph [ line ] } s)
@@ -225,13 +221,13 @@ module Pre = struct
            the headers and the rest of the rows. See
            https://github.github.com/gfm/#example-204 *)
         let row = match_row_length header row in
-        { blocks; next = Rtable (header, row::rows) }
+        { blocks; next = Rtable (header, row :: rows) }
     | Rtable (header, rows), (Lparagraph | Lsetext_heading _) ->
         (* Treat a contiguous line after a table as a row, even if it
            doesn't contain any '|'
            characters. https://github.github.com/gfm/#example-202 *)
-        let row = match_row_length header [s] in
-        { blocks; next = Rtable (header, row::rows) }
+        let row = match_row_length header [ s ] in
+        { blocks; next = Rtable (header, row :: rows) }
     | Rtable _, _ ->
         process { blocks = close { blocks; next }; next = Rempty } s
     | Rindented_code lines, Lindented_code s ->

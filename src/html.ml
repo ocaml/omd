@@ -135,14 +135,20 @@ and inline = function
 
 let alignment_attributes = function
   | Default -> []
-  | Left -> ["align", "left"]
-  | Right -> ["align", "right"]
-  | Centre -> ["align", "center"]
+  | Left -> [ ("align", "left") ]
+  | Right -> [ ("align", "right") ]
+  | Centre -> [ ("align", "center") ]
 
 let table_header headers =
-  elt Table "thead" []
+  elt
+    Table
+    "thead"
+    []
     (Some
-       (elt Table "tr" []
+       (elt
+          Table
+          "tr"
+          []
           (Some
              (concat_map
                 (fun (header, alignment) ->
@@ -151,11 +157,17 @@ let table_header headers =
                 headers))))
 
 let table_body headers rows =
-  elt Table "tbody" []
+  elt
+    Table
+    "tbody"
+    []
     (Some
        (concat_map
           (fun row ->
-            elt Table "tr" []
+            elt
+              Table
+              "tr"
+              []
               (Some
                  (concat_map2
                     (fun (_, alignment) cell ->
@@ -215,15 +227,13 @@ let rec block = function
       in
       elt Block "dl" attr (Some (concat_map f l))
   | Table (attr, headers, []) ->
-     elt Table "table" attr
-       (Some
-          (table_header headers))
+      elt Table "table" attr (Some (table_header headers))
   | Table (attr, headers, rows) ->
-     elt Table "table" attr
-       (Some
-          (concat
-             (table_header headers)
-             (table_body headers rows)))
+      elt
+        Table
+        "table"
+        attr
+        (Some (concat (table_header headers) (table_body headers rows)))
 
 let of_doc doc = concat_map block doc
 

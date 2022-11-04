@@ -23,12 +23,14 @@ and inline = function
   | Image _ -> Atom "img"
 
 let table_header (header, alignment) =
-  List [ inline header
-       ; (match alignment with
-          | Default -> Atom "default"
-          | Left    -> Atom "left"
-          | Centre  -> Atom "centre"
-          | Right   -> Atom "right") ]
+  List
+    [ inline header
+    ; (match alignment with
+      | Default -> Atom "default"
+      | Left -> Atom "left"
+      | Centre -> Atom "centre"
+      | Right -> Atom "right")
+    ]
 
 let rec block = function
   | Paragraph (_, x) -> List [ Atom "paragraph"; inline x ]
@@ -53,10 +55,11 @@ let rec block = function
                l)
         ]
   | Table (_, headers, rows) ->
-     List [ Atom "table"
-          ; List (List.map table_header headers)
-          ; List (List.map (fun row -> List (List.map inline row)) rows)
-       ]
+      List
+        [ Atom "table"
+        ; List (List.map table_header headers)
+        ; List (List.map (fun row -> List (List.map inline row)) rows)
+        ]
 
 let create ast = List (List.map block ast)
 
