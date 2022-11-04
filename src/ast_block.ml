@@ -29,7 +29,6 @@ module Table_alignments = struct
 end
 
 open List_types
-
 open Table_alignments
 
 module Make (C : BlockContent) = struct
@@ -74,9 +73,10 @@ module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
     | Code_block (attr, label, code) -> Code_block (attr, label, code)
     | Html_block (attr, x) -> Html_block (attr, x)
     | Table (attr, headers, rows) ->
-       Table (attr,
-              List.map (fun (header, alignment) -> (f header, alignment)) headers,
-              List.map (List.map f) rows)
+        Table
+          ( attr
+          , List.map (fun (header, alignment) -> (f header, alignment)) headers
+          , List.map (List.map f) rows )
 end
 
 module Mapper = MakeMapper (StringContent) (InlineContent)
