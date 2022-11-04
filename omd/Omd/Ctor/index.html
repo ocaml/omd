@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Ctor (omd.Omd.Ctor)</title><link rel="stylesheet" href="../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">omd</a> &#x00BB; <a href="../index.html">Omd</a> &#x00BB; Ctor</nav><header class="odoc-preamble"><h1>Module <code><span>Omd.Ctor</span></code></h1><p>Functions to help constructing the elements of a <a href="../index.html#type-doc"><code>doc</code></a>.</p><p>E.g.,</p><pre><code>let open Omd.Ctor in
+let para =
+  p ~attrs:[ (&quot;class&quot;, &quot;my-para&quot;) ] [ txt &quot;Content of&quot;; em &quot;this&quot;; txt &quot;paragraph&quot; ]
+in
+[ blockquote [ para; hr; p [ txt &quot;Content of second paragraph&quot; ] ] ]</code></pre><p>Produces</p><pre>&lt;blockquote&gt;
+&lt;p class=&quot;my-para&quot;&gt;Content of&lt;em&gt;this&lt;/em&gt;paragraph&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;Content of second paragraph&lt;/p&gt;
+&lt;/blockquote&gt;</pre><p>The optional <code>attrs</code> argument always defaults to an empty list, and can generally be omitted.</p></header><nav class="odoc-toc"><ul><li><a href="#constructors-for-inline-elements">Constructors for inline elements</a></li><li><a href="#constructors-for-block-level-elements">Constructors for block-level elements</a></li></ul></nav><div class="odoc-content"><h4 id="constructors-for-inline-elements"><a href="#constructors-for-inline-elements" class="anchor"></a>Constructors for inline elements</h4><div class="odoc-spec"><div class="spec value" id="val-txt" class="anchored"><a href="#val-txt" class="anchor"></a><code><span><span class="keyword">val</span> txt : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>txt ~attrs s</code> is <a href="../index.html#type-inline.Text"><code>Text (attrs, s)</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-em" class="anchored"><a href="#val-em" class="anchor"></a><code><span><span class="keyword">val</span> em : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>em ~attrs s</code> is <a href="../index.html#type-inline.Emph"><code>Emph (attrs, txt s)</code></a>. See <a href="#val-txt"><code>txt</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-strong" class="anchored"><a href="#val-strong" class="anchor"></a><code><span><span class="keyword">val</span> strong : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>strong ~attrs s</code> is <a href="../index.html#type-inline.Strong"><code>Strong (attrs, txt s)</code></a>. See <a href="#val-txt"><code>txt</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-code" class="anchored"><a href="#val-code" class="anchor"></a><code><span><span class="keyword">val</span> code : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>code ~attrs s</code> is <a href="../index.html#type-inline.Code"><code>Code (attrs, s)</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-br" class="anchored"><a href="#val-br" class="anchor"></a><code><span><span class="keyword">val</span> br : <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>br</code> is <a href="../index.html#type-inline.Hard_break"><code>Hard_break []</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-nl" class="anchored"><a href="#val-nl" class="anchor"></a><code><span><span class="keyword">val</span> nl : <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>nl</code> is <a href="../index.html#type-inline.Soft_break"><code>Soft_break []</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-a" class="anchored"><a href="#val-a" class="anchor"></a><code><span><span class="keyword">val</span> a : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?title:string <span class="arrow">&#45;&gt;</span></span>
+  <span>url:string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>a ~attrs ~title ~url label</code> is a link around the text of <code>label</code>, pointing to the <code>url</code>, with the optional title <code>title</code> and additional <code>attrs</code>. See <a href="../index.html#type-inline.Link"><code>Link</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-img" class="anchored"><a href="#val-img" class="anchor"></a><code><span><span class="keyword">val</span> img : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?title:string <span class="arrow">&#45;&gt;</span></span>
+  <span>alt:string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>img ~attrs ~title ~alt src</code> is an image from the given <code>src</code> that has the <code>alt</code> text as a fallback, with the optional title <code>title</code> and additional <code>attrs</code>. See <a href="../index.html#type-inline.Image"><code>Image</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-html" class="anchored"><a href="#val-html" class="anchor"></a><code><span><span class="keyword">val</span> html : <span>string <span class="arrow">&#45;&gt;</span></span> <span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span></span></code></div><div class="spec-doc"><p><code>html s</code> is an inline HTML string. See <a href="../index.html#type-inline.Html"><code>Html</code></a>.</p></div></div><h4 id="constructors-for-block-level-elements"><a href="#constructors-for-block-level-elements" class="anchor"></a>Constructors for block-level elements</h4><div class="odoc-spec"><div class="spec value" id="val-p" class="anchored"><a href="#val-p" class="anchor"></a><code><span><span class="keyword">val</span> p : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>p ~attrs inlines</code> is a pragraph block holding the given <code>inline</code> elements. See <a href="../index.html#type-block.Paragraph"><code>Paragraph</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-ul" class="anchored"><a href="#val-ul" class="anchor"></a><code><span><span class="keyword">val</span> ul : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?spacing:<span class="xref-unresolved">Omd__Ast.Impl.list_spacing</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span>
+    list</span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>ul ~attrs ~spacing items</code> is an unordered list with the specified <code>spacing</code>, listing the given <code>items</code>. Each item is a list of block elements.</p><ul><li><code>spacing</code> defaults to <a href="../index.html#type-list_spacing.Loose"><code>Loose</code></a>.</li></ul><p>E.g.,</p><pre><code>ul ~spacing:Tight
+  [ [ p [ txt &quot;Item 1&quot; ] ]
+  ; [ p [ txt &quot;Item 2&quot; ] ]
+  ; [ p [ txt &quot;Item 3&quot; ] ]
+  ]</code></pre><p>See <a href="../index.html#type-block.List"><code>List</code></a> and <a href="../index.html#type-list_type.Bullet"><code>Bullet</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-ol" class="anchored"><a href="#val-ol" class="anchor"></a><code><span><span class="keyword">val</span> ol : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?start:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?char:<span>[ `Dot <span>| `Paren</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?spacing:<span class="xref-unresolved">Omd__Ast.Impl.list_spacing</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span>
+    list</span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>ol ~attrs ~start ~char ~spacing items</code> is like <a href="#val-ul"><code>ul</code></a>, but constructs an ordered list, where <code>start</code> is the number to start enumerating from, and <code>char</code> indicates the character following the number in the enumeration.</p><ul><li><code>char</code> can be either <code>`Dot</code> indicating <code>'.'</code> or <code>`Paren</code> indicating <code>')'</code>, and defaults to <code>`Dot</code>.</li><li><code>start</code> defaults to <code>1</code>.</li></ul><p>See <a href="../index.html#type-block.List"><code>List</code></a> and <a href="../index.html#type-list_type.Ordered"><code>Ordered</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-blockquote" class="anchored"><a href="#val-blockquote" class="anchor"></a><code><span><span class="keyword">val</span> blockquote : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>blockquote ~attrs blocks</code> is a blockquote element containing the given <code>blocks</code>. See <a href="../index.html#type-block.Blockquote"><code>Blockquote</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-hr" class="anchored"><a href="#val-hr" class="anchor"></a><code><span><span class="keyword">val</span> hr : 
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>hr</code> is <a href="../index.html#type-block.Thematic_break"><code>Thematic_break []</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-h" class="anchored"><a href="#val-h" class="anchor"></a><code><span><span class="keyword">val</span> h : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span>(string * string)</span> list</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>h ~attrs level inlines</code> is a heading of the given <code>level</code> comprised of the <code>inlines</code>. See <a href="../index.html#type-block.Heading"><code>Heading</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-code_bl" class="anchored"><a href="#val-code_bl" class="anchor"></a><code><span><span class="keyword">val</span> code_bl : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?lang:string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>code_bl ~attrs ~lang code</code> is a code block labeled with language <code>lang</code>.</p><ul><li><code>lang</code> defaults to being absent.</li></ul><p>See <a href="../index.html#type-block.Code_block"><code>Code_block</code></a></p></div></div><div class="odoc-spec"><div class="spec value" id="val-html_bl" class="anchored"><a href="#val-html_bl" class="anchor"></a><code><span><span class="keyword">val</span> html_bl : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>html_bl ~attrs html</code> is a block-level element of raw HTML. See <a href="../index.html#type-block.Html_block"><code>Html_block</code></a>.</p></div></div><div class="odoc-spec"><div class="spec type" id="type-ctor_def_elt" class="anchored"><a href="#type-ctor_def_elt" class="anchor"></a><code><span><span class="keyword">type</span> <span>'attr ctor_def_elt</span></span><span> = </span><span>{</span></code><table><tr id="type-ctor_def_elt.term" class="anchored"><td class="def record field"><a href="#type-ctor_def_elt.term" class="anchor"></a><code><span>term : <span><span><span class="type-var">'attr</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span> list</span>;</span></code></td></tr><tr id="type-ctor_def_elt.defs" class="anchored"><td class="def record field"><a href="#type-ctor_def_elt.defs" class="anchor"></a><code><span>defs : <span><span><span><span class="type-var">'attr</span> <span class="xref-unresolved">Omd__Ast.Impl.inline</span></span> list</span> list</span>;</span></code></td></tr></table><code><span>}</span></code></div><div class="spec-doc"><p>Type for the items given to <a href="#val-dl"><code>dl</code></a> definition lists. It is isomorphic to <a href="../index.html#type-def_elt"><code>def_elt</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-dl" class="anchored"><a href="#val-dl" class="anchor"></a><code><span><span class="keyword">val</span> dl : 
+  <span>?attrs:<span><span>(string * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span><span>(string * string)</span> list</span> <a href="#type-ctor_def_elt">ctor_def_elt</a></span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * string)</span> list</span>
+    <span class="xref-unresolved">Omd__Ast_block.Make(Omd__Ast_block.InlineContent).block</span></span></span></code></div><div class="spec-doc"><p><code>dl ~attrs elements</code> is a definition list of the given <code>elements</code>. See <a href="../index.html#type-block.Definition_list"><code>Definition_list</code></a>.</p><p>E.g.,</p><pre><code>dl
+  [ { term = [ txt &quot;def term 1&quot; ]
+    ; defs =
+        [ [ txt &quot;definition 1.1&quot; ]
+        ; [ txt &quot;definition 1.2&quot; ]
+        ; [ txt &quot;definition 1.3&quot; ]
+        ]
+    }
+  ; { term = [ txt &quot;def term 2&quot; ]
+    ; defs =
+        [ [ txt &quot;definition 2.1&quot; ]
+        ; [ txt &quot;definition 2.2&quot; ]
+        ; [ txt &quot;definition 2.3&quot; ]
+        ]
+    }
+  ]</code></pre></div></div></div></body></html>
