@@ -3,6 +3,7 @@ open Ast.Impl
 type element_type =
   | Inline
   | Block
+  | Table
 
 type t =
   | Element of element_type * string * attributes * t option

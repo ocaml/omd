@@ -3,6 +3,7 @@ open Ast.Impl
 type element_type =
   | Inline
   | Block
+  | Table
 
 type t =
   | Element of element_type * string * attributes * t option
@@ -53,14 +54,15 @@ let rec add_to_buffer buf = function
   | Element (eltype, name, attrs, Some c) ->
       Printf.bprintf
         buf
-        "<%s%a>%a</%s>"
+        "<%s%a>%s%a</%s>%s"
         name
         add_attrs_to_buffer
         attrs
+        (match eltype with Table -> "\n" | _ -> "")
         add_to_buffer
         c
-        name;
-      if eltype = Block then Buffer.add_char buf '\n'
+        name
+        (match eltype with Table | Block -> "\n" | _ -> "")
   | Text s -> Buffer.add_string buf (htmlentities s)
   | Raw s -> Buffer.add_string buf s
   | Null -> ()
@@ -131,32 +133,33 @@ and inline = function
   | Image (attr, { label; destination; title }) ->
       img label destination title attr
 
+let alignment_attributes = function
+  | Default -> []
+  | Left -> ["align", "left"]
+  | Right -> ["align", "right"]
+  | Centre -> ["align", "center"]
+
 let table_header headers =
-  elt Block "thead" []
+  elt Table "thead" []
     (Some
-       (elt Block "tr" []
+       (elt Table "tr" []
           (Some
              (concat_map
-                (fun (header, _alignment) ->
-                  elt Inline "th" [] (Some (inline header)))
+                (fun (header, alignment) ->
+                  let attrs = alignment_attributes alignment in
+                  elt Block "th" attrs (Some (inline header)))
                 headers))))
 
 let table_body headers rows =
-  elt Block "tbody" []
+  elt Table "tbody" []
     (Some
        (concat_map
           (fun row ->
-            elt Block "tr" []
+            elt Table "tr" []
               (Some
                  (concat_map2
                     (fun (_, alignment) cell ->
-                      let attrs = match alignment with
-                        | Default -> []
-                        (* FIXME: or align="blah" ?? *)
-                        | Left -> ["style", "text-align: left;"]
-                        | Right -> ["style", "text-align: right;"]
-                        | Centre -> ["style", "text-align: centre;"]
-                      in
+                      let attrs = alignment_attributes alignment in
                       elt Block "td" attrs (Some (inline cell)))
                     headers
                     row)))
@@ -212,11 +215,11 @@ let rec block = function
       in
       elt Block "dl" attr (Some (concat_map f l))
   | Table (attr, headers, []) ->
-     elt Block "table" attr
+     elt Table "table" attr
        (Some
           (table_header headers))
   | Table (attr, headers, rows) ->
-     elt Block "table" attr
+     elt Table "table" attr
        (Some
           (concat
              (table_header headers)
