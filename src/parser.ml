@@ -758,7 +758,7 @@ let indented_code ind s =
 
 (* A sequence of cell contents separated by unescaped '|'
    characters. *)
-let table_row pipe_prefix s =
+let table_row ~pipe_prefix s =
   let rec loop items seen_pipe s =
     match StrSlice.index_unescaped '|' s with
     | None ->
@@ -781,12 +781,12 @@ let parse s0 =
       let s = StrSlice.offset 1 s in
       let s = if indent s > 0 then StrSlice.offset 1 s else s in
       Lblockquote s
-  | Some '=' -> (setext_heading ||| table_row false) s
+  | Some '=' -> (setext_heading ||| table_row ~pipe_prefix:false) s
   | Some '-' ->
       (setext_heading
       ||| thematic_break
       ||| unordered_list_item ind
-      ||| table_row false)
+      ||| table_row ~pipe_prefix:false)
         s
   | Some '_' -> thematic_break s
   | Some '#' -> atx_heading s
@@ -794,10 +794,10 @@ let parse s0 =
   | Some '<' -> raw_html s
   | Some '*' -> (thematic_break ||| unordered_list_item ind) s
   | Some '+' -> unordered_list_item ind s
-  | Some '0' .. '9' -> (ordered_list_item ind ||| table_row false) s
-  | Some ':' -> (def_list ||| table_row false) s
-  | Some '|' -> table_row true (StrSlice.tail s)
-  | Some _ -> (blank ||| indented_code ind ||| table_row false) s
+  | Some '0' .. '9' -> (ordered_list_item ind ||| table_row ~pipe_prefix:false) s
+  | Some ':' -> (def_list ||| table_row ~pipe_prefix:false) s
+  | Some '|' -> table_row ~pipe_prefix:true (StrSlice.tail s)
+  | Some _ -> (blank ||| indented_code ind ||| table_row ~pipe_prefix:false) s
   | None -> Lempty
 
 let parse s = try parse s with Fail -> Lparagraph
