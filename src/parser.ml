@@ -794,7 +794,8 @@ let parse s0 =
   | Some '<' -> raw_html s
   | Some '*' -> (thematic_break ||| unordered_list_item ind) s
   | Some '+' -> unordered_list_item ind s
-  | Some '0' .. '9' -> (ordered_list_item ind ||| table_row ~pipe_prefix:false) s
+  | Some '0' .. '9' ->
+      (ordered_list_item ind ||| table_row ~pipe_prefix:false) s
   | Some ':' -> (def_list ||| table_row ~pipe_prefix:false) s
   | Some '|' -> table_row ~pipe_prefix:true (StrSlice.tail s)
   | Some _ -> (blank ||| indented_code ind ||| table_row ~pipe_prefix:false) s
