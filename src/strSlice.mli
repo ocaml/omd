@@ -36,8 +36,8 @@ val drop_last : t -> t
 val take : int -> t -> char list
 (** [take n s] is a list of the first [n] characters of [s] *)
 
-val take_n : int -> t -> t
-(** [take_n n s] returns the slice consisting of the first [n]
+val take_prefix : int -> t -> t
+(** [take_prefix n s] is the slice consisting of the first [n]
     characters of [s]. *)
 
 val drop : int -> t -> t

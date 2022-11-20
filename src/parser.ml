@@ -765,7 +765,7 @@ let table_row ~pipe_prefix s =
         if StrSlice.for_all is_whitespace s then (items, seen_pipe)
         else (s :: items, false)
     | Some i ->
-        let item = StrSlice.take_n i s in
+        let item = StrSlice.take_prefix i s in
         loop (item :: items) true (StrSlice.drop (i + 1) s)
   in
   let items, terminating_pipe = loop [] pipe_prefix s in

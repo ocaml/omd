@@ -63,8 +63,8 @@ let take n s =
   in
   loop n s
 
-let take_n n s =
-  if n < 0 then invalid_arg "take_n";
+let take_prefix n s =
+  if n < 0 then invalid_arg "take_prefix";
   let len = min n s.len in
   { s with len }
 
