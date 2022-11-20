@@ -111,4 +111,5 @@ Special thanks for feedback and contributions to this project goes out to:
 - [Nicolás Ojeda Bär](https://github.com/nojb)
 - [Raphael Sousa Santos](https://sonologi.co/)
 - [Corentin Leruth](https://github.com/tatchi)
+- [Bob Atkey](https://bentnib.org/)
 - *please insert your name here if you believe you've been forgotten*
