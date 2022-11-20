@@ -51,6 +51,8 @@ module Make (C : BlockContent) = struct
     | Html_block of 'attr * string
     | Definition_list of 'attr * 'attr def_elt list
     | Table of 'attr * ('attr C.t * cell_alignment) list * 'attr C.t list list
+        (** A table is represented by a header row, which is a list of pairs of
+            header cells and alignments, and a list of rows *)
 end
 
 module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
