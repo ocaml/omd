@@ -14,7 +14,7 @@ val index : (char -> bool) -> t -> int option
     which [f] is first true, or [None] if [f] holds for no characters in [s]. *)
 
 val index_unescaped : char -> t -> int option
-(** [index_unescaped c s] is [Some i] where [i] index of the first
+(** [index_unescaped c s] is [Some i] where [i] is index of the first
     occurrence of the character [c] in [s] that is not preceeded by a
     backslash ['\\'] and not within a verbatim inline, or [None] if
     there is no such [c] in [s]. *)
