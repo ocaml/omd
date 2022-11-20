@@ -41,7 +41,7 @@ let spec =
     , " file.html Specify the output file (default is stdout)." )
   ; ( "--auto-identifiers"
     , Arg.Bool (fun x -> auto_identifiers := Some x)
-    , " Should identifiers be automatically assigned to headings." )
+    , "Automatically generate identifiers for headings in HTML output." )
   ; ( "--version"
     , Arg.Unit print_version
     , " Display the version of the currently installed omd." )
