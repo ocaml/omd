@@ -1,6 +1,10 @@
 unreleased
 ----------
 
+- Support generation of identifiers in headers (#294, @tatchi)
+
+- Support GitHub-Flavoured Markdown tables (#292, @bobatkey)
+
 - Update parser to support CommonMark Spec 0.30 (#266, @SquidDev)
 
 - Preserve the order of input files in the HTML output to stdout (#258,

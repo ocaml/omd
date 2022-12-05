@@ -1,3 +1,11 @@
+(library
+ (name expect_tests)
+ (modules expect_tests)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect))
+ (libraries omd))
+
 (executable
  (name extract_tests)
  (libraries str)
@@ -7,7 +15,8 @@
  (with-stdout-to
   dune.inc.new
   (run ./extract_tests.exe -write-dune-file %{dep:spec.txt}
-    %{dep:attributes.md} %{dep:def_list.md})))
+    %{dep:gfm_table_spec.md} %{dep:extra_table_tests.md} %{dep:attributes.md}
+    %{dep:def_list.md})))
 
 (include dune.inc)
 

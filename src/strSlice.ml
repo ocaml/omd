@@ -63,6 +63,11 @@ let take n s =
   in
   loop n s
 
+let take_prefix n s =
+  if n < 0 then invalid_arg "take_prefix";
+  let len = min n s.len in
+  { s with len }
+
 let drop n s =
   if n < 0 then invalid_arg "drop";
   (* len should not be reduced below 0, as strings cannot have a negative length *)
@@ -118,6 +123,29 @@ let split_at f s =
 (*   assert ("aaa" = to_string before); *)
 (*   assert ("" = to_string rest) *)
 
+let index_unescaped sep s =
+  let rec loop idx state =
+    if idx = s.off + s.len then None
+      (* If we get here and we're inside a verbatim span, what to do? *)
+    else
+      match (state, s.base.[idx]) with
+      | `normal, '\\' -> loop (idx + 1) `escape
+      | `normal, '`' -> loop (idx + 1) (`verbatim_open 1)
+      | `normal, c when c = sep -> Some (idx - s.off)
+      | `normal, _ -> loop (idx + 1) `normal
+      | `escape, _ -> loop (idx + 1) `normal
+      | `verbatim_open n, '`' -> loop (idx + 1) (`verbatim_open (n + 1))
+      | `verbatim_open n, _ -> loop (idx + 1) (`within_verbatim n)
+      | `within_verbatim 1, '`' -> loop (idx + 1) `normal
+      | `within_verbatim n, '`' -> loop (idx + 1) (`verbatim_close (n, n - 1))
+      | `within_verbatim n, _ -> loop (idx + 1) (`within_verbatim n)
+      | `verbatim_close (_, 1), '`' -> loop (idx + 1) `normal
+      | `verbatim_close (n, k), '`' ->
+          loop (idx + 1) (`verbatim_close (n, k - 1))
+      | `verbatim_close (n, _), _ -> loop (idx + 1) (`within_verbatim n)
+  in
+  loop s.off `normal
+
 let exists f s =
   let rec loop s i =
     if i >= s.len then false
@@ -142,3 +170,10 @@ let fold_left f init s =
 (*   let s = of_string "abcde" in *)
 (*   assert (fold_left (fun _ n -> n + 1) 0 s = 5); *)
 (*   assert (fold_left (fun c s -> String.make 2 c ^ s) "" s = "eeddccbbaa") *)
+
+let trim s =
+  let is_whitespace = function
+    | ' ' | '\t' | '\010' .. '\013' -> true
+    | _ -> false
+  in
+  drop_while is_whitespace (drop_last_while is_whitespace s)

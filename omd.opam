@@ -28,6 +28,7 @@ depends: [
   "uucp"
   "uunf"
   "dune-build-info" {>= "2.7"}
+  "ppx_expect" {with-test}
   "odoc" {with-doc}
 ]
 build: [

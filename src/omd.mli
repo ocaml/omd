@@ -6,6 +6,10 @@
 
 include Ast.Intf
 
+(** {2 Helper functions for constructing the document AST } *)
+
+module Ctor : Ast_constructors.Intf
+
 (** {2 Generating and constructing tables of contents} *)
 
 val headers :
@@ -24,5 +28,5 @@ val escape_html_entities : string -> string
 
 val of_channel : in_channel -> doc
 val of_string : string -> doc
-val to_html : doc -> string
+val to_html : ?auto_identifiers:bool -> doc -> string
 val to_sexp : doc -> string

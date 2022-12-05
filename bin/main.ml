@@ -18,9 +18,9 @@ let with_open_out fn f =
       close_out_noerr oc;
       raise e
 
-let process ic oc =
+let process ?auto_identifiers ic oc =
   let md = Omd.of_channel ic in
-  output_string oc (Omd.to_html md)
+  output_string oc (Omd.to_html ?auto_identifiers md)
 
 let print_version () =
   let version =
@@ -33,11 +33,15 @@ let print_version () =
 
 let input = ref []
 let output = ref ""
+let auto_identifiers = ref None
 
 let spec =
   [ ( "-o"
     , Arg.Set_string output
     , " file.html Specify the output file (default is stdout)." )
+  ; ( "--auto-identifiers"
+    , Arg.Bool (fun x -> auto_identifiers := Some x)
+    , " Should identifiers be automatically assigned to headings." )
   ; ( "--version"
     , Arg.Unit print_version
     , " Display the version of the currently installed omd." )
@@ -54,10 +58,13 @@ let main () =
   let with_output f =
     if !output = "" then f stdout else with_open_out !output f
   in
+  let auto_identifiers = !auto_identifiers in
   with_output @@ fun oc ->
-  if !input = [] then process stdin oc
+  if !input = [] then process ?auto_identifiers stdin oc
   else
-    let f filename = with_open_in filename @@ fun ic -> process ic oc in
+    let f filename =
+      with_open_in filename @@ fun ic -> process ?auto_identifiers ic oc
+    in
     List.(iter f (rev !input))
 
 let () =
