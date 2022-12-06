@@ -11,6 +11,7 @@ let rec link { label; destination; title; _ } =
   List (Atom "link" :: inline label :: Atom destination :: title)
 
 and inline = function
+  | Empty -> List []
   | Concat (_, xs) -> List (Atom "concat" :: List.map inline xs)
   | Text (_, s) -> Atom s
   | Emph (_, il) -> List [ Atom "emph"; inline il ]
