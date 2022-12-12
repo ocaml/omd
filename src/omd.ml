@@ -24,6 +24,7 @@ let parse_inlines (md, defs) : doc =
   in
   List.map (Ast_block.Mapper.map (parse_inline defs)) md
 
+let escape_html_entities = Html.htmlentities
 let of_channel ic : doc = parse_inlines (Block_parser.Pre.of_channel ic)
 let of_string s = parse_inlines (Block_parser.Pre.of_string s)
 

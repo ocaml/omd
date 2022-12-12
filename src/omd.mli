@@ -17,6 +17,13 @@ val headers :
 
 val toc : ?start:int list -> ?depth:int -> doc -> doc
 
+(** {2 Helper functions} *)
+
+val escape_html_entities : string -> string
+(** Perform escaping of HTML entities. Turns: ['"'] into ["&quot;"],
+    ['&'] into ["&amp;"], ['<'] in ["&lt;"] and ['>'] into ["&gt;"]
+*)
+
 (** {2 Converting to and from documents} *)
 
 val of_channel : in_channel -> doc
