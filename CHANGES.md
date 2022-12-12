@@ -1,5 +1,7 @@
-unreleased
+2.0.0~alpha3
 ----------
+
+- Expose the HTML escape function `htmlentities` (#295 @cuihtlauac)
 
 - Support generation of identifiers in headers (#294, @tatchi)
 
