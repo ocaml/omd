@@ -6,7 +6,6 @@
         but with the caveat that most renderings of the document don't support
         attributes in these nodes? *)
 type 'attr inline =
-  | Empty
   | Concat of 'attr * 'attr inline list
   | Text of 'attr * string
   | Emph of 'attr * 'attr inline

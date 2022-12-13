@@ -3,7 +3,6 @@ open Stdcompat
 
 let rec remove_links inline =
   match inline with
-  | Empty -> Empty
   | Concat (attr, inlines) -> Concat (attr, List.map remove_links inlines)
   | Emph (attr, inline) -> Emph (attr, remove_links inline)
   | Strong (attr, inline) -> Emph (attr, remove_links inline)

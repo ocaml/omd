@@ -160,7 +160,6 @@ let slugify s =
 let to_plain_text t =
   let buf = Buffer.create 1024 in
   let rec go : _ inline -> unit = function
-    | Empty -> ()
     | Concat (_, l) -> List.iter go l
     | Text (_, t) | Code (_, t) -> Buffer.add_string buf t
     | Emph (_, i)
@@ -193,8 +192,7 @@ and img label destination title attrs =
   elt Inline "img" attrs None
 
 and inline = function
-  | Ast.Impl.Empty -> Null
-  | Concat (_, l) -> concat_map inline l
+  | Ast.Impl.Concat (_, l) -> concat_map inline l
   | Text (_, t) -> text t
   | Emph (attr, il) -> elt Inline "em" attr (Some (inline il))
   | Strong (attr, il) -> elt Inline "strong" attr (Some (inline il))
