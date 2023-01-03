@@ -30,3 +30,5 @@ val of_channel : in_channel -> doc
 val of_string : string -> doc
 val to_html : ?auto_identifiers:bool -> doc -> string
 val to_sexp : doc -> string
+val to_string : 'attr inline -> string
+(** Returns the text contents of an inline element. *)

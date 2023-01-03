@@ -32,3 +32,5 @@ let to_html ?auto_identifiers doc =
   Html.to_string (Html.of_doc ?auto_identifiers doc)
 
 let to_sexp ast = Format.asprintf "@[%a@]@." Sexp.print (Sexp.create ast)
+
+let to_string = Html.to_plain_text
