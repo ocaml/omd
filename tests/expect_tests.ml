@@ -34,10 +34,10 @@ let%expect_test "construct inline elements" =
 
 let%expect_test "construct headings" =
   show Omd.Ctor.[ h 1 ~attrs:[ ("class", "my-class") ] [ txt "Heading 1" ] ];
-  [%expect {| <h1 id="heading-1" class="my-class">Heading 1</h1> |}];
+  [%expect {| <h1 class="my-class">Heading 1</h1> |}];
   show Omd.Ctor.[ h 6 [ txt "Heading 6"; em "with emphasis!" ] ];
   [%expect
-    {| <h6 id="heading-6with-emphasis">Heading 6<em>with emphasis!</em></h6> |}]
+    {| <h6>Heading 6<em>with emphasis!</em></h6> |}]
 
 let%expect_test "construct lists" =
   show

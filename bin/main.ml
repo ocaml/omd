@@ -19,8 +19,8 @@ let with_open_out fn f =
       raise e
 
 let process ?auto_identifiers ic oc =
-  let md = Omd.of_channel ic in
-  output_string oc (Omd.to_html ?auto_identifiers md)
+  let md = Omd.of_channel ?auto_identifiers ic in
+  output_string oc (Omd.to_html md)
 
 let print_version () =
   let version =
