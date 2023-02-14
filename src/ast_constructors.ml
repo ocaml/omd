@@ -28,6 +28,9 @@ module type Intf = sig
 
   (** {3 Constructors for inline elements}  *)
 
+  val empty : attributes inline
+  (** [empty] is an empty inline element. *)
+
   val txt : ?attrs:attributes -> string -> attributes inline
   (** [txt ~attrs s] is {{!Text} [Text (attrs, s)]}. *)
 
@@ -170,6 +173,7 @@ end
 
 module Impl : Intf = struct
   let concat elems = Concat ([], elems)
+  let empty = concat []
   let txt ?(attrs = []) s = Text (attrs, s)
   let em ?(attrs = []) s = Emph (attrs, txt s)
   let strong ?(attrs = []) s = Strong (attrs, txt s)
