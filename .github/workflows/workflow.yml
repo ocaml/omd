@@ -21,6 +21,7 @@ jobs:
           # such as https://github.com/thierry-martinez/stdcompat/issues/26
           - 4.08.0
           - 4.14.x
+          - 5.0.x
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
