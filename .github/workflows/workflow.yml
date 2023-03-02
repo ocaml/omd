@@ -21,7 +21,12 @@ jobs:
           # such as https://github.com/thierry-martinez/stdcompat/issues/26
           - 4.08.0
           - 4.14.x
-          - 5.0.x
+        include:
+          - ocaml-compiler: 5.0.x
+            os:
+              - macos-latest
+              - ubuntu-latest
+
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
