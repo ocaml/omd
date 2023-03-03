@@ -24,8 +24,10 @@ jobs:
         include:
           - ocaml-compiler: 5.0.x
             os:
-              - macos-latest
               - ubuntu-latest
+          - ocaml-compiler: 5.0.x
+            os:
+              - macos-latest
 
     runs-on: ${{ matrix.os }}
     steps:
