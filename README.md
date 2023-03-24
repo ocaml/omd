@@ -55,7 +55,7 @@ $ make test
 Dependencies
 ------------
 
-The minimum version of OCaml required is 4.08.
+The minimum version of OCaml required is 4.13.
 
 Dependencies are tracked in the [dune-project](./dune-project) and can be
 installed by running:
