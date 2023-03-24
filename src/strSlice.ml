@@ -1,5 +1,3 @@
-open Stdcompat
-
 type t =
   { base : string
   ; off : int
