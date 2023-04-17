@@ -22,19 +22,3 @@ and 'attr link =
   ; destination : string
   ; title : string option
   }
-
-let rec of_cst_inline (cst : 'attr Cst_inline.inline) : 'attr inline =
-  match cst with
-  | Cst_inline.Strong (attr, inline) -> Strong (attr, of_cst_inline inline)
-  | Cst_inline.Concat (attr, inline) ->
-      Concat (attr, inline |> List.map of_cst_inline)
-  | Cst_inline.Text (attr, s) -> Text (attr, s)
-  | Cst_inline.Emph (attr, inline) -> Emph (attr, of_cst_inline inline)
-  | Cst_inline.Code (attr, s) -> Code (attr, s)
-  | Cst_inline.Hard_break attr -> Hard_break attr
-  | Cst_inline.Soft_break attr -> Soft_break attr
-  | Cst_inline.Link (attr, { label; destination; title }) ->
-      Link (attr, { label = of_cst_inline label; destination; title })
-  | Cst_inline.Image (attr, { label; destination; title }) ->
-      Image (attr, { label = of_cst_inline label; destination; title })
-  | Cst_inline.Html (attr, s) -> Html (attr, s)

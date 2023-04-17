@@ -7,11 +7,26 @@ module StringContent = struct
 end
 
 module InlineContent = struct
-  type 'attr t = 'attr Ast_inline.inline
+  type 'attr t = 'attr Cst_inline.inline
 end
 
-module List_types = Cst_block.List_types
-module Table_alignments = Cst_block.Table_alignments
+module List_types = struct
+  type list_type =
+    | Ordered of int * char
+    | Bullet of char
+
+  type list_spacing =
+    | Loose
+    | Tight
+end
+
+module Table_alignments = struct
+  type cell_alignment =
+    | Default
+    | Left
+    | Centre
+    | Right
+end
 
 open List_types
 open Table_alignments
@@ -25,7 +40,7 @@ module Make (C : BlockContent) = struct
   (* A value of type 'attr is present in all variants of this type. We use it to associate
      extra information to each node in the AST. Cn the common case, the attributes type defined
      above is used. We might eventually have an alternative function to parse blocks while keeping
-     concrete information such as source location and we'll use it for that as well. *)
+     concrete information sucpasyh as source location and we'll use it for that as well. *)
   type 'attr block =
     | Paragraph of 'attr * 'attr C.t
     | List of 'attr * list_type * list_spacing * 'attr block list list

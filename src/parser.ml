@@ -1,4 +1,4 @@
-open Ast.Impl
+open Cst.Impl
 open Stdcompat
 
 type 'attr link_def =
@@ -1598,7 +1598,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      { Ast.Impl.label = Text ([], label); destination; title = None }
+      { Cst.Impl.label = Text ([], label); destination; title = None }
   | _ -> raise Fail
 
 let inline_link =

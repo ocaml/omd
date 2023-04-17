@@ -29,7 +29,7 @@ let out_string () =
     Omd.Print.pp Format.str_formatter omd;
     Format.flush_str_formatter ()
   in
-  let s = to_string (Omd.of_channel ic1) in
+  let s = to_string (Omd.Parse_tree.of_channel ic1) in
   print_string s
 
 let html_check () =
