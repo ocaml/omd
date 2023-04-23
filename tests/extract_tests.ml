@@ -12,14 +12,72 @@ let disabled = []
 
 (* Some pp tests won't work because of escaping characters *)
 let pp_disabled =
-  [ 51 (* ==== is lost, need that information to reconstruct header *)
-  ; 52 (* see above *)
-  ; 65 (* see above *)
-  ; 98 (* Code in blockquote weirdness *)
-  ; 222 (* Code in blockquote using indentation only! *)
-  ; 511
+  [ 006
+  ; 012
+  ; 014
+  ; 015
+  ; 017
+  ; 020
+  ; 039
+  ; 040
+  ; 041
+  ; 081
+  ; 082
+  ; 095
+  ; 128
+  ; 174
+  ; 175
+  ; 194
+  ; 195
+  ; 202
+  ; 228
+  ; 229
+  ; 230
+  ; 232
+  ; 236
+  ; 238
+  ; 244
+  ; 252
+  ; 255
+  ; 259
+  ; 260
+  ; 264
+  ; 276
+  ; 312
+  ; 319
+  ; 320
+  ; 321
+  ; 324
+  ; 325
+  ; 329
+  ; 330
+  ; 331
+  ; 339
+  ; 346
+  ; 349
+  ; 416
+  ; 435
+  ; 444
+  ; 446
+  ; 447
+  ; 456
+  ; 458
+  ; 467
+  ; 488
+  ; 492
+  ; 505
+  ; 508
+  ; 514
+  ; 525
+  ; 528
+  ; 531
+  ; 532
+  ; 537
+  ; 549
+  ; 592
+  ; 602
+  ; 605
   ]
-  @ List.init 500 (fun i -> 200 + i)
 
 let pp_disabled_filename = [ "gfm_table_spec"; "extra_table_test"; "def_list" ]
 
