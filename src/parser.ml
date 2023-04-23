@@ -1763,7 +1763,7 @@ let rec inline defs st =
             Buffer.add_char buf c;
             loop ~seen_link acc st)
     | '`' -> loop ~seen_link (inline_pre buf acc st) st
-    | '\\' as c -> (
+    | '\\' as c1 -> (
         junk st;
         match peek st with
         | Some '\n' ->
@@ -1771,10 +1771,11 @@ let rec inline defs st =
             loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
         | Some c when is_punct c ->
             junk st;
+            Buffer.add_char buf c1;
             Buffer.add_char buf c;
             loop ~seen_link acc st
         | Some _ | None ->
-            Buffer.add_char buf c;
+            Buffer.add_char buf c1;
             loop ~seen_link acc st)
     | '!' as c -> (
         junk st;

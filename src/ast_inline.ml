@@ -23,12 +23,33 @@ and 'attr link =
   ; title : string option
   }
 
+let remove_escape_chars (s : string) : string =
+  let is_punct = function
+    | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' | '*' | '+' | ','
+    | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | '\\'
+    | ']' | '^' | '_' | '`' | '{' | '|' | '}' | '~' ->
+        true
+    | _ -> false
+  in
+  let n = String.length s in
+  let buf = Buffer.create n in
+  let rec loop i =
+    if i >= n then Buffer.contents buf
+    else if s.[i] = '\\' && i + 1 < n && is_punct s.[i + 1] then (
+      Buffer.add_char buf s.[i + 1];
+      loop (i + 2))
+    else (
+      Buffer.add_char buf s.[i];
+      loop (i + 1))
+  in
+  loop 0
+
 let rec of_cst_inline (cst : 'attr Cst_inline.inline) : 'attr inline =
   match cst with
   | Cst_inline.Strong (attr, _, inline) -> Strong (attr, of_cst_inline inline)
   | Cst_inline.Concat (attr, inline) ->
       Concat (attr, inline |> List.map of_cst_inline)
-  | Cst_inline.Text (attr, s) -> Text (attr, s)
+  | Cst_inline.Text (attr, s) -> Text (attr, remove_escape_chars s)
   | Cst_inline.Emph (attr, _, inline) -> Emph (attr, of_cst_inline inline)
   | Cst_inline.Code (attr, s) -> Code (attr, s)
   | Cst_inline.Hard_break attr -> Hard_break attr

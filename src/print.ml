@@ -14,17 +14,6 @@ let escape_link_destination s =
     s;
   Buffer.contents b
 
-let escape_text s =
-  let b = Buffer.create (String.length s) in
-  String.iter
-    (function
-      | ('*' | '#' | '_') as c ->
-          Buffer.add_char b '\\';
-          Buffer.add_char b c
-      | _ as c -> Buffer.add_char b c)
-    s;
-  Buffer.contents b
-
 let has_backticks s =
   let b = ref false in
   let len = String.length s in
@@ -37,9 +26,8 @@ let has_backticks s =
 
 let rec inline ppf = function
   (* Don't introduce a thematic break *)
-  | Text (_, s) when s = "***" || s = "___" || s = "---" ->
-      pf ppf "    %s" (escape_text s)
-  | Text (_, s) -> pf ppf "%s" (escape_text s)
+  | Text (_, s) when s = "***" || s = "___" || s = "---" -> pf ppf "    %s" s
+  | Text (_, s) -> pf ppf "%s" s
   | Emph (_attrs, emph_style, il) ->
       let emp_style = match emph_style with Star -> "*" | Underscore -> "_" in
       pf ppf "%s%a%s" emp_style inline il emp_style
