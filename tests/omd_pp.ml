@@ -34,7 +34,9 @@ let out_string () =
 
 let html_check () =
   with_open_in Sys.argv.(2) @@ fun ic1 ->
-  let html = normalize_html Omd.(to_html (of_channel ic1)) in
+  let html =
+    normalize_html Omd.(to_html ~auto_identifiers:false (of_channel ic1))
+  in
   print_string html
 
 let () =
