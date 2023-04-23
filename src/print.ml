@@ -54,9 +54,9 @@ let rec inline ppf = function
   | Emph (_, Text (_, s)) -> pf ppf "*%s*" (escape_star s)
   | Emph (_, Emph (_, s)) -> pf ppf "_*%a*_" inline s
   | Emph (_, il) -> pf ppf "*%a*" inline il
-  | Strong (_, Text (_, s)) -> pf ppf "**%s**" (escape_star s)
-  | Strong (_, Strong (_, s)) -> pf ppf "__**%a**__" inline s
-  | Strong (_, il) -> pf ppf "**%a**" inline il
+  | Strong (_attrs, emph_style, il) ->
+      let emp_style = match emph_style with Star -> "*" | Underscore -> "_" in
+      pf ppf "%s%s%a%s%s" emp_style emp_style inline il emp_style emp_style
   | Code (attrs, s) -> pf ppf "`%s`%a" s attributes attrs
   | Hard_break _ -> pf ppf "  @ "
   | Soft_break _ -> pf ppf "@ "

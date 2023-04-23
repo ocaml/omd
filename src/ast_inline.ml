@@ -25,7 +25,7 @@ and 'attr link =
 
 let rec of_cst_inline (cst : 'attr Cst_inline.inline) : 'attr inline =
   match cst with
-  | Cst_inline.Strong (attr, inline) -> Strong (attr, of_cst_inline inline)
+  | Cst_inline.Strong (attr, _, inline) -> Strong (attr, of_cst_inline inline)
   | Cst_inline.Concat (attr, inline) ->
       Concat (attr, inline |> List.map of_cst_inline)
   | Cst_inline.Text (attr, s) -> Text (attr, s)

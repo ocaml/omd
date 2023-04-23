@@ -7234,8 +7234,17 @@
  (action
   (with-stdout-to spec-467.html.new (run ./omd.exe %{dep:spec-467.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-467.md.pp
+          (run ./omd_pp.exe print %{dep:spec-467.md}))
+          (with-stdout-to spec-467.html.pp.new
+          (run ./omd_pp.exe html spec-467.md.pp)))))
+(rule
  (alias spec-467)
  (action (diff spec-467.html spec-467.html.new)))
+(rule
+ (alias spec-467)
+ (action (diff spec-467.html spec-467.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-468.html.new (run ./omd.exe %{dep:spec-468.md}))))

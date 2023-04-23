@@ -5,11 +5,16 @@
         those somehow? Or should we include these in the document model, but
         but with the caveat that most renderings of the document don't support
         attributes in these nodes? *)
+
+type emph_style =
+  | Star
+  | Underscore
+
 type 'attr inline =
   | Concat of 'attr * 'attr inline list
   | Text of 'attr * string
   | Emph of 'attr * 'attr inline
-  | Strong of 'attr * 'attr inline
+  | Strong of 'attr * emph_style * 'attr inline
   | Code of 'attr * string
   | Hard_break of 'attr
   | Soft_break of 'attr

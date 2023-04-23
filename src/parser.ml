@@ -860,10 +860,6 @@ module Pre = struct
     | Punct
     | Other
 
-  type emph_style =
-    | Star
-    | Underscore
-
   type link_kind =
     | Img
     | Url
@@ -1000,7 +996,7 @@ module Pre = struct
                 in
                 let r =
                   let il = concat (List.map to_r (List.rev acc)) in
-                  if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
+                  if n1 >= 2 && n2 >= 2 then R (Strong ([], q1, il)) :: xs
                   else R (Emph ([], il)) :: xs
                 in
                 let r =
@@ -1867,7 +1863,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Pre.Star else Pre.Underscore in
+          let e = if c = '*' then Cst.Impl.Star else Cst.Impl.Underscore in
           loop ~seen_link (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =
