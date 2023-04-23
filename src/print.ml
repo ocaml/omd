@@ -14,17 +14,6 @@ let escape_link_destination s =
     s;
   Buffer.contents b
 
-let escape_star s =
-  let b = Buffer.create (String.length s) in
-  String.iter
-    (function
-      | '*' as c ->
-          Buffer.add_char b '\\';
-          Buffer.add_char b c
-      | _ as c -> Buffer.add_char b c)
-    s;
-  Buffer.contents b
-
 let escape_text s =
   let b = Buffer.create (String.length s) in
   String.iter
@@ -51,9 +40,9 @@ let rec inline ppf = function
   | Text (_, s) when s = "***" || s = "___" || s = "---" ->
       pf ppf "    %s" (escape_text s)
   | Text (_, s) -> pf ppf "%s" (escape_text s)
-  | Emph (_, Text (_, s)) -> pf ppf "*%s*" (escape_star s)
-  | Emph (_, Emph (_, s)) -> pf ppf "_*%a*_" inline s
-  | Emph (_, il) -> pf ppf "*%a*" inline il
+  | Emph (_attrs, emph_style, il) ->
+      let emp_style = match emph_style with Star -> "*" | Underscore -> "_" in
+      pf ppf "%s%a%s" emp_style inline il emp_style
   | Strong (_attrs, emph_style, il) ->
       let emp_style = match emph_style with Star -> "*" | Underscore -> "_" in
       pf ppf "%s%s%a%s%s" emp_style emp_style inline il emp_style emp_style

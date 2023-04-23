@@ -13,7 +13,7 @@ type emph_style =
 type 'attr inline =
   | Concat of 'attr * 'attr inline list
   | Text of 'attr * string
-  | Emph of 'attr * 'attr inline
+  | Emph of 'attr * emph_style * 'attr inline
   | Strong of 'attr * emph_style * 'attr inline
   | Code of 'attr * string
   | Hard_break of 'attr

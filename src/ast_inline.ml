@@ -29,7 +29,7 @@ let rec of_cst_inline (cst : 'attr Cst_inline.inline) : 'attr inline =
   | Cst_inline.Concat (attr, inline) ->
       Concat (attr, inline |> List.map of_cst_inline)
   | Cst_inline.Text (attr, s) -> Text (attr, s)
-  | Cst_inline.Emph (attr, inline) -> Emph (attr, of_cst_inline inline)
+  | Cst_inline.Emph (attr, _, inline) -> Emph (attr, of_cst_inline inline)
   | Cst_inline.Code (attr, s) -> Code (attr, s)
   | Cst_inline.Hard_break attr -> Hard_break attr
   | Cst_inline.Soft_break attr -> Soft_break attr
