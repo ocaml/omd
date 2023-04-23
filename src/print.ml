@@ -107,8 +107,19 @@ and block ?(tight = false) ?(list = None) ppf = function
             pf ppf "%i%c @[<v0>%a@]" i c (pp_list (block ~tight ~list:(Some c)))
       in
       pf ppf "@[<v0>%a@]" (pp_list (elt typ)) blockss
-  | Heading (attrs, size, il) ->
-      pf ppf "%s %a%a" (String.make size '#') inline il attributes attrs
+  | Heading (attrs, heading_type, size, il) -> (
+      match heading_type with
+      | Latx ->
+          pf ppf "%s %a%a" (String.make size '#') inline il attributes attrs
+      | Lsetext len ->
+          pf
+            ppf
+            "%a%a@ %s"
+            inline
+            il
+            attributes
+            attrs
+            (String.make len (if size = 1 then '=' else '-')))
   | Code_block (attrs, lang, code) -> (
       let len = String.length code in
       let code = if len > 0 then String.sub code 0 (len - 1) else code in

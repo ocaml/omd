@@ -21,7 +21,7 @@ module Impl = struct
     | Cst.Impl.Blockquote (attr, blk) ->
         Blockquote (attr, blk |> List.map of_cst_block)
     | Cst.Impl.Thematic_break atrr -> Thematic_break atrr
-    | Cst.Impl.Heading (attr, level, inline) ->
+    | Cst.Impl.Heading (attr, _heading_type, level, inline) ->
         Heading (attr, level, Ast_inline.of_cst_inline inline)
     | Cst.Impl.Code_block (attr, s1, s2) -> Code_block (attr, s1, s2)
     | Cst.Impl.Html_block (atrr, s) -> Html_block (atrr, s)

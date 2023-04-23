@@ -1813,14 +1813,32 @@
  (action
   (with-stdout-to spec-081.html.new (run ./omd.exe %{dep:spec-081.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-081.md.pp
+          (run ./omd_pp.exe print %{dep:spec-081.md}))
+          (with-stdout-to spec-081.html.pp.new
+          (run ./omd_pp.exe html spec-081.md.pp)))))
+(rule
  (alias spec-081)
  (action (diff spec-081.html spec-081.html.new)))
+(rule
+ (alias spec-081)
+ (action (diff spec-081.html spec-081.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-082.html.new (run ./omd.exe %{dep:spec-082.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-082.md.pp
+          (run ./omd_pp.exe print %{dep:spec-082.md}))
+          (with-stdout-to spec-082.html.pp.new
+          (run ./omd_pp.exe html spec-082.md.pp)))))
+(rule
  (alias spec-082)
  (action (diff spec-082.html spec-082.html.new)))
+(rule
+ (alias spec-082)
+ (action (diff spec-082.html spec-082.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-083.html.new (run ./omd.exe %{dep:spec-083.md}))))
@@ -2005,8 +2023,17 @@
  (action
   (with-stdout-to spec-095.html.new (run ./omd.exe %{dep:spec-095.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-095.md.pp
+          (run ./omd_pp.exe print %{dep:spec-095.md}))
+          (with-stdout-to spec-095.html.pp.new
+          (run ./omd_pp.exe html spec-095.md.pp)))))
+(rule
  (alias spec-095)
  (action (diff spec-095.html spec-095.html.new)))
+(rule
+ (alias spec-095)
+ (action (diff spec-095.html spec-095.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-096.html.new (run ./omd.exe %{dep:spec-096.md}))))
@@ -2101,17 +2128,8 @@
  (action
   (with-stdout-to spec-102.html.new (run ./omd.exe %{dep:spec-102.md}))))
 (rule
- (action
-  (progn (with-stdout-to spec-102.md.pp
-          (run ./omd_pp.exe print %{dep:spec-102.md}))
-          (with-stdout-to spec-102.html.pp.new
-          (run ./omd_pp.exe html spec-102.md.pp)))))
-(rule
  (alias spec-102)
  (action (diff spec-102.html spec-102.html.new)))
-(rule
- (alias spec-102)
- (action (diff spec-102.html spec-102.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-103.html.new (run ./omd.exe %{dep:spec-103.md}))))

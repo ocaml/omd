@@ -31,6 +31,10 @@ end
 open List_types
 open Table_alignments
 
+type heading_type =
+  | Latx
+  | Lsetext of int
+
 module Make (C : BlockContent) = struct
   type 'attr def_elt =
     { term : 'attr C.t
@@ -46,7 +50,7 @@ module Make (C : BlockContent) = struct
     | List of 'attr * list_type * list_spacing * 'attr block list list
     | Blockquote of 'attr * 'attr block list
     | Thematic_break of 'attr
-    | Heading of 'attr * int * 'attr C.t
+    | Heading of 'attr * heading_type * int * 'attr C.t
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
     | Definition_list of 'attr * 'attr def_elt list
@@ -66,7 +70,8 @@ module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
         List (attr, ty, sp, List.map (List.map (map f)) bl)
     | Blockquote (attr, xs) -> Blockquote (attr, List.map (map f) xs)
     | Thematic_break attr -> Thematic_break attr
-    | Heading (attr, level, text) -> Heading (attr, level, f text)
+    | Heading (attr, heading_type, level, text) ->
+        Heading (attr, heading_type, level, f text)
     | Definition_list (attr, l) ->
         let f { SrcBlock.term; defs } =
           { DstBlock.term = f term; defs = List.map f defs }

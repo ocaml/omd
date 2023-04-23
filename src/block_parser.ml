@@ -139,7 +139,7 @@ module Pre = struct
     | Rempty, Lsetext_heading { level = 2; len } when len >= 3 ->
         { blocks = Thematic_break [] :: blocks; next = Rempty }
     | Rempty, Latx_heading (level, text, attr) ->
-        { blocks = Heading (attr, level, text) :: blocks; next = Rempty }
+        { blocks = Heading (attr, Latx, level, text) :: blocks; next = Rempty }
     | Rempty, Lfenced_code (ind, num, q, info, a) ->
         { blocks; next = Rfenced_code (ind, num, q, info, [], a) }
     | Rempty, Lhtml (_, kind) -> process { blocks; next = Rhtml (kind, []) } s
@@ -165,7 +165,7 @@ module Pre = struct
         | Lfenced_code _
         | Lhtml (true, _) ) ) ->
         process { blocks = close { blocks; next }; next = Rempty } s
-    | Rparagraph (_ :: _ as lines), Lsetext_heading { level; _ } ->
+    | Rparagraph (_ :: _ as lines), Lsetext_heading { level; len } ->
         let text = concat (List.map trim_left lines) in
         let defs, text = link_reference_definitions text in
         link_defs := defs @ !link_defs;
@@ -179,7 +179,10 @@ module Pre = struct
              In that case, there's nothing to make as Heading. We can simply add `===` as Rparagraph
           *)
           { blocks; next = Rparagraph [ StrSlice.to_string s ] }
-        else { blocks = Heading ([], level, text) :: blocks; next = Rempty }
+        else
+          { blocks = Heading ([], Lsetext len, level, text) :: blocks
+          ; next = Rempty
+          }
     | Rparagraph lines, _ ->
         { blocks; next = Rparagraph (StrSlice.to_string s :: lines) }
     | Rfenced_code (_, num, q, _, _, _), Lfenced_code (_, num', q1, ("", _), _)
