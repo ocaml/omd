@@ -10,6 +10,10 @@ type emph_style =
   | Star
   | Underscore
 
+type link_type =
+  | Regular
+  | Autolink
+
 type 'attr inline =
   | Concat of 'attr * 'attr inline list
   | Text of 'attr * string
@@ -18,7 +22,7 @@ type 'attr inline =
   | Code of 'attr * string
   | Hard_break of 'attr
   | Soft_break of 'attr
-  | Link of 'attr * 'attr link
+  | Link of 'attr * link_type * 'attr link
   | Image of 'attr * 'attr link
   | Html of 'attr * string
 

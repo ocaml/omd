@@ -8,7 +8,7 @@ let protect ~finally f =
       finally ();
       r
 
-let disabled = [ 020; 602 ]
+let disabled = []
 
 (* Some pp tests won't work because of escaping characters *)
 let pp_disabled =
@@ -49,7 +49,6 @@ let pp_disabled =
   ; 330
   ; 331
   ; 339
-  ; 346
   ; 349
   ; 416
   ; 435
@@ -61,10 +60,8 @@ let pp_disabled =
   ; 488
   ; 505
   ; 508
-  ; 525
   ; 531
   ; 532
-  ; 537
   ]
 
 let pp_disabled_filename = [ "gfm_table_spec"; "extra_table_test"; "def_list" ]

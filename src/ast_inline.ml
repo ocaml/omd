@@ -44,18 +44,25 @@ let remove_escape_chars (s : string) : string =
   in
   loop 0
 
-let rec of_cst_inline (cst : 'attr Cst_inline.inline) : 'attr inline =
+let rec of_cst_inline ?(escape = true) (cst : 'attr Cst_inline.inline) :
+    'attr inline =
   match cst with
   | Cst_inline.Strong (attr, _, inline) -> Strong (attr, of_cst_inline inline)
   | Cst_inline.Concat (attr, inline) ->
       Concat (attr, inline |> List.map of_cst_inline)
-  | Cst_inline.Text (attr, s) -> Text (attr, remove_escape_chars s)
+  | Cst_inline.Text (attr, s) ->
+      Text (attr, if escape then remove_escape_chars s else s)
   | Cst_inline.Emph (attr, _, inline) -> Emph (attr, of_cst_inline inline)
   | Cst_inline.Code (attr, s) -> Code (attr, s)
   | Cst_inline.Hard_break attr -> Hard_break attr
   | Cst_inline.Soft_break attr -> Soft_break attr
-  | Cst_inline.Link (attr, { label; destination; title }) ->
-      Link (attr, { label = of_cst_inline label; destination; title })
+  | Cst_inline.Link (attr, link_type, { label; destination; title }) ->
+      Link
+        ( attr
+        , { label = of_cst_inline ~escape:(link_type = Regular) label
+          ; destination
+          ; title
+          } )
   | Cst_inline.Image (attr, { label; destination; title }) ->
       Image (attr, { label = of_cst_inline label; destination; title })
   | Cst_inline.Html (attr, s) -> Html (attr, s)

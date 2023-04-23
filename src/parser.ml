@@ -1687,7 +1687,7 @@ let rec inline defs st =
                 let def = { label = lab1; destination; title } in
                 match kind with
                 | Pre.Img -> Image (attr, def)
-                | Url -> Link (attr, def)
+                | Url -> Link (attr, Regular, def)
               in
               loop (Pre.R r :: text acc) st
           | None ->
@@ -1727,7 +1727,7 @@ let rec inline defs st =
         match protect autolink st with
         | def ->
             let attr = inline_attribute_string st in
-            loop ~seen_link (Pre.R (Link (attr, def)) :: text acc) st
+            loop ~seen_link (Pre.R (Link (attr, Autolink, def)) :: text acc) st
         | exception Fail -> (
             match
               protect
@@ -1806,7 +1806,7 @@ let rec inline defs st =
                         let def = { label; destination; title } in
                         match k with
                         | Img -> Image (attr, def)
-                        | Url -> Link (attr, def)
+                        | Url -> Link (attr, Regular, def)
                       in
                       loop ~seen_link (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1831,7 +1831,7 @@ let rec inline defs st =
                           let r =
                             match k with
                             | Img -> Image (attr, def)
-                            | Url -> Link (attr, def)
+                            | Url -> Link (attr, Regular, def)
                           in
                           loop ~seen_link (Pre.R r :: acc') st
                       | None ->

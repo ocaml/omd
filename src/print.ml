@@ -37,7 +37,7 @@ let rec inline ppf = function
   | Code (attrs, s) -> pf ppf "`%s`%a" s attributes attrs
   | Hard_break _ -> pf ppf "  @ "
   | Soft_break _ -> pf ppf "@ "
-  | Link (attrs, { label; destination; title = None }) ->
+  | Link (attrs, Regular, { label; destination; title = None }) ->
       pf
         ppf
         "[%a](%s)%a"
@@ -46,7 +46,7 @@ let rec inline ppf = function
         (escape_link_destination destination)
         attributes
         attrs
-  | Link (attrs, { label; destination; title = Some title }) ->
+  | Link (attrs, Regular, { label; destination; title = Some title }) ->
       pf
         ppf
         "[%a](%s \"%s\")%a"
@@ -56,6 +56,8 @@ let rec inline ppf = function
         title
         attributes
         attrs
+  | Link (attrs, Autolink, { label; _ }) ->
+      pf ppf "<%a>%a" inline label attributes attrs
   | Image (attrs, { label; destination; title = None }) ->
       pf
         ppf
