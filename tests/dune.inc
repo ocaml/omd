@@ -6362,321 +6362,141 @@
   (with-stdout-to gfm_table_spec-001.html.new
    (run ./omd.exe %{dep:gfm_table_spec-001.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-001.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-001.md}))
-          (with-stdout-to gfm_table_spec-001.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-001.md.pp)))))
-(rule
  (alias gfm_table_spec-001)
  (action (diff gfm_table_spec-001.html gfm_table_spec-001.html.new)))
-(rule
- (alias gfm_table_spec-001)
- (action (diff gfm_table_spec-001.html gfm_table_spec-001.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-002.html.new
    (run ./omd.exe %{dep:gfm_table_spec-002.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-002.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-002.md}))
-          (with-stdout-to gfm_table_spec-002.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-002.md.pp)))))
-(rule
  (alias gfm_table_spec-002)
  (action (diff gfm_table_spec-002.html gfm_table_spec-002.html.new)))
-(rule
- (alias gfm_table_spec-002)
- (action (diff gfm_table_spec-002.html gfm_table_spec-002.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-003.html.new
    (run ./omd.exe %{dep:gfm_table_spec-003.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-003.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-003.md}))
-          (with-stdout-to gfm_table_spec-003.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-003.md.pp)))))
-(rule
  (alias gfm_table_spec-003)
  (action (diff gfm_table_spec-003.html gfm_table_spec-003.html.new)))
-(rule
- (alias gfm_table_spec-003)
- (action (diff gfm_table_spec-003.html gfm_table_spec-003.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-004.html.new
    (run ./omd.exe %{dep:gfm_table_spec-004.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-004.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-004.md}))
-          (with-stdout-to gfm_table_spec-004.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-004.md.pp)))))
-(rule
  (alias gfm_table_spec-004)
  (action (diff gfm_table_spec-004.html gfm_table_spec-004.html.new)))
-(rule
- (alias gfm_table_spec-004)
- (action (diff gfm_table_spec-004.html gfm_table_spec-004.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-005.html.new
    (run ./omd.exe %{dep:gfm_table_spec-005.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-005.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-005.md}))
-          (with-stdout-to gfm_table_spec-005.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-005.md.pp)))))
-(rule
  (alias gfm_table_spec-005)
  (action (diff gfm_table_spec-005.html gfm_table_spec-005.html.new)))
-(rule
- (alias gfm_table_spec-005)
- (action (diff gfm_table_spec-005.html gfm_table_spec-005.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-006.html.new
    (run ./omd.exe %{dep:gfm_table_spec-006.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-006.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-006.md}))
-          (with-stdout-to gfm_table_spec-006.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-006.md.pp)))))
-(rule
  (alias gfm_table_spec-006)
  (action (diff gfm_table_spec-006.html gfm_table_spec-006.html.new)))
-(rule
- (alias gfm_table_spec-006)
- (action (diff gfm_table_spec-006.html gfm_table_spec-006.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-007.html.new
    (run ./omd.exe %{dep:gfm_table_spec-007.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-007.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-007.md}))
-          (with-stdout-to gfm_table_spec-007.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-007.md.pp)))))
-(rule
  (alias gfm_table_spec-007)
  (action (diff gfm_table_spec-007.html gfm_table_spec-007.html.new)))
-(rule
- (alias gfm_table_spec-007)
- (action (diff gfm_table_spec-007.html gfm_table_spec-007.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-008.html.new
    (run ./omd.exe %{dep:gfm_table_spec-008.md}))))
 (rule
- (action
-  (progn (with-stdout-to gfm_table_spec-008.md.pp
-          (run ./omd_pp.exe print %{dep:gfm_table_spec-008.md}))
-          (with-stdout-to gfm_table_spec-008.html.pp.new
-          (run ./omd_pp.exe html gfm_table_spec-008.md.pp)))))
-(rule
  (alias gfm_table_spec-008)
  (action (diff gfm_table_spec-008.html gfm_table_spec-008.html.new)))
-(rule
- (alias gfm_table_spec-008)
- (action (diff gfm_table_spec-008.html gfm_table_spec-008.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-001.html.new
    (run ./omd.exe %{dep:extra_table_tests-001.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-001.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-001.md}))
-          (with-stdout-to extra_table_tests-001.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-001.md.pp)))))
-(rule
  (alias extra_table_tests-001)
  (action (diff extra_table_tests-001.html extra_table_tests-001.html.new)))
-(rule
- (alias extra_table_tests-001)
- (action (diff extra_table_tests-001.html extra_table_tests-001.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-002.html.new
    (run ./omd.exe %{dep:extra_table_tests-002.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-002.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-002.md}))
-          (with-stdout-to extra_table_tests-002.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-002.md.pp)))))
-(rule
  (alias extra_table_tests-002)
  (action (diff extra_table_tests-002.html extra_table_tests-002.html.new)))
-(rule
- (alias extra_table_tests-002)
- (action (diff extra_table_tests-002.html extra_table_tests-002.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-003.html.new
    (run ./omd.exe %{dep:extra_table_tests-003.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-003.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-003.md}))
-          (with-stdout-to extra_table_tests-003.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-003.md.pp)))))
-(rule
  (alias extra_table_tests-003)
  (action (diff extra_table_tests-003.html extra_table_tests-003.html.new)))
-(rule
- (alias extra_table_tests-003)
- (action (diff extra_table_tests-003.html extra_table_tests-003.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-004.html.new
    (run ./omd.exe %{dep:extra_table_tests-004.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-004.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-004.md}))
-          (with-stdout-to extra_table_tests-004.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-004.md.pp)))))
-(rule
  (alias extra_table_tests-004)
  (action (diff extra_table_tests-004.html extra_table_tests-004.html.new)))
-(rule
- (alias extra_table_tests-004)
- (action (diff extra_table_tests-004.html extra_table_tests-004.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-005.html.new
    (run ./omd.exe %{dep:extra_table_tests-005.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-005.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-005.md}))
-          (with-stdout-to extra_table_tests-005.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-005.md.pp)))))
-(rule
  (alias extra_table_tests-005)
  (action (diff extra_table_tests-005.html extra_table_tests-005.html.new)))
-(rule
- (alias extra_table_tests-005)
- (action (diff extra_table_tests-005.html extra_table_tests-005.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-006.html.new
    (run ./omd.exe %{dep:extra_table_tests-006.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-006.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-006.md}))
-          (with-stdout-to extra_table_tests-006.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-006.md.pp)))))
-(rule
  (alias extra_table_tests-006)
  (action (diff extra_table_tests-006.html extra_table_tests-006.html.new)))
-(rule
- (alias extra_table_tests-006)
- (action (diff extra_table_tests-006.html extra_table_tests-006.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-007.html.new
    (run ./omd.exe %{dep:extra_table_tests-007.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-007.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-007.md}))
-          (with-stdout-to extra_table_tests-007.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-007.md.pp)))))
-(rule
  (alias extra_table_tests-007)
  (action (diff extra_table_tests-007.html extra_table_tests-007.html.new)))
-(rule
- (alias extra_table_tests-007)
- (action (diff extra_table_tests-007.html extra_table_tests-007.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-008.html.new
    (run ./omd.exe %{dep:extra_table_tests-008.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-008.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-008.md}))
-          (with-stdout-to extra_table_tests-008.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-008.md.pp)))))
-(rule
  (alias extra_table_tests-008)
  (action (diff extra_table_tests-008.html extra_table_tests-008.html.new)))
-(rule
- (alias extra_table_tests-008)
- (action (diff extra_table_tests-008.html extra_table_tests-008.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-009.html.new
    (run ./omd.exe %{dep:extra_table_tests-009.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-009.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-009.md}))
-          (with-stdout-to extra_table_tests-009.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-009.md.pp)))))
-(rule
  (alias extra_table_tests-009)
  (action (diff extra_table_tests-009.html extra_table_tests-009.html.new)))
-(rule
- (alias extra_table_tests-009)
- (action (diff extra_table_tests-009.html extra_table_tests-009.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-010.html.new
    (run ./omd.exe %{dep:extra_table_tests-010.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-010.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-010.md}))
-          (with-stdout-to extra_table_tests-010.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-010.md.pp)))))
-(rule
  (alias extra_table_tests-010)
  (action (diff extra_table_tests-010.html extra_table_tests-010.html.new)))
-(rule
- (alias extra_table_tests-010)
- (action (diff extra_table_tests-010.html extra_table_tests-010.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-011.html.new
    (run ./omd.exe %{dep:extra_table_tests-011.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-011.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-011.md}))
-          (with-stdout-to extra_table_tests-011.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-011.md.pp)))))
-(rule
  (alias extra_table_tests-011)
  (action (diff extra_table_tests-011.html extra_table_tests-011.html.new)))
-(rule
- (alias extra_table_tests-011)
- (action (diff extra_table_tests-011.html extra_table_tests-011.html.pp.new)))
 (rule
  (action
   (with-stdout-to extra_table_tests-012.html.new
    (run ./omd.exe %{dep:extra_table_tests-012.md}))))
 (rule
- (action
-  (progn (with-stdout-to extra_table_tests-012.md.pp
-          (run ./omd_pp.exe print %{dep:extra_table_tests-012.md}))
-          (with-stdout-to extra_table_tests-012.html.pp.new
-          (run ./omd_pp.exe html extra_table_tests-012.md.pp)))))
-(rule
  (alias extra_table_tests-012)
  (action (diff extra_table_tests-012.html extra_table_tests-012.html.new)))
-(rule
- (alias extra_table_tests-012)
- (action (diff extra_table_tests-012.html extra_table_tests-012.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-001.html.new
@@ -6922,17 +6742,8 @@
   (with-stdout-to def_list-001.html.new
    (run ./omd.exe %{dep:def_list-001.md}))))
 (rule
- (action
-  (progn (with-stdout-to def_list-001.md.pp
-          (run ./omd_pp.exe print %{dep:def_list-001.md}))
-          (with-stdout-to def_list-001.html.pp.new
-          (run ./omd_pp.exe html def_list-001.md.pp)))))
-(rule
  (alias def_list-001)
  (action (diff def_list-001.html def_list-001.html.new)))
-(rule
- (alias def_list-001)
- (action (diff def_list-001.html def_list-001.html.pp.new)))
 (alias
  (name runtest)
  (deps

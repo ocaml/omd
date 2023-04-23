@@ -21,6 +21,8 @@ let pp_disabled =
   ]
   @ List.init 500 (fun i -> 200 + i)
 
+let pp_disabled_filename = [ "gfm_table_spec"; "extra_table_test"; "def_list" ]
+
 let with_open_in fn f =
   let ic = open_in fn in
   protect ~finally:(fun () -> close_in_noerr ic) (fun () -> f ic)
@@ -105,7 +107,13 @@ let write_dune_file test_specs tests =
         example
         base
         example;
-      if not (List.mem example pp_disabled) then
+      if
+        not
+          (List.mem example pp_disabled
+          || pp_disabled_filename
+             |> List.exists (fun pp_disabled_filename ->
+                    String.starts_with ~prefix:pp_disabled_filename filename))
+      then
         Format.printf
           "@[<v1>(rule@ @[<hov1>(action@ @[<hov1>(progn \
            @[<hov1>(with-stdout-to %s-%03d.md.pp@ @[<hov1>(run@ ./omd_pp.exe \
@@ -128,7 +136,13 @@ let write_dune_file test_specs tests =
         example
         base
         example;
-      if not (List.mem example pp_disabled) then
+      if
+        not
+          (List.mem example pp_disabled
+          || pp_disabled_filename
+             |> List.exists (fun pp_disabled_filename ->
+                    String.starts_with ~prefix:pp_disabled_filename filename))
+      then
         Format.printf
           "@[<v1>(rule@ @[<hov1>(alias %s-%03d)@]@ @[<hov1>(action@ \
            @[<hov1>(diff@ %s-%03d.html %s-%03d.html.pp.new)@])@])@]@."
