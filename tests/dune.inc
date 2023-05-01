@@ -694,32 +694,77 @@
  (action
   (with-stdout-to spec-001.html.new (run ./omd.exe %{dep:spec-001.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-001.md.pp
+          (run ./omd_pp.exe print %{dep:spec-001.md}))
+          (with-stdout-to spec-001.html.pp.new
+          (run ./omd_pp.exe html spec-001.md.pp)))))
+(rule
  (alias spec-001)
  (action (diff spec-001.html spec-001.html.new)))
+(rule
+ (alias spec-001)
+ (action (diff spec-001.html spec-001.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-002.html.new (run ./omd.exe %{dep:spec-002.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-002.md.pp
+          (run ./omd_pp.exe print %{dep:spec-002.md}))
+          (with-stdout-to spec-002.html.pp.new
+          (run ./omd_pp.exe html spec-002.md.pp)))))
+(rule
  (alias spec-002)
  (action (diff spec-002.html spec-002.html.new)))
+(rule
+ (alias spec-002)
+ (action (diff spec-002.html spec-002.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-003.html.new (run ./omd.exe %{dep:spec-003.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-003.md.pp
+          (run ./omd_pp.exe print %{dep:spec-003.md}))
+          (with-stdout-to spec-003.html.pp.new
+          (run ./omd_pp.exe html spec-003.md.pp)))))
+(rule
  (alias spec-003)
  (action (diff spec-003.html spec-003.html.new)))
+(rule
+ (alias spec-003)
+ (action (diff spec-003.html spec-003.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-004.html.new (run ./omd.exe %{dep:spec-004.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-004.md.pp
+          (run ./omd_pp.exe print %{dep:spec-004.md}))
+          (with-stdout-to spec-004.html.pp.new
+          (run ./omd_pp.exe html spec-004.md.pp)))))
+(rule
  (alias spec-004)
  (action (diff spec-004.html spec-004.html.new)))
+(rule
+ (alias spec-004)
+ (action (diff spec-004.html spec-004.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-005.html.new (run ./omd.exe %{dep:spec-005.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-005.md.pp
+          (run ./omd_pp.exe print %{dep:spec-005.md}))
+          (with-stdout-to spec-005.html.pp.new
+          (run ./omd_pp.exe html spec-005.md.pp)))))
+(rule
  (alias spec-005)
  (action (diff spec-005.html spec-005.html.new)))
+(rule
+ (alias spec-005)
+ (action (diff spec-005.html spec-005.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-006.html.new (run ./omd.exe %{dep:spec-006.md}))))
@@ -730,62 +775,152 @@
  (action
   (with-stdout-to spec-007.html.new (run ./omd.exe %{dep:spec-007.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-007.md.pp
+          (run ./omd_pp.exe print %{dep:spec-007.md}))
+          (with-stdout-to spec-007.html.pp.new
+          (run ./omd_pp.exe html spec-007.md.pp)))))
+(rule
  (alias spec-007)
  (action (diff spec-007.html spec-007.html.new)))
+(rule
+ (alias spec-007)
+ (action (diff spec-007.html spec-007.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-008.html.new (run ./omd.exe %{dep:spec-008.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-008.md.pp
+          (run ./omd_pp.exe print %{dep:spec-008.md}))
+          (with-stdout-to spec-008.html.pp.new
+          (run ./omd_pp.exe html spec-008.md.pp)))))
+(rule
  (alias spec-008)
  (action (diff spec-008.html spec-008.html.new)))
+(rule
+ (alias spec-008)
+ (action (diff spec-008.html spec-008.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-009.html.new (run ./omd.exe %{dep:spec-009.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-009.md.pp
+          (run ./omd_pp.exe print %{dep:spec-009.md}))
+          (with-stdout-to spec-009.html.pp.new
+          (run ./omd_pp.exe html spec-009.md.pp)))))
+(rule
  (alias spec-009)
  (action (diff spec-009.html spec-009.html.new)))
+(rule
+ (alias spec-009)
+ (action (diff spec-009.html spec-009.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-010.html.new (run ./omd.exe %{dep:spec-010.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-010.md.pp
+          (run ./omd_pp.exe print %{dep:spec-010.md}))
+          (with-stdout-to spec-010.html.pp.new
+          (run ./omd_pp.exe html spec-010.md.pp)))))
+(rule
  (alias spec-010)
  (action (diff spec-010.html spec-010.html.new)))
+(rule
+ (alias spec-010)
+ (action (diff spec-010.html spec-010.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-011.html.new (run ./omd.exe %{dep:spec-011.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-011.md.pp
+          (run ./omd_pp.exe print %{dep:spec-011.md}))
+          (with-stdout-to spec-011.html.pp.new
+          (run ./omd_pp.exe html spec-011.md.pp)))))
+(rule
  (alias spec-011)
  (action (diff spec-011.html spec-011.html.new)))
+(rule
+ (alias spec-011)
+ (action (diff spec-011.html spec-011.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-012.html.new (run ./omd.exe %{dep:spec-012.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-012.md.pp
+          (run ./omd_pp.exe print %{dep:spec-012.md}))
+          (with-stdout-to spec-012.html.pp.new
+          (run ./omd_pp.exe html spec-012.md.pp)))))
+(rule
  (alias spec-012)
  (action (diff spec-012.html spec-012.html.new)))
+(rule
+ (alias spec-012)
+ (action (diff spec-012.html spec-012.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-013.html.new (run ./omd.exe %{dep:spec-013.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-013.md.pp
+          (run ./omd_pp.exe print %{dep:spec-013.md}))
+          (with-stdout-to spec-013.html.pp.new
+          (run ./omd_pp.exe html spec-013.md.pp)))))
+(rule
  (alias spec-013)
  (action (diff spec-013.html spec-013.html.new)))
+(rule
+ (alias spec-013)
+ (action (diff spec-013.html spec-013.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-014.html.new (run ./omd.exe %{dep:spec-014.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-014.md.pp
+          (run ./omd_pp.exe print %{dep:spec-014.md}))
+          (with-stdout-to spec-014.html.pp.new
+          (run ./omd_pp.exe html spec-014.md.pp)))))
+(rule
  (alias spec-014)
  (action (diff spec-014.html spec-014.html.new)))
+(rule
+ (alias spec-014)
+ (action (diff spec-014.html spec-014.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-015.html.new (run ./omd.exe %{dep:spec-015.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-015.md.pp
+          (run ./omd_pp.exe print %{dep:spec-015.md}))
+          (with-stdout-to spec-015.html.pp.new
+          (run ./omd_pp.exe html spec-015.md.pp)))))
+(rule
  (alias spec-015)
  (action (diff spec-015.html spec-015.html.new)))
+(rule
+ (alias spec-015)
+ (action (diff spec-015.html spec-015.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-016.html.new (run ./omd.exe %{dep:spec-016.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-016.md.pp
+          (run ./omd_pp.exe print %{dep:spec-016.md}))
+          (with-stdout-to spec-016.html.pp.new
+          (run ./omd_pp.exe html spec-016.md.pp)))))
+(rule
  (alias spec-016)
  (action (diff spec-016.html spec-016.html.new)))
+(rule
+ (alias spec-016)
+ (action (diff spec-016.html spec-016.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-017.html.new (run ./omd.exe %{dep:spec-017.md}))))
@@ -796,50 +931,122 @@
  (action
   (with-stdout-to spec-018.html.new (run ./omd.exe %{dep:spec-018.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-018.md.pp
+          (run ./omd_pp.exe print %{dep:spec-018.md}))
+          (with-stdout-to spec-018.html.pp.new
+          (run ./omd_pp.exe html spec-018.md.pp)))))
+(rule
  (alias spec-018)
  (action (diff spec-018.html spec-018.html.new)))
+(rule
+ (alias spec-018)
+ (action (diff spec-018.html spec-018.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-019.html.new (run ./omd.exe %{dep:spec-019.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-019.md.pp
+          (run ./omd_pp.exe print %{dep:spec-019.md}))
+          (with-stdout-to spec-019.html.pp.new
+          (run ./omd_pp.exe html spec-019.md.pp)))))
+(rule
  (alias spec-019)
  (action (diff spec-019.html spec-019.html.new)))
+(rule
+ (alias spec-019)
+ (action (diff spec-019.html spec-019.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-020.html.new (run ./omd.exe %{dep:spec-020.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-020.md.pp
+          (run ./omd_pp.exe print %{dep:spec-020.md}))
+          (with-stdout-to spec-020.html.pp.new
+          (run ./omd_pp.exe html spec-020.md.pp)))))
+(rule
  (alias spec-020)
  (action (diff spec-020.html spec-020.html.new)))
+(rule
+ (alias spec-020)
+ (action (diff spec-020.html spec-020.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-021.html.new (run ./omd.exe %{dep:spec-021.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-021.md.pp
+          (run ./omd_pp.exe print %{dep:spec-021.md}))
+          (with-stdout-to spec-021.html.pp.new
+          (run ./omd_pp.exe html spec-021.md.pp)))))
+(rule
  (alias spec-021)
  (action (diff spec-021.html spec-021.html.new)))
+(rule
+ (alias spec-021)
+ (action (diff spec-021.html spec-021.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-022.html.new (run ./omd.exe %{dep:spec-022.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-022.md.pp
+          (run ./omd_pp.exe print %{dep:spec-022.md}))
+          (with-stdout-to spec-022.html.pp.new
+          (run ./omd_pp.exe html spec-022.md.pp)))))
+(rule
  (alias spec-022)
  (action (diff spec-022.html spec-022.html.new)))
+(rule
+ (alias spec-022)
+ (action (diff spec-022.html spec-022.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-023.html.new (run ./omd.exe %{dep:spec-023.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-023.md.pp
+          (run ./omd_pp.exe print %{dep:spec-023.md}))
+          (with-stdout-to spec-023.html.pp.new
+          (run ./omd_pp.exe html spec-023.md.pp)))))
+(rule
  (alias spec-023)
  (action (diff spec-023.html spec-023.html.new)))
+(rule
+ (alias spec-023)
+ (action (diff spec-023.html spec-023.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-024.html.new (run ./omd.exe %{dep:spec-024.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-024.md.pp
+          (run ./omd_pp.exe print %{dep:spec-024.md}))
+          (with-stdout-to spec-024.html.pp.new
+          (run ./omd_pp.exe html spec-024.md.pp)))))
+(rule
  (alias spec-024)
  (action (diff spec-024.html spec-024.html.new)))
+(rule
+ (alias spec-024)
+ (action (diff spec-024.html spec-024.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-025.html.new (run ./omd.exe %{dep:spec-025.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-025.md.pp
+          (run ./omd_pp.exe print %{dep:spec-025.md}))
+          (with-stdout-to spec-025.html.pp.new
+          (run ./omd_pp.exe html spec-025.md.pp)))))
+(rule
  (alias spec-025)
  (action (diff spec-025.html spec-025.html.new)))
+(rule
+ (alias spec-025)
+ (action (diff spec-025.html spec-025.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-026.html.new (run ./omd.exe %{dep:spec-026.md}))))
@@ -850,62 +1057,152 @@
  (action
   (with-stdout-to spec-027.html.new (run ./omd.exe %{dep:spec-027.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-027.md.pp
+          (run ./omd_pp.exe print %{dep:spec-027.md}))
+          (with-stdout-to spec-027.html.pp.new
+          (run ./omd_pp.exe html spec-027.md.pp)))))
+(rule
  (alias spec-027)
  (action (diff spec-027.html spec-027.html.new)))
+(rule
+ (alias spec-027)
+ (action (diff spec-027.html spec-027.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-028.html.new (run ./omd.exe %{dep:spec-028.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-028.md.pp
+          (run ./omd_pp.exe print %{dep:spec-028.md}))
+          (with-stdout-to spec-028.html.pp.new
+          (run ./omd_pp.exe html spec-028.md.pp)))))
+(rule
  (alias spec-028)
  (action (diff spec-028.html spec-028.html.new)))
+(rule
+ (alias spec-028)
+ (action (diff spec-028.html spec-028.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-029.html.new (run ./omd.exe %{dep:spec-029.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-029.md.pp
+          (run ./omd_pp.exe print %{dep:spec-029.md}))
+          (with-stdout-to spec-029.html.pp.new
+          (run ./omd_pp.exe html spec-029.md.pp)))))
+(rule
  (alias spec-029)
  (action (diff spec-029.html spec-029.html.new)))
+(rule
+ (alias spec-029)
+ (action (diff spec-029.html spec-029.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-030.html.new (run ./omd.exe %{dep:spec-030.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-030.md.pp
+          (run ./omd_pp.exe print %{dep:spec-030.md}))
+          (with-stdout-to spec-030.html.pp.new
+          (run ./omd_pp.exe html spec-030.md.pp)))))
+(rule
  (alias spec-030)
  (action (diff spec-030.html spec-030.html.new)))
+(rule
+ (alias spec-030)
+ (action (diff spec-030.html spec-030.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-031.html.new (run ./omd.exe %{dep:spec-031.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-031.md.pp
+          (run ./omd_pp.exe print %{dep:spec-031.md}))
+          (with-stdout-to spec-031.html.pp.new
+          (run ./omd_pp.exe html spec-031.md.pp)))))
+(rule
  (alias spec-031)
  (action (diff spec-031.html spec-031.html.new)))
+(rule
+ (alias spec-031)
+ (action (diff spec-031.html spec-031.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-032.html.new (run ./omd.exe %{dep:spec-032.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-032.md.pp
+          (run ./omd_pp.exe print %{dep:spec-032.md}))
+          (with-stdout-to spec-032.html.pp.new
+          (run ./omd_pp.exe html spec-032.md.pp)))))
+(rule
  (alias spec-032)
  (action (diff spec-032.html spec-032.html.new)))
+(rule
+ (alias spec-032)
+ (action (diff spec-032.html spec-032.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-033.html.new (run ./omd.exe %{dep:spec-033.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-033.md.pp
+          (run ./omd_pp.exe print %{dep:spec-033.md}))
+          (with-stdout-to spec-033.html.pp.new
+          (run ./omd_pp.exe html spec-033.md.pp)))))
+(rule
  (alias spec-033)
  (action (diff spec-033.html spec-033.html.new)))
+(rule
+ (alias spec-033)
+ (action (diff spec-033.html spec-033.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-034.html.new (run ./omd.exe %{dep:spec-034.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-034.md.pp
+          (run ./omd_pp.exe print %{dep:spec-034.md}))
+          (with-stdout-to spec-034.html.pp.new
+          (run ./omd_pp.exe html spec-034.md.pp)))))
+(rule
  (alias spec-034)
  (action (diff spec-034.html spec-034.html.new)))
+(rule
+ (alias spec-034)
+ (action (diff spec-034.html spec-034.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-035.html.new (run ./omd.exe %{dep:spec-035.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-035.md.pp
+          (run ./omd_pp.exe print %{dep:spec-035.md}))
+          (with-stdout-to spec-035.html.pp.new
+          (run ./omd_pp.exe html spec-035.md.pp)))))
+(rule
  (alias spec-035)
  (action (diff spec-035.html spec-035.html.new)))
+(rule
+ (alias spec-035)
+ (action (diff spec-035.html spec-035.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-036.html.new (run ./omd.exe %{dep:spec-036.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-036.md.pp
+          (run ./omd_pp.exe print %{dep:spec-036.md}))
+          (with-stdout-to spec-036.html.pp.new
+          (run ./omd_pp.exe html spec-036.md.pp)))))
+(rule
  (alias spec-036)
  (action (diff spec-036.html spec-036.html.new)))
+(rule
+ (alias spec-036)
+ (action (diff spec-036.html spec-036.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-037.html.new (run ./omd.exe %{dep:spec-037.md}))))
@@ -940,170 +1237,422 @@
  (action
   (with-stdout-to spec-042.html.new (run ./omd.exe %{dep:spec-042.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-042.md.pp
+          (run ./omd_pp.exe print %{dep:spec-042.md}))
+          (with-stdout-to spec-042.html.pp.new
+          (run ./omd_pp.exe html spec-042.md.pp)))))
+(rule
  (alias spec-042)
  (action (diff spec-042.html spec-042.html.new)))
+(rule
+ (alias spec-042)
+ (action (diff spec-042.html spec-042.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-043.html.new (run ./omd.exe %{dep:spec-043.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-043.md.pp
+          (run ./omd_pp.exe print %{dep:spec-043.md}))
+          (with-stdout-to spec-043.html.pp.new
+          (run ./omd_pp.exe html spec-043.md.pp)))))
+(rule
  (alias spec-043)
  (action (diff spec-043.html spec-043.html.new)))
+(rule
+ (alias spec-043)
+ (action (diff spec-043.html spec-043.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-044.html.new (run ./omd.exe %{dep:spec-044.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-044.md.pp
+          (run ./omd_pp.exe print %{dep:spec-044.md}))
+          (with-stdout-to spec-044.html.pp.new
+          (run ./omd_pp.exe html spec-044.md.pp)))))
+(rule
  (alias spec-044)
  (action (diff spec-044.html spec-044.html.new)))
+(rule
+ (alias spec-044)
+ (action (diff spec-044.html spec-044.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-045.html.new (run ./omd.exe %{dep:spec-045.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-045.md.pp
+          (run ./omd_pp.exe print %{dep:spec-045.md}))
+          (with-stdout-to spec-045.html.pp.new
+          (run ./omd_pp.exe html spec-045.md.pp)))))
+(rule
  (alias spec-045)
  (action (diff spec-045.html spec-045.html.new)))
+(rule
+ (alias spec-045)
+ (action (diff spec-045.html spec-045.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-046.html.new (run ./omd.exe %{dep:spec-046.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-046.md.pp
+          (run ./omd_pp.exe print %{dep:spec-046.md}))
+          (with-stdout-to spec-046.html.pp.new
+          (run ./omd_pp.exe html spec-046.md.pp)))))
+(rule
  (alias spec-046)
  (action (diff spec-046.html spec-046.html.new)))
+(rule
+ (alias spec-046)
+ (action (diff spec-046.html spec-046.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-047.html.new (run ./omd.exe %{dep:spec-047.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-047.md.pp
+          (run ./omd_pp.exe print %{dep:spec-047.md}))
+          (with-stdout-to spec-047.html.pp.new
+          (run ./omd_pp.exe html spec-047.md.pp)))))
+(rule
  (alias spec-047)
  (action (diff spec-047.html spec-047.html.new)))
+(rule
+ (alias spec-047)
+ (action (diff spec-047.html spec-047.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-048.html.new (run ./omd.exe %{dep:spec-048.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-048.md.pp
+          (run ./omd_pp.exe print %{dep:spec-048.md}))
+          (with-stdout-to spec-048.html.pp.new
+          (run ./omd_pp.exe html spec-048.md.pp)))))
+(rule
  (alias spec-048)
  (action (diff spec-048.html spec-048.html.new)))
+(rule
+ (alias spec-048)
+ (action (diff spec-048.html spec-048.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-049.html.new (run ./omd.exe %{dep:spec-049.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-049.md.pp
+          (run ./omd_pp.exe print %{dep:spec-049.md}))
+          (with-stdout-to spec-049.html.pp.new
+          (run ./omd_pp.exe html spec-049.md.pp)))))
+(rule
  (alias spec-049)
  (action (diff spec-049.html spec-049.html.new)))
+(rule
+ (alias spec-049)
+ (action (diff spec-049.html spec-049.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-050.html.new (run ./omd.exe %{dep:spec-050.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-050.md.pp
+          (run ./omd_pp.exe print %{dep:spec-050.md}))
+          (with-stdout-to spec-050.html.pp.new
+          (run ./omd_pp.exe html spec-050.md.pp)))))
+(rule
  (alias spec-050)
  (action (diff spec-050.html spec-050.html.new)))
+(rule
+ (alias spec-050)
+ (action (diff spec-050.html spec-050.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-051.html.new (run ./omd.exe %{dep:spec-051.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-051.md.pp
+          (run ./omd_pp.exe print %{dep:spec-051.md}))
+          (with-stdout-to spec-051.html.pp.new
+          (run ./omd_pp.exe html spec-051.md.pp)))))
+(rule
  (alias spec-051)
  (action (diff spec-051.html spec-051.html.new)))
+(rule
+ (alias spec-051)
+ (action (diff spec-051.html spec-051.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-052.html.new (run ./omd.exe %{dep:spec-052.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-052.md.pp
+          (run ./omd_pp.exe print %{dep:spec-052.md}))
+          (with-stdout-to spec-052.html.pp.new
+          (run ./omd_pp.exe html spec-052.md.pp)))))
+(rule
  (alias spec-052)
  (action (diff spec-052.html spec-052.html.new)))
+(rule
+ (alias spec-052)
+ (action (diff spec-052.html spec-052.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-053.html.new (run ./omd.exe %{dep:spec-053.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-053.md.pp
+          (run ./omd_pp.exe print %{dep:spec-053.md}))
+          (with-stdout-to spec-053.html.pp.new
+          (run ./omd_pp.exe html spec-053.md.pp)))))
+(rule
  (alias spec-053)
  (action (diff spec-053.html spec-053.html.new)))
+(rule
+ (alias spec-053)
+ (action (diff spec-053.html spec-053.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-054.html.new (run ./omd.exe %{dep:spec-054.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-054.md.pp
+          (run ./omd_pp.exe print %{dep:spec-054.md}))
+          (with-stdout-to spec-054.html.pp.new
+          (run ./omd_pp.exe html spec-054.md.pp)))))
+(rule
  (alias spec-054)
  (action (diff spec-054.html spec-054.html.new)))
+(rule
+ (alias spec-054)
+ (action (diff spec-054.html spec-054.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-055.html.new (run ./omd.exe %{dep:spec-055.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-055.md.pp
+          (run ./omd_pp.exe print %{dep:spec-055.md}))
+          (with-stdout-to spec-055.html.pp.new
+          (run ./omd_pp.exe html spec-055.md.pp)))))
+(rule
  (alias spec-055)
  (action (diff spec-055.html spec-055.html.new)))
+(rule
+ (alias spec-055)
+ (action (diff spec-055.html spec-055.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-056.html.new (run ./omd.exe %{dep:spec-056.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-056.md.pp
+          (run ./omd_pp.exe print %{dep:spec-056.md}))
+          (with-stdout-to spec-056.html.pp.new
+          (run ./omd_pp.exe html spec-056.md.pp)))))
+(rule
  (alias spec-056)
  (action (diff spec-056.html spec-056.html.new)))
+(rule
+ (alias spec-056)
+ (action (diff spec-056.html spec-056.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-057.html.new (run ./omd.exe %{dep:spec-057.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-057.md.pp
+          (run ./omd_pp.exe print %{dep:spec-057.md}))
+          (with-stdout-to spec-057.html.pp.new
+          (run ./omd_pp.exe html spec-057.md.pp)))))
+(rule
  (alias spec-057)
  (action (diff spec-057.html spec-057.html.new)))
+(rule
+ (alias spec-057)
+ (action (diff spec-057.html spec-057.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-058.html.new (run ./omd.exe %{dep:spec-058.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-058.md.pp
+          (run ./omd_pp.exe print %{dep:spec-058.md}))
+          (with-stdout-to spec-058.html.pp.new
+          (run ./omd_pp.exe html spec-058.md.pp)))))
+(rule
  (alias spec-058)
  (action (diff spec-058.html spec-058.html.new)))
+(rule
+ (alias spec-058)
+ (action (diff spec-058.html spec-058.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-059.html.new (run ./omd.exe %{dep:spec-059.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-059.md.pp
+          (run ./omd_pp.exe print %{dep:spec-059.md}))
+          (with-stdout-to spec-059.html.pp.new
+          (run ./omd_pp.exe html spec-059.md.pp)))))
+(rule
  (alias spec-059)
  (action (diff spec-059.html spec-059.html.new)))
+(rule
+ (alias spec-059)
+ (action (diff spec-059.html spec-059.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-060.html.new (run ./omd.exe %{dep:spec-060.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-060.md.pp
+          (run ./omd_pp.exe print %{dep:spec-060.md}))
+          (with-stdout-to spec-060.html.pp.new
+          (run ./omd_pp.exe html spec-060.md.pp)))))
+(rule
  (alias spec-060)
  (action (diff spec-060.html spec-060.html.new)))
+(rule
+ (alias spec-060)
+ (action (diff spec-060.html spec-060.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-061.html.new (run ./omd.exe %{dep:spec-061.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-061.md.pp
+          (run ./omd_pp.exe print %{dep:spec-061.md}))
+          (with-stdout-to spec-061.html.pp.new
+          (run ./omd_pp.exe html spec-061.md.pp)))))
+(rule
  (alias spec-061)
  (action (diff spec-061.html spec-061.html.new)))
+(rule
+ (alias spec-061)
+ (action (diff spec-061.html spec-061.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-062.html.new (run ./omd.exe %{dep:spec-062.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-062.md.pp
+          (run ./omd_pp.exe print %{dep:spec-062.md}))
+          (with-stdout-to spec-062.html.pp.new
+          (run ./omd_pp.exe html spec-062.md.pp)))))
+(rule
  (alias spec-062)
  (action (diff spec-062.html spec-062.html.new)))
+(rule
+ (alias spec-062)
+ (action (diff spec-062.html spec-062.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-063.html.new (run ./omd.exe %{dep:spec-063.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-063.md.pp
+          (run ./omd_pp.exe print %{dep:spec-063.md}))
+          (with-stdout-to spec-063.html.pp.new
+          (run ./omd_pp.exe html spec-063.md.pp)))))
+(rule
  (alias spec-063)
  (action (diff spec-063.html spec-063.html.new)))
+(rule
+ (alias spec-063)
+ (action (diff spec-063.html spec-063.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-064.html.new (run ./omd.exe %{dep:spec-064.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-064.md.pp
+          (run ./omd_pp.exe print %{dep:spec-064.md}))
+          (with-stdout-to spec-064.html.pp.new
+          (run ./omd_pp.exe html spec-064.md.pp)))))
+(rule
  (alias spec-064)
  (action (diff spec-064.html spec-064.html.new)))
+(rule
+ (alias spec-064)
+ (action (diff spec-064.html spec-064.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-065.html.new (run ./omd.exe %{dep:spec-065.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-065.md.pp
+          (run ./omd_pp.exe print %{dep:spec-065.md}))
+          (with-stdout-to spec-065.html.pp.new
+          (run ./omd_pp.exe html spec-065.md.pp)))))
+(rule
  (alias spec-065)
  (action (diff spec-065.html spec-065.html.new)))
+(rule
+ (alias spec-065)
+ (action (diff spec-065.html spec-065.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-066.html.new (run ./omd.exe %{dep:spec-066.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-066.md.pp
+          (run ./omd_pp.exe print %{dep:spec-066.md}))
+          (with-stdout-to spec-066.html.pp.new
+          (run ./omd_pp.exe html spec-066.md.pp)))))
+(rule
  (alias spec-066)
  (action (diff spec-066.html spec-066.html.new)))
+(rule
+ (alias spec-066)
+ (action (diff spec-066.html spec-066.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-067.html.new (run ./omd.exe %{dep:spec-067.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-067.md.pp
+          (run ./omd_pp.exe print %{dep:spec-067.md}))
+          (with-stdout-to spec-067.html.pp.new
+          (run ./omd_pp.exe html spec-067.md.pp)))))
+(rule
  (alias spec-067)
  (action (diff spec-067.html spec-067.html.new)))
+(rule
+ (alias spec-067)
+ (action (diff spec-067.html spec-067.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-068.html.new (run ./omd.exe %{dep:spec-068.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-068.md.pp
+          (run ./omd_pp.exe print %{dep:spec-068.md}))
+          (with-stdout-to spec-068.html.pp.new
+          (run ./omd_pp.exe html spec-068.md.pp)))))
+(rule
  (alias spec-068)
  (action (diff spec-068.html spec-068.html.new)))
+(rule
+ (alias spec-068)
+ (action (diff spec-068.html spec-068.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-069.html.new (run ./omd.exe %{dep:spec-069.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-069.md.pp
+          (run ./omd_pp.exe print %{dep:spec-069.md}))
+          (with-stdout-to spec-069.html.pp.new
+          (run ./omd_pp.exe html spec-069.md.pp)))))
+(rule
  (alias spec-069)
  (action (diff spec-069.html spec-069.html.new)))
+(rule
+ (alias spec-069)
+ (action (diff spec-069.html spec-069.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-070.html.new (run ./omd.exe %{dep:spec-070.md}))))
@@ -1114,344 +1663,857 @@
  (action
   (with-stdout-to spec-071.html.new (run ./omd.exe %{dep:spec-071.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-071.md.pp
+          (run ./omd_pp.exe print %{dep:spec-071.md}))
+          (with-stdout-to spec-071.html.pp.new
+          (run ./omd_pp.exe html spec-071.md.pp)))))
+(rule
  (alias spec-071)
  (action (diff spec-071.html spec-071.html.new)))
+(rule
+ (alias spec-071)
+ (action (diff spec-071.html spec-071.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-072.html.new (run ./omd.exe %{dep:spec-072.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-072.md.pp
+          (run ./omd_pp.exe print %{dep:spec-072.md}))
+          (with-stdout-to spec-072.html.pp.new
+          (run ./omd_pp.exe html spec-072.md.pp)))))
+(rule
  (alias spec-072)
  (action (diff spec-072.html spec-072.html.new)))
+(rule
+ (alias spec-072)
+ (action (diff spec-072.html spec-072.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-073.html.new (run ./omd.exe %{dep:spec-073.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-073.md.pp
+          (run ./omd_pp.exe print %{dep:spec-073.md}))
+          (with-stdout-to spec-073.html.pp.new
+          (run ./omd_pp.exe html spec-073.md.pp)))))
+(rule
  (alias spec-073)
  (action (diff spec-073.html spec-073.html.new)))
+(rule
+ (alias spec-073)
+ (action (diff spec-073.html spec-073.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-074.html.new (run ./omd.exe %{dep:spec-074.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-074.md.pp
+          (run ./omd_pp.exe print %{dep:spec-074.md}))
+          (with-stdout-to spec-074.html.pp.new
+          (run ./omd_pp.exe html spec-074.md.pp)))))
+(rule
  (alias spec-074)
  (action (diff spec-074.html spec-074.html.new)))
+(rule
+ (alias spec-074)
+ (action (diff spec-074.html spec-074.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-075.html.new (run ./omd.exe %{dep:spec-075.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-075.md.pp
+          (run ./omd_pp.exe print %{dep:spec-075.md}))
+          (with-stdout-to spec-075.html.pp.new
+          (run ./omd_pp.exe html spec-075.md.pp)))))
+(rule
  (alias spec-075)
  (action (diff spec-075.html spec-075.html.new)))
+(rule
+ (alias spec-075)
+ (action (diff spec-075.html spec-075.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-076.html.new (run ./omd.exe %{dep:spec-076.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-076.md.pp
+          (run ./omd_pp.exe print %{dep:spec-076.md}))
+          (with-stdout-to spec-076.html.pp.new
+          (run ./omd_pp.exe html spec-076.md.pp)))))
+(rule
  (alias spec-076)
  (action (diff spec-076.html spec-076.html.new)))
+(rule
+ (alias spec-076)
+ (action (diff spec-076.html spec-076.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-077.html.new (run ./omd.exe %{dep:spec-077.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-077.md.pp
+          (run ./omd_pp.exe print %{dep:spec-077.md}))
+          (with-stdout-to spec-077.html.pp.new
+          (run ./omd_pp.exe html spec-077.md.pp)))))
+(rule
  (alias spec-077)
  (action (diff spec-077.html spec-077.html.new)))
+(rule
+ (alias spec-077)
+ (action (diff spec-077.html spec-077.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-078.html.new (run ./omd.exe %{dep:spec-078.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-078.md.pp
+          (run ./omd_pp.exe print %{dep:spec-078.md}))
+          (with-stdout-to spec-078.html.pp.new
+          (run ./omd_pp.exe html spec-078.md.pp)))))
+(rule
  (alias spec-078)
  (action (diff spec-078.html spec-078.html.new)))
+(rule
+ (alias spec-078)
+ (action (diff spec-078.html spec-078.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-079.html.new (run ./omd.exe %{dep:spec-079.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-079.md.pp
+          (run ./omd_pp.exe print %{dep:spec-079.md}))
+          (with-stdout-to spec-079.html.pp.new
+          (run ./omd_pp.exe html spec-079.md.pp)))))
+(rule
  (alias spec-079)
  (action (diff spec-079.html spec-079.html.new)))
+(rule
+ (alias spec-079)
+ (action (diff spec-079.html spec-079.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-080.html.new (run ./omd.exe %{dep:spec-080.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-080.md.pp
+          (run ./omd_pp.exe print %{dep:spec-080.md}))
+          (with-stdout-to spec-080.html.pp.new
+          (run ./omd_pp.exe html spec-080.md.pp)))))
+(rule
  (alias spec-080)
  (action (diff spec-080.html spec-080.html.new)))
+(rule
+ (alias spec-080)
+ (action (diff spec-080.html spec-080.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-081.html.new (run ./omd.exe %{dep:spec-081.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-081.md.pp
+          (run ./omd_pp.exe print %{dep:spec-081.md}))
+          (with-stdout-to spec-081.html.pp.new
+          (run ./omd_pp.exe html spec-081.md.pp)))))
+(rule
  (alias spec-081)
  (action (diff spec-081.html spec-081.html.new)))
+(rule
+ (alias spec-081)
+ (action (diff spec-081.html spec-081.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-082.html.new (run ./omd.exe %{dep:spec-082.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-082.md.pp
+          (run ./omd_pp.exe print %{dep:spec-082.md}))
+          (with-stdout-to spec-082.html.pp.new
+          (run ./omd_pp.exe html spec-082.md.pp)))))
+(rule
  (alias spec-082)
  (action (diff spec-082.html spec-082.html.new)))
+(rule
+ (alias spec-082)
+ (action (diff spec-082.html spec-082.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-083.html.new (run ./omd.exe %{dep:spec-083.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-083.md.pp
+          (run ./omd_pp.exe print %{dep:spec-083.md}))
+          (with-stdout-to spec-083.html.pp.new
+          (run ./omd_pp.exe html spec-083.md.pp)))))
+(rule
  (alias spec-083)
  (action (diff spec-083.html spec-083.html.new)))
+(rule
+ (alias spec-083)
+ (action (diff spec-083.html spec-083.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-084.html.new (run ./omd.exe %{dep:spec-084.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-084.md.pp
+          (run ./omd_pp.exe print %{dep:spec-084.md}))
+          (with-stdout-to spec-084.html.pp.new
+          (run ./omd_pp.exe html spec-084.md.pp)))))
+(rule
  (alias spec-084)
  (action (diff spec-084.html spec-084.html.new)))
+(rule
+ (alias spec-084)
+ (action (diff spec-084.html spec-084.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-085.html.new (run ./omd.exe %{dep:spec-085.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-085.md.pp
+          (run ./omd_pp.exe print %{dep:spec-085.md}))
+          (with-stdout-to spec-085.html.pp.new
+          (run ./omd_pp.exe html spec-085.md.pp)))))
+(rule
  (alias spec-085)
  (action (diff spec-085.html spec-085.html.new)))
+(rule
+ (alias spec-085)
+ (action (diff spec-085.html spec-085.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-086.html.new (run ./omd.exe %{dep:spec-086.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-086.md.pp
+          (run ./omd_pp.exe print %{dep:spec-086.md}))
+          (with-stdout-to spec-086.html.pp.new
+          (run ./omd_pp.exe html spec-086.md.pp)))))
+(rule
  (alias spec-086)
  (action (diff spec-086.html spec-086.html.new)))
+(rule
+ (alias spec-086)
+ (action (diff spec-086.html spec-086.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-087.html.new (run ./omd.exe %{dep:spec-087.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-087.md.pp
+          (run ./omd_pp.exe print %{dep:spec-087.md}))
+          (with-stdout-to spec-087.html.pp.new
+          (run ./omd_pp.exe html spec-087.md.pp)))))
+(rule
  (alias spec-087)
  (action (diff spec-087.html spec-087.html.new)))
+(rule
+ (alias spec-087)
+ (action (diff spec-087.html spec-087.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-088.html.new (run ./omd.exe %{dep:spec-088.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-088.md.pp
+          (run ./omd_pp.exe print %{dep:spec-088.md}))
+          (with-stdout-to spec-088.html.pp.new
+          (run ./omd_pp.exe html spec-088.md.pp)))))
+(rule
  (alias spec-088)
  (action (diff spec-088.html spec-088.html.new)))
+(rule
+ (alias spec-088)
+ (action (diff spec-088.html spec-088.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-089.html.new (run ./omd.exe %{dep:spec-089.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-089.md.pp
+          (run ./omd_pp.exe print %{dep:spec-089.md}))
+          (with-stdout-to spec-089.html.pp.new
+          (run ./omd_pp.exe html spec-089.md.pp)))))
+(rule
  (alias spec-089)
  (action (diff spec-089.html spec-089.html.new)))
+(rule
+ (alias spec-089)
+ (action (diff spec-089.html spec-089.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-090.html.new (run ./omd.exe %{dep:spec-090.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-090.md.pp
+          (run ./omd_pp.exe print %{dep:spec-090.md}))
+          (with-stdout-to spec-090.html.pp.new
+          (run ./omd_pp.exe html spec-090.md.pp)))))
+(rule
  (alias spec-090)
  (action (diff spec-090.html spec-090.html.new)))
+(rule
+ (alias spec-090)
+ (action (diff spec-090.html spec-090.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-091.html.new (run ./omd.exe %{dep:spec-091.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-091.md.pp
+          (run ./omd_pp.exe print %{dep:spec-091.md}))
+          (with-stdout-to spec-091.html.pp.new
+          (run ./omd_pp.exe html spec-091.md.pp)))))
+(rule
  (alias spec-091)
  (action (diff spec-091.html spec-091.html.new)))
+(rule
+ (alias spec-091)
+ (action (diff spec-091.html spec-091.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-092.html.new (run ./omd.exe %{dep:spec-092.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-092.md.pp
+          (run ./omd_pp.exe print %{dep:spec-092.md}))
+          (with-stdout-to spec-092.html.pp.new
+          (run ./omd_pp.exe html spec-092.md.pp)))))
+(rule
  (alias spec-092)
  (action (diff spec-092.html spec-092.html.new)))
+(rule
+ (alias spec-092)
+ (action (diff spec-092.html spec-092.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-093.html.new (run ./omd.exe %{dep:spec-093.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-093.md.pp
+          (run ./omd_pp.exe print %{dep:spec-093.md}))
+          (with-stdout-to spec-093.html.pp.new
+          (run ./omd_pp.exe html spec-093.md.pp)))))
+(rule
  (alias spec-093)
  (action (diff spec-093.html spec-093.html.new)))
+(rule
+ (alias spec-093)
+ (action (diff spec-093.html spec-093.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-094.html.new (run ./omd.exe %{dep:spec-094.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-094.md.pp
+          (run ./omd_pp.exe print %{dep:spec-094.md}))
+          (with-stdout-to spec-094.html.pp.new
+          (run ./omd_pp.exe html spec-094.md.pp)))))
+(rule
  (alias spec-094)
  (action (diff spec-094.html spec-094.html.new)))
+(rule
+ (alias spec-094)
+ (action (diff spec-094.html spec-094.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-095.html.new (run ./omd.exe %{dep:spec-095.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-095.md.pp
+          (run ./omd_pp.exe print %{dep:spec-095.md}))
+          (with-stdout-to spec-095.html.pp.new
+          (run ./omd_pp.exe html spec-095.md.pp)))))
+(rule
  (alias spec-095)
  (action (diff spec-095.html spec-095.html.new)))
+(rule
+ (alias spec-095)
+ (action (diff spec-095.html spec-095.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-096.html.new (run ./omd.exe %{dep:spec-096.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-096.md.pp
+          (run ./omd_pp.exe print %{dep:spec-096.md}))
+          (with-stdout-to spec-096.html.pp.new
+          (run ./omd_pp.exe html spec-096.md.pp)))))
+(rule
  (alias spec-096)
  (action (diff spec-096.html spec-096.html.new)))
+(rule
+ (alias spec-096)
+ (action (diff spec-096.html spec-096.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-097.html.new (run ./omd.exe %{dep:spec-097.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-097.md.pp
+          (run ./omd_pp.exe print %{dep:spec-097.md}))
+          (with-stdout-to spec-097.html.pp.new
+          (run ./omd_pp.exe html spec-097.md.pp)))))
+(rule
  (alias spec-097)
  (action (diff spec-097.html spec-097.html.new)))
+(rule
+ (alias spec-097)
+ (action (diff spec-097.html spec-097.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-098.html.new (run ./omd.exe %{dep:spec-098.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-098.md.pp
+          (run ./omd_pp.exe print %{dep:spec-098.md}))
+          (with-stdout-to spec-098.html.pp.new
+          (run ./omd_pp.exe html spec-098.md.pp)))))
+(rule
  (alias spec-098)
  (action (diff spec-098.html spec-098.html.new)))
+(rule
+ (alias spec-098)
+ (action (diff spec-098.html spec-098.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-099.html.new (run ./omd.exe %{dep:spec-099.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-099.md.pp
+          (run ./omd_pp.exe print %{dep:spec-099.md}))
+          (with-stdout-to spec-099.html.pp.new
+          (run ./omd_pp.exe html spec-099.md.pp)))))
+(rule
  (alias spec-099)
  (action (diff spec-099.html spec-099.html.new)))
+(rule
+ (alias spec-099)
+ (action (diff spec-099.html spec-099.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-100.html.new (run ./omd.exe %{dep:spec-100.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-100.md.pp
+          (run ./omd_pp.exe print %{dep:spec-100.md}))
+          (with-stdout-to spec-100.html.pp.new
+          (run ./omd_pp.exe html spec-100.md.pp)))))
+(rule
  (alias spec-100)
  (action (diff spec-100.html spec-100.html.new)))
+(rule
+ (alias spec-100)
+ (action (diff spec-100.html spec-100.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-101.html.new (run ./omd.exe %{dep:spec-101.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-101.md.pp
+          (run ./omd_pp.exe print %{dep:spec-101.md}))
+          (with-stdout-to spec-101.html.pp.new
+          (run ./omd_pp.exe html spec-101.md.pp)))))
+(rule
  (alias spec-101)
  (action (diff spec-101.html spec-101.html.new)))
+(rule
+ (alias spec-101)
+ (action (diff spec-101.html spec-101.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-102.html.new (run ./omd.exe %{dep:spec-102.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-102.md.pp
+          (run ./omd_pp.exe print %{dep:spec-102.md}))
+          (with-stdout-to spec-102.html.pp.new
+          (run ./omd_pp.exe html spec-102.md.pp)))))
+(rule
  (alias spec-102)
  (action (diff spec-102.html spec-102.html.new)))
+(rule
+ (alias spec-102)
+ (action (diff spec-102.html spec-102.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-103.html.new (run ./omd.exe %{dep:spec-103.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-103.md.pp
+          (run ./omd_pp.exe print %{dep:spec-103.md}))
+          (with-stdout-to spec-103.html.pp.new
+          (run ./omd_pp.exe html spec-103.md.pp)))))
+(rule
  (alias spec-103)
  (action (diff spec-103.html spec-103.html.new)))
+(rule
+ (alias spec-103)
+ (action (diff spec-103.html spec-103.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-104.html.new (run ./omd.exe %{dep:spec-104.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-104.md.pp
+          (run ./omd_pp.exe print %{dep:spec-104.md}))
+          (with-stdout-to spec-104.html.pp.new
+          (run ./omd_pp.exe html spec-104.md.pp)))))
+(rule
  (alias spec-104)
  (action (diff spec-104.html spec-104.html.new)))
+(rule
+ (alias spec-104)
+ (action (diff spec-104.html spec-104.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-105.html.new (run ./omd.exe %{dep:spec-105.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-105.md.pp
+          (run ./omd_pp.exe print %{dep:spec-105.md}))
+          (with-stdout-to spec-105.html.pp.new
+          (run ./omd_pp.exe html spec-105.md.pp)))))
+(rule
  (alias spec-105)
  (action (diff spec-105.html spec-105.html.new)))
+(rule
+ (alias spec-105)
+ (action (diff spec-105.html spec-105.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-106.html.new (run ./omd.exe %{dep:spec-106.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-106.md.pp
+          (run ./omd_pp.exe print %{dep:spec-106.md}))
+          (with-stdout-to spec-106.html.pp.new
+          (run ./omd_pp.exe html spec-106.md.pp)))))
+(rule
  (alias spec-106)
  (action (diff spec-106.html spec-106.html.new)))
+(rule
+ (alias spec-106)
+ (action (diff spec-106.html spec-106.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-107.html.new (run ./omd.exe %{dep:spec-107.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-107.md.pp
+          (run ./omd_pp.exe print %{dep:spec-107.md}))
+          (with-stdout-to spec-107.html.pp.new
+          (run ./omd_pp.exe html spec-107.md.pp)))))
+(rule
  (alias spec-107)
  (action (diff spec-107.html spec-107.html.new)))
+(rule
+ (alias spec-107)
+ (action (diff spec-107.html spec-107.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-108.html.new (run ./omd.exe %{dep:spec-108.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-108.md.pp
+          (run ./omd_pp.exe print %{dep:spec-108.md}))
+          (with-stdout-to spec-108.html.pp.new
+          (run ./omd_pp.exe html spec-108.md.pp)))))
+(rule
  (alias spec-108)
  (action (diff spec-108.html spec-108.html.new)))
+(rule
+ (alias spec-108)
+ (action (diff spec-108.html spec-108.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-109.html.new (run ./omd.exe %{dep:spec-109.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-109.md.pp
+          (run ./omd_pp.exe print %{dep:spec-109.md}))
+          (with-stdout-to spec-109.html.pp.new
+          (run ./omd_pp.exe html spec-109.md.pp)))))
+(rule
  (alias spec-109)
  (action (diff spec-109.html spec-109.html.new)))
+(rule
+ (alias spec-109)
+ (action (diff spec-109.html spec-109.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-110.html.new (run ./omd.exe %{dep:spec-110.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-110.md.pp
+          (run ./omd_pp.exe print %{dep:spec-110.md}))
+          (with-stdout-to spec-110.html.pp.new
+          (run ./omd_pp.exe html spec-110.md.pp)))))
+(rule
  (alias spec-110)
  (action (diff spec-110.html spec-110.html.new)))
+(rule
+ (alias spec-110)
+ (action (diff spec-110.html spec-110.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-111.html.new (run ./omd.exe %{dep:spec-111.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-111.md.pp
+          (run ./omd_pp.exe print %{dep:spec-111.md}))
+          (with-stdout-to spec-111.html.pp.new
+          (run ./omd_pp.exe html spec-111.md.pp)))))
+(rule
  (alias spec-111)
  (action (diff spec-111.html spec-111.html.new)))
+(rule
+ (alias spec-111)
+ (action (diff spec-111.html spec-111.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-112.html.new (run ./omd.exe %{dep:spec-112.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-112.md.pp
+          (run ./omd_pp.exe print %{dep:spec-112.md}))
+          (with-stdout-to spec-112.html.pp.new
+          (run ./omd_pp.exe html spec-112.md.pp)))))
+(rule
  (alias spec-112)
  (action (diff spec-112.html spec-112.html.new)))
+(rule
+ (alias spec-112)
+ (action (diff spec-112.html spec-112.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-113.html.new (run ./omd.exe %{dep:spec-113.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-113.md.pp
+          (run ./omd_pp.exe print %{dep:spec-113.md}))
+          (with-stdout-to spec-113.html.pp.new
+          (run ./omd_pp.exe html spec-113.md.pp)))))
+(rule
  (alias spec-113)
  (action (diff spec-113.html spec-113.html.new)))
+(rule
+ (alias spec-113)
+ (action (diff spec-113.html spec-113.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-114.html.new (run ./omd.exe %{dep:spec-114.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-114.md.pp
+          (run ./omd_pp.exe print %{dep:spec-114.md}))
+          (with-stdout-to spec-114.html.pp.new
+          (run ./omd_pp.exe html spec-114.md.pp)))))
+(rule
  (alias spec-114)
  (action (diff spec-114.html spec-114.html.new)))
+(rule
+ (alias spec-114)
+ (action (diff spec-114.html spec-114.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-115.html.new (run ./omd.exe %{dep:spec-115.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-115.md.pp
+          (run ./omd_pp.exe print %{dep:spec-115.md}))
+          (with-stdout-to spec-115.html.pp.new
+          (run ./omd_pp.exe html spec-115.md.pp)))))
+(rule
  (alias spec-115)
  (action (diff spec-115.html spec-115.html.new)))
+(rule
+ (alias spec-115)
+ (action (diff spec-115.html spec-115.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-116.html.new (run ./omd.exe %{dep:spec-116.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-116.md.pp
+          (run ./omd_pp.exe print %{dep:spec-116.md}))
+          (with-stdout-to spec-116.html.pp.new
+          (run ./omd_pp.exe html spec-116.md.pp)))))
+(rule
  (alias spec-116)
  (action (diff spec-116.html spec-116.html.new)))
+(rule
+ (alias spec-116)
+ (action (diff spec-116.html spec-116.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-117.html.new (run ./omd.exe %{dep:spec-117.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-117.md.pp
+          (run ./omd_pp.exe print %{dep:spec-117.md}))
+          (with-stdout-to spec-117.html.pp.new
+          (run ./omd_pp.exe html spec-117.md.pp)))))
+(rule
  (alias spec-117)
  (action (diff spec-117.html spec-117.html.new)))
+(rule
+ (alias spec-117)
+ (action (diff spec-117.html spec-117.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-118.html.new (run ./omd.exe %{dep:spec-118.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-118.md.pp
+          (run ./omd_pp.exe print %{dep:spec-118.md}))
+          (with-stdout-to spec-118.html.pp.new
+          (run ./omd_pp.exe html spec-118.md.pp)))))
+(rule
  (alias spec-118)
  (action (diff spec-118.html spec-118.html.new)))
+(rule
+ (alias spec-118)
+ (action (diff spec-118.html spec-118.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-119.html.new (run ./omd.exe %{dep:spec-119.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-119.md.pp
+          (run ./omd_pp.exe print %{dep:spec-119.md}))
+          (with-stdout-to spec-119.html.pp.new
+          (run ./omd_pp.exe html spec-119.md.pp)))))
+(rule
  (alias spec-119)
  (action (diff spec-119.html spec-119.html.new)))
+(rule
+ (alias spec-119)
+ (action (diff spec-119.html spec-119.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-120.html.new (run ./omd.exe %{dep:spec-120.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-120.md.pp
+          (run ./omd_pp.exe print %{dep:spec-120.md}))
+          (with-stdout-to spec-120.html.pp.new
+          (run ./omd_pp.exe html spec-120.md.pp)))))
+(rule
  (alias spec-120)
  (action (diff spec-120.html spec-120.html.new)))
+(rule
+ (alias spec-120)
+ (action (diff spec-120.html spec-120.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-121.html.new (run ./omd.exe %{dep:spec-121.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-121.md.pp
+          (run ./omd_pp.exe print %{dep:spec-121.md}))
+          (with-stdout-to spec-121.html.pp.new
+          (run ./omd_pp.exe html spec-121.md.pp)))))
+(rule
  (alias spec-121)
  (action (diff spec-121.html spec-121.html.new)))
+(rule
+ (alias spec-121)
+ (action (diff spec-121.html spec-121.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-122.html.new (run ./omd.exe %{dep:spec-122.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-122.md.pp
+          (run ./omd_pp.exe print %{dep:spec-122.md}))
+          (with-stdout-to spec-122.html.pp.new
+          (run ./omd_pp.exe html spec-122.md.pp)))))
+(rule
  (alias spec-122)
  (action (diff spec-122.html spec-122.html.new)))
+(rule
+ (alias spec-122)
+ (action (diff spec-122.html spec-122.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-123.html.new (run ./omd.exe %{dep:spec-123.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-123.md.pp
+          (run ./omd_pp.exe print %{dep:spec-123.md}))
+          (with-stdout-to spec-123.html.pp.new
+          (run ./omd_pp.exe html spec-123.md.pp)))))
+(rule
  (alias spec-123)
  (action (diff spec-123.html spec-123.html.new)))
+(rule
+ (alias spec-123)
+ (action (diff spec-123.html spec-123.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-124.html.new (run ./omd.exe %{dep:spec-124.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-124.md.pp
+          (run ./omd_pp.exe print %{dep:spec-124.md}))
+          (with-stdout-to spec-124.html.pp.new
+          (run ./omd_pp.exe html spec-124.md.pp)))))
+(rule
  (alias spec-124)
  (action (diff spec-124.html spec-124.html.new)))
+(rule
+ (alias spec-124)
+ (action (diff spec-124.html spec-124.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-125.html.new (run ./omd.exe %{dep:spec-125.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-125.md.pp
+          (run ./omd_pp.exe print %{dep:spec-125.md}))
+          (with-stdout-to spec-125.html.pp.new
+          (run ./omd_pp.exe html spec-125.md.pp)))))
+(rule
  (alias spec-125)
  (action (diff spec-125.html spec-125.html.new)))
+(rule
+ (alias spec-125)
+ (action (diff spec-125.html spec-125.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-126.html.new (run ./omd.exe %{dep:spec-126.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-126.md.pp
+          (run ./omd_pp.exe print %{dep:spec-126.md}))
+          (with-stdout-to spec-126.html.pp.new
+          (run ./omd_pp.exe html spec-126.md.pp)))))
+(rule
  (alias spec-126)
  (action (diff spec-126.html spec-126.html.new)))
+(rule
+ (alias spec-126)
+ (action (diff spec-126.html spec-126.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-127.html.new (run ./omd.exe %{dep:spec-127.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-127.md.pp
+          (run ./omd_pp.exe print %{dep:spec-127.md}))
+          (with-stdout-to spec-127.html.pp.new
+          (run ./omd_pp.exe html spec-127.md.pp)))))
+(rule
  (alias spec-127)
  (action (diff spec-127.html spec-127.html.new)))
+(rule
+ (alias spec-127)
+ (action (diff spec-127.html spec-127.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-128.html.new (run ./omd.exe %{dep:spec-128.md}))))
@@ -1462,272 +2524,677 @@
  (action
   (with-stdout-to spec-129.html.new (run ./omd.exe %{dep:spec-129.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-129.md.pp
+          (run ./omd_pp.exe print %{dep:spec-129.md}))
+          (with-stdout-to spec-129.html.pp.new
+          (run ./omd_pp.exe html spec-129.md.pp)))))
+(rule
  (alias spec-129)
  (action (diff spec-129.html spec-129.html.new)))
+(rule
+ (alias spec-129)
+ (action (diff spec-129.html spec-129.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-130.html.new (run ./omd.exe %{dep:spec-130.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-130.md.pp
+          (run ./omd_pp.exe print %{dep:spec-130.md}))
+          (with-stdout-to spec-130.html.pp.new
+          (run ./omd_pp.exe html spec-130.md.pp)))))
+(rule
  (alias spec-130)
  (action (diff spec-130.html spec-130.html.new)))
+(rule
+ (alias spec-130)
+ (action (diff spec-130.html spec-130.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-131.html.new (run ./omd.exe %{dep:spec-131.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-131.md.pp
+          (run ./omd_pp.exe print %{dep:spec-131.md}))
+          (with-stdout-to spec-131.html.pp.new
+          (run ./omd_pp.exe html spec-131.md.pp)))))
+(rule
  (alias spec-131)
  (action (diff spec-131.html spec-131.html.new)))
+(rule
+ (alias spec-131)
+ (action (diff spec-131.html spec-131.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-132.html.new (run ./omd.exe %{dep:spec-132.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-132.md.pp
+          (run ./omd_pp.exe print %{dep:spec-132.md}))
+          (with-stdout-to spec-132.html.pp.new
+          (run ./omd_pp.exe html spec-132.md.pp)))))
+(rule
  (alias spec-132)
  (action (diff spec-132.html spec-132.html.new)))
+(rule
+ (alias spec-132)
+ (action (diff spec-132.html spec-132.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-133.html.new (run ./omd.exe %{dep:spec-133.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-133.md.pp
+          (run ./omd_pp.exe print %{dep:spec-133.md}))
+          (with-stdout-to spec-133.html.pp.new
+          (run ./omd_pp.exe html spec-133.md.pp)))))
+(rule
  (alias spec-133)
  (action (diff spec-133.html spec-133.html.new)))
+(rule
+ (alias spec-133)
+ (action (diff spec-133.html spec-133.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-134.html.new (run ./omd.exe %{dep:spec-134.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-134.md.pp
+          (run ./omd_pp.exe print %{dep:spec-134.md}))
+          (with-stdout-to spec-134.html.pp.new
+          (run ./omd_pp.exe html spec-134.md.pp)))))
+(rule
  (alias spec-134)
  (action (diff spec-134.html spec-134.html.new)))
+(rule
+ (alias spec-134)
+ (action (diff spec-134.html spec-134.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-135.html.new (run ./omd.exe %{dep:spec-135.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-135.md.pp
+          (run ./omd_pp.exe print %{dep:spec-135.md}))
+          (with-stdout-to spec-135.html.pp.new
+          (run ./omd_pp.exe html spec-135.md.pp)))))
+(rule
  (alias spec-135)
  (action (diff spec-135.html spec-135.html.new)))
+(rule
+ (alias spec-135)
+ (action (diff spec-135.html spec-135.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-136.html.new (run ./omd.exe %{dep:spec-136.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-136.md.pp
+          (run ./omd_pp.exe print %{dep:spec-136.md}))
+          (with-stdout-to spec-136.html.pp.new
+          (run ./omd_pp.exe html spec-136.md.pp)))))
+(rule
  (alias spec-136)
  (action (diff spec-136.html spec-136.html.new)))
+(rule
+ (alias spec-136)
+ (action (diff spec-136.html spec-136.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-137.html.new (run ./omd.exe %{dep:spec-137.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-137.md.pp
+          (run ./omd_pp.exe print %{dep:spec-137.md}))
+          (with-stdout-to spec-137.html.pp.new
+          (run ./omd_pp.exe html spec-137.md.pp)))))
+(rule
  (alias spec-137)
  (action (diff spec-137.html spec-137.html.new)))
+(rule
+ (alias spec-137)
+ (action (diff spec-137.html spec-137.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-138.html.new (run ./omd.exe %{dep:spec-138.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-138.md.pp
+          (run ./omd_pp.exe print %{dep:spec-138.md}))
+          (with-stdout-to spec-138.html.pp.new
+          (run ./omd_pp.exe html spec-138.md.pp)))))
+(rule
  (alias spec-138)
  (action (diff spec-138.html spec-138.html.new)))
+(rule
+ (alias spec-138)
+ (action (diff spec-138.html spec-138.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-139.html.new (run ./omd.exe %{dep:spec-139.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-139.md.pp
+          (run ./omd_pp.exe print %{dep:spec-139.md}))
+          (with-stdout-to spec-139.html.pp.new
+          (run ./omd_pp.exe html spec-139.md.pp)))))
+(rule
  (alias spec-139)
  (action (diff spec-139.html spec-139.html.new)))
+(rule
+ (alias spec-139)
+ (action (diff spec-139.html spec-139.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-140.html.new (run ./omd.exe %{dep:spec-140.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-140.md.pp
+          (run ./omd_pp.exe print %{dep:spec-140.md}))
+          (with-stdout-to spec-140.html.pp.new
+          (run ./omd_pp.exe html spec-140.md.pp)))))
+(rule
  (alias spec-140)
  (action (diff spec-140.html spec-140.html.new)))
+(rule
+ (alias spec-140)
+ (action (diff spec-140.html spec-140.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-141.html.new (run ./omd.exe %{dep:spec-141.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-141.md.pp
+          (run ./omd_pp.exe print %{dep:spec-141.md}))
+          (with-stdout-to spec-141.html.pp.new
+          (run ./omd_pp.exe html spec-141.md.pp)))))
+(rule
  (alias spec-141)
  (action (diff spec-141.html spec-141.html.new)))
+(rule
+ (alias spec-141)
+ (action (diff spec-141.html spec-141.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-142.html.new (run ./omd.exe %{dep:spec-142.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-142.md.pp
+          (run ./omd_pp.exe print %{dep:spec-142.md}))
+          (with-stdout-to spec-142.html.pp.new
+          (run ./omd_pp.exe html spec-142.md.pp)))))
+(rule
  (alias spec-142)
  (action (diff spec-142.html spec-142.html.new)))
+(rule
+ (alias spec-142)
+ (action (diff spec-142.html spec-142.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-143.html.new (run ./omd.exe %{dep:spec-143.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-143.md.pp
+          (run ./omd_pp.exe print %{dep:spec-143.md}))
+          (with-stdout-to spec-143.html.pp.new
+          (run ./omd_pp.exe html spec-143.md.pp)))))
+(rule
  (alias spec-143)
  (action (diff spec-143.html spec-143.html.new)))
+(rule
+ (alias spec-143)
+ (action (diff spec-143.html spec-143.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-144.html.new (run ./omd.exe %{dep:spec-144.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-144.md.pp
+          (run ./omd_pp.exe print %{dep:spec-144.md}))
+          (with-stdout-to spec-144.html.pp.new
+          (run ./omd_pp.exe html spec-144.md.pp)))))
+(rule
  (alias spec-144)
  (action (diff spec-144.html spec-144.html.new)))
+(rule
+ (alias spec-144)
+ (action (diff spec-144.html spec-144.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-145.html.new (run ./omd.exe %{dep:spec-145.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-145.md.pp
+          (run ./omd_pp.exe print %{dep:spec-145.md}))
+          (with-stdout-to spec-145.html.pp.new
+          (run ./omd_pp.exe html spec-145.md.pp)))))
+(rule
  (alias spec-145)
  (action (diff spec-145.html spec-145.html.new)))
+(rule
+ (alias spec-145)
+ (action (diff spec-145.html spec-145.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-146.html.new (run ./omd.exe %{dep:spec-146.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-146.md.pp
+          (run ./omd_pp.exe print %{dep:spec-146.md}))
+          (with-stdout-to spec-146.html.pp.new
+          (run ./omd_pp.exe html spec-146.md.pp)))))
+(rule
  (alias spec-146)
  (action (diff spec-146.html spec-146.html.new)))
+(rule
+ (alias spec-146)
+ (action (diff spec-146.html spec-146.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-147.html.new (run ./omd.exe %{dep:spec-147.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-147.md.pp
+          (run ./omd_pp.exe print %{dep:spec-147.md}))
+          (with-stdout-to spec-147.html.pp.new
+          (run ./omd_pp.exe html spec-147.md.pp)))))
+(rule
  (alias spec-147)
  (action (diff spec-147.html spec-147.html.new)))
+(rule
+ (alias spec-147)
+ (action (diff spec-147.html spec-147.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-148.html.new (run ./omd.exe %{dep:spec-148.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-148.md.pp
+          (run ./omd_pp.exe print %{dep:spec-148.md}))
+          (with-stdout-to spec-148.html.pp.new
+          (run ./omd_pp.exe html spec-148.md.pp)))))
+(rule
  (alias spec-148)
  (action (diff spec-148.html spec-148.html.new)))
+(rule
+ (alias spec-148)
+ (action (diff spec-148.html spec-148.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-149.html.new (run ./omd.exe %{dep:spec-149.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-149.md.pp
+          (run ./omd_pp.exe print %{dep:spec-149.md}))
+          (with-stdout-to spec-149.html.pp.new
+          (run ./omd_pp.exe html spec-149.md.pp)))))
+(rule
  (alias spec-149)
  (action (diff spec-149.html spec-149.html.new)))
+(rule
+ (alias spec-149)
+ (action (diff spec-149.html spec-149.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-150.html.new (run ./omd.exe %{dep:spec-150.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-150.md.pp
+          (run ./omd_pp.exe print %{dep:spec-150.md}))
+          (with-stdout-to spec-150.html.pp.new
+          (run ./omd_pp.exe html spec-150.md.pp)))))
+(rule
  (alias spec-150)
  (action (diff spec-150.html spec-150.html.new)))
+(rule
+ (alias spec-150)
+ (action (diff spec-150.html spec-150.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-151.html.new (run ./omd.exe %{dep:spec-151.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-151.md.pp
+          (run ./omd_pp.exe print %{dep:spec-151.md}))
+          (with-stdout-to spec-151.html.pp.new
+          (run ./omd_pp.exe html spec-151.md.pp)))))
+(rule
  (alias spec-151)
  (action (diff spec-151.html spec-151.html.new)))
+(rule
+ (alias spec-151)
+ (action (diff spec-151.html spec-151.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-152.html.new (run ./omd.exe %{dep:spec-152.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-152.md.pp
+          (run ./omd_pp.exe print %{dep:spec-152.md}))
+          (with-stdout-to spec-152.html.pp.new
+          (run ./omd_pp.exe html spec-152.md.pp)))))
+(rule
  (alias spec-152)
  (action (diff spec-152.html spec-152.html.new)))
+(rule
+ (alias spec-152)
+ (action (diff spec-152.html spec-152.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-153.html.new (run ./omd.exe %{dep:spec-153.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-153.md.pp
+          (run ./omd_pp.exe print %{dep:spec-153.md}))
+          (with-stdout-to spec-153.html.pp.new
+          (run ./omd_pp.exe html spec-153.md.pp)))))
+(rule
  (alias spec-153)
  (action (diff spec-153.html spec-153.html.new)))
+(rule
+ (alias spec-153)
+ (action (diff spec-153.html spec-153.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-154.html.new (run ./omd.exe %{dep:spec-154.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-154.md.pp
+          (run ./omd_pp.exe print %{dep:spec-154.md}))
+          (with-stdout-to spec-154.html.pp.new
+          (run ./omd_pp.exe html spec-154.md.pp)))))
+(rule
  (alias spec-154)
  (action (diff spec-154.html spec-154.html.new)))
+(rule
+ (alias spec-154)
+ (action (diff spec-154.html spec-154.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-155.html.new (run ./omd.exe %{dep:spec-155.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-155.md.pp
+          (run ./omd_pp.exe print %{dep:spec-155.md}))
+          (with-stdout-to spec-155.html.pp.new
+          (run ./omd_pp.exe html spec-155.md.pp)))))
+(rule
  (alias spec-155)
  (action (diff spec-155.html spec-155.html.new)))
+(rule
+ (alias spec-155)
+ (action (diff spec-155.html spec-155.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-156.html.new (run ./omd.exe %{dep:spec-156.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-156.md.pp
+          (run ./omd_pp.exe print %{dep:spec-156.md}))
+          (with-stdout-to spec-156.html.pp.new
+          (run ./omd_pp.exe html spec-156.md.pp)))))
+(rule
  (alias spec-156)
  (action (diff spec-156.html spec-156.html.new)))
+(rule
+ (alias spec-156)
+ (action (diff spec-156.html spec-156.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-157.html.new (run ./omd.exe %{dep:spec-157.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-157.md.pp
+          (run ./omd_pp.exe print %{dep:spec-157.md}))
+          (with-stdout-to spec-157.html.pp.new
+          (run ./omd_pp.exe html spec-157.md.pp)))))
+(rule
  (alias spec-157)
  (action (diff spec-157.html spec-157.html.new)))
+(rule
+ (alias spec-157)
+ (action (diff spec-157.html spec-157.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-158.html.new (run ./omd.exe %{dep:spec-158.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-158.md.pp
+          (run ./omd_pp.exe print %{dep:spec-158.md}))
+          (with-stdout-to spec-158.html.pp.new
+          (run ./omd_pp.exe html spec-158.md.pp)))))
+(rule
  (alias spec-158)
  (action (diff spec-158.html spec-158.html.new)))
+(rule
+ (alias spec-158)
+ (action (diff spec-158.html spec-158.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-159.html.new (run ./omd.exe %{dep:spec-159.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-159.md.pp
+          (run ./omd_pp.exe print %{dep:spec-159.md}))
+          (with-stdout-to spec-159.html.pp.new
+          (run ./omd_pp.exe html spec-159.md.pp)))))
+(rule
  (alias spec-159)
  (action (diff spec-159.html spec-159.html.new)))
+(rule
+ (alias spec-159)
+ (action (diff spec-159.html spec-159.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-160.html.new (run ./omd.exe %{dep:spec-160.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-160.md.pp
+          (run ./omd_pp.exe print %{dep:spec-160.md}))
+          (with-stdout-to spec-160.html.pp.new
+          (run ./omd_pp.exe html spec-160.md.pp)))))
+(rule
  (alias spec-160)
  (action (diff spec-160.html spec-160.html.new)))
+(rule
+ (alias spec-160)
+ (action (diff spec-160.html spec-160.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-161.html.new (run ./omd.exe %{dep:spec-161.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-161.md.pp
+          (run ./omd_pp.exe print %{dep:spec-161.md}))
+          (with-stdout-to spec-161.html.pp.new
+          (run ./omd_pp.exe html spec-161.md.pp)))))
+(rule
  (alias spec-161)
  (action (diff spec-161.html spec-161.html.new)))
+(rule
+ (alias spec-161)
+ (action (diff spec-161.html spec-161.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-162.html.new (run ./omd.exe %{dep:spec-162.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-162.md.pp
+          (run ./omd_pp.exe print %{dep:spec-162.md}))
+          (with-stdout-to spec-162.html.pp.new
+          (run ./omd_pp.exe html spec-162.md.pp)))))
+(rule
  (alias spec-162)
  (action (diff spec-162.html spec-162.html.new)))
+(rule
+ (alias spec-162)
+ (action (diff spec-162.html spec-162.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-163.html.new (run ./omd.exe %{dep:spec-163.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-163.md.pp
+          (run ./omd_pp.exe print %{dep:spec-163.md}))
+          (with-stdout-to spec-163.html.pp.new
+          (run ./omd_pp.exe html spec-163.md.pp)))))
+(rule
  (alias spec-163)
  (action (diff spec-163.html spec-163.html.new)))
+(rule
+ (alias spec-163)
+ (action (diff spec-163.html spec-163.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-164.html.new (run ./omd.exe %{dep:spec-164.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-164.md.pp
+          (run ./omd_pp.exe print %{dep:spec-164.md}))
+          (with-stdout-to spec-164.html.pp.new
+          (run ./omd_pp.exe html spec-164.md.pp)))))
+(rule
  (alias spec-164)
  (action (diff spec-164.html spec-164.html.new)))
+(rule
+ (alias spec-164)
+ (action (diff spec-164.html spec-164.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-165.html.new (run ./omd.exe %{dep:spec-165.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-165.md.pp
+          (run ./omd_pp.exe print %{dep:spec-165.md}))
+          (with-stdout-to spec-165.html.pp.new
+          (run ./omd_pp.exe html spec-165.md.pp)))))
+(rule
  (alias spec-165)
  (action (diff spec-165.html spec-165.html.new)))
+(rule
+ (alias spec-165)
+ (action (diff spec-165.html spec-165.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-166.html.new (run ./omd.exe %{dep:spec-166.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-166.md.pp
+          (run ./omd_pp.exe print %{dep:spec-166.md}))
+          (with-stdout-to spec-166.html.pp.new
+          (run ./omd_pp.exe html spec-166.md.pp)))))
+(rule
  (alias spec-166)
  (action (diff spec-166.html spec-166.html.new)))
+(rule
+ (alias spec-166)
+ (action (diff spec-166.html spec-166.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-167.html.new (run ./omd.exe %{dep:spec-167.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-167.md.pp
+          (run ./omd_pp.exe print %{dep:spec-167.md}))
+          (with-stdout-to spec-167.html.pp.new
+          (run ./omd_pp.exe html spec-167.md.pp)))))
+(rule
  (alias spec-167)
  (action (diff spec-167.html spec-167.html.new)))
+(rule
+ (alias spec-167)
+ (action (diff spec-167.html spec-167.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-168.html.new (run ./omd.exe %{dep:spec-168.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-168.md.pp
+          (run ./omd_pp.exe print %{dep:spec-168.md}))
+          (with-stdout-to spec-168.html.pp.new
+          (run ./omd_pp.exe html spec-168.md.pp)))))
+(rule
  (alias spec-168)
  (action (diff spec-168.html spec-168.html.new)))
+(rule
+ (alias spec-168)
+ (action (diff spec-168.html spec-168.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-169.html.new (run ./omd.exe %{dep:spec-169.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-169.md.pp
+          (run ./omd_pp.exe print %{dep:spec-169.md}))
+          (with-stdout-to spec-169.html.pp.new
+          (run ./omd_pp.exe html spec-169.md.pp)))))
+(rule
  (alias spec-169)
  (action (diff spec-169.html spec-169.html.new)))
+(rule
+ (alias spec-169)
+ (action (diff spec-169.html spec-169.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-170.html.new (run ./omd.exe %{dep:spec-170.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-170.md.pp
+          (run ./omd_pp.exe print %{dep:spec-170.md}))
+          (with-stdout-to spec-170.html.pp.new
+          (run ./omd_pp.exe html spec-170.md.pp)))))
+(rule
  (alias spec-170)
  (action (diff spec-170.html spec-170.html.new)))
+(rule
+ (alias spec-170)
+ (action (diff spec-170.html spec-170.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-171.html.new (run ./omd.exe %{dep:spec-171.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-171.md.pp
+          (run ./omd_pp.exe print %{dep:spec-171.md}))
+          (with-stdout-to spec-171.html.pp.new
+          (run ./omd_pp.exe html spec-171.md.pp)))))
+(rule
  (alias spec-171)
  (action (diff spec-171.html spec-171.html.new)))
+(rule
+ (alias spec-171)
+ (action (diff spec-171.html spec-171.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-172.html.new (run ./omd.exe %{dep:spec-172.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-172.md.pp
+          (run ./omd_pp.exe print %{dep:spec-172.md}))
+          (with-stdout-to spec-172.html.pp.new
+          (run ./omd_pp.exe html spec-172.md.pp)))))
+(rule
  (alias spec-172)
  (action (diff spec-172.html spec-172.html.new)))
+(rule
+ (alias spec-172)
+ (action (diff spec-172.html spec-172.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-173.html.new (run ./omd.exe %{dep:spec-173.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-173.md.pp
+          (run ./omd_pp.exe print %{dep:spec-173.md}))
+          (with-stdout-to spec-173.html.pp.new
+          (run ./omd_pp.exe html spec-173.md.pp)))))
+(rule
  (alias spec-173)
  (action (diff spec-173.html spec-173.html.new)))
+(rule
+ (alias spec-173)
+ (action (diff spec-173.html spec-173.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-174.html.new (run ./omd.exe %{dep:spec-174.md}))))
@@ -1744,116 +3211,287 @@
  (action
   (with-stdout-to spec-176.html.new (run ./omd.exe %{dep:spec-176.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-176.md.pp
+          (run ./omd_pp.exe print %{dep:spec-176.md}))
+          (with-stdout-to spec-176.html.pp.new
+          (run ./omd_pp.exe html spec-176.md.pp)))))
+(rule
  (alias spec-176)
  (action (diff spec-176.html spec-176.html.new)))
+(rule
+ (alias spec-176)
+ (action (diff spec-176.html spec-176.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-177.html.new (run ./omd.exe %{dep:spec-177.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-177.md.pp
+          (run ./omd_pp.exe print %{dep:spec-177.md}))
+          (with-stdout-to spec-177.html.pp.new
+          (run ./omd_pp.exe html spec-177.md.pp)))))
+(rule
  (alias spec-177)
  (action (diff spec-177.html spec-177.html.new)))
+(rule
+ (alias spec-177)
+ (action (diff spec-177.html spec-177.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-178.html.new (run ./omd.exe %{dep:spec-178.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-178.md.pp
+          (run ./omd_pp.exe print %{dep:spec-178.md}))
+          (with-stdout-to spec-178.html.pp.new
+          (run ./omd_pp.exe html spec-178.md.pp)))))
+(rule
  (alias spec-178)
  (action (diff spec-178.html spec-178.html.new)))
+(rule
+ (alias spec-178)
+ (action (diff spec-178.html spec-178.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-179.html.new (run ./omd.exe %{dep:spec-179.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-179.md.pp
+          (run ./omd_pp.exe print %{dep:spec-179.md}))
+          (with-stdout-to spec-179.html.pp.new
+          (run ./omd_pp.exe html spec-179.md.pp)))))
+(rule
  (alias spec-179)
  (action (diff spec-179.html spec-179.html.new)))
+(rule
+ (alias spec-179)
+ (action (diff spec-179.html spec-179.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-180.html.new (run ./omd.exe %{dep:spec-180.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-180.md.pp
+          (run ./omd_pp.exe print %{dep:spec-180.md}))
+          (with-stdout-to spec-180.html.pp.new
+          (run ./omd_pp.exe html spec-180.md.pp)))))
+(rule
  (alias spec-180)
  (action (diff spec-180.html spec-180.html.new)))
+(rule
+ (alias spec-180)
+ (action (diff spec-180.html spec-180.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-181.html.new (run ./omd.exe %{dep:spec-181.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-181.md.pp
+          (run ./omd_pp.exe print %{dep:spec-181.md}))
+          (with-stdout-to spec-181.html.pp.new
+          (run ./omd_pp.exe html spec-181.md.pp)))))
+(rule
  (alias spec-181)
  (action (diff spec-181.html spec-181.html.new)))
+(rule
+ (alias spec-181)
+ (action (diff spec-181.html spec-181.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-182.html.new (run ./omd.exe %{dep:spec-182.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-182.md.pp
+          (run ./omd_pp.exe print %{dep:spec-182.md}))
+          (with-stdout-to spec-182.html.pp.new
+          (run ./omd_pp.exe html spec-182.md.pp)))))
+(rule
  (alias spec-182)
  (action (diff spec-182.html spec-182.html.new)))
+(rule
+ (alias spec-182)
+ (action (diff spec-182.html spec-182.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-183.html.new (run ./omd.exe %{dep:spec-183.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-183.md.pp
+          (run ./omd_pp.exe print %{dep:spec-183.md}))
+          (with-stdout-to spec-183.html.pp.new
+          (run ./omd_pp.exe html spec-183.md.pp)))))
+(rule
  (alias spec-183)
  (action (diff spec-183.html spec-183.html.new)))
+(rule
+ (alias spec-183)
+ (action (diff spec-183.html spec-183.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-184.html.new (run ./omd.exe %{dep:spec-184.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-184.md.pp
+          (run ./omd_pp.exe print %{dep:spec-184.md}))
+          (with-stdout-to spec-184.html.pp.new
+          (run ./omd_pp.exe html spec-184.md.pp)))))
+(rule
  (alias spec-184)
  (action (diff spec-184.html spec-184.html.new)))
+(rule
+ (alias spec-184)
+ (action (diff spec-184.html spec-184.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-185.html.new (run ./omd.exe %{dep:spec-185.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-185.md.pp
+          (run ./omd_pp.exe print %{dep:spec-185.md}))
+          (with-stdout-to spec-185.html.pp.new
+          (run ./omd_pp.exe html spec-185.md.pp)))))
+(rule
  (alias spec-185)
  (action (diff spec-185.html spec-185.html.new)))
+(rule
+ (alias spec-185)
+ (action (diff spec-185.html spec-185.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-186.html.new (run ./omd.exe %{dep:spec-186.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-186.md.pp
+          (run ./omd_pp.exe print %{dep:spec-186.md}))
+          (with-stdout-to spec-186.html.pp.new
+          (run ./omd_pp.exe html spec-186.md.pp)))))
+(rule
  (alias spec-186)
  (action (diff spec-186.html spec-186.html.new)))
+(rule
+ (alias spec-186)
+ (action (diff spec-186.html spec-186.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-187.html.new (run ./omd.exe %{dep:spec-187.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-187.md.pp
+          (run ./omd_pp.exe print %{dep:spec-187.md}))
+          (with-stdout-to spec-187.html.pp.new
+          (run ./omd_pp.exe html spec-187.md.pp)))))
+(rule
  (alias spec-187)
  (action (diff spec-187.html spec-187.html.new)))
+(rule
+ (alias spec-187)
+ (action (diff spec-187.html spec-187.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-188.html.new (run ./omd.exe %{dep:spec-188.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-188.md.pp
+          (run ./omd_pp.exe print %{dep:spec-188.md}))
+          (with-stdout-to spec-188.html.pp.new
+          (run ./omd_pp.exe html spec-188.md.pp)))))
+(rule
  (alias spec-188)
  (action (diff spec-188.html spec-188.html.new)))
+(rule
+ (alias spec-188)
+ (action (diff spec-188.html spec-188.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-189.html.new (run ./omd.exe %{dep:spec-189.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-189.md.pp
+          (run ./omd_pp.exe print %{dep:spec-189.md}))
+          (with-stdout-to spec-189.html.pp.new
+          (run ./omd_pp.exe html spec-189.md.pp)))))
+(rule
  (alias spec-189)
  (action (diff spec-189.html spec-189.html.new)))
+(rule
+ (alias spec-189)
+ (action (diff spec-189.html spec-189.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-190.html.new (run ./omd.exe %{dep:spec-190.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-190.md.pp
+          (run ./omd_pp.exe print %{dep:spec-190.md}))
+          (with-stdout-to spec-190.html.pp.new
+          (run ./omd_pp.exe html spec-190.md.pp)))))
+(rule
  (alias spec-190)
  (action (diff spec-190.html spec-190.html.new)))
+(rule
+ (alias spec-190)
+ (action (diff spec-190.html spec-190.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-191.html.new (run ./omd.exe %{dep:spec-191.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-191.md.pp
+          (run ./omd_pp.exe print %{dep:spec-191.md}))
+          (with-stdout-to spec-191.html.pp.new
+          (run ./omd_pp.exe html spec-191.md.pp)))))
+(rule
  (alias spec-191)
  (action (diff spec-191.html spec-191.html.new)))
+(rule
+ (alias spec-191)
+ (action (diff spec-191.html spec-191.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-192.html.new (run ./omd.exe %{dep:spec-192.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-192.md.pp
+          (run ./omd_pp.exe print %{dep:spec-192.md}))
+          (with-stdout-to spec-192.html.pp.new
+          (run ./omd_pp.exe html spec-192.md.pp)))))
+(rule
  (alias spec-192)
  (action (diff spec-192.html spec-192.html.new)))
+(rule
+ (alias spec-192)
+ (action (diff spec-192.html spec-192.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-193.html.new (run ./omd.exe %{dep:spec-193.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-193.md.pp
+          (run ./omd_pp.exe print %{dep:spec-193.md}))
+          (with-stdout-to spec-193.html.pp.new
+          (run ./omd_pp.exe html spec-193.md.pp)))))
+(rule
  (alias spec-193)
  (action (diff spec-193.html spec-193.html.new)))
+(rule
+ (alias spec-193)
+ (action (diff spec-193.html spec-193.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-194.html.new (run ./omd.exe %{dep:spec-194.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-194.md.pp
+          (run ./omd_pp.exe print %{dep:spec-194.md}))
+          (with-stdout-to spec-194.html.pp.new
+          (run ./omd_pp.exe html spec-194.md.pp)))))
+(rule
  (alias spec-194)
  (action (diff spec-194.html spec-194.html.new)))
+(rule
+ (alias spec-194)
+ (action (diff spec-194.html spec-194.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-195.html.new (run ./omd.exe %{dep:spec-195.md}))))
@@ -1864,38 +3502,92 @@
  (action
   (with-stdout-to spec-196.html.new (run ./omd.exe %{dep:spec-196.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-196.md.pp
+          (run ./omd_pp.exe print %{dep:spec-196.md}))
+          (with-stdout-to spec-196.html.pp.new
+          (run ./omd_pp.exe html spec-196.md.pp)))))
+(rule
  (alias spec-196)
  (action (diff spec-196.html spec-196.html.new)))
+(rule
+ (alias spec-196)
+ (action (diff spec-196.html spec-196.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-197.html.new (run ./omd.exe %{dep:spec-197.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-197.md.pp
+          (run ./omd_pp.exe print %{dep:spec-197.md}))
+          (with-stdout-to spec-197.html.pp.new
+          (run ./omd_pp.exe html spec-197.md.pp)))))
+(rule
  (alias spec-197)
  (action (diff spec-197.html spec-197.html.new)))
+(rule
+ (alias spec-197)
+ (action (diff spec-197.html spec-197.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-198.html.new (run ./omd.exe %{dep:spec-198.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-198.md.pp
+          (run ./omd_pp.exe print %{dep:spec-198.md}))
+          (with-stdout-to spec-198.html.pp.new
+          (run ./omd_pp.exe html spec-198.md.pp)))))
+(rule
  (alias spec-198)
  (action (diff spec-198.html spec-198.html.new)))
+(rule
+ (alias spec-198)
+ (action (diff spec-198.html spec-198.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-199.html.new (run ./omd.exe %{dep:spec-199.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-199.md.pp
+          (run ./omd_pp.exe print %{dep:spec-199.md}))
+          (with-stdout-to spec-199.html.pp.new
+          (run ./omd_pp.exe html spec-199.md.pp)))))
+(rule
  (alias spec-199)
  (action (diff spec-199.html spec-199.html.new)))
+(rule
+ (alias spec-199)
+ (action (diff spec-199.html spec-199.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-200.html.new (run ./omd.exe %{dep:spec-200.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-200.md.pp
+          (run ./omd_pp.exe print %{dep:spec-200.md}))
+          (with-stdout-to spec-200.html.pp.new
+          (run ./omd_pp.exe html spec-200.md.pp)))))
+(rule
  (alias spec-200)
  (action (diff spec-200.html spec-200.html.new)))
+(rule
+ (alias spec-200)
+ (action (diff spec-200.html spec-200.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-201.html.new (run ./omd.exe %{dep:spec-201.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-201.md.pp
+          (run ./omd_pp.exe print %{dep:spec-201.md}))
+          (with-stdout-to spec-201.html.pp.new
+          (run ./omd_pp.exe html spec-201.md.pp)))))
+(rule
  (alias spec-201)
  (action (diff spec-201.html spec-201.html.new)))
+(rule
+ (alias spec-201)
+ (action (diff spec-201.html spec-201.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-202.html.new (run ./omd.exe %{dep:spec-202.md}))))
@@ -1906,152 +3598,377 @@
  (action
   (with-stdout-to spec-203.html.new (run ./omd.exe %{dep:spec-203.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-203.md.pp
+          (run ./omd_pp.exe print %{dep:spec-203.md}))
+          (with-stdout-to spec-203.html.pp.new
+          (run ./omd_pp.exe html spec-203.md.pp)))))
+(rule
  (alias spec-203)
  (action (diff spec-203.html spec-203.html.new)))
+(rule
+ (alias spec-203)
+ (action (diff spec-203.html spec-203.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-204.html.new (run ./omd.exe %{dep:spec-204.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-204.md.pp
+          (run ./omd_pp.exe print %{dep:spec-204.md}))
+          (with-stdout-to spec-204.html.pp.new
+          (run ./omd_pp.exe html spec-204.md.pp)))))
+(rule
  (alias spec-204)
  (action (diff spec-204.html spec-204.html.new)))
+(rule
+ (alias spec-204)
+ (action (diff spec-204.html spec-204.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-205.html.new (run ./omd.exe %{dep:spec-205.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-205.md.pp
+          (run ./omd_pp.exe print %{dep:spec-205.md}))
+          (with-stdout-to spec-205.html.pp.new
+          (run ./omd_pp.exe html spec-205.md.pp)))))
+(rule
  (alias spec-205)
  (action (diff spec-205.html spec-205.html.new)))
+(rule
+ (alias spec-205)
+ (action (diff spec-205.html spec-205.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-206.html.new (run ./omd.exe %{dep:spec-206.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-206.md.pp
+          (run ./omd_pp.exe print %{dep:spec-206.md}))
+          (with-stdout-to spec-206.html.pp.new
+          (run ./omd_pp.exe html spec-206.md.pp)))))
+(rule
  (alias spec-206)
  (action (diff spec-206.html spec-206.html.new)))
+(rule
+ (alias spec-206)
+ (action (diff spec-206.html spec-206.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-207.html.new (run ./omd.exe %{dep:spec-207.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-207.md.pp
+          (run ./omd_pp.exe print %{dep:spec-207.md}))
+          (with-stdout-to spec-207.html.pp.new
+          (run ./omd_pp.exe html spec-207.md.pp)))))
+(rule
  (alias spec-207)
  (action (diff spec-207.html spec-207.html.new)))
+(rule
+ (alias spec-207)
+ (action (diff spec-207.html spec-207.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-208.html.new (run ./omd.exe %{dep:spec-208.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-208.md.pp
+          (run ./omd_pp.exe print %{dep:spec-208.md}))
+          (with-stdout-to spec-208.html.pp.new
+          (run ./omd_pp.exe html spec-208.md.pp)))))
+(rule
  (alias spec-208)
  (action (diff spec-208.html spec-208.html.new)))
+(rule
+ (alias spec-208)
+ (action (diff spec-208.html spec-208.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-209.html.new (run ./omd.exe %{dep:spec-209.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-209.md.pp
+          (run ./omd_pp.exe print %{dep:spec-209.md}))
+          (with-stdout-to spec-209.html.pp.new
+          (run ./omd_pp.exe html spec-209.md.pp)))))
+(rule
  (alias spec-209)
  (action (diff spec-209.html spec-209.html.new)))
+(rule
+ (alias spec-209)
+ (action (diff spec-209.html spec-209.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-210.html.new (run ./omd.exe %{dep:spec-210.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-210.md.pp
+          (run ./omd_pp.exe print %{dep:spec-210.md}))
+          (with-stdout-to spec-210.html.pp.new
+          (run ./omd_pp.exe html spec-210.md.pp)))))
+(rule
  (alias spec-210)
  (action (diff spec-210.html spec-210.html.new)))
+(rule
+ (alias spec-210)
+ (action (diff spec-210.html spec-210.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-211.html.new (run ./omd.exe %{dep:spec-211.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-211.md.pp
+          (run ./omd_pp.exe print %{dep:spec-211.md}))
+          (with-stdout-to spec-211.html.pp.new
+          (run ./omd_pp.exe html spec-211.md.pp)))))
+(rule
  (alias spec-211)
  (action (diff spec-211.html spec-211.html.new)))
+(rule
+ (alias spec-211)
+ (action (diff spec-211.html spec-211.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-212.html.new (run ./omd.exe %{dep:spec-212.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-212.md.pp
+          (run ./omd_pp.exe print %{dep:spec-212.md}))
+          (with-stdout-to spec-212.html.pp.new
+          (run ./omd_pp.exe html spec-212.md.pp)))))
+(rule
  (alias spec-212)
  (action (diff spec-212.html spec-212.html.new)))
+(rule
+ (alias spec-212)
+ (action (diff spec-212.html spec-212.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-213.html.new (run ./omd.exe %{dep:spec-213.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-213.md.pp
+          (run ./omd_pp.exe print %{dep:spec-213.md}))
+          (with-stdout-to spec-213.html.pp.new
+          (run ./omd_pp.exe html spec-213.md.pp)))))
+(rule
  (alias spec-213)
  (action (diff spec-213.html spec-213.html.new)))
+(rule
+ (alias spec-213)
+ (action (diff spec-213.html spec-213.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-214.html.new (run ./omd.exe %{dep:spec-214.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-214.md.pp
+          (run ./omd_pp.exe print %{dep:spec-214.md}))
+          (with-stdout-to spec-214.html.pp.new
+          (run ./omd_pp.exe html spec-214.md.pp)))))
+(rule
  (alias spec-214)
  (action (diff spec-214.html spec-214.html.new)))
+(rule
+ (alias spec-214)
+ (action (diff spec-214.html spec-214.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-215.html.new (run ./omd.exe %{dep:spec-215.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-215.md.pp
+          (run ./omd_pp.exe print %{dep:spec-215.md}))
+          (with-stdout-to spec-215.html.pp.new
+          (run ./omd_pp.exe html spec-215.md.pp)))))
+(rule
  (alias spec-215)
  (action (diff spec-215.html spec-215.html.new)))
+(rule
+ (alias spec-215)
+ (action (diff spec-215.html spec-215.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-216.html.new (run ./omd.exe %{dep:spec-216.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-216.md.pp
+          (run ./omd_pp.exe print %{dep:spec-216.md}))
+          (with-stdout-to spec-216.html.pp.new
+          (run ./omd_pp.exe html spec-216.md.pp)))))
+(rule
  (alias spec-216)
  (action (diff spec-216.html spec-216.html.new)))
+(rule
+ (alias spec-216)
+ (action (diff spec-216.html spec-216.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-217.html.new (run ./omd.exe %{dep:spec-217.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-217.md.pp
+          (run ./omd_pp.exe print %{dep:spec-217.md}))
+          (with-stdout-to spec-217.html.pp.new
+          (run ./omd_pp.exe html spec-217.md.pp)))))
+(rule
  (alias spec-217)
  (action (diff spec-217.html spec-217.html.new)))
+(rule
+ (alias spec-217)
+ (action (diff spec-217.html spec-217.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-218.html.new (run ./omd.exe %{dep:spec-218.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-218.md.pp
+          (run ./omd_pp.exe print %{dep:spec-218.md}))
+          (with-stdout-to spec-218.html.pp.new
+          (run ./omd_pp.exe html spec-218.md.pp)))))
+(rule
  (alias spec-218)
  (action (diff spec-218.html spec-218.html.new)))
+(rule
+ (alias spec-218)
+ (action (diff spec-218.html spec-218.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-219.html.new (run ./omd.exe %{dep:spec-219.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-219.md.pp
+          (run ./omd_pp.exe print %{dep:spec-219.md}))
+          (with-stdout-to spec-219.html.pp.new
+          (run ./omd_pp.exe html spec-219.md.pp)))))
+(rule
  (alias spec-219)
  (action (diff spec-219.html spec-219.html.new)))
+(rule
+ (alias spec-219)
+ (action (diff spec-219.html spec-219.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-220.html.new (run ./omd.exe %{dep:spec-220.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-220.md.pp
+          (run ./omd_pp.exe print %{dep:spec-220.md}))
+          (with-stdout-to spec-220.html.pp.new
+          (run ./omd_pp.exe html spec-220.md.pp)))))
+(rule
  (alias spec-220)
  (action (diff spec-220.html spec-220.html.new)))
+(rule
+ (alias spec-220)
+ (action (diff spec-220.html spec-220.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-221.html.new (run ./omd.exe %{dep:spec-221.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-221.md.pp
+          (run ./omd_pp.exe print %{dep:spec-221.md}))
+          (with-stdout-to spec-221.html.pp.new
+          (run ./omd_pp.exe html spec-221.md.pp)))))
+(rule
  (alias spec-221)
  (action (diff spec-221.html spec-221.html.new)))
+(rule
+ (alias spec-221)
+ (action (diff spec-221.html spec-221.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-222.html.new (run ./omd.exe %{dep:spec-222.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-222.md.pp
+          (run ./omd_pp.exe print %{dep:spec-222.md}))
+          (with-stdout-to spec-222.html.pp.new
+          (run ./omd_pp.exe html spec-222.md.pp)))))
+(rule
  (alias spec-222)
  (action (diff spec-222.html spec-222.html.new)))
+(rule
+ (alias spec-222)
+ (action (diff spec-222.html spec-222.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-223.html.new (run ./omd.exe %{dep:spec-223.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-223.md.pp
+          (run ./omd_pp.exe print %{dep:spec-223.md}))
+          (with-stdout-to spec-223.html.pp.new
+          (run ./omd_pp.exe html spec-223.md.pp)))))
+(rule
  (alias spec-223)
  (action (diff spec-223.html spec-223.html.new)))
+(rule
+ (alias spec-223)
+ (action (diff spec-223.html spec-223.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-224.html.new (run ./omd.exe %{dep:spec-224.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-224.md.pp
+          (run ./omd_pp.exe print %{dep:spec-224.md}))
+          (with-stdout-to spec-224.html.pp.new
+          (run ./omd_pp.exe html spec-224.md.pp)))))
+(rule
  (alias spec-224)
  (action (diff spec-224.html spec-224.html.new)))
+(rule
+ (alias spec-224)
+ (action (diff spec-224.html spec-224.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-225.html.new (run ./omd.exe %{dep:spec-225.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-225.md.pp
+          (run ./omd_pp.exe print %{dep:spec-225.md}))
+          (with-stdout-to spec-225.html.pp.new
+          (run ./omd_pp.exe html spec-225.md.pp)))))
+(rule
  (alias spec-225)
  (action (diff spec-225.html spec-225.html.new)))
+(rule
+ (alias spec-225)
+ (action (diff spec-225.html spec-225.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-226.html.new (run ./omd.exe %{dep:spec-226.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-226.md.pp
+          (run ./omd_pp.exe print %{dep:spec-226.md}))
+          (with-stdout-to spec-226.html.pp.new
+          (run ./omd_pp.exe html spec-226.md.pp)))))
+(rule
  (alias spec-226)
  (action (diff spec-226.html spec-226.html.new)))
+(rule
+ (alias spec-226)
+ (action (diff spec-226.html spec-226.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-227.html.new (run ./omd.exe %{dep:spec-227.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-227.md.pp
+          (run ./omd_pp.exe print %{dep:spec-227.md}))
+          (with-stdout-to spec-227.html.pp.new
+          (run ./omd_pp.exe html spec-227.md.pp)))))
+(rule
  (alias spec-227)
  (action (diff spec-227.html spec-227.html.new)))
+(rule
+ (alias spec-227)
+ (action (diff spec-227.html spec-227.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-228.html.new (run ./omd.exe %{dep:spec-228.md}))))
@@ -2074,8 +3991,17 @@
  (action
   (with-stdout-to spec-231.html.new (run ./omd.exe %{dep:spec-231.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-231.md.pp
+          (run ./omd_pp.exe print %{dep:spec-231.md}))
+          (with-stdout-to spec-231.html.pp.new
+          (run ./omd_pp.exe html spec-231.md.pp)))))
+(rule
  (alias spec-231)
  (action (diff spec-231.html spec-231.html.new)))
+(rule
+ (alias spec-231)
+ (action (diff spec-231.html spec-231.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-232.html.new (run ./omd.exe %{dep:spec-232.md}))))
@@ -2086,20 +4012,47 @@
  (action
   (with-stdout-to spec-233.html.new (run ./omd.exe %{dep:spec-233.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-233.md.pp
+          (run ./omd_pp.exe print %{dep:spec-233.md}))
+          (with-stdout-to spec-233.html.pp.new
+          (run ./omd_pp.exe html spec-233.md.pp)))))
+(rule
  (alias spec-233)
  (action (diff spec-233.html spec-233.html.new)))
+(rule
+ (alias spec-233)
+ (action (diff spec-233.html spec-233.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-234.html.new (run ./omd.exe %{dep:spec-234.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-234.md.pp
+          (run ./omd_pp.exe print %{dep:spec-234.md}))
+          (with-stdout-to spec-234.html.pp.new
+          (run ./omd_pp.exe html spec-234.md.pp)))))
+(rule
  (alias spec-234)
  (action (diff spec-234.html spec-234.html.new)))
+(rule
+ (alias spec-234)
+ (action (diff spec-234.html spec-234.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-235.html.new (run ./omd.exe %{dep:spec-235.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-235.md.pp
+          (run ./omd_pp.exe print %{dep:spec-235.md}))
+          (with-stdout-to spec-235.html.pp.new
+          (run ./omd_pp.exe html spec-235.md.pp)))))
+(rule
  (alias spec-235)
  (action (diff spec-235.html spec-235.html.new)))
+(rule
+ (alias spec-235)
+ (action (diff spec-235.html spec-235.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-236.html.new (run ./omd.exe %{dep:spec-236.md}))))
@@ -2110,8 +4063,17 @@
  (action
   (with-stdout-to spec-237.html.new (run ./omd.exe %{dep:spec-237.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-237.md.pp
+          (run ./omd_pp.exe print %{dep:spec-237.md}))
+          (with-stdout-to spec-237.html.pp.new
+          (run ./omd_pp.exe html spec-237.md.pp)))))
+(rule
  (alias spec-237)
  (action (diff spec-237.html spec-237.html.new)))
+(rule
+ (alias spec-237)
+ (action (diff spec-237.html spec-237.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-238.html.new (run ./omd.exe %{dep:spec-238.md}))))
@@ -2122,32 +4084,77 @@
  (action
   (with-stdout-to spec-239.html.new (run ./omd.exe %{dep:spec-239.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-239.md.pp
+          (run ./omd_pp.exe print %{dep:spec-239.md}))
+          (with-stdout-to spec-239.html.pp.new
+          (run ./omd_pp.exe html spec-239.md.pp)))))
+(rule
  (alias spec-239)
  (action (diff spec-239.html spec-239.html.new)))
+(rule
+ (alias spec-239)
+ (action (diff spec-239.html spec-239.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-240.html.new (run ./omd.exe %{dep:spec-240.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-240.md.pp
+          (run ./omd_pp.exe print %{dep:spec-240.md}))
+          (with-stdout-to spec-240.html.pp.new
+          (run ./omd_pp.exe html spec-240.md.pp)))))
+(rule
  (alias spec-240)
  (action (diff spec-240.html spec-240.html.new)))
+(rule
+ (alias spec-240)
+ (action (diff spec-240.html spec-240.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-241.html.new (run ./omd.exe %{dep:spec-241.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-241.md.pp
+          (run ./omd_pp.exe print %{dep:spec-241.md}))
+          (with-stdout-to spec-241.html.pp.new
+          (run ./omd_pp.exe html spec-241.md.pp)))))
+(rule
  (alias spec-241)
  (action (diff spec-241.html spec-241.html.new)))
+(rule
+ (alias spec-241)
+ (action (diff spec-241.html spec-241.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-242.html.new (run ./omd.exe %{dep:spec-242.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-242.md.pp
+          (run ./omd_pp.exe print %{dep:spec-242.md}))
+          (with-stdout-to spec-242.html.pp.new
+          (run ./omd_pp.exe html spec-242.md.pp)))))
+(rule
  (alias spec-242)
  (action (diff spec-242.html spec-242.html.new)))
+(rule
+ (alias spec-242)
+ (action (diff spec-242.html spec-242.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-243.html.new (run ./omd.exe %{dep:spec-243.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-243.md.pp
+          (run ./omd_pp.exe print %{dep:spec-243.md}))
+          (with-stdout-to spec-243.html.pp.new
+          (run ./omd_pp.exe html spec-243.md.pp)))))
+(rule
  (alias spec-243)
  (action (diff spec-243.html spec-243.html.new)))
+(rule
+ (alias spec-243)
+ (action (diff spec-243.html spec-243.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-244.html.new (run ./omd.exe %{dep:spec-244.md}))))
@@ -2158,44 +4165,107 @@
  (action
   (with-stdout-to spec-245.html.new (run ./omd.exe %{dep:spec-245.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-245.md.pp
+          (run ./omd_pp.exe print %{dep:spec-245.md}))
+          (with-stdout-to spec-245.html.pp.new
+          (run ./omd_pp.exe html spec-245.md.pp)))))
+(rule
  (alias spec-245)
  (action (diff spec-245.html spec-245.html.new)))
+(rule
+ (alias spec-245)
+ (action (diff spec-245.html spec-245.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-246.html.new (run ./omd.exe %{dep:spec-246.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-246.md.pp
+          (run ./omd_pp.exe print %{dep:spec-246.md}))
+          (with-stdout-to spec-246.html.pp.new
+          (run ./omd_pp.exe html spec-246.md.pp)))))
+(rule
  (alias spec-246)
  (action (diff spec-246.html spec-246.html.new)))
+(rule
+ (alias spec-246)
+ (action (diff spec-246.html spec-246.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-247.html.new (run ./omd.exe %{dep:spec-247.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-247.md.pp
+          (run ./omd_pp.exe print %{dep:spec-247.md}))
+          (with-stdout-to spec-247.html.pp.new
+          (run ./omd_pp.exe html spec-247.md.pp)))))
+(rule
  (alias spec-247)
  (action (diff spec-247.html spec-247.html.new)))
+(rule
+ (alias spec-247)
+ (action (diff spec-247.html spec-247.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-248.html.new (run ./omd.exe %{dep:spec-248.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-248.md.pp
+          (run ./omd_pp.exe print %{dep:spec-248.md}))
+          (with-stdout-to spec-248.html.pp.new
+          (run ./omd_pp.exe html spec-248.md.pp)))))
+(rule
  (alias spec-248)
  (action (diff spec-248.html spec-248.html.new)))
+(rule
+ (alias spec-248)
+ (action (diff spec-248.html spec-248.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-249.html.new (run ./omd.exe %{dep:spec-249.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-249.md.pp
+          (run ./omd_pp.exe print %{dep:spec-249.md}))
+          (with-stdout-to spec-249.html.pp.new
+          (run ./omd_pp.exe html spec-249.md.pp)))))
+(rule
  (alias spec-249)
  (action (diff spec-249.html spec-249.html.new)))
+(rule
+ (alias spec-249)
+ (action (diff spec-249.html spec-249.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-250.html.new (run ./omd.exe %{dep:spec-250.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-250.md.pp
+          (run ./omd_pp.exe print %{dep:spec-250.md}))
+          (with-stdout-to spec-250.html.pp.new
+          (run ./omd_pp.exe html spec-250.md.pp)))))
+(rule
  (alias spec-250)
  (action (diff spec-250.html spec-250.html.new)))
+(rule
+ (alias spec-250)
+ (action (diff spec-250.html spec-250.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-251.html.new (run ./omd.exe %{dep:spec-251.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-251.md.pp
+          (run ./omd_pp.exe print %{dep:spec-251.md}))
+          (with-stdout-to spec-251.html.pp.new
+          (run ./omd_pp.exe html spec-251.md.pp)))))
+(rule
  (alias spec-251)
  (action (diff spec-251.html spec-251.html.new)))
+(rule
+ (alias spec-251)
+ (action (diff spec-251.html spec-251.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-252.html.new (run ./omd.exe %{dep:spec-252.md}))))
@@ -2206,14 +4276,32 @@
  (action
   (with-stdout-to spec-253.html.new (run ./omd.exe %{dep:spec-253.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-253.md.pp
+          (run ./omd_pp.exe print %{dep:spec-253.md}))
+          (with-stdout-to spec-253.html.pp.new
+          (run ./omd_pp.exe html spec-253.md.pp)))))
+(rule
  (alias spec-253)
  (action (diff spec-253.html spec-253.html.new)))
+(rule
+ (alias spec-253)
+ (action (diff spec-253.html spec-253.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-254.html.new (run ./omd.exe %{dep:spec-254.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-254.md.pp
+          (run ./omd_pp.exe print %{dep:spec-254.md}))
+          (with-stdout-to spec-254.html.pp.new
+          (run ./omd_pp.exe html spec-254.md.pp)))))
+(rule
  (alias spec-254)
  (action (diff spec-254.html spec-254.html.new)))
+(rule
+ (alias spec-254)
+ (action (diff spec-254.html spec-254.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-255.html.new (run ./omd.exe %{dep:spec-255.md}))))
@@ -2224,20 +4312,47 @@
  (action
   (with-stdout-to spec-256.html.new (run ./omd.exe %{dep:spec-256.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-256.md.pp
+          (run ./omd_pp.exe print %{dep:spec-256.md}))
+          (with-stdout-to spec-256.html.pp.new
+          (run ./omd_pp.exe html spec-256.md.pp)))))
+(rule
  (alias spec-256)
  (action (diff spec-256.html spec-256.html.new)))
+(rule
+ (alias spec-256)
+ (action (diff spec-256.html spec-256.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-257.html.new (run ./omd.exe %{dep:spec-257.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-257.md.pp
+          (run ./omd_pp.exe print %{dep:spec-257.md}))
+          (with-stdout-to spec-257.html.pp.new
+          (run ./omd_pp.exe html spec-257.md.pp)))))
+(rule
  (alias spec-257)
  (action (diff spec-257.html spec-257.html.new)))
+(rule
+ (alias spec-257)
+ (action (diff spec-257.html spec-257.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-258.html.new (run ./omd.exe %{dep:spec-258.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-258.md.pp
+          (run ./omd_pp.exe print %{dep:spec-258.md}))
+          (with-stdout-to spec-258.html.pp.new
+          (run ./omd_pp.exe html spec-258.md.pp)))))
+(rule
  (alias spec-258)
  (action (diff spec-258.html spec-258.html.new)))
+(rule
+ (alias spec-258)
+ (action (diff spec-258.html spec-258.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-259.html.new (run ./omd.exe %{dep:spec-259.md}))))
@@ -2254,20 +4369,47 @@
  (action
   (with-stdout-to spec-261.html.new (run ./omd.exe %{dep:spec-261.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-261.md.pp
+          (run ./omd_pp.exe print %{dep:spec-261.md}))
+          (with-stdout-to spec-261.html.pp.new
+          (run ./omd_pp.exe html spec-261.md.pp)))))
+(rule
  (alias spec-261)
  (action (diff spec-261.html spec-261.html.new)))
+(rule
+ (alias spec-261)
+ (action (diff spec-261.html spec-261.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-262.html.new (run ./omd.exe %{dep:spec-262.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-262.md.pp
+          (run ./omd_pp.exe print %{dep:spec-262.md}))
+          (with-stdout-to spec-262.html.pp.new
+          (run ./omd_pp.exe html spec-262.md.pp)))))
+(rule
  (alias spec-262)
  (action (diff spec-262.html spec-262.html.new)))
+(rule
+ (alias spec-262)
+ (action (diff spec-262.html spec-262.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-263.html.new (run ./omd.exe %{dep:spec-263.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-263.md.pp
+          (run ./omd_pp.exe print %{dep:spec-263.md}))
+          (with-stdout-to spec-263.html.pp.new
+          (run ./omd_pp.exe html spec-263.md.pp)))))
+(rule
  (alias spec-263)
  (action (diff spec-263.html spec-263.html.new)))
+(rule
+ (alias spec-263)
+ (action (diff spec-263.html spec-263.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-264.html.new (run ./omd.exe %{dep:spec-264.md}))))
@@ -2278,68 +4420,167 @@
  (action
   (with-stdout-to spec-265.html.new (run ./omd.exe %{dep:spec-265.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-265.md.pp
+          (run ./omd_pp.exe print %{dep:spec-265.md}))
+          (with-stdout-to spec-265.html.pp.new
+          (run ./omd_pp.exe html spec-265.md.pp)))))
+(rule
  (alias spec-265)
  (action (diff spec-265.html spec-265.html.new)))
+(rule
+ (alias spec-265)
+ (action (diff spec-265.html spec-265.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-266.html.new (run ./omd.exe %{dep:spec-266.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-266.md.pp
+          (run ./omd_pp.exe print %{dep:spec-266.md}))
+          (with-stdout-to spec-266.html.pp.new
+          (run ./omd_pp.exe html spec-266.md.pp)))))
+(rule
  (alias spec-266)
  (action (diff spec-266.html spec-266.html.new)))
+(rule
+ (alias spec-266)
+ (action (diff spec-266.html spec-266.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-267.html.new (run ./omd.exe %{dep:spec-267.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-267.md.pp
+          (run ./omd_pp.exe print %{dep:spec-267.md}))
+          (with-stdout-to spec-267.html.pp.new
+          (run ./omd_pp.exe html spec-267.md.pp)))))
+(rule
  (alias spec-267)
  (action (diff spec-267.html spec-267.html.new)))
+(rule
+ (alias spec-267)
+ (action (diff spec-267.html spec-267.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-268.html.new (run ./omd.exe %{dep:spec-268.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-268.md.pp
+          (run ./omd_pp.exe print %{dep:spec-268.md}))
+          (with-stdout-to spec-268.html.pp.new
+          (run ./omd_pp.exe html spec-268.md.pp)))))
+(rule
  (alias spec-268)
  (action (diff spec-268.html spec-268.html.new)))
+(rule
+ (alias spec-268)
+ (action (diff spec-268.html spec-268.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-269.html.new (run ./omd.exe %{dep:spec-269.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-269.md.pp
+          (run ./omd_pp.exe print %{dep:spec-269.md}))
+          (with-stdout-to spec-269.html.pp.new
+          (run ./omd_pp.exe html spec-269.md.pp)))))
+(rule
  (alias spec-269)
  (action (diff spec-269.html spec-269.html.new)))
+(rule
+ (alias spec-269)
+ (action (diff spec-269.html spec-269.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-270.html.new (run ./omd.exe %{dep:spec-270.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-270.md.pp
+          (run ./omd_pp.exe print %{dep:spec-270.md}))
+          (with-stdout-to spec-270.html.pp.new
+          (run ./omd_pp.exe html spec-270.md.pp)))))
+(rule
  (alias spec-270)
  (action (diff spec-270.html spec-270.html.new)))
+(rule
+ (alias spec-270)
+ (action (diff spec-270.html spec-270.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-271.html.new (run ./omd.exe %{dep:spec-271.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-271.md.pp
+          (run ./omd_pp.exe print %{dep:spec-271.md}))
+          (with-stdout-to spec-271.html.pp.new
+          (run ./omd_pp.exe html spec-271.md.pp)))))
+(rule
  (alias spec-271)
  (action (diff spec-271.html spec-271.html.new)))
+(rule
+ (alias spec-271)
+ (action (diff spec-271.html spec-271.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-272.html.new (run ./omd.exe %{dep:spec-272.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-272.md.pp
+          (run ./omd_pp.exe print %{dep:spec-272.md}))
+          (with-stdout-to spec-272.html.pp.new
+          (run ./omd_pp.exe html spec-272.md.pp)))))
+(rule
  (alias spec-272)
  (action (diff spec-272.html spec-272.html.new)))
+(rule
+ (alias spec-272)
+ (action (diff spec-272.html spec-272.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-273.html.new (run ./omd.exe %{dep:spec-273.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-273.md.pp
+          (run ./omd_pp.exe print %{dep:spec-273.md}))
+          (with-stdout-to spec-273.html.pp.new
+          (run ./omd_pp.exe html spec-273.md.pp)))))
+(rule
  (alias spec-273)
  (action (diff spec-273.html spec-273.html.new)))
+(rule
+ (alias spec-273)
+ (action (diff spec-273.html spec-273.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-274.html.new (run ./omd.exe %{dep:spec-274.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-274.md.pp
+          (run ./omd_pp.exe print %{dep:spec-274.md}))
+          (with-stdout-to spec-274.html.pp.new
+          (run ./omd_pp.exe html spec-274.md.pp)))))
+(rule
  (alias spec-274)
  (action (diff spec-274.html spec-274.html.new)))
+(rule
+ (alias spec-274)
+ (action (diff spec-274.html spec-274.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-275.html.new (run ./omd.exe %{dep:spec-275.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-275.md.pp
+          (run ./omd_pp.exe print %{dep:spec-275.md}))
+          (with-stdout-to spec-275.html.pp.new
+          (run ./omd_pp.exe html spec-275.md.pp)))))
+(rule
  (alias spec-275)
  (action (diff spec-275.html spec-275.html.new)))
+(rule
+ (alias spec-275)
+ (action (diff spec-275.html spec-275.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-276.html.new (run ./omd.exe %{dep:spec-276.md}))))
@@ -2350,212 +4591,527 @@
  (action
   (with-stdout-to spec-277.html.new (run ./omd.exe %{dep:spec-277.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-277.md.pp
+          (run ./omd_pp.exe print %{dep:spec-277.md}))
+          (with-stdout-to spec-277.html.pp.new
+          (run ./omd_pp.exe html spec-277.md.pp)))))
+(rule
  (alias spec-277)
  (action (diff spec-277.html spec-277.html.new)))
+(rule
+ (alias spec-277)
+ (action (diff spec-277.html spec-277.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-278.html.new (run ./omd.exe %{dep:spec-278.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-278.md.pp
+          (run ./omd_pp.exe print %{dep:spec-278.md}))
+          (with-stdout-to spec-278.html.pp.new
+          (run ./omd_pp.exe html spec-278.md.pp)))))
+(rule
  (alias spec-278)
  (action (diff spec-278.html spec-278.html.new)))
+(rule
+ (alias spec-278)
+ (action (diff spec-278.html spec-278.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-279.html.new (run ./omd.exe %{dep:spec-279.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-279.md.pp
+          (run ./omd_pp.exe print %{dep:spec-279.md}))
+          (with-stdout-to spec-279.html.pp.new
+          (run ./omd_pp.exe html spec-279.md.pp)))))
+(rule
  (alias spec-279)
  (action (diff spec-279.html spec-279.html.new)))
+(rule
+ (alias spec-279)
+ (action (diff spec-279.html spec-279.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-280.html.new (run ./omd.exe %{dep:spec-280.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-280.md.pp
+          (run ./omd_pp.exe print %{dep:spec-280.md}))
+          (with-stdout-to spec-280.html.pp.new
+          (run ./omd_pp.exe html spec-280.md.pp)))))
+(rule
  (alias spec-280)
  (action (diff spec-280.html spec-280.html.new)))
+(rule
+ (alias spec-280)
+ (action (diff spec-280.html spec-280.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-281.html.new (run ./omd.exe %{dep:spec-281.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-281.md.pp
+          (run ./omd_pp.exe print %{dep:spec-281.md}))
+          (with-stdout-to spec-281.html.pp.new
+          (run ./omd_pp.exe html spec-281.md.pp)))))
+(rule
  (alias spec-281)
  (action (diff spec-281.html spec-281.html.new)))
+(rule
+ (alias spec-281)
+ (action (diff spec-281.html spec-281.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-282.html.new (run ./omd.exe %{dep:spec-282.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-282.md.pp
+          (run ./omd_pp.exe print %{dep:spec-282.md}))
+          (with-stdout-to spec-282.html.pp.new
+          (run ./omd_pp.exe html spec-282.md.pp)))))
+(rule
  (alias spec-282)
  (action (diff spec-282.html spec-282.html.new)))
+(rule
+ (alias spec-282)
+ (action (diff spec-282.html spec-282.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-283.html.new (run ./omd.exe %{dep:spec-283.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-283.md.pp
+          (run ./omd_pp.exe print %{dep:spec-283.md}))
+          (with-stdout-to spec-283.html.pp.new
+          (run ./omd_pp.exe html spec-283.md.pp)))))
+(rule
  (alias spec-283)
  (action (diff spec-283.html spec-283.html.new)))
+(rule
+ (alias spec-283)
+ (action (diff spec-283.html spec-283.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-284.html.new (run ./omd.exe %{dep:spec-284.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-284.md.pp
+          (run ./omd_pp.exe print %{dep:spec-284.md}))
+          (with-stdout-to spec-284.html.pp.new
+          (run ./omd_pp.exe html spec-284.md.pp)))))
+(rule
  (alias spec-284)
  (action (diff spec-284.html spec-284.html.new)))
+(rule
+ (alias spec-284)
+ (action (diff spec-284.html spec-284.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-285.html.new (run ./omd.exe %{dep:spec-285.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-285.md.pp
+          (run ./omd_pp.exe print %{dep:spec-285.md}))
+          (with-stdout-to spec-285.html.pp.new
+          (run ./omd_pp.exe html spec-285.md.pp)))))
+(rule
  (alias spec-285)
  (action (diff spec-285.html spec-285.html.new)))
+(rule
+ (alias spec-285)
+ (action (diff spec-285.html spec-285.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-286.html.new (run ./omd.exe %{dep:spec-286.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-286.md.pp
+          (run ./omd_pp.exe print %{dep:spec-286.md}))
+          (with-stdout-to spec-286.html.pp.new
+          (run ./omd_pp.exe html spec-286.md.pp)))))
+(rule
  (alias spec-286)
  (action (diff spec-286.html spec-286.html.new)))
+(rule
+ (alias spec-286)
+ (action (diff spec-286.html spec-286.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-287.html.new (run ./omd.exe %{dep:spec-287.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-287.md.pp
+          (run ./omd_pp.exe print %{dep:spec-287.md}))
+          (with-stdout-to spec-287.html.pp.new
+          (run ./omd_pp.exe html spec-287.md.pp)))))
+(rule
  (alias spec-287)
  (action (diff spec-287.html spec-287.html.new)))
+(rule
+ (alias spec-287)
+ (action (diff spec-287.html spec-287.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-288.html.new (run ./omd.exe %{dep:spec-288.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-288.md.pp
+          (run ./omd_pp.exe print %{dep:spec-288.md}))
+          (with-stdout-to spec-288.html.pp.new
+          (run ./omd_pp.exe html spec-288.md.pp)))))
+(rule
  (alias spec-288)
  (action (diff spec-288.html spec-288.html.new)))
+(rule
+ (alias spec-288)
+ (action (diff spec-288.html spec-288.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-289.html.new (run ./omd.exe %{dep:spec-289.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-289.md.pp
+          (run ./omd_pp.exe print %{dep:spec-289.md}))
+          (with-stdout-to spec-289.html.pp.new
+          (run ./omd_pp.exe html spec-289.md.pp)))))
+(rule
  (alias spec-289)
  (action (diff spec-289.html spec-289.html.new)))
+(rule
+ (alias spec-289)
+ (action (diff spec-289.html spec-289.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-290.html.new (run ./omd.exe %{dep:spec-290.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-290.md.pp
+          (run ./omd_pp.exe print %{dep:spec-290.md}))
+          (with-stdout-to spec-290.html.pp.new
+          (run ./omd_pp.exe html spec-290.md.pp)))))
+(rule
  (alias spec-290)
  (action (diff spec-290.html spec-290.html.new)))
+(rule
+ (alias spec-290)
+ (action (diff spec-290.html spec-290.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-291.html.new (run ./omd.exe %{dep:spec-291.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-291.md.pp
+          (run ./omd_pp.exe print %{dep:spec-291.md}))
+          (with-stdout-to spec-291.html.pp.new
+          (run ./omd_pp.exe html spec-291.md.pp)))))
+(rule
  (alias spec-291)
  (action (diff spec-291.html spec-291.html.new)))
+(rule
+ (alias spec-291)
+ (action (diff spec-291.html spec-291.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-292.html.new (run ./omd.exe %{dep:spec-292.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-292.md.pp
+          (run ./omd_pp.exe print %{dep:spec-292.md}))
+          (with-stdout-to spec-292.html.pp.new
+          (run ./omd_pp.exe html spec-292.md.pp)))))
+(rule
  (alias spec-292)
  (action (diff spec-292.html spec-292.html.new)))
+(rule
+ (alias spec-292)
+ (action (diff spec-292.html spec-292.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-293.html.new (run ./omd.exe %{dep:spec-293.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-293.md.pp
+          (run ./omd_pp.exe print %{dep:spec-293.md}))
+          (with-stdout-to spec-293.html.pp.new
+          (run ./omd_pp.exe html spec-293.md.pp)))))
+(rule
  (alias spec-293)
  (action (diff spec-293.html spec-293.html.new)))
+(rule
+ (alias spec-293)
+ (action (diff spec-293.html spec-293.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-294.html.new (run ./omd.exe %{dep:spec-294.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-294.md.pp
+          (run ./omd_pp.exe print %{dep:spec-294.md}))
+          (with-stdout-to spec-294.html.pp.new
+          (run ./omd_pp.exe html spec-294.md.pp)))))
+(rule
  (alias spec-294)
  (action (diff spec-294.html spec-294.html.new)))
+(rule
+ (alias spec-294)
+ (action (diff spec-294.html spec-294.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-295.html.new (run ./omd.exe %{dep:spec-295.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-295.md.pp
+          (run ./omd_pp.exe print %{dep:spec-295.md}))
+          (with-stdout-to spec-295.html.pp.new
+          (run ./omd_pp.exe html spec-295.md.pp)))))
+(rule
  (alias spec-295)
  (action (diff spec-295.html spec-295.html.new)))
+(rule
+ (alias spec-295)
+ (action (diff spec-295.html spec-295.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-296.html.new (run ./omd.exe %{dep:spec-296.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-296.md.pp
+          (run ./omd_pp.exe print %{dep:spec-296.md}))
+          (with-stdout-to spec-296.html.pp.new
+          (run ./omd_pp.exe html spec-296.md.pp)))))
+(rule
  (alias spec-296)
  (action (diff spec-296.html spec-296.html.new)))
+(rule
+ (alias spec-296)
+ (action (diff spec-296.html spec-296.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-297.html.new (run ./omd.exe %{dep:spec-297.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-297.md.pp
+          (run ./omd_pp.exe print %{dep:spec-297.md}))
+          (with-stdout-to spec-297.html.pp.new
+          (run ./omd_pp.exe html spec-297.md.pp)))))
+(rule
  (alias spec-297)
  (action (diff spec-297.html spec-297.html.new)))
+(rule
+ (alias spec-297)
+ (action (diff spec-297.html spec-297.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-298.html.new (run ./omd.exe %{dep:spec-298.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-298.md.pp
+          (run ./omd_pp.exe print %{dep:spec-298.md}))
+          (with-stdout-to spec-298.html.pp.new
+          (run ./omd_pp.exe html spec-298.md.pp)))))
+(rule
  (alias spec-298)
  (action (diff spec-298.html spec-298.html.new)))
+(rule
+ (alias spec-298)
+ (action (diff spec-298.html spec-298.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-299.html.new (run ./omd.exe %{dep:spec-299.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-299.md.pp
+          (run ./omd_pp.exe print %{dep:spec-299.md}))
+          (with-stdout-to spec-299.html.pp.new
+          (run ./omd_pp.exe html spec-299.md.pp)))))
+(rule
  (alias spec-299)
  (action (diff spec-299.html spec-299.html.new)))
+(rule
+ (alias spec-299)
+ (action (diff spec-299.html spec-299.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-300.html.new (run ./omd.exe %{dep:spec-300.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-300.md.pp
+          (run ./omd_pp.exe print %{dep:spec-300.md}))
+          (with-stdout-to spec-300.html.pp.new
+          (run ./omd_pp.exe html spec-300.md.pp)))))
+(rule
  (alias spec-300)
  (action (diff spec-300.html spec-300.html.new)))
+(rule
+ (alias spec-300)
+ (action (diff spec-300.html spec-300.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-301.html.new (run ./omd.exe %{dep:spec-301.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-301.md.pp
+          (run ./omd_pp.exe print %{dep:spec-301.md}))
+          (with-stdout-to spec-301.html.pp.new
+          (run ./omd_pp.exe html spec-301.md.pp)))))
+(rule
  (alias spec-301)
  (action (diff spec-301.html spec-301.html.new)))
+(rule
+ (alias spec-301)
+ (action (diff spec-301.html spec-301.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-302.html.new (run ./omd.exe %{dep:spec-302.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-302.md.pp
+          (run ./omd_pp.exe print %{dep:spec-302.md}))
+          (with-stdout-to spec-302.html.pp.new
+          (run ./omd_pp.exe html spec-302.md.pp)))))
+(rule
  (alias spec-302)
  (action (diff spec-302.html spec-302.html.new)))
+(rule
+ (alias spec-302)
+ (action (diff spec-302.html spec-302.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-303.html.new (run ./omd.exe %{dep:spec-303.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-303.md.pp
+          (run ./omd_pp.exe print %{dep:spec-303.md}))
+          (with-stdout-to spec-303.html.pp.new
+          (run ./omd_pp.exe html spec-303.md.pp)))))
+(rule
  (alias spec-303)
  (action (diff spec-303.html spec-303.html.new)))
+(rule
+ (alias spec-303)
+ (action (diff spec-303.html spec-303.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-304.html.new (run ./omd.exe %{dep:spec-304.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-304.md.pp
+          (run ./omd_pp.exe print %{dep:spec-304.md}))
+          (with-stdout-to spec-304.html.pp.new
+          (run ./omd_pp.exe html spec-304.md.pp)))))
+(rule
  (alias spec-304)
  (action (diff spec-304.html spec-304.html.new)))
+(rule
+ (alias spec-304)
+ (action (diff spec-304.html spec-304.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-305.html.new (run ./omd.exe %{dep:spec-305.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-305.md.pp
+          (run ./omd_pp.exe print %{dep:spec-305.md}))
+          (with-stdout-to spec-305.html.pp.new
+          (run ./omd_pp.exe html spec-305.md.pp)))))
+(rule
  (alias spec-305)
  (action (diff spec-305.html spec-305.html.new)))
+(rule
+ (alias spec-305)
+ (action (diff spec-305.html spec-305.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-306.html.new (run ./omd.exe %{dep:spec-306.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-306.md.pp
+          (run ./omd_pp.exe print %{dep:spec-306.md}))
+          (with-stdout-to spec-306.html.pp.new
+          (run ./omd_pp.exe html spec-306.md.pp)))))
+(rule
  (alias spec-306)
  (action (diff spec-306.html spec-306.html.new)))
+(rule
+ (alias spec-306)
+ (action (diff spec-306.html spec-306.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-307.html.new (run ./omd.exe %{dep:spec-307.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-307.md.pp
+          (run ./omd_pp.exe print %{dep:spec-307.md}))
+          (with-stdout-to spec-307.html.pp.new
+          (run ./omd_pp.exe html spec-307.md.pp)))))
+(rule
  (alias spec-307)
  (action (diff spec-307.html spec-307.html.new)))
+(rule
+ (alias spec-307)
+ (action (diff spec-307.html spec-307.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-308.html.new (run ./omd.exe %{dep:spec-308.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-308.md.pp
+          (run ./omd_pp.exe print %{dep:spec-308.md}))
+          (with-stdout-to spec-308.html.pp.new
+          (run ./omd_pp.exe html spec-308.md.pp)))))
+(rule
  (alias spec-308)
  (action (diff spec-308.html spec-308.html.new)))
+(rule
+ (alias spec-308)
+ (action (diff spec-308.html spec-308.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-309.html.new (run ./omd.exe %{dep:spec-309.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-309.md.pp
+          (run ./omd_pp.exe print %{dep:spec-309.md}))
+          (with-stdout-to spec-309.html.pp.new
+          (run ./omd_pp.exe html spec-309.md.pp)))))
+(rule
  (alias spec-309)
  (action (diff spec-309.html spec-309.html.new)))
+(rule
+ (alias spec-309)
+ (action (diff spec-309.html spec-309.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-310.html.new (run ./omd.exe %{dep:spec-310.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-310.md.pp
+          (run ./omd_pp.exe print %{dep:spec-310.md}))
+          (with-stdout-to spec-310.html.pp.new
+          (run ./omd_pp.exe html spec-310.md.pp)))))
+(rule
  (alias spec-310)
  (action (diff spec-310.html spec-310.html.new)))
+(rule
+ (alias spec-310)
+ (action (diff spec-310.html spec-310.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-311.html.new (run ./omd.exe %{dep:spec-311.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-311.md.pp
+          (run ./omd_pp.exe print %{dep:spec-311.md}))
+          (with-stdout-to spec-311.html.pp.new
+          (run ./omd_pp.exe html spec-311.md.pp)))))
+(rule
  (alias spec-311)
  (action (diff spec-311.html spec-311.html.new)))
+(rule
+ (alias spec-311)
+ (action (diff spec-311.html spec-311.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-312.html.new (run ./omd.exe %{dep:spec-312.md}))))
@@ -2566,38 +5122,92 @@
  (action
   (with-stdout-to spec-313.html.new (run ./omd.exe %{dep:spec-313.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-313.md.pp
+          (run ./omd_pp.exe print %{dep:spec-313.md}))
+          (with-stdout-to spec-313.html.pp.new
+          (run ./omd_pp.exe html spec-313.md.pp)))))
+(rule
  (alias spec-313)
  (action (diff spec-313.html spec-313.html.new)))
+(rule
+ (alias spec-313)
+ (action (diff spec-313.html spec-313.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-314.html.new (run ./omd.exe %{dep:spec-314.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-314.md.pp
+          (run ./omd_pp.exe print %{dep:spec-314.md}))
+          (with-stdout-to spec-314.html.pp.new
+          (run ./omd_pp.exe html spec-314.md.pp)))))
+(rule
  (alias spec-314)
  (action (diff spec-314.html spec-314.html.new)))
+(rule
+ (alias spec-314)
+ (action (diff spec-314.html spec-314.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-315.html.new (run ./omd.exe %{dep:spec-315.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-315.md.pp
+          (run ./omd_pp.exe print %{dep:spec-315.md}))
+          (with-stdout-to spec-315.html.pp.new
+          (run ./omd_pp.exe html spec-315.md.pp)))))
+(rule
  (alias spec-315)
  (action (diff spec-315.html spec-315.html.new)))
+(rule
+ (alias spec-315)
+ (action (diff spec-315.html spec-315.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-316.html.new (run ./omd.exe %{dep:spec-316.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-316.md.pp
+          (run ./omd_pp.exe print %{dep:spec-316.md}))
+          (with-stdout-to spec-316.html.pp.new
+          (run ./omd_pp.exe html spec-316.md.pp)))))
+(rule
  (alias spec-316)
  (action (diff spec-316.html spec-316.html.new)))
+(rule
+ (alias spec-316)
+ (action (diff spec-316.html spec-316.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-317.html.new (run ./omd.exe %{dep:spec-317.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-317.md.pp
+          (run ./omd_pp.exe print %{dep:spec-317.md}))
+          (with-stdout-to spec-317.html.pp.new
+          (run ./omd_pp.exe html spec-317.md.pp)))))
+(rule
  (alias spec-317)
  (action (diff spec-317.html spec-317.html.new)))
+(rule
+ (alias spec-317)
+ (action (diff spec-317.html spec-317.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-318.html.new (run ./omd.exe %{dep:spec-318.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-318.md.pp
+          (run ./omd_pp.exe print %{dep:spec-318.md}))
+          (with-stdout-to spec-318.html.pp.new
+          (run ./omd_pp.exe html spec-318.md.pp)))))
+(rule
  (alias spec-318)
  (action (diff spec-318.html spec-318.html.new)))
+(rule
+ (alias spec-318)
+ (action (diff spec-318.html spec-318.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-319.html.new (run ./omd.exe %{dep:spec-319.md}))))
@@ -2620,14 +5230,32 @@
  (action
   (with-stdout-to spec-322.html.new (run ./omd.exe %{dep:spec-322.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-322.md.pp
+          (run ./omd_pp.exe print %{dep:spec-322.md}))
+          (with-stdout-to spec-322.html.pp.new
+          (run ./omd_pp.exe html spec-322.md.pp)))))
+(rule
  (alias spec-322)
  (action (diff spec-322.html spec-322.html.new)))
+(rule
+ (alias spec-322)
+ (action (diff spec-322.html spec-322.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-323.html.new (run ./omd.exe %{dep:spec-323.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-323.md.pp
+          (run ./omd_pp.exe print %{dep:spec-323.md}))
+          (with-stdout-to spec-323.html.pp.new
+          (run ./omd_pp.exe html spec-323.md.pp)))))
+(rule
  (alias spec-323)
  (action (diff spec-323.html spec-323.html.new)))
+(rule
+ (alias spec-323)
+ (action (diff spec-323.html spec-323.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-324.html.new (run ./omd.exe %{dep:spec-324.md}))))
@@ -2644,20 +5272,47 @@
  (action
   (with-stdout-to spec-326.html.new (run ./omd.exe %{dep:spec-326.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-326.md.pp
+          (run ./omd_pp.exe print %{dep:spec-326.md}))
+          (with-stdout-to spec-326.html.pp.new
+          (run ./omd_pp.exe html spec-326.md.pp)))))
+(rule
  (alias spec-326)
  (action (diff spec-326.html spec-326.html.new)))
+(rule
+ (alias spec-326)
+ (action (diff spec-326.html spec-326.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-327.html.new (run ./omd.exe %{dep:spec-327.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-327.md.pp
+          (run ./omd_pp.exe print %{dep:spec-327.md}))
+          (with-stdout-to spec-327.html.pp.new
+          (run ./omd_pp.exe html spec-327.md.pp)))))
+(rule
  (alias spec-327)
  (action (diff spec-327.html spec-327.html.new)))
+(rule
+ (alias spec-327)
+ (action (diff spec-327.html spec-327.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-328.html.new (run ./omd.exe %{dep:spec-328.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-328.md.pp
+          (run ./omd_pp.exe print %{dep:spec-328.md}))
+          (with-stdout-to spec-328.html.pp.new
+          (run ./omd_pp.exe html spec-328.md.pp)))))
+(rule
  (alias spec-328)
  (action (diff spec-328.html spec-328.html.new)))
+(rule
+ (alias spec-328)
+ (action (diff spec-328.html spec-328.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-329.html.new (run ./omd.exe %{dep:spec-329.md}))))
@@ -2680,44 +5335,107 @@
  (action
   (with-stdout-to spec-332.html.new (run ./omd.exe %{dep:spec-332.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-332.md.pp
+          (run ./omd_pp.exe print %{dep:spec-332.md}))
+          (with-stdout-to spec-332.html.pp.new
+          (run ./omd_pp.exe html spec-332.md.pp)))))
+(rule
  (alias spec-332)
  (action (diff spec-332.html spec-332.html.new)))
+(rule
+ (alias spec-332)
+ (action (diff spec-332.html spec-332.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-333.html.new (run ./omd.exe %{dep:spec-333.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-333.md.pp
+          (run ./omd_pp.exe print %{dep:spec-333.md}))
+          (with-stdout-to spec-333.html.pp.new
+          (run ./omd_pp.exe html spec-333.md.pp)))))
+(rule
  (alias spec-333)
  (action (diff spec-333.html spec-333.html.new)))
+(rule
+ (alias spec-333)
+ (action (diff spec-333.html spec-333.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-334.html.new (run ./omd.exe %{dep:spec-334.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-334.md.pp
+          (run ./omd_pp.exe print %{dep:spec-334.md}))
+          (with-stdout-to spec-334.html.pp.new
+          (run ./omd_pp.exe html spec-334.md.pp)))))
+(rule
  (alias spec-334)
  (action (diff spec-334.html spec-334.html.new)))
+(rule
+ (alias spec-334)
+ (action (diff spec-334.html spec-334.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-335.html.new (run ./omd.exe %{dep:spec-335.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-335.md.pp
+          (run ./omd_pp.exe print %{dep:spec-335.md}))
+          (with-stdout-to spec-335.html.pp.new
+          (run ./omd_pp.exe html spec-335.md.pp)))))
+(rule
  (alias spec-335)
  (action (diff spec-335.html spec-335.html.new)))
+(rule
+ (alias spec-335)
+ (action (diff spec-335.html spec-335.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-336.html.new (run ./omd.exe %{dep:spec-336.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-336.md.pp
+          (run ./omd_pp.exe print %{dep:spec-336.md}))
+          (with-stdout-to spec-336.html.pp.new
+          (run ./omd_pp.exe html spec-336.md.pp)))))
+(rule
  (alias spec-336)
  (action (diff spec-336.html spec-336.html.new)))
+(rule
+ (alias spec-336)
+ (action (diff spec-336.html spec-336.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-337.html.new (run ./omd.exe %{dep:spec-337.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-337.md.pp
+          (run ./omd_pp.exe print %{dep:spec-337.md}))
+          (with-stdout-to spec-337.html.pp.new
+          (run ./omd_pp.exe html spec-337.md.pp)))))
+(rule
  (alias spec-337)
  (action (diff spec-337.html spec-337.html.new)))
+(rule
+ (alias spec-337)
+ (action (diff spec-337.html spec-337.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-338.html.new (run ./omd.exe %{dep:spec-338.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-338.md.pp
+          (run ./omd_pp.exe print %{dep:spec-338.md}))
+          (with-stdout-to spec-338.html.pp.new
+          (run ./omd_pp.exe html spec-338.md.pp)))))
+(rule
  (alias spec-338)
  (action (diff spec-338.html spec-338.html.new)))
+(rule
+ (alias spec-338)
+ (action (diff spec-338.html spec-338.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-339.html.new (run ./omd.exe %{dep:spec-339.md}))))
@@ -2728,56 +5446,137 @@
  (action
   (with-stdout-to spec-340.html.new (run ./omd.exe %{dep:spec-340.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-340.md.pp
+          (run ./omd_pp.exe print %{dep:spec-340.md}))
+          (with-stdout-to spec-340.html.pp.new
+          (run ./omd_pp.exe html spec-340.md.pp)))))
+(rule
  (alias spec-340)
  (action (diff spec-340.html spec-340.html.new)))
+(rule
+ (alias spec-340)
+ (action (diff spec-340.html spec-340.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-341.html.new (run ./omd.exe %{dep:spec-341.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-341.md.pp
+          (run ./omd_pp.exe print %{dep:spec-341.md}))
+          (with-stdout-to spec-341.html.pp.new
+          (run ./omd_pp.exe html spec-341.md.pp)))))
+(rule
  (alias spec-341)
  (action (diff spec-341.html spec-341.html.new)))
+(rule
+ (alias spec-341)
+ (action (diff spec-341.html spec-341.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-342.html.new (run ./omd.exe %{dep:spec-342.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-342.md.pp
+          (run ./omd_pp.exe print %{dep:spec-342.md}))
+          (with-stdout-to spec-342.html.pp.new
+          (run ./omd_pp.exe html spec-342.md.pp)))))
+(rule
  (alias spec-342)
  (action (diff spec-342.html spec-342.html.new)))
+(rule
+ (alias spec-342)
+ (action (diff spec-342.html spec-342.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-343.html.new (run ./omd.exe %{dep:spec-343.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-343.md.pp
+          (run ./omd_pp.exe print %{dep:spec-343.md}))
+          (with-stdout-to spec-343.html.pp.new
+          (run ./omd_pp.exe html spec-343.md.pp)))))
+(rule
  (alias spec-343)
  (action (diff spec-343.html spec-343.html.new)))
+(rule
+ (alias spec-343)
+ (action (diff spec-343.html spec-343.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-344.html.new (run ./omd.exe %{dep:spec-344.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-344.md.pp
+          (run ./omd_pp.exe print %{dep:spec-344.md}))
+          (with-stdout-to spec-344.html.pp.new
+          (run ./omd_pp.exe html spec-344.md.pp)))))
+(rule
  (alias spec-344)
  (action (diff spec-344.html spec-344.html.new)))
+(rule
+ (alias spec-344)
+ (action (diff spec-344.html spec-344.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-345.html.new (run ./omd.exe %{dep:spec-345.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-345.md.pp
+          (run ./omd_pp.exe print %{dep:spec-345.md}))
+          (with-stdout-to spec-345.html.pp.new
+          (run ./omd_pp.exe html spec-345.md.pp)))))
+(rule
  (alias spec-345)
  (action (diff spec-345.html spec-345.html.new)))
+(rule
+ (alias spec-345)
+ (action (diff spec-345.html spec-345.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-346.html.new (run ./omd.exe %{dep:spec-346.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-346.md.pp
+          (run ./omd_pp.exe print %{dep:spec-346.md}))
+          (with-stdout-to spec-346.html.pp.new
+          (run ./omd_pp.exe html spec-346.md.pp)))))
+(rule
  (alias spec-346)
  (action (diff spec-346.html spec-346.html.new)))
+(rule
+ (alias spec-346)
+ (action (diff spec-346.html spec-346.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-347.html.new (run ./omd.exe %{dep:spec-347.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-347.md.pp
+          (run ./omd_pp.exe print %{dep:spec-347.md}))
+          (with-stdout-to spec-347.html.pp.new
+          (run ./omd_pp.exe html spec-347.md.pp)))))
+(rule
  (alias spec-347)
  (action (diff spec-347.html spec-347.html.new)))
+(rule
+ (alias spec-347)
+ (action (diff spec-347.html spec-347.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-348.html.new (run ./omd.exe %{dep:spec-348.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-348.md.pp
+          (run ./omd_pp.exe print %{dep:spec-348.md}))
+          (with-stdout-to spec-348.html.pp.new
+          (run ./omd_pp.exe html spec-348.md.pp)))))
+(rule
  (alias spec-348)
  (action (diff spec-348.html spec-348.html.new)))
+(rule
+ (alias spec-348)
+ (action (diff spec-348.html spec-348.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-349.html.new (run ./omd.exe %{dep:spec-349.md}))))
@@ -2788,398 +5587,992 @@
  (action
   (with-stdout-to spec-350.html.new (run ./omd.exe %{dep:spec-350.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-350.md.pp
+          (run ./omd_pp.exe print %{dep:spec-350.md}))
+          (with-stdout-to spec-350.html.pp.new
+          (run ./omd_pp.exe html spec-350.md.pp)))))
+(rule
  (alias spec-350)
  (action (diff spec-350.html spec-350.html.new)))
+(rule
+ (alias spec-350)
+ (action (diff spec-350.html spec-350.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-351.html.new (run ./omd.exe %{dep:spec-351.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-351.md.pp
+          (run ./omd_pp.exe print %{dep:spec-351.md}))
+          (with-stdout-to spec-351.html.pp.new
+          (run ./omd_pp.exe html spec-351.md.pp)))))
+(rule
  (alias spec-351)
  (action (diff spec-351.html spec-351.html.new)))
+(rule
+ (alias spec-351)
+ (action (diff spec-351.html spec-351.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-352.html.new (run ./omd.exe %{dep:spec-352.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-352.md.pp
+          (run ./omd_pp.exe print %{dep:spec-352.md}))
+          (with-stdout-to spec-352.html.pp.new
+          (run ./omd_pp.exe html spec-352.md.pp)))))
+(rule
  (alias spec-352)
  (action (diff spec-352.html spec-352.html.new)))
+(rule
+ (alias spec-352)
+ (action (diff spec-352.html spec-352.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-353.html.new (run ./omd.exe %{dep:spec-353.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-353.md.pp
+          (run ./omd_pp.exe print %{dep:spec-353.md}))
+          (with-stdout-to spec-353.html.pp.new
+          (run ./omd_pp.exe html spec-353.md.pp)))))
+(rule
  (alias spec-353)
  (action (diff spec-353.html spec-353.html.new)))
+(rule
+ (alias spec-353)
+ (action (diff spec-353.html spec-353.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-354.html.new (run ./omd.exe %{dep:spec-354.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-354.md.pp
+          (run ./omd_pp.exe print %{dep:spec-354.md}))
+          (with-stdout-to spec-354.html.pp.new
+          (run ./omd_pp.exe html spec-354.md.pp)))))
+(rule
  (alias spec-354)
  (action (diff spec-354.html spec-354.html.new)))
+(rule
+ (alias spec-354)
+ (action (diff spec-354.html spec-354.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-355.html.new (run ./omd.exe %{dep:spec-355.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-355.md.pp
+          (run ./omd_pp.exe print %{dep:spec-355.md}))
+          (with-stdout-to spec-355.html.pp.new
+          (run ./omd_pp.exe html spec-355.md.pp)))))
+(rule
  (alias spec-355)
  (action (diff spec-355.html spec-355.html.new)))
+(rule
+ (alias spec-355)
+ (action (diff spec-355.html spec-355.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-356.html.new (run ./omd.exe %{dep:spec-356.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-356.md.pp
+          (run ./omd_pp.exe print %{dep:spec-356.md}))
+          (with-stdout-to spec-356.html.pp.new
+          (run ./omd_pp.exe html spec-356.md.pp)))))
+(rule
  (alias spec-356)
  (action (diff spec-356.html spec-356.html.new)))
+(rule
+ (alias spec-356)
+ (action (diff spec-356.html spec-356.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-357.html.new (run ./omd.exe %{dep:spec-357.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-357.md.pp
+          (run ./omd_pp.exe print %{dep:spec-357.md}))
+          (with-stdout-to spec-357.html.pp.new
+          (run ./omd_pp.exe html spec-357.md.pp)))))
+(rule
  (alias spec-357)
  (action (diff spec-357.html spec-357.html.new)))
+(rule
+ (alias spec-357)
+ (action (diff spec-357.html spec-357.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-358.html.new (run ./omd.exe %{dep:spec-358.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-358.md.pp
+          (run ./omd_pp.exe print %{dep:spec-358.md}))
+          (with-stdout-to spec-358.html.pp.new
+          (run ./omd_pp.exe html spec-358.md.pp)))))
+(rule
  (alias spec-358)
  (action (diff spec-358.html spec-358.html.new)))
+(rule
+ (alias spec-358)
+ (action (diff spec-358.html spec-358.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-359.html.new (run ./omd.exe %{dep:spec-359.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-359.md.pp
+          (run ./omd_pp.exe print %{dep:spec-359.md}))
+          (with-stdout-to spec-359.html.pp.new
+          (run ./omd_pp.exe html spec-359.md.pp)))))
+(rule
  (alias spec-359)
  (action (diff spec-359.html spec-359.html.new)))
+(rule
+ (alias spec-359)
+ (action (diff spec-359.html spec-359.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-360.html.new (run ./omd.exe %{dep:spec-360.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-360.md.pp
+          (run ./omd_pp.exe print %{dep:spec-360.md}))
+          (with-stdout-to spec-360.html.pp.new
+          (run ./omd_pp.exe html spec-360.md.pp)))))
+(rule
  (alias spec-360)
  (action (diff spec-360.html spec-360.html.new)))
+(rule
+ (alias spec-360)
+ (action (diff spec-360.html spec-360.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-361.html.new (run ./omd.exe %{dep:spec-361.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-361.md.pp
+          (run ./omd_pp.exe print %{dep:spec-361.md}))
+          (with-stdout-to spec-361.html.pp.new
+          (run ./omd_pp.exe html spec-361.md.pp)))))
+(rule
  (alias spec-361)
  (action (diff spec-361.html spec-361.html.new)))
+(rule
+ (alias spec-361)
+ (action (diff spec-361.html spec-361.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-362.html.new (run ./omd.exe %{dep:spec-362.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-362.md.pp
+          (run ./omd_pp.exe print %{dep:spec-362.md}))
+          (with-stdout-to spec-362.html.pp.new
+          (run ./omd_pp.exe html spec-362.md.pp)))))
+(rule
  (alias spec-362)
  (action (diff spec-362.html spec-362.html.new)))
+(rule
+ (alias spec-362)
+ (action (diff spec-362.html spec-362.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-363.html.new (run ./omd.exe %{dep:spec-363.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-363.md.pp
+          (run ./omd_pp.exe print %{dep:spec-363.md}))
+          (with-stdout-to spec-363.html.pp.new
+          (run ./omd_pp.exe html spec-363.md.pp)))))
+(rule
  (alias spec-363)
  (action (diff spec-363.html spec-363.html.new)))
+(rule
+ (alias spec-363)
+ (action (diff spec-363.html spec-363.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-364.html.new (run ./omd.exe %{dep:spec-364.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-364.md.pp
+          (run ./omd_pp.exe print %{dep:spec-364.md}))
+          (with-stdout-to spec-364.html.pp.new
+          (run ./omd_pp.exe html spec-364.md.pp)))))
+(rule
  (alias spec-364)
  (action (diff spec-364.html spec-364.html.new)))
+(rule
+ (alias spec-364)
+ (action (diff spec-364.html spec-364.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-365.html.new (run ./omd.exe %{dep:spec-365.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-365.md.pp
+          (run ./omd_pp.exe print %{dep:spec-365.md}))
+          (with-stdout-to spec-365.html.pp.new
+          (run ./omd_pp.exe html spec-365.md.pp)))))
+(rule
  (alias spec-365)
  (action (diff spec-365.html spec-365.html.new)))
+(rule
+ (alias spec-365)
+ (action (diff spec-365.html spec-365.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-366.html.new (run ./omd.exe %{dep:spec-366.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-366.md.pp
+          (run ./omd_pp.exe print %{dep:spec-366.md}))
+          (with-stdout-to spec-366.html.pp.new
+          (run ./omd_pp.exe html spec-366.md.pp)))))
+(rule
  (alias spec-366)
  (action (diff spec-366.html spec-366.html.new)))
+(rule
+ (alias spec-366)
+ (action (diff spec-366.html spec-366.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-367.html.new (run ./omd.exe %{dep:spec-367.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-367.md.pp
+          (run ./omd_pp.exe print %{dep:spec-367.md}))
+          (with-stdout-to spec-367.html.pp.new
+          (run ./omd_pp.exe html spec-367.md.pp)))))
+(rule
  (alias spec-367)
  (action (diff spec-367.html spec-367.html.new)))
+(rule
+ (alias spec-367)
+ (action (diff spec-367.html spec-367.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-368.html.new (run ./omd.exe %{dep:spec-368.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-368.md.pp
+          (run ./omd_pp.exe print %{dep:spec-368.md}))
+          (with-stdout-to spec-368.html.pp.new
+          (run ./omd_pp.exe html spec-368.md.pp)))))
+(rule
  (alias spec-368)
  (action (diff spec-368.html spec-368.html.new)))
+(rule
+ (alias spec-368)
+ (action (diff spec-368.html spec-368.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-369.html.new (run ./omd.exe %{dep:spec-369.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-369.md.pp
+          (run ./omd_pp.exe print %{dep:spec-369.md}))
+          (with-stdout-to spec-369.html.pp.new
+          (run ./omd_pp.exe html spec-369.md.pp)))))
+(rule
  (alias spec-369)
  (action (diff spec-369.html spec-369.html.new)))
+(rule
+ (alias spec-369)
+ (action (diff spec-369.html spec-369.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-370.html.new (run ./omd.exe %{dep:spec-370.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-370.md.pp
+          (run ./omd_pp.exe print %{dep:spec-370.md}))
+          (with-stdout-to spec-370.html.pp.new
+          (run ./omd_pp.exe html spec-370.md.pp)))))
+(rule
  (alias spec-370)
  (action (diff spec-370.html spec-370.html.new)))
+(rule
+ (alias spec-370)
+ (action (diff spec-370.html spec-370.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-371.html.new (run ./omd.exe %{dep:spec-371.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-371.md.pp
+          (run ./omd_pp.exe print %{dep:spec-371.md}))
+          (with-stdout-to spec-371.html.pp.new
+          (run ./omd_pp.exe html spec-371.md.pp)))))
+(rule
  (alias spec-371)
  (action (diff spec-371.html spec-371.html.new)))
+(rule
+ (alias spec-371)
+ (action (diff spec-371.html spec-371.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-372.html.new (run ./omd.exe %{dep:spec-372.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-372.md.pp
+          (run ./omd_pp.exe print %{dep:spec-372.md}))
+          (with-stdout-to spec-372.html.pp.new
+          (run ./omd_pp.exe html spec-372.md.pp)))))
+(rule
  (alias spec-372)
  (action (diff spec-372.html spec-372.html.new)))
+(rule
+ (alias spec-372)
+ (action (diff spec-372.html spec-372.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-373.html.new (run ./omd.exe %{dep:spec-373.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-373.md.pp
+          (run ./omd_pp.exe print %{dep:spec-373.md}))
+          (with-stdout-to spec-373.html.pp.new
+          (run ./omd_pp.exe html spec-373.md.pp)))))
+(rule
  (alias spec-373)
  (action (diff spec-373.html spec-373.html.new)))
+(rule
+ (alias spec-373)
+ (action (diff spec-373.html spec-373.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-374.html.new (run ./omd.exe %{dep:spec-374.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-374.md.pp
+          (run ./omd_pp.exe print %{dep:spec-374.md}))
+          (with-stdout-to spec-374.html.pp.new
+          (run ./omd_pp.exe html spec-374.md.pp)))))
+(rule
  (alias spec-374)
  (action (diff spec-374.html spec-374.html.new)))
+(rule
+ (alias spec-374)
+ (action (diff spec-374.html spec-374.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-375.html.new (run ./omd.exe %{dep:spec-375.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-375.md.pp
+          (run ./omd_pp.exe print %{dep:spec-375.md}))
+          (with-stdout-to spec-375.html.pp.new
+          (run ./omd_pp.exe html spec-375.md.pp)))))
+(rule
  (alias spec-375)
  (action (diff spec-375.html spec-375.html.new)))
+(rule
+ (alias spec-375)
+ (action (diff spec-375.html spec-375.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-376.html.new (run ./omd.exe %{dep:spec-376.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-376.md.pp
+          (run ./omd_pp.exe print %{dep:spec-376.md}))
+          (with-stdout-to spec-376.html.pp.new
+          (run ./omd_pp.exe html spec-376.md.pp)))))
+(rule
  (alias spec-376)
  (action (diff spec-376.html spec-376.html.new)))
+(rule
+ (alias spec-376)
+ (action (diff spec-376.html spec-376.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-377.html.new (run ./omd.exe %{dep:spec-377.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-377.md.pp
+          (run ./omd_pp.exe print %{dep:spec-377.md}))
+          (with-stdout-to spec-377.html.pp.new
+          (run ./omd_pp.exe html spec-377.md.pp)))))
+(rule
  (alias spec-377)
  (action (diff spec-377.html spec-377.html.new)))
+(rule
+ (alias spec-377)
+ (action (diff spec-377.html spec-377.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-378.html.new (run ./omd.exe %{dep:spec-378.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-378.md.pp
+          (run ./omd_pp.exe print %{dep:spec-378.md}))
+          (with-stdout-to spec-378.html.pp.new
+          (run ./omd_pp.exe html spec-378.md.pp)))))
+(rule
  (alias spec-378)
  (action (diff spec-378.html spec-378.html.new)))
+(rule
+ (alias spec-378)
+ (action (diff spec-378.html spec-378.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-379.html.new (run ./omd.exe %{dep:spec-379.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-379.md.pp
+          (run ./omd_pp.exe print %{dep:spec-379.md}))
+          (with-stdout-to spec-379.html.pp.new
+          (run ./omd_pp.exe html spec-379.md.pp)))))
+(rule
  (alias spec-379)
  (action (diff spec-379.html spec-379.html.new)))
+(rule
+ (alias spec-379)
+ (action (diff spec-379.html spec-379.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-380.html.new (run ./omd.exe %{dep:spec-380.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-380.md.pp
+          (run ./omd_pp.exe print %{dep:spec-380.md}))
+          (with-stdout-to spec-380.html.pp.new
+          (run ./omd_pp.exe html spec-380.md.pp)))))
+(rule
  (alias spec-380)
  (action (diff spec-380.html spec-380.html.new)))
+(rule
+ (alias spec-380)
+ (action (diff spec-380.html spec-380.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-381.html.new (run ./omd.exe %{dep:spec-381.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-381.md.pp
+          (run ./omd_pp.exe print %{dep:spec-381.md}))
+          (with-stdout-to spec-381.html.pp.new
+          (run ./omd_pp.exe html spec-381.md.pp)))))
+(rule
  (alias spec-381)
  (action (diff spec-381.html spec-381.html.new)))
+(rule
+ (alias spec-381)
+ (action (diff spec-381.html spec-381.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-382.html.new (run ./omd.exe %{dep:spec-382.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-382.md.pp
+          (run ./omd_pp.exe print %{dep:spec-382.md}))
+          (with-stdout-to spec-382.html.pp.new
+          (run ./omd_pp.exe html spec-382.md.pp)))))
+(rule
  (alias spec-382)
  (action (diff spec-382.html spec-382.html.new)))
+(rule
+ (alias spec-382)
+ (action (diff spec-382.html spec-382.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-383.html.new (run ./omd.exe %{dep:spec-383.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-383.md.pp
+          (run ./omd_pp.exe print %{dep:spec-383.md}))
+          (with-stdout-to spec-383.html.pp.new
+          (run ./omd_pp.exe html spec-383.md.pp)))))
+(rule
  (alias spec-383)
  (action (diff spec-383.html spec-383.html.new)))
+(rule
+ (alias spec-383)
+ (action (diff spec-383.html spec-383.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-384.html.new (run ./omd.exe %{dep:spec-384.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-384.md.pp
+          (run ./omd_pp.exe print %{dep:spec-384.md}))
+          (with-stdout-to spec-384.html.pp.new
+          (run ./omd_pp.exe html spec-384.md.pp)))))
+(rule
  (alias spec-384)
  (action (diff spec-384.html spec-384.html.new)))
+(rule
+ (alias spec-384)
+ (action (diff spec-384.html spec-384.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-385.html.new (run ./omd.exe %{dep:spec-385.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-385.md.pp
+          (run ./omd_pp.exe print %{dep:spec-385.md}))
+          (with-stdout-to spec-385.html.pp.new
+          (run ./omd_pp.exe html spec-385.md.pp)))))
+(rule
  (alias spec-385)
  (action (diff spec-385.html spec-385.html.new)))
+(rule
+ (alias spec-385)
+ (action (diff spec-385.html spec-385.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-386.html.new (run ./omd.exe %{dep:spec-386.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-386.md.pp
+          (run ./omd_pp.exe print %{dep:spec-386.md}))
+          (with-stdout-to spec-386.html.pp.new
+          (run ./omd_pp.exe html spec-386.md.pp)))))
+(rule
  (alias spec-386)
  (action (diff spec-386.html spec-386.html.new)))
+(rule
+ (alias spec-386)
+ (action (diff spec-386.html spec-386.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-387.html.new (run ./omd.exe %{dep:spec-387.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-387.md.pp
+          (run ./omd_pp.exe print %{dep:spec-387.md}))
+          (with-stdout-to spec-387.html.pp.new
+          (run ./omd_pp.exe html spec-387.md.pp)))))
+(rule
  (alias spec-387)
  (action (diff spec-387.html spec-387.html.new)))
+(rule
+ (alias spec-387)
+ (action (diff spec-387.html spec-387.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-388.html.new (run ./omd.exe %{dep:spec-388.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-388.md.pp
+          (run ./omd_pp.exe print %{dep:spec-388.md}))
+          (with-stdout-to spec-388.html.pp.new
+          (run ./omd_pp.exe html spec-388.md.pp)))))
+(rule
  (alias spec-388)
  (action (diff spec-388.html spec-388.html.new)))
+(rule
+ (alias spec-388)
+ (action (diff spec-388.html spec-388.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-389.html.new (run ./omd.exe %{dep:spec-389.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-389.md.pp
+          (run ./omd_pp.exe print %{dep:spec-389.md}))
+          (with-stdout-to spec-389.html.pp.new
+          (run ./omd_pp.exe html spec-389.md.pp)))))
+(rule
  (alias spec-389)
  (action (diff spec-389.html spec-389.html.new)))
+(rule
+ (alias spec-389)
+ (action (diff spec-389.html spec-389.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-390.html.new (run ./omd.exe %{dep:spec-390.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-390.md.pp
+          (run ./omd_pp.exe print %{dep:spec-390.md}))
+          (with-stdout-to spec-390.html.pp.new
+          (run ./omd_pp.exe html spec-390.md.pp)))))
+(rule
  (alias spec-390)
  (action (diff spec-390.html spec-390.html.new)))
+(rule
+ (alias spec-390)
+ (action (diff spec-390.html spec-390.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-391.html.new (run ./omd.exe %{dep:spec-391.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-391.md.pp
+          (run ./omd_pp.exe print %{dep:spec-391.md}))
+          (with-stdout-to spec-391.html.pp.new
+          (run ./omd_pp.exe html spec-391.md.pp)))))
+(rule
  (alias spec-391)
  (action (diff spec-391.html spec-391.html.new)))
+(rule
+ (alias spec-391)
+ (action (diff spec-391.html spec-391.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-392.html.new (run ./omd.exe %{dep:spec-392.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-392.md.pp
+          (run ./omd_pp.exe print %{dep:spec-392.md}))
+          (with-stdout-to spec-392.html.pp.new
+          (run ./omd_pp.exe html spec-392.md.pp)))))
+(rule
  (alias spec-392)
  (action (diff spec-392.html spec-392.html.new)))
+(rule
+ (alias spec-392)
+ (action (diff spec-392.html spec-392.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-393.html.new (run ./omd.exe %{dep:spec-393.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-393.md.pp
+          (run ./omd_pp.exe print %{dep:spec-393.md}))
+          (with-stdout-to spec-393.html.pp.new
+          (run ./omd_pp.exe html spec-393.md.pp)))))
+(rule
  (alias spec-393)
  (action (diff spec-393.html spec-393.html.new)))
+(rule
+ (alias spec-393)
+ (action (diff spec-393.html spec-393.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-394.html.new (run ./omd.exe %{dep:spec-394.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-394.md.pp
+          (run ./omd_pp.exe print %{dep:spec-394.md}))
+          (with-stdout-to spec-394.html.pp.new
+          (run ./omd_pp.exe html spec-394.md.pp)))))
+(rule
  (alias spec-394)
  (action (diff spec-394.html spec-394.html.new)))
+(rule
+ (alias spec-394)
+ (action (diff spec-394.html spec-394.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-395.html.new (run ./omd.exe %{dep:spec-395.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-395.md.pp
+          (run ./omd_pp.exe print %{dep:spec-395.md}))
+          (with-stdout-to spec-395.html.pp.new
+          (run ./omd_pp.exe html spec-395.md.pp)))))
+(rule
  (alias spec-395)
  (action (diff spec-395.html spec-395.html.new)))
+(rule
+ (alias spec-395)
+ (action (diff spec-395.html spec-395.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-396.html.new (run ./omd.exe %{dep:spec-396.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-396.md.pp
+          (run ./omd_pp.exe print %{dep:spec-396.md}))
+          (with-stdout-to spec-396.html.pp.new
+          (run ./omd_pp.exe html spec-396.md.pp)))))
+(rule
  (alias spec-396)
  (action (diff spec-396.html spec-396.html.new)))
+(rule
+ (alias spec-396)
+ (action (diff spec-396.html spec-396.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-397.html.new (run ./omd.exe %{dep:spec-397.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-397.md.pp
+          (run ./omd_pp.exe print %{dep:spec-397.md}))
+          (with-stdout-to spec-397.html.pp.new
+          (run ./omd_pp.exe html spec-397.md.pp)))))
+(rule
  (alias spec-397)
  (action (diff spec-397.html spec-397.html.new)))
+(rule
+ (alias spec-397)
+ (action (diff spec-397.html spec-397.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-398.html.new (run ./omd.exe %{dep:spec-398.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-398.md.pp
+          (run ./omd_pp.exe print %{dep:spec-398.md}))
+          (with-stdout-to spec-398.html.pp.new
+          (run ./omd_pp.exe html spec-398.md.pp)))))
+(rule
  (alias spec-398)
  (action (diff spec-398.html spec-398.html.new)))
+(rule
+ (alias spec-398)
+ (action (diff spec-398.html spec-398.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-399.html.new (run ./omd.exe %{dep:spec-399.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-399.md.pp
+          (run ./omd_pp.exe print %{dep:spec-399.md}))
+          (with-stdout-to spec-399.html.pp.new
+          (run ./omd_pp.exe html spec-399.md.pp)))))
+(rule
  (alias spec-399)
  (action (diff spec-399.html spec-399.html.new)))
+(rule
+ (alias spec-399)
+ (action (diff spec-399.html spec-399.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-400.html.new (run ./omd.exe %{dep:spec-400.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-400.md.pp
+          (run ./omd_pp.exe print %{dep:spec-400.md}))
+          (with-stdout-to spec-400.html.pp.new
+          (run ./omd_pp.exe html spec-400.md.pp)))))
+(rule
  (alias spec-400)
  (action (diff spec-400.html spec-400.html.new)))
+(rule
+ (alias spec-400)
+ (action (diff spec-400.html spec-400.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-401.html.new (run ./omd.exe %{dep:spec-401.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-401.md.pp
+          (run ./omd_pp.exe print %{dep:spec-401.md}))
+          (with-stdout-to spec-401.html.pp.new
+          (run ./omd_pp.exe html spec-401.md.pp)))))
+(rule
  (alias spec-401)
  (action (diff spec-401.html spec-401.html.new)))
+(rule
+ (alias spec-401)
+ (action (diff spec-401.html spec-401.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-402.html.new (run ./omd.exe %{dep:spec-402.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-402.md.pp
+          (run ./omd_pp.exe print %{dep:spec-402.md}))
+          (with-stdout-to spec-402.html.pp.new
+          (run ./omd_pp.exe html spec-402.md.pp)))))
+(rule
  (alias spec-402)
  (action (diff spec-402.html spec-402.html.new)))
+(rule
+ (alias spec-402)
+ (action (diff spec-402.html spec-402.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-403.html.new (run ./omd.exe %{dep:spec-403.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-403.md.pp
+          (run ./omd_pp.exe print %{dep:spec-403.md}))
+          (with-stdout-to spec-403.html.pp.new
+          (run ./omd_pp.exe html spec-403.md.pp)))))
+(rule
  (alias spec-403)
  (action (diff spec-403.html spec-403.html.new)))
+(rule
+ (alias spec-403)
+ (action (diff spec-403.html spec-403.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-404.html.new (run ./omd.exe %{dep:spec-404.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-404.md.pp
+          (run ./omd_pp.exe print %{dep:spec-404.md}))
+          (with-stdout-to spec-404.html.pp.new
+          (run ./omd_pp.exe html spec-404.md.pp)))))
+(rule
  (alias spec-404)
  (action (diff spec-404.html spec-404.html.new)))
+(rule
+ (alias spec-404)
+ (action (diff spec-404.html spec-404.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-405.html.new (run ./omd.exe %{dep:spec-405.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-405.md.pp
+          (run ./omd_pp.exe print %{dep:spec-405.md}))
+          (with-stdout-to spec-405.html.pp.new
+          (run ./omd_pp.exe html spec-405.md.pp)))))
+(rule
  (alias spec-405)
  (action (diff spec-405.html spec-405.html.new)))
+(rule
+ (alias spec-405)
+ (action (diff spec-405.html spec-405.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-406.html.new (run ./omd.exe %{dep:spec-406.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-406.md.pp
+          (run ./omd_pp.exe print %{dep:spec-406.md}))
+          (with-stdout-to spec-406.html.pp.new
+          (run ./omd_pp.exe html spec-406.md.pp)))))
+(rule
  (alias spec-406)
  (action (diff spec-406.html spec-406.html.new)))
+(rule
+ (alias spec-406)
+ (action (diff spec-406.html spec-406.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-407.html.new (run ./omd.exe %{dep:spec-407.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-407.md.pp
+          (run ./omd_pp.exe print %{dep:spec-407.md}))
+          (with-stdout-to spec-407.html.pp.new
+          (run ./omd_pp.exe html spec-407.md.pp)))))
+(rule
  (alias spec-407)
  (action (diff spec-407.html spec-407.html.new)))
+(rule
+ (alias spec-407)
+ (action (diff spec-407.html spec-407.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-408.html.new (run ./omd.exe %{dep:spec-408.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-408.md.pp
+          (run ./omd_pp.exe print %{dep:spec-408.md}))
+          (with-stdout-to spec-408.html.pp.new
+          (run ./omd_pp.exe html spec-408.md.pp)))))
+(rule
  (alias spec-408)
  (action (diff spec-408.html spec-408.html.new)))
+(rule
+ (alias spec-408)
+ (action (diff spec-408.html spec-408.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-409.html.new (run ./omd.exe %{dep:spec-409.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-409.md.pp
+          (run ./omd_pp.exe print %{dep:spec-409.md}))
+          (with-stdout-to spec-409.html.pp.new
+          (run ./omd_pp.exe html spec-409.md.pp)))))
+(rule
  (alias spec-409)
  (action (diff spec-409.html spec-409.html.new)))
+(rule
+ (alias spec-409)
+ (action (diff spec-409.html spec-409.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-410.html.new (run ./omd.exe %{dep:spec-410.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-410.md.pp
+          (run ./omd_pp.exe print %{dep:spec-410.md}))
+          (with-stdout-to spec-410.html.pp.new
+          (run ./omd_pp.exe html spec-410.md.pp)))))
+(rule
  (alias spec-410)
  (action (diff spec-410.html spec-410.html.new)))
+(rule
+ (alias spec-410)
+ (action (diff spec-410.html spec-410.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-411.html.new (run ./omd.exe %{dep:spec-411.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-411.md.pp
+          (run ./omd_pp.exe print %{dep:spec-411.md}))
+          (with-stdout-to spec-411.html.pp.new
+          (run ./omd_pp.exe html spec-411.md.pp)))))
+(rule
  (alias spec-411)
  (action (diff spec-411.html spec-411.html.new)))
+(rule
+ (alias spec-411)
+ (action (diff spec-411.html spec-411.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-412.html.new (run ./omd.exe %{dep:spec-412.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-412.md.pp
+          (run ./omd_pp.exe print %{dep:spec-412.md}))
+          (with-stdout-to spec-412.html.pp.new
+          (run ./omd_pp.exe html spec-412.md.pp)))))
+(rule
  (alias spec-412)
  (action (diff spec-412.html spec-412.html.new)))
+(rule
+ (alias spec-412)
+ (action (diff spec-412.html spec-412.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-413.html.new (run ./omd.exe %{dep:spec-413.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-413.md.pp
+          (run ./omd_pp.exe print %{dep:spec-413.md}))
+          (with-stdout-to spec-413.html.pp.new
+          (run ./omd_pp.exe html spec-413.md.pp)))))
+(rule
  (alias spec-413)
  (action (diff spec-413.html spec-413.html.new)))
+(rule
+ (alias spec-413)
+ (action (diff spec-413.html spec-413.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-414.html.new (run ./omd.exe %{dep:spec-414.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-414.md.pp
+          (run ./omd_pp.exe print %{dep:spec-414.md}))
+          (with-stdout-to spec-414.html.pp.new
+          (run ./omd_pp.exe html spec-414.md.pp)))))
+(rule
  (alias spec-414)
  (action (diff spec-414.html spec-414.html.new)))
+(rule
+ (alias spec-414)
+ (action (diff spec-414.html spec-414.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-415.html.new (run ./omd.exe %{dep:spec-415.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-415.md.pp
+          (run ./omd_pp.exe print %{dep:spec-415.md}))
+          (with-stdout-to spec-415.html.pp.new
+          (run ./omd_pp.exe html spec-415.md.pp)))))
+(rule
  (alias spec-415)
  (action (diff spec-415.html spec-415.html.new)))
+(rule
+ (alias spec-415)
+ (action (diff spec-415.html spec-415.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-416.html.new (run ./omd.exe %{dep:spec-416.md}))))
@@ -3190,110 +6583,272 @@
  (action
   (with-stdout-to spec-417.html.new (run ./omd.exe %{dep:spec-417.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-417.md.pp
+          (run ./omd_pp.exe print %{dep:spec-417.md}))
+          (with-stdout-to spec-417.html.pp.new
+          (run ./omd_pp.exe html spec-417.md.pp)))))
+(rule
  (alias spec-417)
  (action (diff spec-417.html spec-417.html.new)))
+(rule
+ (alias spec-417)
+ (action (diff spec-417.html spec-417.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-418.html.new (run ./omd.exe %{dep:spec-418.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-418.md.pp
+          (run ./omd_pp.exe print %{dep:spec-418.md}))
+          (with-stdout-to spec-418.html.pp.new
+          (run ./omd_pp.exe html spec-418.md.pp)))))
+(rule
  (alias spec-418)
  (action (diff spec-418.html spec-418.html.new)))
+(rule
+ (alias spec-418)
+ (action (diff spec-418.html spec-418.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-419.html.new (run ./omd.exe %{dep:spec-419.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-419.md.pp
+          (run ./omd_pp.exe print %{dep:spec-419.md}))
+          (with-stdout-to spec-419.html.pp.new
+          (run ./omd_pp.exe html spec-419.md.pp)))))
+(rule
  (alias spec-419)
  (action (diff spec-419.html spec-419.html.new)))
+(rule
+ (alias spec-419)
+ (action (diff spec-419.html spec-419.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-420.html.new (run ./omd.exe %{dep:spec-420.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-420.md.pp
+          (run ./omd_pp.exe print %{dep:spec-420.md}))
+          (with-stdout-to spec-420.html.pp.new
+          (run ./omd_pp.exe html spec-420.md.pp)))))
+(rule
  (alias spec-420)
  (action (diff spec-420.html spec-420.html.new)))
+(rule
+ (alias spec-420)
+ (action (diff spec-420.html spec-420.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-421.html.new (run ./omd.exe %{dep:spec-421.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-421.md.pp
+          (run ./omd_pp.exe print %{dep:spec-421.md}))
+          (with-stdout-to spec-421.html.pp.new
+          (run ./omd_pp.exe html spec-421.md.pp)))))
+(rule
  (alias spec-421)
  (action (diff spec-421.html spec-421.html.new)))
+(rule
+ (alias spec-421)
+ (action (diff spec-421.html spec-421.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-422.html.new (run ./omd.exe %{dep:spec-422.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-422.md.pp
+          (run ./omd_pp.exe print %{dep:spec-422.md}))
+          (with-stdout-to spec-422.html.pp.new
+          (run ./omd_pp.exe html spec-422.md.pp)))))
+(rule
  (alias spec-422)
  (action (diff spec-422.html spec-422.html.new)))
+(rule
+ (alias spec-422)
+ (action (diff spec-422.html spec-422.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-423.html.new (run ./omd.exe %{dep:spec-423.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-423.md.pp
+          (run ./omd_pp.exe print %{dep:spec-423.md}))
+          (with-stdout-to spec-423.html.pp.new
+          (run ./omd_pp.exe html spec-423.md.pp)))))
+(rule
  (alias spec-423)
  (action (diff spec-423.html spec-423.html.new)))
+(rule
+ (alias spec-423)
+ (action (diff spec-423.html spec-423.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-424.html.new (run ./omd.exe %{dep:spec-424.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-424.md.pp
+          (run ./omd_pp.exe print %{dep:spec-424.md}))
+          (with-stdout-to spec-424.html.pp.new
+          (run ./omd_pp.exe html spec-424.md.pp)))))
+(rule
  (alias spec-424)
  (action (diff spec-424.html spec-424.html.new)))
+(rule
+ (alias spec-424)
+ (action (diff spec-424.html spec-424.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-425.html.new (run ./omd.exe %{dep:spec-425.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-425.md.pp
+          (run ./omd_pp.exe print %{dep:spec-425.md}))
+          (with-stdout-to spec-425.html.pp.new
+          (run ./omd_pp.exe html spec-425.md.pp)))))
+(rule
  (alias spec-425)
  (action (diff spec-425.html spec-425.html.new)))
+(rule
+ (alias spec-425)
+ (action (diff spec-425.html spec-425.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-426.html.new (run ./omd.exe %{dep:spec-426.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-426.md.pp
+          (run ./omd_pp.exe print %{dep:spec-426.md}))
+          (with-stdout-to spec-426.html.pp.new
+          (run ./omd_pp.exe html spec-426.md.pp)))))
+(rule
  (alias spec-426)
  (action (diff spec-426.html spec-426.html.new)))
+(rule
+ (alias spec-426)
+ (action (diff spec-426.html spec-426.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-427.html.new (run ./omd.exe %{dep:spec-427.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-427.md.pp
+          (run ./omd_pp.exe print %{dep:spec-427.md}))
+          (with-stdout-to spec-427.html.pp.new
+          (run ./omd_pp.exe html spec-427.md.pp)))))
+(rule
  (alias spec-427)
  (action (diff spec-427.html spec-427.html.new)))
+(rule
+ (alias spec-427)
+ (action (diff spec-427.html spec-427.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-428.html.new (run ./omd.exe %{dep:spec-428.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-428.md.pp
+          (run ./omd_pp.exe print %{dep:spec-428.md}))
+          (with-stdout-to spec-428.html.pp.new
+          (run ./omd_pp.exe html spec-428.md.pp)))))
+(rule
  (alias spec-428)
  (action (diff spec-428.html spec-428.html.new)))
+(rule
+ (alias spec-428)
+ (action (diff spec-428.html spec-428.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-429.html.new (run ./omd.exe %{dep:spec-429.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-429.md.pp
+          (run ./omd_pp.exe print %{dep:spec-429.md}))
+          (with-stdout-to spec-429.html.pp.new
+          (run ./omd_pp.exe html spec-429.md.pp)))))
+(rule
  (alias spec-429)
  (action (diff spec-429.html spec-429.html.new)))
+(rule
+ (alias spec-429)
+ (action (diff spec-429.html spec-429.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-430.html.new (run ./omd.exe %{dep:spec-430.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-430.md.pp
+          (run ./omd_pp.exe print %{dep:spec-430.md}))
+          (with-stdout-to spec-430.html.pp.new
+          (run ./omd_pp.exe html spec-430.md.pp)))))
+(rule
  (alias spec-430)
  (action (diff spec-430.html spec-430.html.new)))
+(rule
+ (alias spec-430)
+ (action (diff spec-430.html spec-430.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-431.html.new (run ./omd.exe %{dep:spec-431.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-431.md.pp
+          (run ./omd_pp.exe print %{dep:spec-431.md}))
+          (with-stdout-to spec-431.html.pp.new
+          (run ./omd_pp.exe html spec-431.md.pp)))))
+(rule
  (alias spec-431)
  (action (diff spec-431.html spec-431.html.new)))
+(rule
+ (alias spec-431)
+ (action (diff spec-431.html spec-431.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-432.html.new (run ./omd.exe %{dep:spec-432.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-432.md.pp
+          (run ./omd_pp.exe print %{dep:spec-432.md}))
+          (with-stdout-to spec-432.html.pp.new
+          (run ./omd_pp.exe html spec-432.md.pp)))))
+(rule
  (alias spec-432)
  (action (diff spec-432.html spec-432.html.new)))
+(rule
+ (alias spec-432)
+ (action (diff spec-432.html spec-432.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-433.html.new (run ./omd.exe %{dep:spec-433.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-433.md.pp
+          (run ./omd_pp.exe print %{dep:spec-433.md}))
+          (with-stdout-to spec-433.html.pp.new
+          (run ./omd_pp.exe html spec-433.md.pp)))))
+(rule
  (alias spec-433)
  (action (diff spec-433.html spec-433.html.new)))
+(rule
+ (alias spec-433)
+ (action (diff spec-433.html spec-433.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-434.html.new (run ./omd.exe %{dep:spec-434.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-434.md.pp
+          (run ./omd_pp.exe print %{dep:spec-434.md}))
+          (with-stdout-to spec-434.html.pp.new
+          (run ./omd_pp.exe html spec-434.md.pp)))))
+(rule
  (alias spec-434)
  (action (diff spec-434.html spec-434.html.new)))
+(rule
+ (alias spec-434)
+ (action (diff spec-434.html spec-434.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-435.html.new (run ./omd.exe %{dep:spec-435.md}))))
@@ -3304,50 +6859,122 @@
  (action
   (with-stdout-to spec-436.html.new (run ./omd.exe %{dep:spec-436.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-436.md.pp
+          (run ./omd_pp.exe print %{dep:spec-436.md}))
+          (with-stdout-to spec-436.html.pp.new
+          (run ./omd_pp.exe html spec-436.md.pp)))))
+(rule
  (alias spec-436)
  (action (diff spec-436.html spec-436.html.new)))
+(rule
+ (alias spec-436)
+ (action (diff spec-436.html spec-436.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-437.html.new (run ./omd.exe %{dep:spec-437.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-437.md.pp
+          (run ./omd_pp.exe print %{dep:spec-437.md}))
+          (with-stdout-to spec-437.html.pp.new
+          (run ./omd_pp.exe html spec-437.md.pp)))))
+(rule
  (alias spec-437)
  (action (diff spec-437.html spec-437.html.new)))
+(rule
+ (alias spec-437)
+ (action (diff spec-437.html spec-437.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-438.html.new (run ./omd.exe %{dep:spec-438.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-438.md.pp
+          (run ./omd_pp.exe print %{dep:spec-438.md}))
+          (with-stdout-to spec-438.html.pp.new
+          (run ./omd_pp.exe html spec-438.md.pp)))))
+(rule
  (alias spec-438)
  (action (diff spec-438.html spec-438.html.new)))
+(rule
+ (alias spec-438)
+ (action (diff spec-438.html spec-438.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-439.html.new (run ./omd.exe %{dep:spec-439.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-439.md.pp
+          (run ./omd_pp.exe print %{dep:spec-439.md}))
+          (with-stdout-to spec-439.html.pp.new
+          (run ./omd_pp.exe html spec-439.md.pp)))))
+(rule
  (alias spec-439)
  (action (diff spec-439.html spec-439.html.new)))
+(rule
+ (alias spec-439)
+ (action (diff spec-439.html spec-439.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-440.html.new (run ./omd.exe %{dep:spec-440.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-440.md.pp
+          (run ./omd_pp.exe print %{dep:spec-440.md}))
+          (with-stdout-to spec-440.html.pp.new
+          (run ./omd_pp.exe html spec-440.md.pp)))))
+(rule
  (alias spec-440)
  (action (diff spec-440.html spec-440.html.new)))
+(rule
+ (alias spec-440)
+ (action (diff spec-440.html spec-440.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-441.html.new (run ./omd.exe %{dep:spec-441.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-441.md.pp
+          (run ./omd_pp.exe print %{dep:spec-441.md}))
+          (with-stdout-to spec-441.html.pp.new
+          (run ./omd_pp.exe html spec-441.md.pp)))))
+(rule
  (alias spec-441)
  (action (diff spec-441.html spec-441.html.new)))
+(rule
+ (alias spec-441)
+ (action (diff spec-441.html spec-441.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-442.html.new (run ./omd.exe %{dep:spec-442.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-442.md.pp
+          (run ./omd_pp.exe print %{dep:spec-442.md}))
+          (with-stdout-to spec-442.html.pp.new
+          (run ./omd_pp.exe html spec-442.md.pp)))))
+(rule
  (alias spec-442)
  (action (diff spec-442.html spec-442.html.new)))
+(rule
+ (alias spec-442)
+ (action (diff spec-442.html spec-442.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-443.html.new (run ./omd.exe %{dep:spec-443.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-443.md.pp
+          (run ./omd_pp.exe print %{dep:spec-443.md}))
+          (with-stdout-to spec-443.html.pp.new
+          (run ./omd_pp.exe html spec-443.md.pp)))))
+(rule
  (alias spec-443)
  (action (diff spec-443.html spec-443.html.new)))
+(rule
+ (alias spec-443)
+ (action (diff spec-443.html spec-443.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-444.html.new (run ./omd.exe %{dep:spec-444.md}))))
@@ -3358,8 +6985,17 @@
  (action
   (with-stdout-to spec-445.html.new (run ./omd.exe %{dep:spec-445.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-445.md.pp
+          (run ./omd_pp.exe print %{dep:spec-445.md}))
+          (with-stdout-to spec-445.html.pp.new
+          (run ./omd_pp.exe html spec-445.md.pp)))))
+(rule
  (alias spec-445)
  (action (diff spec-445.html spec-445.html.new)))
+(rule
+ (alias spec-445)
+ (action (diff spec-445.html spec-445.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-446.html.new (run ./omd.exe %{dep:spec-446.md}))))
@@ -3376,50 +7012,122 @@
  (action
   (with-stdout-to spec-448.html.new (run ./omd.exe %{dep:spec-448.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-448.md.pp
+          (run ./omd_pp.exe print %{dep:spec-448.md}))
+          (with-stdout-to spec-448.html.pp.new
+          (run ./omd_pp.exe html spec-448.md.pp)))))
+(rule
  (alias spec-448)
  (action (diff spec-448.html spec-448.html.new)))
+(rule
+ (alias spec-448)
+ (action (diff spec-448.html spec-448.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-449.html.new (run ./omd.exe %{dep:spec-449.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-449.md.pp
+          (run ./omd_pp.exe print %{dep:spec-449.md}))
+          (with-stdout-to spec-449.html.pp.new
+          (run ./omd_pp.exe html spec-449.md.pp)))))
+(rule
  (alias spec-449)
  (action (diff spec-449.html spec-449.html.new)))
+(rule
+ (alias spec-449)
+ (action (diff spec-449.html spec-449.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-450.html.new (run ./omd.exe %{dep:spec-450.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-450.md.pp
+          (run ./omd_pp.exe print %{dep:spec-450.md}))
+          (with-stdout-to spec-450.html.pp.new
+          (run ./omd_pp.exe html spec-450.md.pp)))))
+(rule
  (alias spec-450)
  (action (diff spec-450.html spec-450.html.new)))
+(rule
+ (alias spec-450)
+ (action (diff spec-450.html spec-450.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-451.html.new (run ./omd.exe %{dep:spec-451.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-451.md.pp
+          (run ./omd_pp.exe print %{dep:spec-451.md}))
+          (with-stdout-to spec-451.html.pp.new
+          (run ./omd_pp.exe html spec-451.md.pp)))))
+(rule
  (alias spec-451)
  (action (diff spec-451.html spec-451.html.new)))
+(rule
+ (alias spec-451)
+ (action (diff spec-451.html spec-451.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-452.html.new (run ./omd.exe %{dep:spec-452.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-452.md.pp
+          (run ./omd_pp.exe print %{dep:spec-452.md}))
+          (with-stdout-to spec-452.html.pp.new
+          (run ./omd_pp.exe html spec-452.md.pp)))))
+(rule
  (alias spec-452)
  (action (diff spec-452.html spec-452.html.new)))
+(rule
+ (alias spec-452)
+ (action (diff spec-452.html spec-452.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-453.html.new (run ./omd.exe %{dep:spec-453.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-453.md.pp
+          (run ./omd_pp.exe print %{dep:spec-453.md}))
+          (with-stdout-to spec-453.html.pp.new
+          (run ./omd_pp.exe html spec-453.md.pp)))))
+(rule
  (alias spec-453)
  (action (diff spec-453.html spec-453.html.new)))
+(rule
+ (alias spec-453)
+ (action (diff spec-453.html spec-453.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-454.html.new (run ./omd.exe %{dep:spec-454.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-454.md.pp
+          (run ./omd_pp.exe print %{dep:spec-454.md}))
+          (with-stdout-to spec-454.html.pp.new
+          (run ./omd_pp.exe html spec-454.md.pp)))))
+(rule
  (alias spec-454)
  (action (diff spec-454.html spec-454.html.new)))
+(rule
+ (alias spec-454)
+ (action (diff spec-454.html spec-454.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-455.html.new (run ./omd.exe %{dep:spec-455.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-455.md.pp
+          (run ./omd_pp.exe print %{dep:spec-455.md}))
+          (with-stdout-to spec-455.html.pp.new
+          (run ./omd_pp.exe html spec-455.md.pp)))))
+(rule
  (alias spec-455)
  (action (diff spec-455.html spec-455.html.new)))
+(rule
+ (alias spec-455)
+ (action (diff spec-455.html spec-455.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-456.html.new (run ./omd.exe %{dep:spec-456.md}))))
@@ -3430,8 +7138,17 @@
  (action
   (with-stdout-to spec-457.html.new (run ./omd.exe %{dep:spec-457.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-457.md.pp
+          (run ./omd_pp.exe print %{dep:spec-457.md}))
+          (with-stdout-to spec-457.html.pp.new
+          (run ./omd_pp.exe html spec-457.md.pp)))))
+(rule
  (alias spec-457)
  (action (diff spec-457.html spec-457.html.new)))
+(rule
+ (alias spec-457)
+ (action (diff spec-457.html spec-457.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-458.html.new (run ./omd.exe %{dep:spec-458.md}))))
@@ -3442,176 +7159,437 @@
  (action
   (with-stdout-to spec-459.html.new (run ./omd.exe %{dep:spec-459.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-459.md.pp
+          (run ./omd_pp.exe print %{dep:spec-459.md}))
+          (with-stdout-to spec-459.html.pp.new
+          (run ./omd_pp.exe html spec-459.md.pp)))))
+(rule
  (alias spec-459)
  (action (diff spec-459.html spec-459.html.new)))
+(rule
+ (alias spec-459)
+ (action (diff spec-459.html spec-459.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-460.html.new (run ./omd.exe %{dep:spec-460.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-460.md.pp
+          (run ./omd_pp.exe print %{dep:spec-460.md}))
+          (with-stdout-to spec-460.html.pp.new
+          (run ./omd_pp.exe html spec-460.md.pp)))))
+(rule
  (alias spec-460)
  (action (diff spec-460.html spec-460.html.new)))
+(rule
+ (alias spec-460)
+ (action (diff spec-460.html spec-460.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-461.html.new (run ./omd.exe %{dep:spec-461.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-461.md.pp
+          (run ./omd_pp.exe print %{dep:spec-461.md}))
+          (with-stdout-to spec-461.html.pp.new
+          (run ./omd_pp.exe html spec-461.md.pp)))))
+(rule
  (alias spec-461)
  (action (diff spec-461.html spec-461.html.new)))
+(rule
+ (alias spec-461)
+ (action (diff spec-461.html spec-461.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-462.html.new (run ./omd.exe %{dep:spec-462.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-462.md.pp
+          (run ./omd_pp.exe print %{dep:spec-462.md}))
+          (with-stdout-to spec-462.html.pp.new
+          (run ./omd_pp.exe html spec-462.md.pp)))))
+(rule
  (alias spec-462)
  (action (diff spec-462.html spec-462.html.new)))
+(rule
+ (alias spec-462)
+ (action (diff spec-462.html spec-462.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-463.html.new (run ./omd.exe %{dep:spec-463.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-463.md.pp
+          (run ./omd_pp.exe print %{dep:spec-463.md}))
+          (with-stdout-to spec-463.html.pp.new
+          (run ./omd_pp.exe html spec-463.md.pp)))))
+(rule
  (alias spec-463)
  (action (diff spec-463.html spec-463.html.new)))
+(rule
+ (alias spec-463)
+ (action (diff spec-463.html spec-463.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-464.html.new (run ./omd.exe %{dep:spec-464.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-464.md.pp
+          (run ./omd_pp.exe print %{dep:spec-464.md}))
+          (with-stdout-to spec-464.html.pp.new
+          (run ./omd_pp.exe html spec-464.md.pp)))))
+(rule
  (alias spec-464)
  (action (diff spec-464.html spec-464.html.new)))
+(rule
+ (alias spec-464)
+ (action (diff spec-464.html spec-464.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-465.html.new (run ./omd.exe %{dep:spec-465.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-465.md.pp
+          (run ./omd_pp.exe print %{dep:spec-465.md}))
+          (with-stdout-to spec-465.html.pp.new
+          (run ./omd_pp.exe html spec-465.md.pp)))))
+(rule
  (alias spec-465)
  (action (diff spec-465.html spec-465.html.new)))
+(rule
+ (alias spec-465)
+ (action (diff spec-465.html spec-465.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-466.html.new (run ./omd.exe %{dep:spec-466.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-466.md.pp
+          (run ./omd_pp.exe print %{dep:spec-466.md}))
+          (with-stdout-to spec-466.html.pp.new
+          (run ./omd_pp.exe html spec-466.md.pp)))))
+(rule
  (alias spec-466)
  (action (diff spec-466.html spec-466.html.new)))
+(rule
+ (alias spec-466)
+ (action (diff spec-466.html spec-466.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-467.html.new (run ./omd.exe %{dep:spec-467.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-467.md.pp
+          (run ./omd_pp.exe print %{dep:spec-467.md}))
+          (with-stdout-to spec-467.html.pp.new
+          (run ./omd_pp.exe html spec-467.md.pp)))))
+(rule
  (alias spec-467)
  (action (diff spec-467.html spec-467.html.new)))
+(rule
+ (alias spec-467)
+ (action (diff spec-467.html spec-467.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-468.html.new (run ./omd.exe %{dep:spec-468.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-468.md.pp
+          (run ./omd_pp.exe print %{dep:spec-468.md}))
+          (with-stdout-to spec-468.html.pp.new
+          (run ./omd_pp.exe html spec-468.md.pp)))))
+(rule
  (alias spec-468)
  (action (diff spec-468.html spec-468.html.new)))
+(rule
+ (alias spec-468)
+ (action (diff spec-468.html spec-468.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-469.html.new (run ./omd.exe %{dep:spec-469.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-469.md.pp
+          (run ./omd_pp.exe print %{dep:spec-469.md}))
+          (with-stdout-to spec-469.html.pp.new
+          (run ./omd_pp.exe html spec-469.md.pp)))))
+(rule
  (alias spec-469)
  (action (diff spec-469.html spec-469.html.new)))
+(rule
+ (alias spec-469)
+ (action (diff spec-469.html spec-469.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-470.html.new (run ./omd.exe %{dep:spec-470.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-470.md.pp
+          (run ./omd_pp.exe print %{dep:spec-470.md}))
+          (with-stdout-to spec-470.html.pp.new
+          (run ./omd_pp.exe html spec-470.md.pp)))))
+(rule
  (alias spec-470)
  (action (diff spec-470.html spec-470.html.new)))
+(rule
+ (alias spec-470)
+ (action (diff spec-470.html spec-470.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-471.html.new (run ./omd.exe %{dep:spec-471.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-471.md.pp
+          (run ./omd_pp.exe print %{dep:spec-471.md}))
+          (with-stdout-to spec-471.html.pp.new
+          (run ./omd_pp.exe html spec-471.md.pp)))))
+(rule
  (alias spec-471)
  (action (diff spec-471.html spec-471.html.new)))
+(rule
+ (alias spec-471)
+ (action (diff spec-471.html spec-471.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-472.html.new (run ./omd.exe %{dep:spec-472.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-472.md.pp
+          (run ./omd_pp.exe print %{dep:spec-472.md}))
+          (with-stdout-to spec-472.html.pp.new
+          (run ./omd_pp.exe html spec-472.md.pp)))))
+(rule
  (alias spec-472)
  (action (diff spec-472.html spec-472.html.new)))
+(rule
+ (alias spec-472)
+ (action (diff spec-472.html spec-472.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-473.html.new (run ./omd.exe %{dep:spec-473.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-473.md.pp
+          (run ./omd_pp.exe print %{dep:spec-473.md}))
+          (with-stdout-to spec-473.html.pp.new
+          (run ./omd_pp.exe html spec-473.md.pp)))))
+(rule
  (alias spec-473)
  (action (diff spec-473.html spec-473.html.new)))
+(rule
+ (alias spec-473)
+ (action (diff spec-473.html spec-473.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-474.html.new (run ./omd.exe %{dep:spec-474.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-474.md.pp
+          (run ./omd_pp.exe print %{dep:spec-474.md}))
+          (with-stdout-to spec-474.html.pp.new
+          (run ./omd_pp.exe html spec-474.md.pp)))))
+(rule
  (alias spec-474)
  (action (diff spec-474.html spec-474.html.new)))
+(rule
+ (alias spec-474)
+ (action (diff spec-474.html spec-474.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-475.html.new (run ./omd.exe %{dep:spec-475.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-475.md.pp
+          (run ./omd_pp.exe print %{dep:spec-475.md}))
+          (with-stdout-to spec-475.html.pp.new
+          (run ./omd_pp.exe html spec-475.md.pp)))))
+(rule
  (alias spec-475)
  (action (diff spec-475.html spec-475.html.new)))
+(rule
+ (alias spec-475)
+ (action (diff spec-475.html spec-475.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-476.html.new (run ./omd.exe %{dep:spec-476.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-476.md.pp
+          (run ./omd_pp.exe print %{dep:spec-476.md}))
+          (with-stdout-to spec-476.html.pp.new
+          (run ./omd_pp.exe html spec-476.md.pp)))))
+(rule
  (alias spec-476)
  (action (diff spec-476.html spec-476.html.new)))
+(rule
+ (alias spec-476)
+ (action (diff spec-476.html spec-476.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-477.html.new (run ./omd.exe %{dep:spec-477.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-477.md.pp
+          (run ./omd_pp.exe print %{dep:spec-477.md}))
+          (with-stdout-to spec-477.html.pp.new
+          (run ./omd_pp.exe html spec-477.md.pp)))))
+(rule
  (alias spec-477)
  (action (diff spec-477.html spec-477.html.new)))
+(rule
+ (alias spec-477)
+ (action (diff spec-477.html spec-477.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-478.html.new (run ./omd.exe %{dep:spec-478.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-478.md.pp
+          (run ./omd_pp.exe print %{dep:spec-478.md}))
+          (with-stdout-to spec-478.html.pp.new
+          (run ./omd_pp.exe html spec-478.md.pp)))))
+(rule
  (alias spec-478)
  (action (diff spec-478.html spec-478.html.new)))
+(rule
+ (alias spec-478)
+ (action (diff spec-478.html spec-478.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-479.html.new (run ./omd.exe %{dep:spec-479.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-479.md.pp
+          (run ./omd_pp.exe print %{dep:spec-479.md}))
+          (with-stdout-to spec-479.html.pp.new
+          (run ./omd_pp.exe html spec-479.md.pp)))))
+(rule
  (alias spec-479)
  (action (diff spec-479.html spec-479.html.new)))
+(rule
+ (alias spec-479)
+ (action (diff spec-479.html spec-479.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-480.html.new (run ./omd.exe %{dep:spec-480.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-480.md.pp
+          (run ./omd_pp.exe print %{dep:spec-480.md}))
+          (with-stdout-to spec-480.html.pp.new
+          (run ./omd_pp.exe html spec-480.md.pp)))))
+(rule
  (alias spec-480)
  (action (diff spec-480.html spec-480.html.new)))
+(rule
+ (alias spec-480)
+ (action (diff spec-480.html spec-480.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-481.html.new (run ./omd.exe %{dep:spec-481.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-481.md.pp
+          (run ./omd_pp.exe print %{dep:spec-481.md}))
+          (with-stdout-to spec-481.html.pp.new
+          (run ./omd_pp.exe html spec-481.md.pp)))))
+(rule
  (alias spec-481)
  (action (diff spec-481.html spec-481.html.new)))
+(rule
+ (alias spec-481)
+ (action (diff spec-481.html spec-481.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-482.html.new (run ./omd.exe %{dep:spec-482.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-482.md.pp
+          (run ./omd_pp.exe print %{dep:spec-482.md}))
+          (with-stdout-to spec-482.html.pp.new
+          (run ./omd_pp.exe html spec-482.md.pp)))))
+(rule
  (alias spec-482)
  (action (diff spec-482.html spec-482.html.new)))
+(rule
+ (alias spec-482)
+ (action (diff spec-482.html spec-482.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-483.html.new (run ./omd.exe %{dep:spec-483.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-483.md.pp
+          (run ./omd_pp.exe print %{dep:spec-483.md}))
+          (with-stdout-to spec-483.html.pp.new
+          (run ./omd_pp.exe html spec-483.md.pp)))))
+(rule
  (alias spec-483)
  (action (diff spec-483.html spec-483.html.new)))
+(rule
+ (alias spec-483)
+ (action (diff spec-483.html spec-483.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-484.html.new (run ./omd.exe %{dep:spec-484.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-484.md.pp
+          (run ./omd_pp.exe print %{dep:spec-484.md}))
+          (with-stdout-to spec-484.html.pp.new
+          (run ./omd_pp.exe html spec-484.md.pp)))))
+(rule
  (alias spec-484)
  (action (diff spec-484.html spec-484.html.new)))
+(rule
+ (alias spec-484)
+ (action (diff spec-484.html spec-484.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-485.html.new (run ./omd.exe %{dep:spec-485.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-485.md.pp
+          (run ./omd_pp.exe print %{dep:spec-485.md}))
+          (with-stdout-to spec-485.html.pp.new
+          (run ./omd_pp.exe html spec-485.md.pp)))))
+(rule
  (alias spec-485)
  (action (diff spec-485.html spec-485.html.new)))
+(rule
+ (alias spec-485)
+ (action (diff spec-485.html spec-485.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-486.html.new (run ./omd.exe %{dep:spec-486.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-486.md.pp
+          (run ./omd_pp.exe print %{dep:spec-486.md}))
+          (with-stdout-to spec-486.html.pp.new
+          (run ./omd_pp.exe html spec-486.md.pp)))))
+(rule
  (alias spec-486)
  (action (diff spec-486.html spec-486.html.new)))
+(rule
+ (alias spec-486)
+ (action (diff spec-486.html spec-486.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-487.html.new (run ./omd.exe %{dep:spec-487.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-487.md.pp
+          (run ./omd_pp.exe print %{dep:spec-487.md}))
+          (with-stdout-to spec-487.html.pp.new
+          (run ./omd_pp.exe html spec-487.md.pp)))))
+(rule
  (alias spec-487)
  (action (diff spec-487.html spec-487.html.new)))
+(rule
+ (alias spec-487)
+ (action (diff spec-487.html spec-487.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-488.html.new (run ./omd.exe %{dep:spec-488.md}))))
@@ -3622,98 +7600,242 @@
  (action
   (with-stdout-to spec-489.html.new (run ./omd.exe %{dep:spec-489.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-489.md.pp
+          (run ./omd_pp.exe print %{dep:spec-489.md}))
+          (with-stdout-to spec-489.html.pp.new
+          (run ./omd_pp.exe html spec-489.md.pp)))))
+(rule
  (alias spec-489)
  (action (diff spec-489.html spec-489.html.new)))
+(rule
+ (alias spec-489)
+ (action (diff spec-489.html spec-489.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-490.html.new (run ./omd.exe %{dep:spec-490.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-490.md.pp
+          (run ./omd_pp.exe print %{dep:spec-490.md}))
+          (with-stdout-to spec-490.html.pp.new
+          (run ./omd_pp.exe html spec-490.md.pp)))))
+(rule
  (alias spec-490)
  (action (diff spec-490.html spec-490.html.new)))
+(rule
+ (alias spec-490)
+ (action (diff spec-490.html spec-490.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-491.html.new (run ./omd.exe %{dep:spec-491.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-491.md.pp
+          (run ./omd_pp.exe print %{dep:spec-491.md}))
+          (with-stdout-to spec-491.html.pp.new
+          (run ./omd_pp.exe html spec-491.md.pp)))))
+(rule
  (alias spec-491)
  (action (diff spec-491.html spec-491.html.new)))
+(rule
+ (alias spec-491)
+ (action (diff spec-491.html spec-491.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-492.html.new (run ./omd.exe %{dep:spec-492.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-492.md.pp
+          (run ./omd_pp.exe print %{dep:spec-492.md}))
+          (with-stdout-to spec-492.html.pp.new
+          (run ./omd_pp.exe html spec-492.md.pp)))))
+(rule
  (alias spec-492)
  (action (diff spec-492.html spec-492.html.new)))
+(rule
+ (alias spec-492)
+ (action (diff spec-492.html spec-492.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-493.html.new (run ./omd.exe %{dep:spec-493.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-493.md.pp
+          (run ./omd_pp.exe print %{dep:spec-493.md}))
+          (with-stdout-to spec-493.html.pp.new
+          (run ./omd_pp.exe html spec-493.md.pp)))))
+(rule
  (alias spec-493)
  (action (diff spec-493.html spec-493.html.new)))
+(rule
+ (alias spec-493)
+ (action (diff spec-493.html spec-493.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-494.html.new (run ./omd.exe %{dep:spec-494.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-494.md.pp
+          (run ./omd_pp.exe print %{dep:spec-494.md}))
+          (with-stdout-to spec-494.html.pp.new
+          (run ./omd_pp.exe html spec-494.md.pp)))))
+(rule
  (alias spec-494)
  (action (diff spec-494.html spec-494.html.new)))
+(rule
+ (alias spec-494)
+ (action (diff spec-494.html spec-494.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-495.html.new (run ./omd.exe %{dep:spec-495.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-495.md.pp
+          (run ./omd_pp.exe print %{dep:spec-495.md}))
+          (with-stdout-to spec-495.html.pp.new
+          (run ./omd_pp.exe html spec-495.md.pp)))))
+(rule
  (alias spec-495)
  (action (diff spec-495.html spec-495.html.new)))
+(rule
+ (alias spec-495)
+ (action (diff spec-495.html spec-495.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-496.html.new (run ./omd.exe %{dep:spec-496.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-496.md.pp
+          (run ./omd_pp.exe print %{dep:spec-496.md}))
+          (with-stdout-to spec-496.html.pp.new
+          (run ./omd_pp.exe html spec-496.md.pp)))))
+(rule
  (alias spec-496)
  (action (diff spec-496.html spec-496.html.new)))
+(rule
+ (alias spec-496)
+ (action (diff spec-496.html spec-496.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-497.html.new (run ./omd.exe %{dep:spec-497.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-497.md.pp
+          (run ./omd_pp.exe print %{dep:spec-497.md}))
+          (with-stdout-to spec-497.html.pp.new
+          (run ./omd_pp.exe html spec-497.md.pp)))))
+(rule
  (alias spec-497)
  (action (diff spec-497.html spec-497.html.new)))
+(rule
+ (alias spec-497)
+ (action (diff spec-497.html spec-497.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-498.html.new (run ./omd.exe %{dep:spec-498.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-498.md.pp
+          (run ./omd_pp.exe print %{dep:spec-498.md}))
+          (with-stdout-to spec-498.html.pp.new
+          (run ./omd_pp.exe html spec-498.md.pp)))))
+(rule
  (alias spec-498)
  (action (diff spec-498.html spec-498.html.new)))
+(rule
+ (alias spec-498)
+ (action (diff spec-498.html spec-498.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-499.html.new (run ./omd.exe %{dep:spec-499.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-499.md.pp
+          (run ./omd_pp.exe print %{dep:spec-499.md}))
+          (with-stdout-to spec-499.html.pp.new
+          (run ./omd_pp.exe html spec-499.md.pp)))))
+(rule
  (alias spec-499)
  (action (diff spec-499.html spec-499.html.new)))
+(rule
+ (alias spec-499)
+ (action (diff spec-499.html spec-499.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-500.html.new (run ./omd.exe %{dep:spec-500.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-500.md.pp
+          (run ./omd_pp.exe print %{dep:spec-500.md}))
+          (with-stdout-to spec-500.html.pp.new
+          (run ./omd_pp.exe html spec-500.md.pp)))))
+(rule
  (alias spec-500)
  (action (diff spec-500.html spec-500.html.new)))
+(rule
+ (alias spec-500)
+ (action (diff spec-500.html spec-500.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-501.html.new (run ./omd.exe %{dep:spec-501.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-501.md.pp
+          (run ./omd_pp.exe print %{dep:spec-501.md}))
+          (with-stdout-to spec-501.html.pp.new
+          (run ./omd_pp.exe html spec-501.md.pp)))))
+(rule
  (alias spec-501)
  (action (diff spec-501.html spec-501.html.new)))
+(rule
+ (alias spec-501)
+ (action (diff spec-501.html spec-501.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-502.html.new (run ./omd.exe %{dep:spec-502.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-502.md.pp
+          (run ./omd_pp.exe print %{dep:spec-502.md}))
+          (with-stdout-to spec-502.html.pp.new
+          (run ./omd_pp.exe html spec-502.md.pp)))))
+(rule
  (alias spec-502)
  (action (diff spec-502.html spec-502.html.new)))
+(rule
+ (alias spec-502)
+ (action (diff spec-502.html spec-502.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-503.html.new (run ./omd.exe %{dep:spec-503.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-503.md.pp
+          (run ./omd_pp.exe print %{dep:spec-503.md}))
+          (with-stdout-to spec-503.html.pp.new
+          (run ./omd_pp.exe html spec-503.md.pp)))))
+(rule
  (alias spec-503)
  (action (diff spec-503.html spec-503.html.new)))
+(rule
+ (alias spec-503)
+ (action (diff spec-503.html spec-503.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-504.html.new (run ./omd.exe %{dep:spec-504.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-504.md.pp
+          (run ./omd_pp.exe print %{dep:spec-504.md}))
+          (with-stdout-to spec-504.html.pp.new
+          (run ./omd_pp.exe html spec-504.md.pp)))))
+(rule
  (alias spec-504)
  (action (diff spec-504.html spec-504.html.new)))
+(rule
+ (alias spec-504)
+ (action (diff spec-504.html spec-504.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-505.html.new (run ./omd.exe %{dep:spec-505.md}))))
@@ -3724,14 +7846,32 @@
  (action
   (with-stdout-to spec-506.html.new (run ./omd.exe %{dep:spec-506.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-506.md.pp
+          (run ./omd_pp.exe print %{dep:spec-506.md}))
+          (with-stdout-to spec-506.html.pp.new
+          (run ./omd_pp.exe html spec-506.md.pp)))))
+(rule
  (alias spec-506)
  (action (diff spec-506.html spec-506.html.new)))
+(rule
+ (alias spec-506)
+ (action (diff spec-506.html spec-506.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-507.html.new (run ./omd.exe %{dep:spec-507.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-507.md.pp
+          (run ./omd_pp.exe print %{dep:spec-507.md}))
+          (with-stdout-to spec-507.html.pp.new
+          (run ./omd_pp.exe html spec-507.md.pp)))))
+(rule
  (alias spec-507)
  (action (diff spec-507.html spec-507.html.new)))
+(rule
+ (alias spec-507)
+ (action (diff spec-507.html spec-507.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-508.html.new (run ./omd.exe %{dep:spec-508.md}))))
@@ -3742,134 +7882,332 @@
  (action
   (with-stdout-to spec-509.html.new (run ./omd.exe %{dep:spec-509.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-509.md.pp
+          (run ./omd_pp.exe print %{dep:spec-509.md}))
+          (with-stdout-to spec-509.html.pp.new
+          (run ./omd_pp.exe html spec-509.md.pp)))))
+(rule
  (alias spec-509)
  (action (diff spec-509.html spec-509.html.new)))
+(rule
+ (alias spec-509)
+ (action (diff spec-509.html spec-509.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-510.html.new (run ./omd.exe %{dep:spec-510.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-510.md.pp
+          (run ./omd_pp.exe print %{dep:spec-510.md}))
+          (with-stdout-to spec-510.html.pp.new
+          (run ./omd_pp.exe html spec-510.md.pp)))))
+(rule
  (alias spec-510)
  (action (diff spec-510.html spec-510.html.new)))
+(rule
+ (alias spec-510)
+ (action (diff spec-510.html spec-510.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-511.html.new (run ./omd.exe %{dep:spec-511.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-511.md.pp
+          (run ./omd_pp.exe print %{dep:spec-511.md}))
+          (with-stdout-to spec-511.html.pp.new
+          (run ./omd_pp.exe html spec-511.md.pp)))))
+(rule
  (alias spec-511)
  (action (diff spec-511.html spec-511.html.new)))
+(rule
+ (alias spec-511)
+ (action (diff spec-511.html spec-511.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-512.html.new (run ./omd.exe %{dep:spec-512.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-512.md.pp
+          (run ./omd_pp.exe print %{dep:spec-512.md}))
+          (with-stdout-to spec-512.html.pp.new
+          (run ./omd_pp.exe html spec-512.md.pp)))))
+(rule
  (alias spec-512)
  (action (diff spec-512.html spec-512.html.new)))
+(rule
+ (alias spec-512)
+ (action (diff spec-512.html spec-512.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-513.html.new (run ./omd.exe %{dep:spec-513.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-513.md.pp
+          (run ./omd_pp.exe print %{dep:spec-513.md}))
+          (with-stdout-to spec-513.html.pp.new
+          (run ./omd_pp.exe html spec-513.md.pp)))))
+(rule
  (alias spec-513)
  (action (diff spec-513.html spec-513.html.new)))
+(rule
+ (alias spec-513)
+ (action (diff spec-513.html spec-513.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-514.html.new (run ./omd.exe %{dep:spec-514.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-514.md.pp
+          (run ./omd_pp.exe print %{dep:spec-514.md}))
+          (with-stdout-to spec-514.html.pp.new
+          (run ./omd_pp.exe html spec-514.md.pp)))))
+(rule
  (alias spec-514)
  (action (diff spec-514.html spec-514.html.new)))
+(rule
+ (alias spec-514)
+ (action (diff spec-514.html spec-514.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-515.html.new (run ./omd.exe %{dep:spec-515.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-515.md.pp
+          (run ./omd_pp.exe print %{dep:spec-515.md}))
+          (with-stdout-to spec-515.html.pp.new
+          (run ./omd_pp.exe html spec-515.md.pp)))))
+(rule
  (alias spec-515)
  (action (diff spec-515.html spec-515.html.new)))
+(rule
+ (alias spec-515)
+ (action (diff spec-515.html spec-515.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-516.html.new (run ./omd.exe %{dep:spec-516.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-516.md.pp
+          (run ./omd_pp.exe print %{dep:spec-516.md}))
+          (with-stdout-to spec-516.html.pp.new
+          (run ./omd_pp.exe html spec-516.md.pp)))))
+(rule
  (alias spec-516)
  (action (diff spec-516.html spec-516.html.new)))
+(rule
+ (alias spec-516)
+ (action (diff spec-516.html spec-516.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-517.html.new (run ./omd.exe %{dep:spec-517.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-517.md.pp
+          (run ./omd_pp.exe print %{dep:spec-517.md}))
+          (with-stdout-to spec-517.html.pp.new
+          (run ./omd_pp.exe html spec-517.md.pp)))))
+(rule
  (alias spec-517)
  (action (diff spec-517.html spec-517.html.new)))
+(rule
+ (alias spec-517)
+ (action (diff spec-517.html spec-517.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-518.html.new (run ./omd.exe %{dep:spec-518.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-518.md.pp
+          (run ./omd_pp.exe print %{dep:spec-518.md}))
+          (with-stdout-to spec-518.html.pp.new
+          (run ./omd_pp.exe html spec-518.md.pp)))))
+(rule
  (alias spec-518)
  (action (diff spec-518.html spec-518.html.new)))
+(rule
+ (alias spec-518)
+ (action (diff spec-518.html spec-518.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-519.html.new (run ./omd.exe %{dep:spec-519.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-519.md.pp
+          (run ./omd_pp.exe print %{dep:spec-519.md}))
+          (with-stdout-to spec-519.html.pp.new
+          (run ./omd_pp.exe html spec-519.md.pp)))))
+(rule
  (alias spec-519)
  (action (diff spec-519.html spec-519.html.new)))
+(rule
+ (alias spec-519)
+ (action (diff spec-519.html spec-519.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-520.html.new (run ./omd.exe %{dep:spec-520.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-520.md.pp
+          (run ./omd_pp.exe print %{dep:spec-520.md}))
+          (with-stdout-to spec-520.html.pp.new
+          (run ./omd_pp.exe html spec-520.md.pp)))))
+(rule
  (alias spec-520)
  (action (diff spec-520.html spec-520.html.new)))
+(rule
+ (alias spec-520)
+ (action (diff spec-520.html spec-520.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-521.html.new (run ./omd.exe %{dep:spec-521.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-521.md.pp
+          (run ./omd_pp.exe print %{dep:spec-521.md}))
+          (with-stdout-to spec-521.html.pp.new
+          (run ./omd_pp.exe html spec-521.md.pp)))))
+(rule
  (alias spec-521)
  (action (diff spec-521.html spec-521.html.new)))
+(rule
+ (alias spec-521)
+ (action (diff spec-521.html spec-521.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-522.html.new (run ./omd.exe %{dep:spec-522.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-522.md.pp
+          (run ./omd_pp.exe print %{dep:spec-522.md}))
+          (with-stdout-to spec-522.html.pp.new
+          (run ./omd_pp.exe html spec-522.md.pp)))))
+(rule
  (alias spec-522)
  (action (diff spec-522.html spec-522.html.new)))
+(rule
+ (alias spec-522)
+ (action (diff spec-522.html spec-522.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-523.html.new (run ./omd.exe %{dep:spec-523.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-523.md.pp
+          (run ./omd_pp.exe print %{dep:spec-523.md}))
+          (with-stdout-to spec-523.html.pp.new
+          (run ./omd_pp.exe html spec-523.md.pp)))))
+(rule
  (alias spec-523)
  (action (diff spec-523.html spec-523.html.new)))
+(rule
+ (alias spec-523)
+ (action (diff spec-523.html spec-523.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-524.html.new (run ./omd.exe %{dep:spec-524.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-524.md.pp
+          (run ./omd_pp.exe print %{dep:spec-524.md}))
+          (with-stdout-to spec-524.html.pp.new
+          (run ./omd_pp.exe html spec-524.md.pp)))))
+(rule
  (alias spec-524)
  (action (diff spec-524.html spec-524.html.new)))
+(rule
+ (alias spec-524)
+ (action (diff spec-524.html spec-524.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-525.html.new (run ./omd.exe %{dep:spec-525.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-525.md.pp
+          (run ./omd_pp.exe print %{dep:spec-525.md}))
+          (with-stdout-to spec-525.html.pp.new
+          (run ./omd_pp.exe html spec-525.md.pp)))))
+(rule
  (alias spec-525)
  (action (diff spec-525.html spec-525.html.new)))
+(rule
+ (alias spec-525)
+ (action (diff spec-525.html spec-525.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-526.html.new (run ./omd.exe %{dep:spec-526.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-526.md.pp
+          (run ./omd_pp.exe print %{dep:spec-526.md}))
+          (with-stdout-to spec-526.html.pp.new
+          (run ./omd_pp.exe html spec-526.md.pp)))))
+(rule
  (alias spec-526)
  (action (diff spec-526.html spec-526.html.new)))
+(rule
+ (alias spec-526)
+ (action (diff spec-526.html spec-526.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-527.html.new (run ./omd.exe %{dep:spec-527.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-527.md.pp
+          (run ./omd_pp.exe print %{dep:spec-527.md}))
+          (with-stdout-to spec-527.html.pp.new
+          (run ./omd_pp.exe html spec-527.md.pp)))))
+(rule
  (alias spec-527)
  (action (diff spec-527.html spec-527.html.new)))
+(rule
+ (alias spec-527)
+ (action (diff spec-527.html spec-527.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-528.html.new (run ./omd.exe %{dep:spec-528.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-528.md.pp
+          (run ./omd_pp.exe print %{dep:spec-528.md}))
+          (with-stdout-to spec-528.html.pp.new
+          (run ./omd_pp.exe html spec-528.md.pp)))))
+(rule
  (alias spec-528)
  (action (diff spec-528.html spec-528.html.new)))
+(rule
+ (alias spec-528)
+ (action (diff spec-528.html spec-528.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-529.html.new (run ./omd.exe %{dep:spec-529.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-529.md.pp
+          (run ./omd_pp.exe print %{dep:spec-529.md}))
+          (with-stdout-to spec-529.html.pp.new
+          (run ./omd_pp.exe html spec-529.md.pp)))))
+(rule
  (alias spec-529)
  (action (diff spec-529.html spec-529.html.new)))
+(rule
+ (alias spec-529)
+ (action (diff spec-529.html spec-529.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-530.html.new (run ./omd.exe %{dep:spec-530.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-530.md.pp
+          (run ./omd_pp.exe print %{dep:spec-530.md}))
+          (with-stdout-to spec-530.html.pp.new
+          (run ./omd_pp.exe html spec-530.md.pp)))))
+(rule
  (alias spec-530)
  (action (diff spec-530.html spec-530.html.new)))
+(rule
+ (alias spec-530)
+ (action (diff spec-530.html spec-530.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-531.html.new (run ./omd.exe %{dep:spec-531.md}))))
@@ -3886,722 +8224,1802 @@
  (action
   (with-stdout-to spec-533.html.new (run ./omd.exe %{dep:spec-533.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-533.md.pp
+          (run ./omd_pp.exe print %{dep:spec-533.md}))
+          (with-stdout-to spec-533.html.pp.new
+          (run ./omd_pp.exe html spec-533.md.pp)))))
+(rule
  (alias spec-533)
  (action (diff spec-533.html spec-533.html.new)))
+(rule
+ (alias spec-533)
+ (action (diff spec-533.html spec-533.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-534.html.new (run ./omd.exe %{dep:spec-534.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-534.md.pp
+          (run ./omd_pp.exe print %{dep:spec-534.md}))
+          (with-stdout-to spec-534.html.pp.new
+          (run ./omd_pp.exe html spec-534.md.pp)))))
+(rule
  (alias spec-534)
  (action (diff spec-534.html spec-534.html.new)))
+(rule
+ (alias spec-534)
+ (action (diff spec-534.html spec-534.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-535.html.new (run ./omd.exe %{dep:spec-535.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-535.md.pp
+          (run ./omd_pp.exe print %{dep:spec-535.md}))
+          (with-stdout-to spec-535.html.pp.new
+          (run ./omd_pp.exe html spec-535.md.pp)))))
+(rule
  (alias spec-535)
  (action (diff spec-535.html spec-535.html.new)))
+(rule
+ (alias spec-535)
+ (action (diff spec-535.html spec-535.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-536.html.new (run ./omd.exe %{dep:spec-536.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-536.md.pp
+          (run ./omd_pp.exe print %{dep:spec-536.md}))
+          (with-stdout-to spec-536.html.pp.new
+          (run ./omd_pp.exe html spec-536.md.pp)))))
+(rule
  (alias spec-536)
  (action (diff spec-536.html spec-536.html.new)))
+(rule
+ (alias spec-536)
+ (action (diff spec-536.html spec-536.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-537.html.new (run ./omd.exe %{dep:spec-537.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-537.md.pp
+          (run ./omd_pp.exe print %{dep:spec-537.md}))
+          (with-stdout-to spec-537.html.pp.new
+          (run ./omd_pp.exe html spec-537.md.pp)))))
+(rule
  (alias spec-537)
  (action (diff spec-537.html spec-537.html.new)))
+(rule
+ (alias spec-537)
+ (action (diff spec-537.html spec-537.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-538.html.new (run ./omd.exe %{dep:spec-538.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-538.md.pp
+          (run ./omd_pp.exe print %{dep:spec-538.md}))
+          (with-stdout-to spec-538.html.pp.new
+          (run ./omd_pp.exe html spec-538.md.pp)))))
+(rule
  (alias spec-538)
  (action (diff spec-538.html spec-538.html.new)))
+(rule
+ (alias spec-538)
+ (action (diff spec-538.html spec-538.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-539.html.new (run ./omd.exe %{dep:spec-539.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-539.md.pp
+          (run ./omd_pp.exe print %{dep:spec-539.md}))
+          (with-stdout-to spec-539.html.pp.new
+          (run ./omd_pp.exe html spec-539.md.pp)))))
+(rule
  (alias spec-539)
  (action (diff spec-539.html spec-539.html.new)))
+(rule
+ (alias spec-539)
+ (action (diff spec-539.html spec-539.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-540.html.new (run ./omd.exe %{dep:spec-540.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-540.md.pp
+          (run ./omd_pp.exe print %{dep:spec-540.md}))
+          (with-stdout-to spec-540.html.pp.new
+          (run ./omd_pp.exe html spec-540.md.pp)))))
+(rule
  (alias spec-540)
  (action (diff spec-540.html spec-540.html.new)))
+(rule
+ (alias spec-540)
+ (action (diff spec-540.html spec-540.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-541.html.new (run ./omd.exe %{dep:spec-541.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-541.md.pp
+          (run ./omd_pp.exe print %{dep:spec-541.md}))
+          (with-stdout-to spec-541.html.pp.new
+          (run ./omd_pp.exe html spec-541.md.pp)))))
+(rule
  (alias spec-541)
  (action (diff spec-541.html spec-541.html.new)))
+(rule
+ (alias spec-541)
+ (action (diff spec-541.html spec-541.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-542.html.new (run ./omd.exe %{dep:spec-542.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-542.md.pp
+          (run ./omd_pp.exe print %{dep:spec-542.md}))
+          (with-stdout-to spec-542.html.pp.new
+          (run ./omd_pp.exe html spec-542.md.pp)))))
+(rule
  (alias spec-542)
  (action (diff spec-542.html spec-542.html.new)))
+(rule
+ (alias spec-542)
+ (action (diff spec-542.html spec-542.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-543.html.new (run ./omd.exe %{dep:spec-543.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-543.md.pp
+          (run ./omd_pp.exe print %{dep:spec-543.md}))
+          (with-stdout-to spec-543.html.pp.new
+          (run ./omd_pp.exe html spec-543.md.pp)))))
+(rule
  (alias spec-543)
  (action (diff spec-543.html spec-543.html.new)))
+(rule
+ (alias spec-543)
+ (action (diff spec-543.html spec-543.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-544.html.new (run ./omd.exe %{dep:spec-544.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-544.md.pp
+          (run ./omd_pp.exe print %{dep:spec-544.md}))
+          (with-stdout-to spec-544.html.pp.new
+          (run ./omd_pp.exe html spec-544.md.pp)))))
+(rule
  (alias spec-544)
  (action (diff spec-544.html spec-544.html.new)))
+(rule
+ (alias spec-544)
+ (action (diff spec-544.html spec-544.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-545.html.new (run ./omd.exe %{dep:spec-545.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-545.md.pp
+          (run ./omd_pp.exe print %{dep:spec-545.md}))
+          (with-stdout-to spec-545.html.pp.new
+          (run ./omd_pp.exe html spec-545.md.pp)))))
+(rule
  (alias spec-545)
  (action (diff spec-545.html spec-545.html.new)))
+(rule
+ (alias spec-545)
+ (action (diff spec-545.html spec-545.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-546.html.new (run ./omd.exe %{dep:spec-546.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-546.md.pp
+          (run ./omd_pp.exe print %{dep:spec-546.md}))
+          (with-stdout-to spec-546.html.pp.new
+          (run ./omd_pp.exe html spec-546.md.pp)))))
+(rule
  (alias spec-546)
  (action (diff spec-546.html spec-546.html.new)))
+(rule
+ (alias spec-546)
+ (action (diff spec-546.html spec-546.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-547.html.new (run ./omd.exe %{dep:spec-547.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-547.md.pp
+          (run ./omd_pp.exe print %{dep:spec-547.md}))
+          (with-stdout-to spec-547.html.pp.new
+          (run ./omd_pp.exe html spec-547.md.pp)))))
+(rule
  (alias spec-547)
  (action (diff spec-547.html spec-547.html.new)))
+(rule
+ (alias spec-547)
+ (action (diff spec-547.html spec-547.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-548.html.new (run ./omd.exe %{dep:spec-548.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-548.md.pp
+          (run ./omd_pp.exe print %{dep:spec-548.md}))
+          (with-stdout-to spec-548.html.pp.new
+          (run ./omd_pp.exe html spec-548.md.pp)))))
+(rule
  (alias spec-548)
  (action (diff spec-548.html spec-548.html.new)))
+(rule
+ (alias spec-548)
+ (action (diff spec-548.html spec-548.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-549.html.new (run ./omd.exe %{dep:spec-549.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-549.md.pp
+          (run ./omd_pp.exe print %{dep:spec-549.md}))
+          (with-stdout-to spec-549.html.pp.new
+          (run ./omd_pp.exe html spec-549.md.pp)))))
+(rule
  (alias spec-549)
  (action (diff spec-549.html spec-549.html.new)))
+(rule
+ (alias spec-549)
+ (action (diff spec-549.html spec-549.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-550.html.new (run ./omd.exe %{dep:spec-550.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-550.md.pp
+          (run ./omd_pp.exe print %{dep:spec-550.md}))
+          (with-stdout-to spec-550.html.pp.new
+          (run ./omd_pp.exe html spec-550.md.pp)))))
+(rule
  (alias spec-550)
  (action (diff spec-550.html spec-550.html.new)))
+(rule
+ (alias spec-550)
+ (action (diff spec-550.html spec-550.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-551.html.new (run ./omd.exe %{dep:spec-551.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-551.md.pp
+          (run ./omd_pp.exe print %{dep:spec-551.md}))
+          (with-stdout-to spec-551.html.pp.new
+          (run ./omd_pp.exe html spec-551.md.pp)))))
+(rule
  (alias spec-551)
  (action (diff spec-551.html spec-551.html.new)))
+(rule
+ (alias spec-551)
+ (action (diff spec-551.html spec-551.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-552.html.new (run ./omd.exe %{dep:spec-552.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-552.md.pp
+          (run ./omd_pp.exe print %{dep:spec-552.md}))
+          (with-stdout-to spec-552.html.pp.new
+          (run ./omd_pp.exe html spec-552.md.pp)))))
+(rule
  (alias spec-552)
  (action (diff spec-552.html spec-552.html.new)))
+(rule
+ (alias spec-552)
+ (action (diff spec-552.html spec-552.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-553.html.new (run ./omd.exe %{dep:spec-553.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-553.md.pp
+          (run ./omd_pp.exe print %{dep:spec-553.md}))
+          (with-stdout-to spec-553.html.pp.new
+          (run ./omd_pp.exe html spec-553.md.pp)))))
+(rule
  (alias spec-553)
  (action (diff spec-553.html spec-553.html.new)))
+(rule
+ (alias spec-553)
+ (action (diff spec-553.html spec-553.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-554.html.new (run ./omd.exe %{dep:spec-554.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-554.md.pp
+          (run ./omd_pp.exe print %{dep:spec-554.md}))
+          (with-stdout-to spec-554.html.pp.new
+          (run ./omd_pp.exe html spec-554.md.pp)))))
+(rule
  (alias spec-554)
  (action (diff spec-554.html spec-554.html.new)))
+(rule
+ (alias spec-554)
+ (action (diff spec-554.html spec-554.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-555.html.new (run ./omd.exe %{dep:spec-555.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-555.md.pp
+          (run ./omd_pp.exe print %{dep:spec-555.md}))
+          (with-stdout-to spec-555.html.pp.new
+          (run ./omd_pp.exe html spec-555.md.pp)))))
+(rule
  (alias spec-555)
  (action (diff spec-555.html spec-555.html.new)))
+(rule
+ (alias spec-555)
+ (action (diff spec-555.html spec-555.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-556.html.new (run ./omd.exe %{dep:spec-556.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-556.md.pp
+          (run ./omd_pp.exe print %{dep:spec-556.md}))
+          (with-stdout-to spec-556.html.pp.new
+          (run ./omd_pp.exe html spec-556.md.pp)))))
+(rule
  (alias spec-556)
  (action (diff spec-556.html spec-556.html.new)))
+(rule
+ (alias spec-556)
+ (action (diff spec-556.html spec-556.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-557.html.new (run ./omd.exe %{dep:spec-557.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-557.md.pp
+          (run ./omd_pp.exe print %{dep:spec-557.md}))
+          (with-stdout-to spec-557.html.pp.new
+          (run ./omd_pp.exe html spec-557.md.pp)))))
+(rule
  (alias spec-557)
  (action (diff spec-557.html spec-557.html.new)))
+(rule
+ (alias spec-557)
+ (action (diff spec-557.html spec-557.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-558.html.new (run ./omd.exe %{dep:spec-558.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-558.md.pp
+          (run ./omd_pp.exe print %{dep:spec-558.md}))
+          (with-stdout-to spec-558.html.pp.new
+          (run ./omd_pp.exe html spec-558.md.pp)))))
+(rule
  (alias spec-558)
  (action (diff spec-558.html spec-558.html.new)))
+(rule
+ (alias spec-558)
+ (action (diff spec-558.html spec-558.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-559.html.new (run ./omd.exe %{dep:spec-559.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-559.md.pp
+          (run ./omd_pp.exe print %{dep:spec-559.md}))
+          (with-stdout-to spec-559.html.pp.new
+          (run ./omd_pp.exe html spec-559.md.pp)))))
+(rule
  (alias spec-559)
  (action (diff spec-559.html spec-559.html.new)))
+(rule
+ (alias spec-559)
+ (action (diff spec-559.html spec-559.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-560.html.new (run ./omd.exe %{dep:spec-560.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-560.md.pp
+          (run ./omd_pp.exe print %{dep:spec-560.md}))
+          (with-stdout-to spec-560.html.pp.new
+          (run ./omd_pp.exe html spec-560.md.pp)))))
+(rule
  (alias spec-560)
  (action (diff spec-560.html spec-560.html.new)))
+(rule
+ (alias spec-560)
+ (action (diff spec-560.html spec-560.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-561.html.new (run ./omd.exe %{dep:spec-561.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-561.md.pp
+          (run ./omd_pp.exe print %{dep:spec-561.md}))
+          (with-stdout-to spec-561.html.pp.new
+          (run ./omd_pp.exe html spec-561.md.pp)))))
+(rule
  (alias spec-561)
  (action (diff spec-561.html spec-561.html.new)))
+(rule
+ (alias spec-561)
+ (action (diff spec-561.html spec-561.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-562.html.new (run ./omd.exe %{dep:spec-562.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-562.md.pp
+          (run ./omd_pp.exe print %{dep:spec-562.md}))
+          (with-stdout-to spec-562.html.pp.new
+          (run ./omd_pp.exe html spec-562.md.pp)))))
+(rule
  (alias spec-562)
  (action (diff spec-562.html spec-562.html.new)))
+(rule
+ (alias spec-562)
+ (action (diff spec-562.html spec-562.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-563.html.new (run ./omd.exe %{dep:spec-563.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-563.md.pp
+          (run ./omd_pp.exe print %{dep:spec-563.md}))
+          (with-stdout-to spec-563.html.pp.new
+          (run ./omd_pp.exe html spec-563.md.pp)))))
+(rule
  (alias spec-563)
  (action (diff spec-563.html spec-563.html.new)))
+(rule
+ (alias spec-563)
+ (action (diff spec-563.html spec-563.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-564.html.new (run ./omd.exe %{dep:spec-564.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-564.md.pp
+          (run ./omd_pp.exe print %{dep:spec-564.md}))
+          (with-stdout-to spec-564.html.pp.new
+          (run ./omd_pp.exe html spec-564.md.pp)))))
+(rule
  (alias spec-564)
  (action (diff spec-564.html spec-564.html.new)))
+(rule
+ (alias spec-564)
+ (action (diff spec-564.html spec-564.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-565.html.new (run ./omd.exe %{dep:spec-565.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-565.md.pp
+          (run ./omd_pp.exe print %{dep:spec-565.md}))
+          (with-stdout-to spec-565.html.pp.new
+          (run ./omd_pp.exe html spec-565.md.pp)))))
+(rule
  (alias spec-565)
  (action (diff spec-565.html spec-565.html.new)))
+(rule
+ (alias spec-565)
+ (action (diff spec-565.html spec-565.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-566.html.new (run ./omd.exe %{dep:spec-566.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-566.md.pp
+          (run ./omd_pp.exe print %{dep:spec-566.md}))
+          (with-stdout-to spec-566.html.pp.new
+          (run ./omd_pp.exe html spec-566.md.pp)))))
+(rule
  (alias spec-566)
  (action (diff spec-566.html spec-566.html.new)))
+(rule
+ (alias spec-566)
+ (action (diff spec-566.html spec-566.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-567.html.new (run ./omd.exe %{dep:spec-567.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-567.md.pp
+          (run ./omd_pp.exe print %{dep:spec-567.md}))
+          (with-stdout-to spec-567.html.pp.new
+          (run ./omd_pp.exe html spec-567.md.pp)))))
+(rule
  (alias spec-567)
  (action (diff spec-567.html spec-567.html.new)))
+(rule
+ (alias spec-567)
+ (action (diff spec-567.html spec-567.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-568.html.new (run ./omd.exe %{dep:spec-568.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-568.md.pp
+          (run ./omd_pp.exe print %{dep:spec-568.md}))
+          (with-stdout-to spec-568.html.pp.new
+          (run ./omd_pp.exe html spec-568.md.pp)))))
+(rule
  (alias spec-568)
  (action (diff spec-568.html spec-568.html.new)))
+(rule
+ (alias spec-568)
+ (action (diff spec-568.html spec-568.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-569.html.new (run ./omd.exe %{dep:spec-569.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-569.md.pp
+          (run ./omd_pp.exe print %{dep:spec-569.md}))
+          (with-stdout-to spec-569.html.pp.new
+          (run ./omd_pp.exe html spec-569.md.pp)))))
+(rule
  (alias spec-569)
  (action (diff spec-569.html spec-569.html.new)))
+(rule
+ (alias spec-569)
+ (action (diff spec-569.html spec-569.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-570.html.new (run ./omd.exe %{dep:spec-570.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-570.md.pp
+          (run ./omd_pp.exe print %{dep:spec-570.md}))
+          (with-stdout-to spec-570.html.pp.new
+          (run ./omd_pp.exe html spec-570.md.pp)))))
+(rule
  (alias spec-570)
  (action (diff spec-570.html spec-570.html.new)))
+(rule
+ (alias spec-570)
+ (action (diff spec-570.html spec-570.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-571.html.new (run ./omd.exe %{dep:spec-571.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-571.md.pp
+          (run ./omd_pp.exe print %{dep:spec-571.md}))
+          (with-stdout-to spec-571.html.pp.new
+          (run ./omd_pp.exe html spec-571.md.pp)))))
+(rule
  (alias spec-571)
  (action (diff spec-571.html spec-571.html.new)))
+(rule
+ (alias spec-571)
+ (action (diff spec-571.html spec-571.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-572.html.new (run ./omd.exe %{dep:spec-572.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-572.md.pp
+          (run ./omd_pp.exe print %{dep:spec-572.md}))
+          (with-stdout-to spec-572.html.pp.new
+          (run ./omd_pp.exe html spec-572.md.pp)))))
+(rule
  (alias spec-572)
  (action (diff spec-572.html spec-572.html.new)))
+(rule
+ (alias spec-572)
+ (action (diff spec-572.html spec-572.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-573.html.new (run ./omd.exe %{dep:spec-573.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-573.md.pp
+          (run ./omd_pp.exe print %{dep:spec-573.md}))
+          (with-stdout-to spec-573.html.pp.new
+          (run ./omd_pp.exe html spec-573.md.pp)))))
+(rule
  (alias spec-573)
  (action (diff spec-573.html spec-573.html.new)))
+(rule
+ (alias spec-573)
+ (action (diff spec-573.html spec-573.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-574.html.new (run ./omd.exe %{dep:spec-574.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-574.md.pp
+          (run ./omd_pp.exe print %{dep:spec-574.md}))
+          (with-stdout-to spec-574.html.pp.new
+          (run ./omd_pp.exe html spec-574.md.pp)))))
+(rule
  (alias spec-574)
  (action (diff spec-574.html spec-574.html.new)))
+(rule
+ (alias spec-574)
+ (action (diff spec-574.html spec-574.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-575.html.new (run ./omd.exe %{dep:spec-575.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-575.md.pp
+          (run ./omd_pp.exe print %{dep:spec-575.md}))
+          (with-stdout-to spec-575.html.pp.new
+          (run ./omd_pp.exe html spec-575.md.pp)))))
+(rule
  (alias spec-575)
  (action (diff spec-575.html spec-575.html.new)))
+(rule
+ (alias spec-575)
+ (action (diff spec-575.html spec-575.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-576.html.new (run ./omd.exe %{dep:spec-576.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-576.md.pp
+          (run ./omd_pp.exe print %{dep:spec-576.md}))
+          (with-stdout-to spec-576.html.pp.new
+          (run ./omd_pp.exe html spec-576.md.pp)))))
+(rule
  (alias spec-576)
  (action (diff spec-576.html spec-576.html.new)))
+(rule
+ (alias spec-576)
+ (action (diff spec-576.html spec-576.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-577.html.new (run ./omd.exe %{dep:spec-577.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-577.md.pp
+          (run ./omd_pp.exe print %{dep:spec-577.md}))
+          (with-stdout-to spec-577.html.pp.new
+          (run ./omd_pp.exe html spec-577.md.pp)))))
+(rule
  (alias spec-577)
  (action (diff spec-577.html spec-577.html.new)))
+(rule
+ (alias spec-577)
+ (action (diff spec-577.html spec-577.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-578.html.new (run ./omd.exe %{dep:spec-578.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-578.md.pp
+          (run ./omd_pp.exe print %{dep:spec-578.md}))
+          (with-stdout-to spec-578.html.pp.new
+          (run ./omd_pp.exe html spec-578.md.pp)))))
+(rule
  (alias spec-578)
  (action (diff spec-578.html spec-578.html.new)))
+(rule
+ (alias spec-578)
+ (action (diff spec-578.html spec-578.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-579.html.new (run ./omd.exe %{dep:spec-579.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-579.md.pp
+          (run ./omd_pp.exe print %{dep:spec-579.md}))
+          (with-stdout-to spec-579.html.pp.new
+          (run ./omd_pp.exe html spec-579.md.pp)))))
+(rule
  (alias spec-579)
  (action (diff spec-579.html spec-579.html.new)))
+(rule
+ (alias spec-579)
+ (action (diff spec-579.html spec-579.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-580.html.new (run ./omd.exe %{dep:spec-580.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-580.md.pp
+          (run ./omd_pp.exe print %{dep:spec-580.md}))
+          (with-stdout-to spec-580.html.pp.new
+          (run ./omd_pp.exe html spec-580.md.pp)))))
+(rule
  (alias spec-580)
  (action (diff spec-580.html spec-580.html.new)))
+(rule
+ (alias spec-580)
+ (action (diff spec-580.html spec-580.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-581.html.new (run ./omd.exe %{dep:spec-581.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-581.md.pp
+          (run ./omd_pp.exe print %{dep:spec-581.md}))
+          (with-stdout-to spec-581.html.pp.new
+          (run ./omd_pp.exe html spec-581.md.pp)))))
+(rule
  (alias spec-581)
  (action (diff spec-581.html spec-581.html.new)))
+(rule
+ (alias spec-581)
+ (action (diff spec-581.html spec-581.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-582.html.new (run ./omd.exe %{dep:spec-582.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-582.md.pp
+          (run ./omd_pp.exe print %{dep:spec-582.md}))
+          (with-stdout-to spec-582.html.pp.new
+          (run ./omd_pp.exe html spec-582.md.pp)))))
+(rule
  (alias spec-582)
  (action (diff spec-582.html spec-582.html.new)))
+(rule
+ (alias spec-582)
+ (action (diff spec-582.html spec-582.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-583.html.new (run ./omd.exe %{dep:spec-583.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-583.md.pp
+          (run ./omd_pp.exe print %{dep:spec-583.md}))
+          (with-stdout-to spec-583.html.pp.new
+          (run ./omd_pp.exe html spec-583.md.pp)))))
+(rule
  (alias spec-583)
  (action (diff spec-583.html spec-583.html.new)))
+(rule
+ (alias spec-583)
+ (action (diff spec-583.html spec-583.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-584.html.new (run ./omd.exe %{dep:spec-584.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-584.md.pp
+          (run ./omd_pp.exe print %{dep:spec-584.md}))
+          (with-stdout-to spec-584.html.pp.new
+          (run ./omd_pp.exe html spec-584.md.pp)))))
+(rule
  (alias spec-584)
  (action (diff spec-584.html spec-584.html.new)))
+(rule
+ (alias spec-584)
+ (action (diff spec-584.html spec-584.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-585.html.new (run ./omd.exe %{dep:spec-585.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-585.md.pp
+          (run ./omd_pp.exe print %{dep:spec-585.md}))
+          (with-stdout-to spec-585.html.pp.new
+          (run ./omd_pp.exe html spec-585.md.pp)))))
+(rule
  (alias spec-585)
  (action (diff spec-585.html spec-585.html.new)))
+(rule
+ (alias spec-585)
+ (action (diff spec-585.html spec-585.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-586.html.new (run ./omd.exe %{dep:spec-586.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-586.md.pp
+          (run ./omd_pp.exe print %{dep:spec-586.md}))
+          (with-stdout-to spec-586.html.pp.new
+          (run ./omd_pp.exe html spec-586.md.pp)))))
+(rule
  (alias spec-586)
  (action (diff spec-586.html spec-586.html.new)))
+(rule
+ (alias spec-586)
+ (action (diff spec-586.html spec-586.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-587.html.new (run ./omd.exe %{dep:spec-587.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-587.md.pp
+          (run ./omd_pp.exe print %{dep:spec-587.md}))
+          (with-stdout-to spec-587.html.pp.new
+          (run ./omd_pp.exe html spec-587.md.pp)))))
+(rule
  (alias spec-587)
  (action (diff spec-587.html spec-587.html.new)))
+(rule
+ (alias spec-587)
+ (action (diff spec-587.html spec-587.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-588.html.new (run ./omd.exe %{dep:spec-588.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-588.md.pp
+          (run ./omd_pp.exe print %{dep:spec-588.md}))
+          (with-stdout-to spec-588.html.pp.new
+          (run ./omd_pp.exe html spec-588.md.pp)))))
+(rule
  (alias spec-588)
  (action (diff spec-588.html spec-588.html.new)))
+(rule
+ (alias spec-588)
+ (action (diff spec-588.html spec-588.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-589.html.new (run ./omd.exe %{dep:spec-589.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-589.md.pp
+          (run ./omd_pp.exe print %{dep:spec-589.md}))
+          (with-stdout-to spec-589.html.pp.new
+          (run ./omd_pp.exe html spec-589.md.pp)))))
+(rule
  (alias spec-589)
  (action (diff spec-589.html spec-589.html.new)))
+(rule
+ (alias spec-589)
+ (action (diff spec-589.html spec-589.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-590.html.new (run ./omd.exe %{dep:spec-590.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-590.md.pp
+          (run ./omd_pp.exe print %{dep:spec-590.md}))
+          (with-stdout-to spec-590.html.pp.new
+          (run ./omd_pp.exe html spec-590.md.pp)))))
+(rule
  (alias spec-590)
  (action (diff spec-590.html spec-590.html.new)))
+(rule
+ (alias spec-590)
+ (action (diff spec-590.html spec-590.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-591.html.new (run ./omd.exe %{dep:spec-591.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-591.md.pp
+          (run ./omd_pp.exe print %{dep:spec-591.md}))
+          (with-stdout-to spec-591.html.pp.new
+          (run ./omd_pp.exe html spec-591.md.pp)))))
+(rule
  (alias spec-591)
  (action (diff spec-591.html spec-591.html.new)))
+(rule
+ (alias spec-591)
+ (action (diff spec-591.html spec-591.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-592.html.new (run ./omd.exe %{dep:spec-592.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-592.md.pp
+          (run ./omd_pp.exe print %{dep:spec-592.md}))
+          (with-stdout-to spec-592.html.pp.new
+          (run ./omd_pp.exe html spec-592.md.pp)))))
+(rule
  (alias spec-592)
  (action (diff spec-592.html spec-592.html.new)))
+(rule
+ (alias spec-592)
+ (action (diff spec-592.html spec-592.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-593.html.new (run ./omd.exe %{dep:spec-593.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-593.md.pp
+          (run ./omd_pp.exe print %{dep:spec-593.md}))
+          (with-stdout-to spec-593.html.pp.new
+          (run ./omd_pp.exe html spec-593.md.pp)))))
+(rule
  (alias spec-593)
  (action (diff spec-593.html spec-593.html.new)))
+(rule
+ (alias spec-593)
+ (action (diff spec-593.html spec-593.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-594.html.new (run ./omd.exe %{dep:spec-594.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-594.md.pp
+          (run ./omd_pp.exe print %{dep:spec-594.md}))
+          (with-stdout-to spec-594.html.pp.new
+          (run ./omd_pp.exe html spec-594.md.pp)))))
+(rule
  (alias spec-594)
  (action (diff spec-594.html spec-594.html.new)))
+(rule
+ (alias spec-594)
+ (action (diff spec-594.html spec-594.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-595.html.new (run ./omd.exe %{dep:spec-595.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-595.md.pp
+          (run ./omd_pp.exe print %{dep:spec-595.md}))
+          (with-stdout-to spec-595.html.pp.new
+          (run ./omd_pp.exe html spec-595.md.pp)))))
+(rule
  (alias spec-595)
  (action (diff spec-595.html spec-595.html.new)))
+(rule
+ (alias spec-595)
+ (action (diff spec-595.html spec-595.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-596.html.new (run ./omd.exe %{dep:spec-596.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-596.md.pp
+          (run ./omd_pp.exe print %{dep:spec-596.md}))
+          (with-stdout-to spec-596.html.pp.new
+          (run ./omd_pp.exe html spec-596.md.pp)))))
+(rule
  (alias spec-596)
  (action (diff spec-596.html spec-596.html.new)))
+(rule
+ (alias spec-596)
+ (action (diff spec-596.html spec-596.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-597.html.new (run ./omd.exe %{dep:spec-597.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-597.md.pp
+          (run ./omd_pp.exe print %{dep:spec-597.md}))
+          (with-stdout-to spec-597.html.pp.new
+          (run ./omd_pp.exe html spec-597.md.pp)))))
+(rule
  (alias spec-597)
  (action (diff spec-597.html spec-597.html.new)))
+(rule
+ (alias spec-597)
+ (action (diff spec-597.html spec-597.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-598.html.new (run ./omd.exe %{dep:spec-598.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-598.md.pp
+          (run ./omd_pp.exe print %{dep:spec-598.md}))
+          (with-stdout-to spec-598.html.pp.new
+          (run ./omd_pp.exe html spec-598.md.pp)))))
+(rule
  (alias spec-598)
  (action (diff spec-598.html spec-598.html.new)))
+(rule
+ (alias spec-598)
+ (action (diff spec-598.html spec-598.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-599.html.new (run ./omd.exe %{dep:spec-599.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-599.md.pp
+          (run ./omd_pp.exe print %{dep:spec-599.md}))
+          (with-stdout-to spec-599.html.pp.new
+          (run ./omd_pp.exe html spec-599.md.pp)))))
+(rule
  (alias spec-599)
  (action (diff spec-599.html spec-599.html.new)))
+(rule
+ (alias spec-599)
+ (action (diff spec-599.html spec-599.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-600.html.new (run ./omd.exe %{dep:spec-600.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-600.md.pp
+          (run ./omd_pp.exe print %{dep:spec-600.md}))
+          (with-stdout-to spec-600.html.pp.new
+          (run ./omd_pp.exe html spec-600.md.pp)))))
+(rule
  (alias spec-600)
  (action (diff spec-600.html spec-600.html.new)))
+(rule
+ (alias spec-600)
+ (action (diff spec-600.html spec-600.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-601.html.new (run ./omd.exe %{dep:spec-601.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-601.md.pp
+          (run ./omd_pp.exe print %{dep:spec-601.md}))
+          (with-stdout-to spec-601.html.pp.new
+          (run ./omd_pp.exe html spec-601.md.pp)))))
+(rule
  (alias spec-601)
  (action (diff spec-601.html spec-601.html.new)))
+(rule
+ (alias spec-601)
+ (action (diff spec-601.html spec-601.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-602.html.new (run ./omd.exe %{dep:spec-602.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-602.md.pp
+          (run ./omd_pp.exe print %{dep:spec-602.md}))
+          (with-stdout-to spec-602.html.pp.new
+          (run ./omd_pp.exe html spec-602.md.pp)))))
+(rule
  (alias spec-602)
  (action (diff spec-602.html spec-602.html.new)))
+(rule
+ (alias spec-602)
+ (action (diff spec-602.html spec-602.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-603.html.new (run ./omd.exe %{dep:spec-603.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-603.md.pp
+          (run ./omd_pp.exe print %{dep:spec-603.md}))
+          (with-stdout-to spec-603.html.pp.new
+          (run ./omd_pp.exe html spec-603.md.pp)))))
+(rule
  (alias spec-603)
  (action (diff spec-603.html spec-603.html.new)))
+(rule
+ (alias spec-603)
+ (action (diff spec-603.html spec-603.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-604.html.new (run ./omd.exe %{dep:spec-604.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-604.md.pp
+          (run ./omd_pp.exe print %{dep:spec-604.md}))
+          (with-stdout-to spec-604.html.pp.new
+          (run ./omd_pp.exe html spec-604.md.pp)))))
+(rule
  (alias spec-604)
  (action (diff spec-604.html spec-604.html.new)))
+(rule
+ (alias spec-604)
+ (action (diff spec-604.html spec-604.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-605.html.new (run ./omd.exe %{dep:spec-605.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-605.md.pp
+          (run ./omd_pp.exe print %{dep:spec-605.md}))
+          (with-stdout-to spec-605.html.pp.new
+          (run ./omd_pp.exe html spec-605.md.pp)))))
+(rule
  (alias spec-605)
  (action (diff spec-605.html spec-605.html.new)))
+(rule
+ (alias spec-605)
+ (action (diff spec-605.html spec-605.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-606.html.new (run ./omd.exe %{dep:spec-606.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-606.md.pp
+          (run ./omd_pp.exe print %{dep:spec-606.md}))
+          (with-stdout-to spec-606.html.pp.new
+          (run ./omd_pp.exe html spec-606.md.pp)))))
+(rule
  (alias spec-606)
  (action (diff spec-606.html spec-606.html.new)))
+(rule
+ (alias spec-606)
+ (action (diff spec-606.html spec-606.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-607.html.new (run ./omd.exe %{dep:spec-607.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-607.md.pp
+          (run ./omd_pp.exe print %{dep:spec-607.md}))
+          (with-stdout-to spec-607.html.pp.new
+          (run ./omd_pp.exe html spec-607.md.pp)))))
+(rule
  (alias spec-607)
  (action (diff spec-607.html spec-607.html.new)))
+(rule
+ (alias spec-607)
+ (action (diff spec-607.html spec-607.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-608.html.new (run ./omd.exe %{dep:spec-608.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-608.md.pp
+          (run ./omd_pp.exe print %{dep:spec-608.md}))
+          (with-stdout-to spec-608.html.pp.new
+          (run ./omd_pp.exe html spec-608.md.pp)))))
+(rule
  (alias spec-608)
  (action (diff spec-608.html spec-608.html.new)))
+(rule
+ (alias spec-608)
+ (action (diff spec-608.html spec-608.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-609.html.new (run ./omd.exe %{dep:spec-609.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-609.md.pp
+          (run ./omd_pp.exe print %{dep:spec-609.md}))
+          (with-stdout-to spec-609.html.pp.new
+          (run ./omd_pp.exe html spec-609.md.pp)))))
+(rule
  (alias spec-609)
  (action (diff spec-609.html spec-609.html.new)))
+(rule
+ (alias spec-609)
+ (action (diff spec-609.html spec-609.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-610.html.new (run ./omd.exe %{dep:spec-610.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-610.md.pp
+          (run ./omd_pp.exe print %{dep:spec-610.md}))
+          (with-stdout-to spec-610.html.pp.new
+          (run ./omd_pp.exe html spec-610.md.pp)))))
+(rule
  (alias spec-610)
  (action (diff spec-610.html spec-610.html.new)))
+(rule
+ (alias spec-610)
+ (action (diff spec-610.html spec-610.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-611.html.new (run ./omd.exe %{dep:spec-611.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-611.md.pp
+          (run ./omd_pp.exe print %{dep:spec-611.md}))
+          (with-stdout-to spec-611.html.pp.new
+          (run ./omd_pp.exe html spec-611.md.pp)))))
+(rule
  (alias spec-611)
  (action (diff spec-611.html spec-611.html.new)))
+(rule
+ (alias spec-611)
+ (action (diff spec-611.html spec-611.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-612.html.new (run ./omd.exe %{dep:spec-612.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-612.md.pp
+          (run ./omd_pp.exe print %{dep:spec-612.md}))
+          (with-stdout-to spec-612.html.pp.new
+          (run ./omd_pp.exe html spec-612.md.pp)))))
+(rule
  (alias spec-612)
  (action (diff spec-612.html spec-612.html.new)))
+(rule
+ (alias spec-612)
+ (action (diff spec-612.html spec-612.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-613.html.new (run ./omd.exe %{dep:spec-613.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-613.md.pp
+          (run ./omd_pp.exe print %{dep:spec-613.md}))
+          (with-stdout-to spec-613.html.pp.new
+          (run ./omd_pp.exe html spec-613.md.pp)))))
+(rule
  (alias spec-613)
  (action (diff spec-613.html spec-613.html.new)))
+(rule
+ (alias spec-613)
+ (action (diff spec-613.html spec-613.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-614.html.new (run ./omd.exe %{dep:spec-614.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-614.md.pp
+          (run ./omd_pp.exe print %{dep:spec-614.md}))
+          (with-stdout-to spec-614.html.pp.new
+          (run ./omd_pp.exe html spec-614.md.pp)))))
+(rule
  (alias spec-614)
  (action (diff spec-614.html spec-614.html.new)))
+(rule
+ (alias spec-614)
+ (action (diff spec-614.html spec-614.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-615.html.new (run ./omd.exe %{dep:spec-615.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-615.md.pp
+          (run ./omd_pp.exe print %{dep:spec-615.md}))
+          (with-stdout-to spec-615.html.pp.new
+          (run ./omd_pp.exe html spec-615.md.pp)))))
+(rule
  (alias spec-615)
  (action (diff spec-615.html spec-615.html.new)))
+(rule
+ (alias spec-615)
+ (action (diff spec-615.html spec-615.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-616.html.new (run ./omd.exe %{dep:spec-616.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-616.md.pp
+          (run ./omd_pp.exe print %{dep:spec-616.md}))
+          (with-stdout-to spec-616.html.pp.new
+          (run ./omd_pp.exe html spec-616.md.pp)))))
+(rule
  (alias spec-616)
  (action (diff spec-616.html spec-616.html.new)))
+(rule
+ (alias spec-616)
+ (action (diff spec-616.html spec-616.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-617.html.new (run ./omd.exe %{dep:spec-617.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-617.md.pp
+          (run ./omd_pp.exe print %{dep:spec-617.md}))
+          (with-stdout-to spec-617.html.pp.new
+          (run ./omd_pp.exe html spec-617.md.pp)))))
+(rule
  (alias spec-617)
  (action (diff spec-617.html spec-617.html.new)))
+(rule
+ (alias spec-617)
+ (action (diff spec-617.html spec-617.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-618.html.new (run ./omd.exe %{dep:spec-618.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-618.md.pp
+          (run ./omd_pp.exe print %{dep:spec-618.md}))
+          (with-stdout-to spec-618.html.pp.new
+          (run ./omd_pp.exe html spec-618.md.pp)))))
+(rule
  (alias spec-618)
  (action (diff spec-618.html spec-618.html.new)))
+(rule
+ (alias spec-618)
+ (action (diff spec-618.html spec-618.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-619.html.new (run ./omd.exe %{dep:spec-619.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-619.md.pp
+          (run ./omd_pp.exe print %{dep:spec-619.md}))
+          (with-stdout-to spec-619.html.pp.new
+          (run ./omd_pp.exe html spec-619.md.pp)))))
+(rule
  (alias spec-619)
  (action (diff spec-619.html spec-619.html.new)))
+(rule
+ (alias spec-619)
+ (action (diff spec-619.html spec-619.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-620.html.new (run ./omd.exe %{dep:spec-620.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-620.md.pp
+          (run ./omd_pp.exe print %{dep:spec-620.md}))
+          (with-stdout-to spec-620.html.pp.new
+          (run ./omd_pp.exe html spec-620.md.pp)))))
+(rule
  (alias spec-620)
  (action (diff spec-620.html spec-620.html.new)))
+(rule
+ (alias spec-620)
+ (action (diff spec-620.html spec-620.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-621.html.new (run ./omd.exe %{dep:spec-621.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-621.md.pp
+          (run ./omd_pp.exe print %{dep:spec-621.md}))
+          (with-stdout-to spec-621.html.pp.new
+          (run ./omd_pp.exe html spec-621.md.pp)))))
+(rule
  (alias spec-621)
  (action (diff spec-621.html spec-621.html.new)))
+(rule
+ (alias spec-621)
+ (action (diff spec-621.html spec-621.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-622.html.new (run ./omd.exe %{dep:spec-622.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-622.md.pp
+          (run ./omd_pp.exe print %{dep:spec-622.md}))
+          (with-stdout-to spec-622.html.pp.new
+          (run ./omd_pp.exe html spec-622.md.pp)))))
+(rule
  (alias spec-622)
  (action (diff spec-622.html spec-622.html.new)))
+(rule
+ (alias spec-622)
+ (action (diff spec-622.html spec-622.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-623.html.new (run ./omd.exe %{dep:spec-623.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-623.md.pp
+          (run ./omd_pp.exe print %{dep:spec-623.md}))
+          (with-stdout-to spec-623.html.pp.new
+          (run ./omd_pp.exe html spec-623.md.pp)))))
+(rule
  (alias spec-623)
  (action (diff spec-623.html spec-623.html.new)))
+(rule
+ (alias spec-623)
+ (action (diff spec-623.html spec-623.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-624.html.new (run ./omd.exe %{dep:spec-624.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-624.md.pp
+          (run ./omd_pp.exe print %{dep:spec-624.md}))
+          (with-stdout-to spec-624.html.pp.new
+          (run ./omd_pp.exe html spec-624.md.pp)))))
+(rule
  (alias spec-624)
  (action (diff spec-624.html spec-624.html.new)))
+(rule
+ (alias spec-624)
+ (action (diff spec-624.html spec-624.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-625.html.new (run ./omd.exe %{dep:spec-625.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-625.md.pp
+          (run ./omd_pp.exe print %{dep:spec-625.md}))
+          (with-stdout-to spec-625.html.pp.new
+          (run ./omd_pp.exe html spec-625.md.pp)))))
+(rule
  (alias spec-625)
  (action (diff spec-625.html spec-625.html.new)))
+(rule
+ (alias spec-625)
+ (action (diff spec-625.html spec-625.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-626.html.new (run ./omd.exe %{dep:spec-626.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-626.md.pp
+          (run ./omd_pp.exe print %{dep:spec-626.md}))
+          (with-stdout-to spec-626.html.pp.new
+          (run ./omd_pp.exe html spec-626.md.pp)))))
+(rule
  (alias spec-626)
  (action (diff spec-626.html spec-626.html.new)))
+(rule
+ (alias spec-626)
+ (action (diff spec-626.html spec-626.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-627.html.new (run ./omd.exe %{dep:spec-627.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-627.md.pp
+          (run ./omd_pp.exe print %{dep:spec-627.md}))
+          (with-stdout-to spec-627.html.pp.new
+          (run ./omd_pp.exe html spec-627.md.pp)))))
+(rule
  (alias spec-627)
  (action (diff spec-627.html spec-627.html.new)))
+(rule
+ (alias spec-627)
+ (action (diff spec-627.html spec-627.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-628.html.new (run ./omd.exe %{dep:spec-628.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-628.md.pp
+          (run ./omd_pp.exe print %{dep:spec-628.md}))
+          (with-stdout-to spec-628.html.pp.new
+          (run ./omd_pp.exe html spec-628.md.pp)))))
+(rule
  (alias spec-628)
  (action (diff spec-628.html spec-628.html.new)))
+(rule
+ (alias spec-628)
+ (action (diff spec-628.html spec-628.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-629.html.new (run ./omd.exe %{dep:spec-629.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-629.md.pp
+          (run ./omd_pp.exe print %{dep:spec-629.md}))
+          (with-stdout-to spec-629.html.pp.new
+          (run ./omd_pp.exe html spec-629.md.pp)))))
+(rule
  (alias spec-629)
  (action (diff spec-629.html spec-629.html.new)))
+(rule
+ (alias spec-629)
+ (action (diff spec-629.html spec-629.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-630.html.new (run ./omd.exe %{dep:spec-630.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-630.md.pp
+          (run ./omd_pp.exe print %{dep:spec-630.md}))
+          (with-stdout-to spec-630.html.pp.new
+          (run ./omd_pp.exe html spec-630.md.pp)))))
+(rule
  (alias spec-630)
  (action (diff spec-630.html spec-630.html.new)))
+(rule
+ (alias spec-630)
+ (action (diff spec-630.html spec-630.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-631.html.new (run ./omd.exe %{dep:spec-631.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-631.md.pp
+          (run ./omd_pp.exe print %{dep:spec-631.md}))
+          (with-stdout-to spec-631.html.pp.new
+          (run ./omd_pp.exe html spec-631.md.pp)))))
+(rule
  (alias spec-631)
  (action (diff spec-631.html spec-631.html.new)))
+(rule
+ (alias spec-631)
+ (action (diff spec-631.html spec-631.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-632.html.new (run ./omd.exe %{dep:spec-632.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-632.md.pp
+          (run ./omd_pp.exe print %{dep:spec-632.md}))
+          (with-stdout-to spec-632.html.pp.new
+          (run ./omd_pp.exe html spec-632.md.pp)))))
+(rule
  (alias spec-632)
  (action (diff spec-632.html spec-632.html.new)))
+(rule
+ (alias spec-632)
+ (action (diff spec-632.html spec-632.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-633.html.new (run ./omd.exe %{dep:spec-633.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-633.md.pp
+          (run ./omd_pp.exe print %{dep:spec-633.md}))
+          (with-stdout-to spec-633.html.pp.new
+          (run ./omd_pp.exe html spec-633.md.pp)))))
+(rule
  (alias spec-633)
  (action (diff spec-633.html spec-633.html.new)))
+(rule
+ (alias spec-633)
+ (action (diff spec-633.html spec-633.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-634.html.new (run ./omd.exe %{dep:spec-634.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-634.md.pp
+          (run ./omd_pp.exe print %{dep:spec-634.md}))
+          (with-stdout-to spec-634.html.pp.new
+          (run ./omd_pp.exe html spec-634.md.pp)))))
+(rule
  (alias spec-634)
  (action (diff spec-634.html spec-634.html.new)))
+(rule
+ (alias spec-634)
+ (action (diff spec-634.html spec-634.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-635.html.new (run ./omd.exe %{dep:spec-635.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-635.md.pp
+          (run ./omd_pp.exe print %{dep:spec-635.md}))
+          (with-stdout-to spec-635.html.pp.new
+          (run ./omd_pp.exe html spec-635.md.pp)))))
+(rule
  (alias spec-635)
  (action (diff spec-635.html spec-635.html.new)))
+(rule
+ (alias spec-635)
+ (action (diff spec-635.html spec-635.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-636.html.new (run ./omd.exe %{dep:spec-636.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-636.md.pp
+          (run ./omd_pp.exe print %{dep:spec-636.md}))
+          (with-stdout-to spec-636.html.pp.new
+          (run ./omd_pp.exe html spec-636.md.pp)))))
+(rule
  (alias spec-636)
  (action (diff spec-636.html spec-636.html.new)))
+(rule
+ (alias spec-636)
+ (action (diff spec-636.html spec-636.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-637.html.new (run ./omd.exe %{dep:spec-637.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-637.md.pp
+          (run ./omd_pp.exe print %{dep:spec-637.md}))
+          (with-stdout-to spec-637.html.pp.new
+          (run ./omd_pp.exe html spec-637.md.pp)))))
+(rule
  (alias spec-637)
  (action (diff spec-637.html spec-637.html.new)))
+(rule
+ (alias spec-637)
+ (action (diff spec-637.html spec-637.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-638.html.new (run ./omd.exe %{dep:spec-638.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-638.md.pp
+          (run ./omd_pp.exe print %{dep:spec-638.md}))
+          (with-stdout-to spec-638.html.pp.new
+          (run ./omd_pp.exe html spec-638.md.pp)))))
+(rule
  (alias spec-638)
  (action (diff spec-638.html spec-638.html.new)))
+(rule
+ (alias spec-638)
+ (action (diff spec-638.html spec-638.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-639.html.new (run ./omd.exe %{dep:spec-639.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-639.md.pp
+          (run ./omd_pp.exe print %{dep:spec-639.md}))
+          (with-stdout-to spec-639.html.pp.new
+          (run ./omd_pp.exe html spec-639.md.pp)))))
+(rule
  (alias spec-639)
  (action (diff spec-639.html spec-639.html.new)))
+(rule
+ (alias spec-639)
+ (action (diff spec-639.html spec-639.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-640.html.new (run ./omd.exe %{dep:spec-640.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-640.md.pp
+          (run ./omd_pp.exe print %{dep:spec-640.md}))
+          (with-stdout-to spec-640.html.pp.new
+          (run ./omd_pp.exe html spec-640.md.pp)))))
+(rule
  (alias spec-640)
  (action (diff spec-640.html spec-640.html.new)))
+(rule
+ (alias spec-640)
+ (action (diff spec-640.html spec-640.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-641.html.new (run ./omd.exe %{dep:spec-641.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-641.md.pp
+          (run ./omd_pp.exe print %{dep:spec-641.md}))
+          (with-stdout-to spec-641.html.pp.new
+          (run ./omd_pp.exe html spec-641.md.pp)))))
+(rule
  (alias spec-641)
  (action (diff spec-641.html spec-641.html.new)))
+(rule
+ (alias spec-641)
+ (action (diff spec-641.html spec-641.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-642.html.new (run ./omd.exe %{dep:spec-642.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-642.md.pp
+          (run ./omd_pp.exe print %{dep:spec-642.md}))
+          (with-stdout-to spec-642.html.pp.new
+          (run ./omd_pp.exe html spec-642.md.pp)))))
+(rule
  (alias spec-642)
  (action (diff spec-642.html spec-642.html.new)))
+(rule
+ (alias spec-642)
+ (action (diff spec-642.html spec-642.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-643.html.new (run ./omd.exe %{dep:spec-643.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-643.md.pp
+          (run ./omd_pp.exe print %{dep:spec-643.md}))
+          (with-stdout-to spec-643.html.pp.new
+          (run ./omd_pp.exe html spec-643.md.pp)))))
+(rule
  (alias spec-643)
  (action (diff spec-643.html spec-643.html.new)))
+(rule
+ (alias spec-643)
+ (action (diff spec-643.html spec-643.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-644.html.new (run ./omd.exe %{dep:spec-644.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-644.md.pp
+          (run ./omd_pp.exe print %{dep:spec-644.md}))
+          (with-stdout-to spec-644.html.pp.new
+          (run ./omd_pp.exe html spec-644.md.pp)))))
+(rule
  (alias spec-644)
  (action (diff spec-644.html spec-644.html.new)))
+(rule
+ (alias spec-644)
+ (action (diff spec-644.html spec-644.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-645.html.new (run ./omd.exe %{dep:spec-645.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-645.md.pp
+          (run ./omd_pp.exe print %{dep:spec-645.md}))
+          (with-stdout-to spec-645.html.pp.new
+          (run ./omd_pp.exe html spec-645.md.pp)))))
+(rule
  (alias spec-645)
  (action (diff spec-645.html spec-645.html.new)))
+(rule
+ (alias spec-645)
+ (action (diff spec-645.html spec-645.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-646.html.new (run ./omd.exe %{dep:spec-646.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-646.md.pp
+          (run ./omd_pp.exe print %{dep:spec-646.md}))
+          (with-stdout-to spec-646.html.pp.new
+          (run ./omd_pp.exe html spec-646.md.pp)))))
+(rule
  (alias spec-646)
  (action (diff spec-646.html spec-646.html.new)))
+(rule
+ (alias spec-646)
+ (action (diff spec-646.html spec-646.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-647.html.new (run ./omd.exe %{dep:spec-647.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-647.md.pp
+          (run ./omd_pp.exe print %{dep:spec-647.md}))
+          (with-stdout-to spec-647.html.pp.new
+          (run ./omd_pp.exe html spec-647.md.pp)))))
+(rule
  (alias spec-647)
  (action (diff spec-647.html spec-647.html.new)))
+(rule
+ (alias spec-647)
+ (action (diff spec-647.html spec-647.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-648.html.new (run ./omd.exe %{dep:spec-648.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-648.md.pp
+          (run ./omd_pp.exe print %{dep:spec-648.md}))
+          (with-stdout-to spec-648.html.pp.new
+          (run ./omd_pp.exe html spec-648.md.pp)))))
+(rule
  (alias spec-648)
  (action (diff spec-648.html spec-648.html.new)))
+(rule
+ (alias spec-648)
+ (action (diff spec-648.html spec-648.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-649.html.new (run ./omd.exe %{dep:spec-649.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-649.md.pp
+          (run ./omd_pp.exe print %{dep:spec-649.md}))
+          (with-stdout-to spec-649.html.pp.new
+          (run ./omd_pp.exe html spec-649.md.pp)))))
+(rule
  (alias spec-649)
  (action (diff spec-649.html spec-649.html.new)))
+(rule
+ (alias spec-649)
+ (action (diff spec-649.html spec-649.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-650.html.new (run ./omd.exe %{dep:spec-650.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-650.md.pp
+          (run ./omd_pp.exe print %{dep:spec-650.md}))
+          (with-stdout-to spec-650.html.pp.new
+          (run ./omd_pp.exe html spec-650.md.pp)))))
+(rule
  (alias spec-650)
  (action (diff spec-650.html spec-650.html.new)))
+(rule
+ (alias spec-650)
+ (action (diff spec-650.html spec-650.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-651.html.new (run ./omd.exe %{dep:spec-651.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-651.md.pp
+          (run ./omd_pp.exe print %{dep:spec-651.md}))
+          (with-stdout-to spec-651.html.pp.new
+          (run ./omd_pp.exe html spec-651.md.pp)))))
+(rule
  (alias spec-651)
  (action (diff spec-651.html spec-651.html.new)))
+(rule
+ (alias spec-651)
+ (action (diff spec-651.html spec-651.html.pp.new)))
 (rule
  (action
   (with-stdout-to spec-652.html.new (run ./omd.exe %{dep:spec-652.md}))))
 (rule
+ (action
+  (progn (with-stdout-to spec-652.md.pp
+          (run ./omd_pp.exe print %{dep:spec-652.md}))
+          (with-stdout-to spec-652.html.pp.new
+          (run ./omd_pp.exe html spec-652.md.pp)))))
+(rule
  (alias spec-652)
  (action (diff spec-652.html spec-652.html.new)))
+(rule
+ (alias spec-652)
+ (action (diff spec-652.html spec-652.html.pp.new)))
 (rule
  (action
   (with-stdout-to gfm_table_spec-001.html.new
@@ -4747,36 +10165,81 @@
   (with-stdout-to attributes-001.html.new
    (run ./omd.exe %{dep:attributes-001.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-001.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-001.md}))
+          (with-stdout-to attributes-001.html.pp.new
+          (run ./omd_pp.exe html attributes-001.md.pp)))))
+(rule
  (alias attributes-001)
  (action (diff attributes-001.html attributes-001.html.new)))
+(rule
+ (alias attributes-001)
+ (action (diff attributes-001.html attributes-001.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-002.html.new
    (run ./omd.exe %{dep:attributes-002.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-002.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-002.md}))
+          (with-stdout-to attributes-002.html.pp.new
+          (run ./omd_pp.exe html attributes-002.md.pp)))))
+(rule
  (alias attributes-002)
  (action (diff attributes-002.html attributes-002.html.new)))
+(rule
+ (alias attributes-002)
+ (action (diff attributes-002.html attributes-002.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-003.html.new
    (run ./omd.exe %{dep:attributes-003.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-003.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-003.md}))
+          (with-stdout-to attributes-003.html.pp.new
+          (run ./omd_pp.exe html attributes-003.md.pp)))))
+(rule
  (alias attributes-003)
  (action (diff attributes-003.html attributes-003.html.new)))
+(rule
+ (alias attributes-003)
+ (action (diff attributes-003.html attributes-003.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-004.html.new
    (run ./omd.exe %{dep:attributes-004.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-004.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-004.md}))
+          (with-stdout-to attributes-004.html.pp.new
+          (run ./omd_pp.exe html attributes-004.md.pp)))))
+(rule
  (alias attributes-004)
  (action (diff attributes-004.html attributes-004.html.new)))
+(rule
+ (alias attributes-004)
+ (action (diff attributes-004.html attributes-004.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-005.html.new
    (run ./omd.exe %{dep:attributes-005.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-005.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-005.md}))
+          (with-stdout-to attributes-005.html.pp.new
+          (run ./omd_pp.exe html attributes-005.md.pp)))))
+(rule
  (alias attributes-005)
  (action (diff attributes-005.html attributes-005.html.new)))
+(rule
+ (alias attributes-005)
+ (action (diff attributes-005.html attributes-005.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-006.html.new
@@ -4789,64 +10252,145 @@
   (with-stdout-to attributes-007.html.new
    (run ./omd.exe %{dep:attributes-007.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-007.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-007.md}))
+          (with-stdout-to attributes-007.html.pp.new
+          (run ./omd_pp.exe html attributes-007.md.pp)))))
+(rule
  (alias attributes-007)
  (action (diff attributes-007.html attributes-007.html.new)))
+(rule
+ (alias attributes-007)
+ (action (diff attributes-007.html attributes-007.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-008.html.new
    (run ./omd.exe %{dep:attributes-008.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-008.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-008.md}))
+          (with-stdout-to attributes-008.html.pp.new
+          (run ./omd_pp.exe html attributes-008.md.pp)))))
+(rule
  (alias attributes-008)
  (action (diff attributes-008.html attributes-008.html.new)))
+(rule
+ (alias attributes-008)
+ (action (diff attributes-008.html attributes-008.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-009.html.new
    (run ./omd.exe %{dep:attributes-009.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-009.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-009.md}))
+          (with-stdout-to attributes-009.html.pp.new
+          (run ./omd_pp.exe html attributes-009.md.pp)))))
+(rule
  (alias attributes-009)
  (action (diff attributes-009.html attributes-009.html.new)))
+(rule
+ (alias attributes-009)
+ (action (diff attributes-009.html attributes-009.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-010.html.new
    (run ./omd.exe %{dep:attributes-010.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-010.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-010.md}))
+          (with-stdout-to attributes-010.html.pp.new
+          (run ./omd_pp.exe html attributes-010.md.pp)))))
+(rule
  (alias attributes-010)
  (action (diff attributes-010.html attributes-010.html.new)))
+(rule
+ (alias attributes-010)
+ (action (diff attributes-010.html attributes-010.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-011.html.new
    (run ./omd.exe %{dep:attributes-011.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-011.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-011.md}))
+          (with-stdout-to attributes-011.html.pp.new
+          (run ./omd_pp.exe html attributes-011.md.pp)))))
+(rule
  (alias attributes-011)
  (action (diff attributes-011.html attributes-011.html.new)))
+(rule
+ (alias attributes-011)
+ (action (diff attributes-011.html attributes-011.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-012.html.new
    (run ./omd.exe %{dep:attributes-012.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-012.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-012.md}))
+          (with-stdout-to attributes-012.html.pp.new
+          (run ./omd_pp.exe html attributes-012.md.pp)))))
+(rule
  (alias attributes-012)
  (action (diff attributes-012.html attributes-012.html.new)))
+(rule
+ (alias attributes-012)
+ (action (diff attributes-012.html attributes-012.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-013.html.new
    (run ./omd.exe %{dep:attributes-013.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-013.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-013.md}))
+          (with-stdout-to attributes-013.html.pp.new
+          (run ./omd_pp.exe html attributes-013.md.pp)))))
+(rule
  (alias attributes-013)
  (action (diff attributes-013.html attributes-013.html.new)))
+(rule
+ (alias attributes-013)
+ (action (diff attributes-013.html attributes-013.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-014.html.new
    (run ./omd.exe %{dep:attributes-014.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-014.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-014.md}))
+          (with-stdout-to attributes-014.html.pp.new
+          (run ./omd_pp.exe html attributes-014.md.pp)))))
+(rule
  (alias attributes-014)
  (action (diff attributes-014.html attributes-014.html.new)))
+(rule
+ (alias attributes-014)
+ (action (diff attributes-014.html attributes-014.html.pp.new)))
 (rule
  (action
   (with-stdout-to attributes-015.html.new
    (run ./omd.exe %{dep:attributes-015.md}))))
 (rule
+ (action
+  (progn (with-stdout-to attributes-015.md.pp
+          (run ./omd_pp.exe print %{dep:attributes-015.md}))
+          (with-stdout-to attributes-015.html.pp.new
+          (run ./omd_pp.exe html attributes-015.md.pp)))))
+(rule
  (alias attributes-015)
  (action (diff attributes-015.html attributes-015.html.new)))
+(rule
+ (alias attributes-015)
+ (action (diff attributes-015.html attributes-015.html.pp.new)))
 (rule
  (action
   (with-stdout-to def_list-001.html.new

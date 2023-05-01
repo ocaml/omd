@@ -1,4 +1,4 @@
-open Ast.Impl
+open Cst.Impl
 open Stdcompat
 
 type 'attr link_def =
@@ -860,10 +860,6 @@ module Pre = struct
     | Punct
     | Other
 
-  type emph_style =
-    | Star
-    | Underscore
-
   type link_kind =
     | Img
     | Url
@@ -1000,8 +996,8 @@ module Pre = struct
                 in
                 let r =
                   let il = concat (List.map to_r (List.rev acc)) in
-                  if n1 >= 2 && n2 >= 2 then R (Strong ([], il)) :: xs
-                  else R (Emph ([], il)) :: xs
+                  if n1 >= 2 && n2 >= 2 then R (Strong ([], q1, il)) :: xs
+                  else R (Emph ([], q1, il)) :: xs
                 in
                 let r =
                   if n1 >= 2 && n2 >= 2 then
@@ -1598,7 +1594,7 @@ let autolink st =
       junk st;
       let label, destination = (absolute_uri ||| email_address) st in
       if next st <> '>' then raise Fail;
-      { Ast.Impl.label = Text ([], label); destination; title = None }
+      { Cst.Impl.label = Text ([], label); destination; title = None }
   | _ -> raise Fail
 
 let inline_link =
@@ -1691,7 +1687,7 @@ let rec inline defs st =
                 let def = { label = lab1; destination; title } in
                 match kind with
                 | Pre.Img -> Image (attr, def)
-                | Url -> Link (attr, def)
+                | Url -> Link (attr, Regular, def)
               in
               loop (Pre.R r :: text acc) st
           | None ->
@@ -1731,7 +1727,7 @@ let rec inline defs st =
         match protect autolink st with
         | def ->
             let attr = inline_attribute_string st in
-            loop ~seen_link (Pre.R (Link (attr, def)) :: text acc) st
+            loop ~seen_link (Pre.R (Link (attr, Autolink, def)) :: text acc) st
         | exception Fail -> (
             match
               protect
@@ -1767,7 +1763,7 @@ let rec inline defs st =
             Buffer.add_char buf c;
             loop ~seen_link acc st)
     | '`' -> loop ~seen_link (inline_pre buf acc st) st
-    | '\\' as c -> (
+    | '\\' as c1 -> (
         junk st;
         match peek st with
         | Some '\n' ->
@@ -1775,10 +1771,11 @@ let rec inline defs st =
             loop ~seen_link (Pre.R (Hard_break []) :: text acc) st
         | Some c when is_punct c ->
             junk st;
+            Buffer.add_char buf c1;
             Buffer.add_char buf c;
             loop ~seen_link acc st
         | Some _ | None ->
-            Buffer.add_char buf c;
+            Buffer.add_char buf c1;
             loop ~seen_link acc st)
     | '!' as c -> (
         junk st;
@@ -1809,7 +1806,7 @@ let rec inline defs st =
                         let def = { label; destination; title } in
                         match k with
                         | Img -> Image (attr, def)
-                        | Url -> Link (attr, def)
+                        | Url -> Link (attr, Regular, def)
                       in
                       loop ~seen_link (Pre.R r :: acc') st
                   | exception Fail ->
@@ -1834,7 +1831,7 @@ let rec inline defs st =
                           let r =
                             match k with
                             | Img -> Image (attr, def)
-                            | Url -> Link (attr, def)
+                            | Url -> Link (attr, Regular, def)
                           in
                           loop ~seen_link (Pre.R r :: acc') st
                       | None ->
@@ -1867,7 +1864,7 @@ let rec inline defs st =
         let f post n st =
           let pre = pre |> Pre.classify_delim in
           let post = post |> Pre.classify_delim in
-          let e = if c = '*' then Pre.Star else Pre.Underscore in
+          let e = if c = '*' then Cst.Impl.Star else Cst.Impl.Underscore in
           loop ~seen_link (Pre.Emph (pre, post, e, n) :: text acc) st
         in
         let rec aux n =

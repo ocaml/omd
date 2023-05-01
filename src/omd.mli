@@ -24,9 +24,18 @@ val escape_html_entities : string -> string
     ['&'] into ["&amp;"], ['<'] in ["&lt;"] and ['>'] into ["&gt;"]
 *)
 
+module Parse_tree : sig
+  val of_channel : in_channel -> Cst.Impl.parse_tree
+  val of_string : string -> Cst.Impl.parse_tree
+end
+
 (** {2 Converting to and from documents} *)
 
 val of_channel : in_channel -> doc
 val of_string : string -> doc
 val to_html : ?auto_identifiers:bool -> doc -> string
 val to_sexp : doc -> string
+
+module Print : sig
+  val pp : Format.formatter -> Cst.Impl.parse_tree -> unit
+end

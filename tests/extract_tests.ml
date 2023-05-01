@@ -10,6 +10,62 @@ let protect ~finally f =
 
 let disabled = []
 
+(* Some pp tests won't work because of escaping characters *)
+let pp_disabled =
+  [ 006
+  ; 017
+  ; 026
+  ; 037
+  ; 038
+  ; 039
+  ; 040
+  ; 041
+  ; 070
+  ; 128
+  ; 174
+  ; 175
+  ; 195
+  ; 202
+  ; 228
+  ; 229
+  ; 230
+  ; 232
+  ; 236
+  ; 238
+  ; 244
+  ; 252
+  ; 255
+  ; 259
+  ; 260
+  ; 264
+  ; 276
+  ; 312
+  ; 319
+  ; 320
+  ; 321
+  ; 324
+  ; 325
+  ; 329
+  ; 330
+  ; 331
+  ; 339
+  ; 349
+  ; 416
+  ; 435
+  ; 444
+  ; 446
+  ; 447
+  ; 456
+  ; 458
+  ; 488
+  ; 505
+  ; 508
+  ; 531
+  ; 532
+  ]
+
+let pp_disabled_filename = [ "gfm_table_spec"; "extra_table_test"; "def_list" ]
+
 let with_open_in fn f =
   let ic = open_in fn in
   protect ~finally:(fun () -> close_in_noerr ic) (fun () -> f ic)
@@ -94,6 +150,26 @@ let write_dune_file test_specs tests =
         example
         base
         example;
+      if
+        not
+          (List.mem example pp_disabled
+          || pp_disabled_filename
+             |> List.exists (fun pp_disabled_filename ->
+                    String.starts_with ~prefix:pp_disabled_filename filename))
+      then
+        Format.printf
+          "@[<v1>(rule@ @[<hov1>(action@ @[<hov1>(progn \
+           @[<hov1>(with-stdout-to %s-%03d.md.pp@ @[<hov1>(run@ ./omd_pp.exe \
+           print %%{dep:%s-%03d.md}))@]@ (with-stdout-to %s-%03d.html.pp.new@ \
+           @[<hov1>(run@ ./omd_pp.exe html@ %s-%03d.md.pp)@])@])@])@])@]@."
+          base
+          example
+          base
+          example
+          base
+          example
+          base
+          example;
       Format.printf
         "@[<v1>(rule@ @[<hov1>(alias %s-%03d)@]@ @[<hov1>(action@ \
          @[<hov1>(diff@ %s-%03d.html %s-%03d.html.new)@])@])@]@."
@@ -102,7 +178,23 @@ let write_dune_file test_specs tests =
         base
         example
         base
-        example)
+        example;
+      if
+        not
+          (List.mem example pp_disabled
+          || pp_disabled_filename
+             |> List.exists (fun pp_disabled_filename ->
+                    String.starts_with ~prefix:pp_disabled_filename filename))
+      then
+        Format.printf
+          "@[<v1>(rule@ @[<hov1>(alias %s-%03d)@]@ @[<hov1>(action@ \
+           @[<hov1>(diff@ %s-%03d.html %s-%03d.html.pp.new)@])@])@]@."
+          base
+          example
+          base
+          example
+          base
+          example)
     tests;
   let pp ppf { filename; example; _ } =
     let base = Filename.remove_extension filename in

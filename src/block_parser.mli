@@ -1,5 +1,5 @@
-open Ast.Impl
-module Raw = Ast_block.Raw
+open Cst.Impl
+module Raw = Cst_block.Raw
 
 module Pre : sig
   val of_channel :

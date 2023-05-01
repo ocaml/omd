@@ -14,11 +14,21 @@
 (rule
  (with-stdout-to
   dune.inc.new
-  (run ./extract_tests.exe -write-dune-file %{dep:spec.txt}
-    %{dep:gfm_table_spec.md} %{dep:extra_table_tests.md} %{dep:attributes.md}
-    %{dep:def_list.md})))
+  (run
+   ./extract_tests.exe
+   -write-dune-file
+   %{dep:spec.txt}
+   %{dep:gfm_table_spec.md}
+   %{dep:extra_table_tests.md}
+   %{dep:attributes.md}
+   %{dep:def_list.md})))
 
 (include dune.inc)
+
+(executable
+ (name omd_pp)
+ (libraries str omd)
+ (modules omd_pp))
 
 (executable
  (name omd)

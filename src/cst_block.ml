@@ -7,14 +7,33 @@ module StringContent = struct
 end
 
 module InlineContent = struct
-  type 'attr t = 'attr Ast_inline.inline
+  type 'attr t = 'attr Cst_inline.inline
 end
 
-module List_types = Cst_block.List_types
-module Table_alignments = Cst_block.Table_alignments
+module List_types = struct
+  type list_type =
+    | Ordered of int * char
+    | Bullet of char
+
+  type list_spacing =
+    | Loose
+    | Tight
+end
+
+module Table_alignments = struct
+  type cell_alignment =
+    | Default
+    | Left
+    | Centre
+    | Right
+end
 
 open List_types
 open Table_alignments
+
+type heading_type =
+  | Latx
+  | Lsetext of int
 
 module Make (C : BlockContent) = struct
   type 'attr def_elt =
@@ -25,13 +44,13 @@ module Make (C : BlockContent) = struct
   (* A value of type 'attr is present in all variants of this type. We use it to associate
      extra information to each node in the AST. Cn the common case, the attributes type defined
      above is used. We might eventually have an alternative function to parse blocks while keeping
-     concrete information such as source location and we'll use it for that as well. *)
+     concrete information sucpasyh as source location and we'll use it for that as well. *)
   type 'attr block =
     | Paragraph of 'attr * 'attr C.t
     | List of 'attr * list_type * list_spacing * 'attr block list list
     | Blockquote of 'attr * 'attr block list
     | Thematic_break of 'attr
-    | Heading of 'attr * int * 'attr C.t
+    | Heading of 'attr * heading_type * int * 'attr C.t
     | Code_block of 'attr * string * string
     | Html_block of 'attr * string
     | Definition_list of 'attr * 'attr def_elt list
@@ -51,7 +70,8 @@ module MakeMapper (Src : BlockContent) (Dst : BlockContent) = struct
         List (attr, ty, sp, List.map (List.map (map f)) bl)
     | Blockquote (attr, xs) -> Blockquote (attr, List.map (map f) xs)
     | Thematic_break attr -> Thematic_break attr
-    | Heading (attr, level, text) -> Heading (attr, level, f text)
+    | Heading (attr, heading_type, level, text) ->
+        Heading (attr, heading_type, level, f text)
     | Definition_list (attr, l) ->
         let f { SrcBlock.term; defs } =
           { DstBlock.term = f term; defs = List.map f defs }
