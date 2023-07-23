@@ -1,5 +1,4 @@
 open Ast.Impl
-open Stdcompat
 
 type 'attr link_def =
   { label : string

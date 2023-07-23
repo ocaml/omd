@@ -17,9 +17,7 @@ jobs:
           - windows-latest
         ocaml-compiler:
           # Decision on version matrix informed by https://discuss.ocaml.org/t/which-ocaml-compiler-versions-should-we-run-against-in-ci/7933/2
-          # But has gradually inched up due to signs of bitrot on earlier versions
-          # such as https://github.com/thierry-martinez/stdcompat/issues/26
-          - 4.08.0
+          - 4.13.x
           - 4.14.x
         include:
           - ocaml-compiler: 5.0.x
