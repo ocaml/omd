@@ -1,5 +1,14 @@
+2.0.0~alpha4
+------------
+
+- Add an `empty` inline value (#298 @cuihtlauac)
+
+- Remove stdcompat dependency (#304 #305 @hannesm, review by @samoht)
+
+- Minimum supported OCaml version is now 4.13 (#304 @hannesm)
+
 2.0.0~alpha3
-----------
+------------
 
 - Expose the HTML escape function `htmlentities` (#295 @cuihtlauac)
 
