@@ -20,4 +20,4 @@ let with_open_in fn f =
 let () =
   with_open_in Sys.argv.(1) @@ fun ic ->
   print_string
-    (normalize_html (Omd.to_html ~auto_identifiers:false (Omd.of_channel ic)))
+    (normalize_html (Omd.to_html (Omd.of_channel ~auto_identifiers:false ic)))

@@ -22,3 +22,19 @@ and 'attr link =
   ; destination : string
   ; title : string option
   }
+
+let to_plain_text t =
+  let buf = Buffer.create 1024 in
+  let rec go : _ inline -> unit = function
+    | Concat (_, l) -> List.iter go l
+    | Text (_, t) | Code (_, t) -> Buffer.add_string buf t
+    | Emph (_, i)
+    | Strong (_, i)
+    | Link (_, { label = i; _ })
+    | Image (_, { label = i; _ }) ->
+        go i
+    | Hard_break _ | Soft_break _ -> Buffer.add_char buf ' '
+    | Html _ -> ()
+  in
+  go t;
+  Buffer.contents buf
