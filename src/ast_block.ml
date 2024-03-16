@@ -11,7 +11,6 @@ module InlineContent = struct
 end
 
 module List_types = struct
-
   (** @canonical Omd.list_type *)
   type list_type =
     | Ordered of int * char
@@ -24,7 +23,6 @@ module List_types = struct
 end
 
 module Table_alignments = struct
-
   (** @canonical Omd.cell_alignment *)
   type cell_alignment =
     | Default
