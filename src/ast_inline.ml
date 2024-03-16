@@ -5,6 +5,8 @@
         those somehow? Or should we include these in the document model, but
         but with the caveat that most renderings of the document don't support
         attributes in these nodes? *)
+
+(** @canonical Omd.inline *)
 type 'attr inline =
   | Concat of 'attr * 'attr inline list
   | Text of 'attr * string
